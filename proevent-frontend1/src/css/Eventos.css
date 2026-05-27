@@ -1,0 +1,159 @@
+.eventos-container {
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Encabezados */
+.eventos-content h2 {
+  color: #2a3b8f;
+  margin-bottom: 10px;
+}
+
+.eventos-content h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Barra de pestañas para secciones */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tabs button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.tabs button:hover {
+  background: #e0e0e0;
+}
+
+.tabs button.active {
+  background: #2a3b8f;
+  color: #fff;
+}
+
+/* Formulario */
+.form-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.form-container h2 {
+  margin-bottom: 20px;
+  color: #2a3b8f;
+}
+
+.form-container label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-container input,
+.form-container select,
+.form-container textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Botones de acción */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.actions button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.actions button[type="button"] {
+  background: #f0ad4e;
+  color: #fff;
+}
+
+.actions button[type="reset"] {
+  background: #d9534f;
+  color: #fff;
+}
+
+.actions button[type="submit"] {
+  background: #2a3b8f;
+  color: #fff;
+}
+
+.modalidad-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modalidad-card {
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+.modalidad-card input {
+  display: none; /* ocultamos el radio */
+}
+
+.modalidad-card img.modalidad-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.5rem;
+}
+
+.modalidad-card.active {
+  border-color: #007bff;
+  background-color: #e6f0ff;
+}
+.checklist {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.checklist h4 {
+  margin-bottom: 0.8rem;
+  color: #333;
+  font-weight: bold;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 14px;
+}
+
+.check-item input {
+  margin-right: 0.5rem;
+}
+

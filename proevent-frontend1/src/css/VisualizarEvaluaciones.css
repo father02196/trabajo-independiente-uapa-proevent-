@@ -1,0 +1,393 @@
+/* ─── VisualizarEvaluaciones.css (Clean & Professional UAPA Theme) ──────── */
+
+:root {
+  --uapa-navy: #041046;
+  --uapa-orange: #fe8301;
+  --uapa-bg: #f1f4f9;
+  --uapa-card: #ffffff;
+  --uapa-border: #e8ecf0;
+  --uapa-text: #0f172a;
+  --uapa-muted: #64748b;
+  --uapa-radius: 14px;
+  --uapa-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+
+.veval-container {
+  padding: 24px;
+  background: var(--uapa-bg);
+  min-height: 100%;
+  font-family: 'Inter', system-ui, sans-serif;
+  animation: veval-fade-in 0.4s ease-out;
+}
+
+@keyframes veval-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.veval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.veval-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--uapa-navy);
+  margin: 0;
+}
+
+.veval-subtitle {
+  color: var(--uapa-muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.veval-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--uapa-navy);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(4,16,70,0.15);
+}
+
+.veval-refresh-btn:hover {
+  background: var(--uapa-orange);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(254,131,1,0.25);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* KPI Grid */
+.veval-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.veval-stat-card {
+  background: var(--uapa-card);
+  border: 1px solid var(--uapa-border);
+  padding: 20px;
+  border-radius: var(--uapa-radius);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--uapa-shadow);
+  transition: transform 0.2s ease;
+}
+
+.veval-stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.veval-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.veval-stat-icon.sat { background: #fff7ed; color: var(--uapa-orange); }
+.veval-stat-icon.total { background: #eff6ff; color: var(--uapa-navy); }
+.veval-stat-icon.best { background: #ecfdf5; color: #10b981; }
+
+.veval-stat-label {
+  display: block;
+  font-size: 12px;
+  color: var(--uapa-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.veval-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--uapa-navy);
+}
+
+.veval-stat-value span {
+  font-size: 14px;
+  color: var(--uapa-muted);
+}
+
+/* Main Card Table */
+.veval-main-card {
+  background: var(--uapa-card);
+  border: 1px solid var(--uapa-border);
+  border-radius: var(--uapa-radius);
+  box-shadow: var(--uapa-shadow);
+  overflow: hidden;
+}
+
+.veval-table-scroll {
+  overflow-x: auto;
+}
+
+.veval-table.premium {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.veval-table.premium th {
+  background: #f8fafc;
+  padding: 14px 20px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--uapa-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 2px solid var(--uapa-border);
+}
+
+.veval-table.premium td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--uapa-border);
+  font-size: 14px;
+  color: var(--uapa-text);
+}
+
+.veval-table.premium tbody tr:hover {
+  background: #fdfdfd;
+}
+
+.veval-table.premium tbody tr.row-expanded {
+  background: #f8fafc;
+}
+
+.veval-id-badge {
+  display: inline-block;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--uapa-navy);
+}
+
+.veval-event-cell strong {
+  display: block;
+  color: var(--uapa-navy);
+  margin-bottom: 2px;
+}
+
+.veval-event-cell span {
+  font-size: 12px;
+  color: var(--uapa-muted);
+}
+
+.veval-recinto-tag {
+  background: #f1f5f9;
+  color: var(--uapa-navy);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.veval-status-pill {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.val-muy_eficiente { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.val-excelente     { background: #eff6ff; color: var(--uapa-navy); border: 1px solid #bfdbfe; }
+.val-eficiente     { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.val-deficiente    { background: #fef2f2; color: #7f1d1d; border: 1px solid #fecaca; }
+
+.veval-stars-mini {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.veval-comment-hint {
+  font-size: 11px;
+  color: var(--uapa-orange);
+  text-decoration: underline;
+  cursor: help;
+}
+
+/* Action Buttons */
+.veval-visual-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.veval-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--uapa-border);
+  background: #fff;
+  color: var(--uapa-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.veval-icon-btn:hover {
+  border-color: var(--uapa-navy);
+  color: var(--uapa-navy);
+  background: #f8fafc;
+}
+
+.veval-icon-btn.active {
+  background: var(--uapa-navy);
+  color: #fff;
+  border-color: var(--uapa-navy);
+  box-shadow: 0 4px 10px rgba(4,16,70,0.2);
+}
+
+/* Expansion Row */
+.veval-expansion-content {
+  display: flex;
+  gap: 32px;
+  padding: 24px 32px;
+  background: #f9fafb;
+  border-bottom: 2px solid var(--uapa-border);
+}
+
+.veval-expansion-info {
+  flex: 1;
+}
+
+.veval-expansion-info h4 {
+  margin-bottom: 12px;
+  color: var(--uapa-navy);
+}
+
+.veval-quote {
+  margin: 0;
+  padding: 12px 16px;
+  background: #fff;
+  border-left: 4px solid var(--uapa-orange);
+  border-radius: 4px;
+  font-style: italic;
+  color: var(--uapa-text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.veval-expansion-chart {
+  flex: 1.2;
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--uapa-border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+/* Footer & Pagination */
+.veval-footer {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--uapa-border);
+}
+
+.veval-info-total {
+  font-size: 13px;
+  color: var(--uapa-muted);
+}
+
+.veval-pagination.premium {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--uapa-border);
+  background: #fff;
+  color: var(--uapa-navy);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.page-nav:hover:not(:disabled) {
+  background: var(--uapa-navy);
+  color: #fff;
+}
+
+.page-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-size: 13px;
+  color: var(--uapa-text);
+}
+
+.page-indicator strong {
+  color: var(--uapa-orange);
+}
+
+/* Loading Shimmer */
+.veval-loading-shimmer {
+  padding: 30px;
+}
+
+.shimmer-row {
+  height: 50px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.veval-empty {
+  padding: 60px;
+  text-align: center;
+  color: var(--uapa-muted);
+}
+
+.veval-empty-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}

@@ -1,0 +1,188 @@
+.proveedores-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.proveedores-header {
+  margin-bottom: 24px;
+}
+
+.proveedores-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.proveedores-subtitle {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.filtros-proveedores {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filtro-grupo label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #34495e;
+}
+
+.filtro-grupo select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.tabla-proveedores-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow-x: auto;
+}
+
+.tabla-proveedores {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tabla-proveedores th {
+  background-color: #f1f2f6;
+  padding: 12px 15px;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tabla-proveedores td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #f1f2f6;
+  vertical-align: middle;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.pendiente { background: #ffeaa7; color: #d35400; }
+.badge.enviado, .badge.recibido, .badge.completado { background: #55efc4; color: #00b894; }
+.badge.con-incidencias, .badge.en-revision { background: #fab1a0; color: #d63031; }
+.badge.procesado { background: #74b9ff; color: #0984e3; }
+
+.acciones-celda {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-accion {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+
+.btn-envio { background: #0984e3; color: white; }
+.btn-recepcion { background: #00b894; color: white; }
+.btn-pago { background: #fdcb6e; color: #2d3436; }
+
+.btn-accion:hover {
+  opacity: 0.8;
+}
+
+/* Modales */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.modal-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-group select,
+.form-group textarea,
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  background: #f1f2f6;
+  color: #2d3436;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-save {
+  background: #0984e3;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}

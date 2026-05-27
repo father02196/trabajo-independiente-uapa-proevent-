@@ -1,0 +1,129 @@
+.bitacora-container {
+    padding: 20px;
+    background-color: #f8fafc;
+    min-height: calc(100vh - 80px); /* Ajuste según nav */
+    border-radius: 12px;
+}
+
+.bitacora-filters-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+}
+
+.filter-group {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.filter-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    background: transparent;
+}
+
+.bitacora-search-input,
+.bitacora-select {
+    width: 100%;
+    padding: 12px 16px 12px 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #334155;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.bitacora-search-input:focus,
+.bitacora-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.bitacora-table-wrapper {
+    background: white;
+    padding: 2px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.bitacora-table th {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px !important;
+}
+
+.bitacora-table td {
+    padding: 16px !important;
+    vertical-align: top;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.accion-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: #e0f2fe;
+    color: #0284c7;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.accion-detalles {
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.user-icon-small {
+    background: #e2e8f0;
+    color: #64748b;
+    padding: 6px;
+    border-radius: 50%;
+    margin-right: 8px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.usuario-info-cell {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.text-muted {
+    color: #94a3b8;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    text-align: center;
+}

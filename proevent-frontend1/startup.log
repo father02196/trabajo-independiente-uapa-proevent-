@@ -1,0 +1,239 @@
+
+> frontenduapaproevent@1.0.0 start
+> react-scripts start
+
+(node:13376) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:13376) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:13376) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+Starting the development server...
+
+Compiled successfully!
+
+You can now view frontenduapaproevent in the browser.
+
+  Local:            http://localhost:3000
+  On Your Network:  http://192.168.88.1:3000
+
+Note that the development build is not optimized.
+To create a production build, use npm run build.
+
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\pages\NuevaSolicitudEvento.js
+Syntax error: 'return' outside of function. (350:2) (350:2)
+[1m[31mERROR[39m[22m in [1m./src/pages/NuevaSolicitudEvento.js[39m[22m
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+SyntaxError: C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\src\pages\NuevaSolicitudEvento.js: 'return' outside of function. (350:2)
+
+[0m [90m 348 |[39m   [36mconst[39m esUltimaSeccion [33m=[39m seccionActualIndex [33m===[39m secciones[33m.[39mlength [33m-[39m [35m1[39m[33m;[39m
+ [90m 349 |[39m
+[31m[1m>[22m[39m[90m 350 |[39m   [36mreturn[39m (
+ [90m     |[39m   [31m[1m^[22m[39m
+ [90m 351 |[39m     [33m<[39m[33mform[39m onSubmit[33m=[39m{handleSubmit} className[33m=[39m[32m"form-container"[39m[33m>[39m
+ [90m 352 |[39m       [33m<[39m[33mh2[39m[33m>[39m[33mNueva[39m [33mSolicitud[39m de [33mEvento[39m[33m<[39m[33m/[39m[33mh2[39m[33m>[39m
+ [90m 353 |[39m[0m
+    at constructor (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:365:19)
+    at FlowParserMixin.raise (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:6599:19)
+    at FlowParserMixin.parseReturnStatement (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13136:12)
+    at FlowParserMixin.parseStatementContent (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12798:21)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2918:24)
+    at FlowParserMixin.parseModuleItem (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12744:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13316:36)
+    at FlowParserMixin.parseBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13309:10)
+    at FlowParserMixin.parseProgram (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12622:10)
+    at FlowParserMixin.parseTopLevel (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12612:25)
+    at FlowParserMixin.parseTopLevel (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:3685:28)
+    at FlowParserMixin.parse (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:14488:25)
+    at parse (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:14522:38)
+    at parser (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\parser\index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\transformation\index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\transform.js:22:33)
+    at transform.next (<anonymous>)
+    at step (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\gensync\index.js:261:32)
+    at C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\gensync\index.js:273:13
+    at async.call.result.err.err (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\gensync\index.js:223:11)
+
+[1m[31mERROR[39m[22m in [1m[eslint] 
+src\pages\NuevaSolicitudEvento.js
+  Line 350:2:  Parsing [1m[31merror[39m[22m[1m: 'return' outside of function. (350:2)
+
+[39m[22m
+
+webpack compiled with [1m[31m2 errors[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\pages\NuevaSolicitudEvento.js
+Syntax error: Unexpected token (173:12) (173:12)
+[1m[31mERROR[39m[22m in [1m./src/pages/NuevaSolicitudEvento.js[39m[22m
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+SyntaxError: C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\src\pages\NuevaSolicitudEvento.js: Unexpected token (173:12)
+
+[0m [90m 171 |[39m               [36mreturn[39m[33m;[39m
+ [90m 172 |[39m             }
+[31m[1m>[22m[39m[90m 173 |[39m           } [36mcatch[39m (avErr) {
+ [90m     |[39m             [31m[1m^[22m[39m
+ [90m 174 |[39m             console[33m.[39merror([32m"Error al enviar solicitud AV:"[39m[33m,[39m avErr)[33m;[39m
+ [90m 175 |[39m             setError([32m`Evento creado (#EVT-${id_evento}), pero hubo un problema de conexi├│n para la solicitud audiovisual.`[39m)[33m;[39m
+ [90m 176 |[39m             setLoading([36mfalse[39m)[33m;[39m[0m
+    at constructor (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:365:19)
+    at FlowParserMixin.raise (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:6599:19)
+    at FlowParserMixin.unexpected (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:6619:16)
+    at FlowParserMixin.parseExprAtom (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11442:22)
+    at FlowParserMixin.parseExprAtom (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:4764:20)
+    at FlowParserMixin.parseExprSubscripts (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11081:23)
+    at FlowParserMixin.parseUpdate (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11066:21)
+    at FlowParserMixin.parseMaybeUnary (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11046:23)
+    at FlowParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10899:61)
+    at FlowParserMixin.parseExprOps (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10904:23)
+    at FlowParserMixin.parseMaybeConditional (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10881:23)
+    at FlowParserMixin.parseMaybeAssign (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10831:21)
+    at FlowParserMixin.parseMaybeAssign (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:3549:18)
+    at FlowParserMixin.parseExpressionBase (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10784:23)
+    at C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10780:39
+    at FlowParserMixin.allowInAnd (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12421:16)
+    at FlowParserMixin.parseExpression (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10780:17)
+    at FlowParserMixin.parseStatementContent (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12895:23)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2918:24)
+    at FlowParserMixin.parseStatementListItem (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12747:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13316:61)
+    at FlowParserMixin.parseBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13309:10)
+    at FlowParserMixin.parseBlock (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13297:10)
+    at FlowParserMixin.parseStatementContent (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12858:21)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2918:24)
+    at FlowParserMixin.parseStatementOrSloppyAnnexBFunctionDeclaration (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12757:17)
+    at FlowParserMixin.parseIfStatement (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13131:42)
+    at FlowParserMixin.parseStatementContent (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12796:21)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2918:24)
+    at FlowParserMixin.parseStatementListItem (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12747:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13316:61)
+    at FlowParserMixin.parseBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13309:10)
+    at FlowParserMixin.parseBlock (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13297:10)
+    at FlowParserMixin.parseTryStatement (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13205:23)
+    at FlowParserMixin.parseStatementContent (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12804:21)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2918:24)
+    at FlowParserMixin.parseStatementListItem (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12747:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13316:61)
+    at FlowParserMixin.parseBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13309:10)
+    at FlowParserMixin.parseBlock (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13297:10)
+    at FlowParserMixin.parseFunctionBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12100:24)
+    at C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2892:63
+    at FlowParserMixin.forwardNoArrowParamsConversionAt (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:3068:16)
+    at FlowParserMixin.parseFunctionBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2892:12)
+    at FlowParserMixin.parseArrowExpression (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12075:10)
+    at FlowParserMixin.parseAsyncArrowFromCallExpression (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11264:10)
+
+[1m[31mERROR[39m[22m in [1m[eslint] 
+src\pages\NuevaSolicitudEvento.js
+  Line 173:12:  Parsing [1m[31merror[39m[22m[1m: [1m[31mUnexpected[39m[22m[1m token (173:12)
+
+[39m[22m
+
+webpack compiled with [1m[31m2 errors[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\pages\NuevaSolicitudEvento.js
+Syntax error: Unexpected token (346:2) (346:2)
+[1m[31mERROR[39m[22m in [1m./src/pages/NuevaSolicitudEvento.js[39m[22m
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+SyntaxError: C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\src\pages\NuevaSolicitudEvento.js: Unexpected token (346:2)
+
+[0m [90m 344 |[39m   )[33m;[39m
+ [90m 345 |[39m }
+[31m[1m>[22m[39m[90m 346 |[39m   )[33m;[39m
+ [90m     |[39m   [31m[1m^[22m[39m
+ [90m 347 |[39m }
+ [90m 348 |[39m[0m
+    at constructor (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:365:19)
+    at FlowParserMixin.raise (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:6599:19)
+    at FlowParserMixin.unexpected (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:6619:16)
+    at FlowParserMixin.parseExprAtom (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11442:22)
+    at FlowParserMixin.parseExprAtom (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:4764:20)
+    at FlowParserMixin.parseExprSubscripts (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11081:23)
+    at FlowParserMixin.parseUpdate (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11066:21)
+    at FlowParserMixin.parseMaybeUnary (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:11046:23)
+    at FlowParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10899:61)
+    at FlowParserMixin.parseExprOps (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10904:23)
+    at FlowParserMixin.parseMaybeConditional (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10881:23)
+    at FlowParserMixin.parseMaybeAssign (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10831:21)
+    at FlowParserMixin.parseMaybeAssign (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:3549:18)
+    at FlowParserMixin.parseExpressionBase (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10784:23)
+    at C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10780:39
+    at FlowParserMixin.allowInAnd (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12421:16)
+    at FlowParserMixin.parseExpression (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:10780:17)
+    at FlowParserMixin.parseStatementContent (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12895:23)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:2918:24)
+    at FlowParserMixin.parseModuleItem (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12744:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13316:36)
+    at FlowParserMixin.parseBlockBody (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:13309:10)
+    at FlowParserMixin.parseProgram (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12622:10)
+    at FlowParserMixin.parseTopLevel (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:12612:25)
+    at FlowParserMixin.parseTopLevel (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:3685:28)
+    at FlowParserMixin.parse (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:14488:25)
+    at parse (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\parser\lib\index.js:14522:38)
+    at parser (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\parser\index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\transformation\index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\@babel\core\lib\transform.js:22:33)
+    at transform.next (<anonymous>)
+    at step (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\gensync\index.js:261:32)
+    at C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\gensync\index.js:273:13
+    at async.call.result.err.err (C:\Users\Laptop\Documents\proevent pruebas\proevent pruebas\FrontEndUAPAPROEVENT-main\node_modules\gensync\index.js:223:11)
+
+[1m[31mERROR[39m[22m in [1m[eslint] 
+src\pages\NuevaSolicitudEvento.js
+  Line 346:2:  Parsing [1m[31merror[39m[22m[1m: [1m[31mUnexpected[39m[22m[1m token (346:2)
+
+[39m[22m
+
+webpack compiled with [1m[31m2 errors[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
+Compiling...
+Compiled successfully!
+webpack compiled [1m[32msuccessfully[39m[22m
