@@ -25,19 +25,32 @@ import NotificationBell from "./NotificationBell";
 import ModuloProveedores from "./ModuloProveedores";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
-    const [activeTab, setActiveTab] = useState("Dashboard");
+    const [activeTab, setActiveTab] = useState(() => {
+        return localStorage.getItem("dashboard_activeTab") || "Dashboard";
+    });
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingEvent, setEditingEvent] = useState(null);
     const [eventoEvalId, setEventoEvalId] = useState(null);
 
-    const [openMenus, setOpenMenus] = useState({
-        eventos: false,
-        audiovisual: false,
-        admin: false,
-        proveedores: false
+    const [openMenus, setOpenMenus] = useState(() => {
+        const savedMenus = localStorage.getItem("dashboard_openMenus");
+        return savedMenus ? JSON.parse(savedMenus) : {
+            eventos: false,
+            audiovisual: false,
+            admin: false,
+            proveedores: false
+        };
     });
+
+    React.useEffect(() => {
+        localStorage.setItem("dashboard_activeTab", activeTab);
+    }, [activeTab]);
+
+    React.useEffect(() => {
+        localStorage.setItem("dashboard_openMenus", JSON.stringify(openMenus));
+    }, [openMenus]);
 
     const toggleMenu = (menu) => setOpenMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
 

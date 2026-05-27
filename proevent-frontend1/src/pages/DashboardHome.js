@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2 } from "react-icons/fi";
 import './../css/Dashboard.css';
+import MisTareasApoyo from './MisTareasApoyo';
 
 const API = "http://localhost:8080";
 
@@ -24,6 +25,15 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // --- Estados para Fase 1 del Relevo: Asignación de Coordinador ---
+  const [isCoordinadorModalOpen, setIsCoordinadorModalOpen] = useState(false);
+  const [pendingApprovalEvent, setPendingApprovalEvent] = useState(null);
+  const [coordinadoresPosibles, setCoordinadoresPosibles] = useState([]);
+  const [selectedCoordinador, setSelectedCoordinador] = useState("");
+
+  // --- Confirmación General de Cambio de Estado ---
+  const [confirmEstadoModal, setConfirmEstadoModal] = useState({ open: false, id_evento: null, nuevoEstado: "" });
 
   const openModal = (req) => {
     setSelectedRequest(req);
@@ -37,9 +47,19 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
   useEffect(() => {
     cargarEventos();
     cargarAudiovisuales();
+    cargarCoordinadores();
     setCurrentPage(1); // Reset al cambiar usuario
   }, [usuario]);
 
+  const cargarCoordinadores = async () => {
+    try {
+      const res = await fetch(`${API}/usuarios-coordinadores`);
+      const data = await res.json();
+      if(Array.isArray(data)) setCoordinadoresPosibles(data);
+    } catch(e) {
+      console.error("Error cargando coordinadores", e);
+    }
+  };
 
   const cargarAudiovisuales = async () => {
     setLoadingAV(true);
@@ -83,20 +103,48 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
     }
   };
 
-  const handleCambiarEstado = async (id_evento, nuevoEstado) => {
+  const handleIntentarCambioEstado = (id_evento, nuevoEstado) => {
+    if (nuevoEstado === "Aprobado") {
+      setPendingApprovalEvent(id_evento);
+      setIsCoordinadorModalOpen(true);
+    } else {
+      setConfirmEstadoModal({ open: true, id_evento, nuevoEstado });
+    }
+  };
+
+  const handleConfirmarCambioEstadoGenerico = () => {
+    handleCambiarEstado(confirmEstadoModal.id_evento, confirmEstadoModal.nuevoEstado);
+    setConfirmEstadoModal({ open: false, id_evento: null, nuevoEstado: "" });
+  };
+
+  const handleRechazarCambioEstadoGenerico = () => {
+    setConfirmEstadoModal({ open: false, id_evento: null, nuevoEstado: "" });
+    cargarEventos(); // reset select
+  };
+
+  const handleCambiarEstado = async (id_evento, nuevoEstado, id_coordinador = null) => {
     try {
+      const bodyPayload = { estado: nuevoEstado };
+      if (id_coordinador) bodyPayload.id_coordinador = id_coordinador;
+
       const res = await fetch(`${API}/eventos/${id_evento}/estado`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
           "x-usuario-id": usuario?.id_usuario || ""
         },
-        body: JSON.stringify({ estado: nuevoEstado })
+        body: JSON.stringify(bodyPayload)
       });
+      
+      const data = await res.json();
+      
       if (res.ok) {
         cargarEventos();
+        setIsCoordinadorModalOpen(false);
+        setSelectedCoordinador("");
+        setPendingApprovalEvent(null);
       } else {
-        alert("Error al cambiar el estado.");
+        alert(data.mensaje || "Error al cambiar el estado.");
       }
     } catch {
       alert("No se pudo conectar al servidor.");
@@ -187,6 +235,10 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
   const totalSolicitudes = eventRequests.length;
   const pendientes = eventRequests.filter((e) => e.estado === "Pendiente").length;
   const finalizados = eventRequests.filter((e) => e.estado === "Finalizado" || e.estado === "Aprobado").length;
+
+  if (usuario?.rol === 'Personal de Apoyo') {
+    return <MisTareasApoyo usuario={usuario} />;
+  }
 
   return (
     <>
@@ -310,7 +362,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
                         ) : (
                           <select
                             value={req.estado || "Pendiente"}
-                            onChange={(e) => handleCambiarEstado(req.id_evento, e.target.value)}
+                            onChange={(e) => handleIntentarCambioEstado(req.id_evento, e.target.value)}
                             className="table-select"
                           >
                             <option value="Pendiente">Pendiente</option>
@@ -357,100 +409,144 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
           </div>
         )}
 
-        {/* MODAL DETALLES */}
+        {/* MODAL DETALLES REDISEÑADO */}
         {isModalOpen && selectedRequest && (
           <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Detalles de la Solicitud</h2>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "650px", padding: "0" }}>
+              <div className="modal-header" style={{ padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0" }}>
+                <h2 style={{ margin: 0, fontSize: "20px" }}>Detalle de Solicitud: #{selectedRequest.id_evento}</h2>
+                <button onClick={closeModal} style={{ background: "transparent", border: "none", fontSize: "20px", cursor: "pointer", color: "#64748b" }}>&times;</button>
               </div>
-              <div className="modal-body">
-                <div className="detail-group">
-                  <label>Nombre del Evento:</label>
-                  <p>{selectedRequest.nombre}</p>
-                </div>
-                <div className="detail-group">
-                  <label>Solicitante:</label>
-                  <p>{selectedRequest.solicitante || "—"}</p>
-                </div>
-                <div className="detail-group">
-                  <label>Dependencia:</label>
-                  <p>{selectedRequest.dependencia || "—"}</p>
+              <div className="modal-body" style={{ padding: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                
+                <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "15px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                  <h3 style={{ margin: "0 0 5px 0", fontSize: "16px", color: "#1e40af" }}>{selectedRequest.nombre}</h3>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#64748b" }}>Solicitado por: <strong>{selectedRequest.solicitante || "—"}</strong></p>
                 </div>
 
-                <div className="detail-group">
-                  <label>Recinto:</label>
-                  <p>{selectedRequest.recinto || "—"}</p>
+                <div className="detail-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Dependencia:</label>
+                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.dependencia || "—"}</p>
                 </div>
-                {selectedRequest.modalidad && (
-                  <div className="detail-group">
-                    <label>Modalidad:</label>
-                    <p>{selectedRequest.modalidad}</p>
-                  </div>
-                )}
-                {selectedRequest.tipo_evento && (
-                  <div className="detail-group">
-                    <label>Tipo de Evento:</label>
-                    <p>{selectedRequest.tipo_evento}</p>
-                  </div>
-                )}
-                <div className="detail-group">
-                  <label>Fechas:</label>
-                  <p>
-                    {formatFecha(selectedRequest.fecha_inicio)} 
-                    {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` - ${formatFecha(selectedRequest.fecha_fin)}` : ""}
+                <div className="detail-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Recinto:</label>
+                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.recinto || "—"}</p>
+                </div>
+
+                <div className="detail-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Modalidad y Tipo:</label>
+                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.modalidad || "—"} - {selectedRequest.tipo_evento || "—"}</p>
+                </div>
+                <div className="detail-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Fechas y Horario:</label>
+                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>
+                    {formatFecha(selectedRequest.fecha_inicio)} {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? `al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
+                    <br/><span style={{ color: "#64748b", fontSize: "13px" }}>{selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} a {selectedRequest.hora_fin ? formatHora(selectedRequest.hora_fin) : "—"}</span>
                   </p>
                 </div>
-                {(selectedRequest.hora_inicio || selectedRequest.hora_fin) && (
-                  <div className="detail-group">
-                    <label>Horario:</label>
-                    <p>
-                      {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} 
-                      {selectedRequest.hora_fin ? ` a ${formatHora(selectedRequest.hora_fin)}` : ""}
-                    </p>
-                  </div>
-                )}
-                {selectedRequest.cantidad_asistentes && (
-                  <div className="detail-group">
-                    <label>Asistentes Esperados:</label>
-                    <p>{selectedRequest.cantidad_asistentes}</p>
-                  </div>
-                )}
-                {(selectedRequest.monto_poa || selectedRequest.moneda) && (
-                  <div className="detail-group">
-                    <label>Presupuesto POA:</label>
-                    <p>{selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || ''}` : "—"}</p>
-                  </div>
-                )}
-                {selectedRequest.detalles_corporativos && (
-                  <div className="detail-group">
-                    <label>Detalles Corporativos:</label>
-                    <p>{selectedRequest.detalles_corporativos}</p>
-                  </div>
-                )}
-                {selectedRequest.alimentos && (
-                  <div className="detail-group">
-                    <label>Servicio de Catering:</label>
-                    <p>{selectedRequest.alimentos}</p>
-                  </div>
-                )}
-                <div className="detail-group">
-                  <label>Audiovisual Requerido:</label>
-                  <p>
-                    {selectedRequest.necesita_audiovisual 
-                      ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
-                      : "No"}
+
+                <div className="detail-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Asistentes Esperados:</label>
+                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.cantidad_asistentes || "—"}</p>
+                </div>
+                <div className="detail-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Presupuesto POA:</label>
+                  <p style={{ margin: "5px 0 0 0", fontWeight: "500", color: "#16a34a" }}>{selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || ''}` : "—"}</p>
+                </div>
+
+                <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0, padding: "10px", background: "#f1f5f9", borderRadius: "6px" }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Logística (Alimentos / Detalles):</label>
+                  <p style={{ margin: "5px 0 0 0", fontSize: "13px" }}>
+                    <strong>Catering:</strong> {selectedRequest.alimentos || "Ninguno"}<br/>
+                    <strong>Corporativo:</strong> {selectedRequest.detalles_corporativos || "Ninguno"}
                   </p>
                 </div>
+
+                <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Audiovisual Requerido:</label>
+                  <p style={{ margin: "5px 0 0 0", fontSize: "13px" }}>
+                    {selectedRequest.necesita_audiovisual ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") : "No"}
+                  </p>
+                </div>
+
                 {selectedRequest.observaciones && (
-                  <div className="detail-group" style={{ gridColumn: "1 / -1" }}>
-                    <label>Observaciones de Montaje:</label>
-                    <p>{selectedRequest.observaciones}</p>
+                  <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                    <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Observaciones de Montaje:</label>
+                    <p style={{ margin: "5px 0 0 0", fontSize: "13px", color: "#475569" }}>{selectedRequest.observaciones}</p>
                   </div>
                 )}
+
+                {selectedRequest.motivo_rechazo_poa && (
+                  <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0, padding: "12px", background: "#fee2e2", borderLeft: "4px solid #dc2626", borderRadius: "4px" }}>
+                    <label style={{ fontSize: "13px", color: "#dc2626", display: "block", fontWeight: "bold" }}>Razón de Rechazo (Administración POA):</label>
+                    <p style={{ margin: "5px 0 0 0", fontSize: "14px", color: "#b91c1c" }}>{selectedRequest.motivo_rechazo_poa}</p>
+                  </div>
+                )}
+
               </div>
-              <div className="modal-footer">
-                <button className="close-btn" onClick={closeModal}>Cerrar</button>
+              <div className="modal-footer" style={{ padding: "15px 20px", borderTop: "1px solid #e2e8f0", textAlign: "right", background: "#f8fafc" }}>
+                <button className="btn-primary" onClick={closeModal} style={{ padding: "8px 20px", borderRadius: "6px", background: "#1e40af", color: "white", border: "none", cursor: "pointer", fontWeight: "500" }}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL CONFIRMACION DE ESTADO GENÉRICO */}
+        {confirmEstadoModal.open && (
+          <div className="modal-overlay" onClick={handleRechazarCambioEstadoGenerico}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px", textAlign: "center", padding: "30px" }}>
+              <h3 style={{ margin: "0 0 15px 0" }}>Confirmación de Acción</h3>
+              <p style={{ color: "#475569", marginBottom: "25px" }}>
+                ¿Deseas realizar la acción "<strong>{confirmEstadoModal.nuevoEstado}</strong>" para este evento?
+              </p>
+              <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
+                <button 
+                  onClick={handleRechazarCambioEstadoGenerico}
+                  style={{ padding: "10px 20px", borderRadius: "6px", background: "white", border: "1px solid #cbd5e1", color: "#475569", cursor: "pointer", fontWeight: "600" }}
+                >
+                  Rechazar
+                </button>
+                <button 
+                  onClick={handleConfirmarCambioEstadoGenerico}
+                  style={{ padding: "10px 20px", borderRadius: "6px", background: "#1e40af", border: "none", color: "white", cursor: "pointer", fontWeight: "600" }}
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL ASIGNAR COORDINADOR (Fase 1) */}
+        {isCoordinadorModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsCoordinadorModalOpen(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '400px'}}>
+              <div className="modal-header">
+                <h2>Aprobar y Asignar Coordinador</h2>
+              </div>
+              <div className="modal-body">
+                <p>Para aprobar este evento, por favor asigne al Coordinador Logístico que será responsable de armar el cronograma.</p>
+                <div className="form-group" style={{marginTop: '15px'}}>
+                  <label>Seleccionar Coordinador:</label>
+                  <select 
+                    style={{width: '100%', padding: '10px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc'}}
+                    value={selectedCoordinador} 
+                    onChange={(e) => setSelectedCoordinador(e.target.value)}
+                  >
+                    <option value="">-- Seleccione una persona --</option>
+                    {coordinadoresPosibles.map(c => (
+                      <option key={c.id_usuario} value={c.id_usuario}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer" style={{display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px'}}>
+                <button className="close-btn" style={{background: '#95a5a6'}} onClick={() => setIsCoordinadorModalOpen(false)}>Cancelar</button>
+                <button className="btn-primary" 
+                  disabled={!selectedCoordinador}
+                  onClick={() => handleCambiarEstado(pendingApprovalEvent, "Aprobado", selectedCoordinador)}
+                  style={{background: '#2ecc71', color: 'white', padding: '8px 15px', border: 'none', borderRadius: '4px', cursor: selectedCoordinador ? 'pointer' : 'not-allowed', opacity: selectedCoordinador ? 1 : 0.5}}
+                >Confirmar y Aprobar</button>
               </div>
             </div>
           </div>

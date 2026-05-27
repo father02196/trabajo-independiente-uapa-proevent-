@@ -178,8 +178,54 @@ module.exports = (db, transporter) => {
     }
   });
 
+  // --- Módulo: Proveedores | Función: Subir comprobante de pago/factura saldada (Fase 4 del Relevo) ---
+  router.post('/admin/factura-proveedor/:id_cotizacion', upload.single('archivo_factura'), async (req, res) => {
+    try {
+      const { id_cotizacion } = req.params;
+      if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo PDF.' });
 
-  // --- RUTAS DE INTELIGENCIA ARTIFICIAL (ADMIN) ---
+      const fileName = `factura_pagada_${id_cotizacion}_${Date.now()}.pdf`;
+      const uploadPath = './uploads/' + fileName;
+      
+      if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
+      fs.writeFileSync(uploadPath, req.file.buffer);
+
+      db.query(`UPDATE cotizacion_recibida SET factura_pdf = ?, estado_pago = 'Pagado' WHERE id_cotizacion = ?`, [uploadPath, id_cotizacion], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // AuditService: Registrar el pago
+        const reqUserId = req.headers['x-usuario-id'];
+        if(reqUserId) db.query('INSERT INTO bitacora_movimiento (id_usuario, id_rol, accion, detalles) VALUES (?, ?, ?, ?)', [reqUserId, 1, 'PAGO_FACTURA_B2B', `Se ha subido el comprobante de pago para la cotización ID ${id_cotizacion}`]);
+        
+        res.json({ message: 'Factura subida y marcada como pagada correctamente.' });
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
+  // --- RUTAS DE INTELIGENCIA ARTIFICIAL Y LISTADO B2B (ADMIN) ---
+
+  // Nueva ruta para obtener licitaciones evaluadas/adjudicadas para mostrar en ModuloProveedores
+  router.get('/admin/licitaciones-adjudicadas', (req, res) => {
+    db.query(`
+      SELECT a.id_analisis, a.id_solicitud, a.proveedor_recomendado_id, a.fecha_analisis, 
+             s.id_evento, s.requisitos, e.nombre as nombre_evento, 
+             p.nombre_empresa as proveedor_nombre,
+             c.monto_total_detectado, c.estado_pago, c.id_cotizacion
+      FROM analisis_ia_comparativo a
+      JOIN solicitud_cotizacion s ON a.id_solicitud = s.id_solicitud
+      JOIN evento e ON s.id_evento = e.id_evento
+      JOIN proveedor_externo p ON a.proveedor_recomendado_id = p.id_proveedor
+      LEFT JOIN cotizacion_recibida c ON a.proveedor_recomendado_id = c.id_proveedor AND a.id_solicitud = c.id_solicitud
+      ORDER BY a.fecha_analisis DESC
+    `, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
+  });
 
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY || 'dummy_key' // Asume que se ha puesto en .env. El dummy evita crasheo al iniciar.

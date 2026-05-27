@@ -32,31 +32,51 @@ export default function ServiciosyDetalles({ data, setData }) {
       <h3>Servicios alimenticios y Detalles corporativos</h3>
 
       {/* Lista de detalles corporativos */}
-      <div className="checklist">
+      <div className="checklist" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <h4>Tipos de detalles corporativos</h4>
-        {detallesCorp.map((d) => (
-          <label key={d.id_detalle_corp} className="check-item">
+        {[...detallesCorp]
+          .sort((a, b) => a.nombre.toLowerCase().includes('no aplica') ? 1 : b.nombre.toLowerCase().includes('no aplica') ? -1 : 0)
+          .map((d) => (
+          <label key={d.id_detalle_corp} className="check-item" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            borderBottom: '1px dashed #ccc', 
+            paddingBottom: '5px',
+            marginBottom: '5px',
+            cursor: 'pointer'
+          }}>
+            <span>{d.nombre}</span>
             <input
               type="checkbox"
               checked={data.items?.includes(d.nombre) || false}
               onChange={() => toggleItem(d.nombre, "items")}
+              style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
             />
-            {d.nombre}
           </label>
         ))}
       </div>
 
       {/* Lista de alimentos y bebidas */}
-      <div className="checklist">
+      <div className="checklist" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <h4>Alimentos y bebidas</h4>
         {alimentos.map((a) => (
-          <label key={a.id_alimento} className="check-item">
+          <label key={a.id_alimento} className="check-item" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            borderBottom: '1px dashed #ccc', 
+            paddingBottom: '5px',
+            marginBottom: '5px',
+            cursor: 'pointer'
+          }}>
+            <span>{a.nombre}</span>
             <input
               type="checkbox"
               checked={data.catering?.includes(a.nombre) || false}
               onChange={() => toggleItem(a.nombre, "catering")}
+              style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
             />
-            {a.nombre}
           </label>
         ))}
       </div>

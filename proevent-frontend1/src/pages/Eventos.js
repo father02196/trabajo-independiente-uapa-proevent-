@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 import '../css/Eventos.css';
 import NuevaSolicitudEvento from './NuevaSolicitudEvento';
+import CronogramaLogistico from './CronogramaLogistico';
+import LicitacionesB2B from './LicitacionesB2B';
 
 function Eventos({ usuario, editingEvent, setEditingEvent }) {
-  const [activeSection, setActiveSection] = useState("Información General");
+  // --- Persistencia del activeSection en la creación de eventos ---
+  const [activeSection, setActiveSection] = useState(() => {
+      return localStorage.getItem("eventos_activeSection") || "Información General";
+  });
+
+  React.useEffect(() => {
+      localStorage.setItem("eventos_activeSection", activeSection);
+  }, [activeSection]);
 
   const secciones = [
     "Información General",
@@ -11,6 +20,10 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
     "Servicios alimenticios y Detalles coorporativos",
     "Presupuesto y POA"
   ];
+
+  if (editingEvent) {
+    secciones.push("Cronograma Logístico", "Licitaciones B2B");
+  }
 
   return (
     <div className="eventos-container">
@@ -31,13 +44,19 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
 
       {/* Formulario dinámico */}
       <main className="form-container">
-        <NuevaSolicitudEvento
-          activeSection={activeSection}
-          setActiveSection={setActiveSection}
-          usuario={usuario}
-          editingEvent={editingEvent}
-          setEditingEvent={setEditingEvent}
-        />
+        {activeSection === "Cronograma Logístico" ? (
+          <CronogramaLogistico evento={editingEvent} usuario={usuario} />
+        ) : activeSection === "Licitaciones B2B" ? (
+          <LicitacionesB2B evento={editingEvent} usuario={usuario} />
+        ) : (
+          <NuevaSolicitudEvento
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            usuario={usuario}
+            editingEvent={editingEvent}
+            setEditingEvent={setEditingEvent}
+          />
+        )}
       </main>
     </div>
   );

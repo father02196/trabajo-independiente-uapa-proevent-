@@ -3,9 +3,18 @@ import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu } fr
 import './../css/ModuloProveedores.css';
 
 function ModuloProveedores({ usuario }) {
-    const [activeTab, setActiveTab] = useState('logistica');
+    // --- Persistencia de la pestaña activa ---
+    const [activeTab, setActiveTab] = useState(() => {
+        return localStorage.getItem("proveedores_activeTab") || 'logistica';
+    });
+
+    useEffect(() => {
+        localStorage.setItem("proveedores_activeTab", activeTab);
+    }, [activeTab]);
     const [servicios, setServicios] = useState([]);
     const [proveedores, setProveedores] = useState([]);
+    const [licitacionesAdjudicadas, setLicitacionesAdjudicadas] = useState([]);
+    const [fileFactura, setFileFactura] = useState(null);
     const [filtroEstadoRecepcion, setFiltroEstadoRecepcion] = useState('Todos');
     const [filtroEstadoPago, setFiltroEstadoPago] = useState('Todos');
     
@@ -16,7 +25,18 @@ function ModuloProveedores({ usuario }) {
     useEffect(() => {
         if (activeTab === 'logistica') fetchServicios();
         if (activeTab === 'directorio') fetchProveedores();
+        if (activeTab === 'ia') cargarLicitacionesAdjudicadas();
     }, [activeTab]);
+
+    const cargarLicitacionesAdjudicadas = async () => {
+        try {
+            const res = await fetch(`${API}/admin/licitaciones-adjudicadas`);
+            const data = await res.json();
+            setLicitacionesAdjudicadas(Array.isArray(data) ? data : []);
+        } catch(e) {
+            console.error(e);
+        }
+    };
 
     const fetchServicios = async () => {
         try {
@@ -152,12 +172,82 @@ function ModuloProveedores({ usuario }) {
                 </>
             )}
 
-            {/* TAB: LICITACIONES IA */}
+            {/* TAB: LICITACIONES IA Y FACTURAS B2B */}
             {activeTab === 'ia' && (
-                <div style={{padding: '20px', background: 'white', borderRadius: '8px', textAlign: 'center'}}>
-                    <FiCpu size={50} color="#3498db" style={{marginBottom: '10px'}}/>
-                    <h3>Motor de Inteligencia Artificial (GPT-4o-mini)</h3>
-                    <p>Las licitaciones se envían automáticamente al crear un evento. Pronto verá aquí el análisis comparativo automático de las ofertas subidas por los proveedores.</p>
+                <div style={{padding: '20px', background: 'white', borderRadius: '8px'}}>
+                    <div style={{textAlign: 'center', marginBottom: '30px'}}>
+                        <FiCpu size={50} color="#3498db" style={{marginBottom: '10px'}}/>
+                        <h3>Licitaciones Adjudicadas (Evaluación IA)</h3>
+                        <p>Aquí se muestran las licitaciones que la Inteligencia Artificial ya evaluó y adjudicó. Como Encargado de Compras, puedes subir la factura saldada para poder finalizar el evento logísticamente.</p>
+                    </div>
+
+                    <table className="requests-table">
+                        <thead>
+                            <tr>
+                                <th>Evento (Req.)</th>
+                                <th>Proveedor Ganador</th>
+                                <th>Monto Total</th>
+                                <th>Estado Pago</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {licitacionesAdjudicadas.length === 0 ? (
+                                <tr><td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>No hay licitaciones adjudicadas aún.</td></tr>
+                            ) : licitacionesAdjudicadas.map(lic => (
+                                <tr key={lic.id_analisis}>
+                                    <td>
+                                        <strong>{lic.nombre_evento}</strong><br/>
+                                        <small className="text-muted">{lic.requisitos}</small>
+                                    </td>
+                                    <td>{lic.proveedor_nombre}</td>
+                                    <td>{lic.monto_total_detectado ? `$${Number(lic.monto_total_detectado).toLocaleString()}` : '—'}</td>
+                                    <td>
+                                        <span className={`status ${lic.estado_pago === 'Pagado' ? 'approved' : 'pending'}`}>
+                                            {lic.estado_pago || 'Pendiente'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {lic.estado_pago !== 'Pagado' ? (
+                                            <div style={{display: 'flex', gap: '5px', alignItems: 'center'}}>
+                                                <input type="file" accept="application/pdf" onChange={e => setFileFactura(e.target.files[0])} style={{width: '150px'}} />
+                                                <button 
+                                                    className="btn-primary" 
+                                                    style={{padding: '5px 10px', fontSize: '12px'}}
+                                                    onClick={async () => {
+                                                        if (!fileFactura) return alert("Seleccione un PDF de factura");
+                                                        const formData = new FormData();
+                                                        formData.append('archivo_factura', fileFactura);
+                                                        try {
+                                                            const res = await fetch(`${API}/admin/factura-proveedor/${lic.id_cotizacion}`, {
+                                                                method: 'POST',
+                                                                headers: { 'x-usuario-id': usuario?.id_usuario || '' },
+                                                                body: formData
+                                                            });
+                                                            if (res.ok) {
+                                                                alert("Factura subida correctamente.");
+                                                                setFileFactura(null);
+                                                                cargarLicitacionesAdjudicadas();
+                                                            } else {
+                                                                const err = await res.json();
+                                                                alert(err.error || "Error al subir");
+                                                            }
+                                                        } catch(e) {
+                                                            alert("Error de red");
+                                                        }
+                                                    }}
+                                                >
+                                                    Subir Factura
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <span style={{color: '#2ecc71'}}><strong>✓ Pagado</strong></span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
 

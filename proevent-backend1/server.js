@@ -742,7 +742,7 @@ app.get('/eventos', (req, res) => { // Declara la gran ruta HTTP GET '/eventos'
        e.hora_inicio, e.hora_fin, e.cantidad_asistentes, e.tipo_evento,
        e.monto_poa, e.moneda, e.estado, e.fecha_creacion,
        e.id_recinto, e.id_dependencia,
-       pm.estado AS estado_poa,
+       pm.estado AS estado_poa, pm.motivo_rechazo AS motivo_rechazo_poa,
        u.nombre  AS solicitante,
        u.id_usuario,
        d.nombre  AS dependencia,
@@ -807,18 +807,59 @@ app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar 
 });
 
 // ── EVENTOS — ACTUALIZAR ESTADO GERENCIAL ────────────────────────
-app.put('/eventos/:id/estado', (req, res) => { // Edición atómica puramente enfocada en el Workflow Lifecycle Status del evento, usando URI PUT
-  const { id } = req.params; // Extrae parámetro
-  const { estado } = req.body; // Cosecha la variable a mutar 
-  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado']; // Define array estático constante interno sirviendo como Lista Blanca/Whitelist de validación de negocio
-  if (!estadosValidos.includes(estado)) // Caza intentos de asignar estados inexistentes inventados por hackers o bugs  
-    return res.status(400).json({ mensaje: 'Estado no válido' }); // Prohibe cambio de estatus corrupto 
-  db.query('UPDATE evento SET estado=? WHERE id_evento=?', [estado, id], (err) => { // Impacta BD estrictamente
-    if (err) return res.status(500).json({ mensaje: 'Error al actualizar estado', error: err.message }); // Handle
-    res.json({ mensaje: 'Estado actualizado con éxito' }); // Terminado okay HTTP Response
-    const reqUserId = req.headers['x-usuario-id']; // Quien aprueba/rechaza
-    if(reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_EVENTO', `Resolución de Estado del Evento. El Evento con ID ${id} ha pasado al estado: "${estado}".`); // Trazo logístico
-  });
+app.put('/eventos/:id/estado', (req, res) => { 
+  // --- Módulo: Eventos | Función: Actualizar estado y asignar coordinador (Fase 1 del Relevo) ---
+  const { id } = req.params; 
+  const { estado, id_coordinador } = req.body; 
+  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado']; 
+  
+  if (!estadosValidos.includes(estado)) 
+    return res.status(400).json({ mensaje: 'Estado no válido' }); 
+
+  // Función interna para proceder con la actualización
+  const procederUpdate = () => {
+    db.query('UPDATE evento SET estado=? WHERE id_evento=?', [estado, id], (err) => { 
+      if (err) return res.status(500).json({ mensaje: 'Error al actualizar estado', error: err.message }); 
+      
+      // Si el evento fue Aprobado y se envió un coordinador, se le asigna la responsabilidad en la tabla puente
+      if (estado === 'Aprobado' && id_coordinador) {
+        db.query(`DELETE FROM evento_organizador WHERE id_evento=? AND rol_organizacion='Coordinador'`, [id], () => {
+          db.query(`INSERT INTO evento_organizador (id_evento, id_usuario, rol_organizacion) VALUES (?, ?, 'Coordinador')`, [id, id_coordinador]);
+        });
+      }
+
+      res.json({ mensaje: 'Estado actualizado con éxito' }); 
+      const reqUserId = req.headers['x-usuario-id']; 
+      if(reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_EVENTO', `Resolución de Estado del Evento. El Evento con ID ${id} ha pasado al estado: "${estado}".`); 
+    });
+  };
+
+  // Fase 5: Validación Estricta para el Cierre Administrativo
+  if (estado === 'Finalizado') {
+    db.query(`SELECT COUNT(*) as pendientes FROM actividad_cronograma WHERE id_evento = ? AND estado != 'Completada'`, [id], (errTask, resultsTask) => {
+      if (errTask) return res.status(500).json({ error: errTask.message });
+      if (resultsTask[0].pendientes > 0) {
+        return res.status(400).json({ mensaje: `No se puede finalizar el evento porque hay ${resultsTask[0].pendientes} tarea(s) del cronograma sin completar.` });
+      }
+
+      db.query(`
+        SELECT COUNT(*) as pendientes_pago 
+        FROM analisis_ia_comparativo a 
+        JOIN cotizacion_recibida c ON a.proveedor_recomendado_id = c.id_proveedor AND a.id_solicitud = c.id_solicitud 
+        JOIN solicitud_cotizacion s ON a.id_solicitud = s.id_solicitud 
+        WHERE s.id_evento = ? AND (c.estado_pago != 'Pagado' OR c.estado_pago IS NULL)
+      `, [id], (errB2B, resultsB2B) => {
+        if (errB2B) return res.status(500).json({ error: errB2B.message });
+        if (resultsB2B[0].pendientes_pago > 0) {
+          return res.status(400).json({ mensaje: `No se puede finalizar el evento porque hay ${resultsB2B[0].pendientes_pago} factura(s) de proveedores sin pagar o subir comprobante.` });
+        }
+
+        procederUpdate(); // Si pasa las validaciones, procede a actualizar
+      });
+    });
+  } else {
+    procederUpdate();
+  }
 });
 
 // ── EVENTOS — ELIMINAR MANUALMENTE UNA SOLICITUD ─────────────────────────────────
@@ -1376,6 +1417,33 @@ app.get('/cronograma/:id_evento', (req, res) => {
     res.json(results);
   });
 });
+
+app.get('/mis-tareas/:id_usuario', (req, res) => {
+  db.query(`
+    SELECT ac.*, e.nombre as nombre_evento
+    FROM actividad_cronograma ac
+    JOIN evento e ON ac.id_evento = e.id_evento
+    WHERE ac.id_usuario_responsable = ?
+    ORDER BY ac.fecha_cumplimiento ASC`, [req.params.id_usuario], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+app.get('/usuarios-coordinadores', (req, res) => {
+  db.query(`SELECT id_usuario, nombre FROM usuario WHERE id_rol IN (SELECT id_rol FROM rol WHERE nombre = 'Coordinador de Evento' OR nombre = 'Administrador' OR nombre = 'Administrador de Evento')`, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+app.get('/usuarios-apoyo', (req, res) => {
+  db.query(`SELECT id_usuario, nombre FROM usuario WHERE id_rol IN (SELECT id_rol FROM rol WHERE nombre = 'Personal de Apoyo')`, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
 app.post('/cronograma', (req, res) => {
   const { id_evento, nombre_actividad, id_usuario_responsable, fecha_cumplimiento } = req.body;
   if (!id_evento || !nombre_actividad || !fecha_cumplimiento) return res.status(400).json({ mensaje: 'Datos faltantes' });
