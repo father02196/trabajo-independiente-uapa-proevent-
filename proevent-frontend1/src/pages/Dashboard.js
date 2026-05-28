@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 // Barra de búsqueda global eliminada por preferencia del usuario
@@ -158,8 +158,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     };
 
     return (
-        <div className="dashboard-layout">
-            <aside className="dashboard-sidebar">
+        <div className={`dashboard-layout${isSidebarOpen ? '' : ' sidebar-collapsed'}`}>
+            <aside className={`dashboard-sidebar${isSidebarOpen ? '' : ' sidebar-hidden'}`}>
                 <div className="sidebar-brand">
                     <div className="brand-logo-container">
                         <img src={uapaLogo} alt="UAPA Logo" className="brand-logo-img" />
@@ -325,7 +325,18 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
 
             <main className="dashboard-main">
                 <header className="dashboard-header">
-                    <h1>{getPageTitle()}</h1>
+                    <div className="header-left">
+                        {/* Botón hamburguesa para colapsar/expandir el sidebar (adoptado de RM-fronters) */}
+                        <button
+                            className="hamburger-btn"
+                            onClick={toggleSidebar}
+                            title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
+                            aria-label="Toggle sidebar"
+                        >
+                            <FiMenu size={22} />
+                        </button>
+                        <h1>{getPageTitle()}</h1>
+                    </div>
                     <div className="header-actions">
                         <NotificationBell
                             usuario={usuario}

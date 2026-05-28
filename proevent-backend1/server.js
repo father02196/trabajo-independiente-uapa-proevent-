@@ -16,6 +16,16 @@ const app = express(); // Instancia un nuevo servidor Express
 app.use(cors()); // Se añade el middleware global CORS a todas las rutas
 app.use(express.json()); // Middleware global que parsea cualquier body JSON recibido en las peticiones entrantes
 
+// --- MANEJO DE ERRORES DE JSON INVÁLIDO (adoptado de RM-fronters/BackendPROEVENT) ---
+// Captura errores de sintaxis JSON antes de que lleguen a los manejadores de rutas
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('⚠️  JSON inválido recibido:', err.message); // Log del error en consola para depuración
+    return res.status(400).json({ mensaje: 'JSON inválido en la solicitud' }); // Respuesta controlada al cliente
+  }
+  next(); // Si no es un error JSON, pasa al siguiente middleware
+});
+
 // --- CONFIGURACIÓN DE LA BASE DE DATOS MÚLTIPLES-CONEXIONES (POOL) ---
 const db = mysql.createPool({ // El Pool mantiene las conexiones vivas y las reutiliza en lugar de crear nuevas cada vez
   host: 'localhost', // Dirección local de la base de datos
