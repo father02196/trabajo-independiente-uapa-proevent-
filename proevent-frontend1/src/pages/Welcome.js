@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import './../css/Welcome.css';
 import uapaLogo from './../img/Logo-blanco-UAPA.png';
 
