@@ -1,39 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2 } from "react-icons/fi";
+﻿import React, { useState, useEffect } from "react";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
 import './../css/Dashboard.css';
-import MisTareasApoyo from './MisTareasApoyo';
 
 const API = "http://localhost:8080";
 
-function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [departmentFilter, setDepartmentFilter] = useState("Todos");
-  const [statusFilter, setStatusFilter] = useState("Todos");
-  const [dateFilter, setDateFilter] = useState("");
+function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) {
   const [eventRequests, setEventRequests] = useState([]);
   const [avRequests, setAvRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingAV, setLoadingAV] = useState(true);
   const [error, setError] = useState("");
-  const [errorAV, setErrorAV] = useState("");
-  
-  // Paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
-  const [currentDate, setCurrentDate] = useState(new Date());
 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // --- Estados para Fase 1 del Relevo: Asignación de Coordinador ---
-  const [isCoordinadorModalOpen, setIsCoordinadorModalOpen] = useState(false);
-  const [pendingApprovalEvent, setPendingApprovalEvent] = useState(null);
-  const [coordinadoresPosibles, setCoordinadoresPosibles] = useState([]);
-  const [selectedCoordinador, setSelectedCoordinador] = useState("");
-
-  // --- Confirmación General de Cambio de Estado ---
-  const [confirmEstadoModal, setConfirmEstadoModal] = useState({ open: false, id_evento: null, nuevoEstado: "" });
+  const [activeTooltip, setActiveTooltip] = useState(null); // Para tooltips interactivos de SVG
 
   const openModal = (req) => {
     setSelectedRequest(req);
@@ -45,149 +24,62 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
   };
 
   useEffect(() => {
-    cargarEventos();
-    cargarAudiovisuales();
-    cargarCoordinadores();
-    setCurrentPage(1); // Reset al cambiar usuario
+    cargarDatos();
+  }, []);
+
+  useEffect(() => {
+    cargarDatos();
   }, [usuario]);
 
-  const cargarCoordinadores = async () => {
-    try {
-      const res = await fetch(`${API}/usuarios-coordinadores`);
-      const data = await res.json();
-      if(Array.isArray(data)) setCoordinadoresPosibles(data);
-    } catch(e) {
-      console.error("Error cargando coordinadores", e);
-    }
-  };
-
-  const cargarAudiovisuales = async () => {
-    setLoadingAV(true);
-    setErrorAV("");
-    try {
-      const url = usuario?.rol === "Solicitante" 
-        ? `${API}/audiovisual?usuario_id=${usuario.id_usuario}`
-        : `${API}/audiovisual`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setAvRequests(data);
-      } else {
-        setErrorAV("Error al cargar solicitudes audiovisuales.");
-      }
-    } catch (err) {
-      setErrorAV("No se pudo conectar al servidor para audiovisuales.");
-    } finally {
-      setLoadingAV(false);
-    }
-  };
-
-  const cargarEventos = async () => {
-    setLoading(true);
+  const cargarDatos = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError("");
     try {
-      const url = usuario?.rol === "Solicitante" 
+      const eventUrl = usuario?.rol === "Solicitante" 
         ? `${API}/eventos?usuario_id=${usuario.id_usuario}`
         : `${API}/eventos`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setEventRequests(data);
-      } else {
-        setError("Error al cargar eventos.");
+      const avUrl = usuario?.rol === "Solicitante" 
+        ? `${API}/audiovisual?usuario_id=${usuario.id_usuario}`
+        : `${API}/audiovisual`;
+
+      const [resEvents, resAV] = await Promise.all([
+        fetch(eventUrl).then(r => r.json()),
+        fetch(avUrl).then(r => r.json())
+      ]);
+
+      if (Array.isArray(resEvents)) {
+        setEventRequests(resEvents);
+      }
+      if (Array.isArray(resAV)) {
+        setAvRequests(resAV);
+      }
+      
+      if (!silent && resEvents && resAV) {
+        // toast.success("Datos sincronizados"); // Opcional, puede ser molesto cada vez que entra.
       }
     } catch (err) {
-      setError("No se pudo conectar al servidor.");
+      setError("No se pudo establecer conexi├│n con el servidor ProEvent.");
+      import("react-hot-toast").then((module) => {
+        module.toast.error("Error al conectar con el servidor.");
+      });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const handleIntentarCambioEstado = (id_evento, nuevoEstado) => {
-    if (nuevoEstado === "Aprobado") {
-      setPendingApprovalEvent(id_evento);
-      setIsCoordinadorModalOpen(true);
-    } else {
-      setConfirmEstadoModal({ open: true, id_evento, nuevoEstado });
-    }
-  };
-
-  const handleConfirmarCambioEstadoGenerico = () => {
-    handleCambiarEstado(confirmEstadoModal.id_evento, confirmEstadoModal.nuevoEstado);
-    setConfirmEstadoModal({ open: false, id_evento: null, nuevoEstado: "" });
-  };
-
-  const handleRechazarCambioEstadoGenerico = () => {
-    setConfirmEstadoModal({ open: false, id_evento: null, nuevoEstado: "" });
-    cargarEventos(); // reset select
-  };
-
-  const handleCambiarEstado = async (id_evento, nuevoEstado, id_coordinador = null) => {
-    try {
-      const bodyPayload = { estado: nuevoEstado };
-      if (id_coordinador) bodyPayload.id_coordinador = id_coordinador;
-
-      const res = await fetch(`${API}/eventos/${id_evento}/estado`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-usuario-id": usuario?.id_usuario || ""
-        },
-        body: JSON.stringify(bodyPayload)
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        cargarEventos();
-        setIsCoordinadorModalOpen(false);
-        setSelectedCoordinador("");
-        setPendingApprovalEvent(null);
-      } else {
-        alert(data.mensaje || "Error al cambiar el estado.");
-      }
-    } catch {
-      alert("No se pudo conectar al servidor.");
-    }
-  };
-
-  const handleCambiarEstadoAV = async (id_servicio, nuevoEstado) => {
-    try {
-      const res = await fetch(`${API}/audiovisual/${id_servicio}/estado`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-usuario-id": usuario?.id_usuario || ""
-        },
-        body: JSON.stringify({ estado: nuevoEstado })
-      });
-      if (res.ok) {
-        cargarAudiovisuales();
-      } else {
-        alert("Error al cambiar el estado.");
-      }
-    } catch {
-      alert("No se pudo conectar al servidor.");
-    }
+  // Helper de formato monetario
+  const formatMonedaDOP = (valor) => {
+    return new Intl.NumberFormat("es-DO", {
+      style: "currency",
+      currency: "DOP"
+    }).format(valor);
   };
 
   const formatFecha = (fechaStr) => {
-    if (!fechaStr) return "—";
+    if (!fechaStr) return "ΓÇö";
     const fecha = new Date(fechaStr);
-    // Adjust for timezone offset if needed, or just format
-    // Realmente, como solo es la fecha se puede parsear directamente pero
-    // le sumamos las horas para evitar problemas de timezone
     fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
-    return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
-  };
-  
-  const formatHora = (horaStr) => {
-    if (!horaStr) return "—";
-    const [hora, min] = horaStr.split(':');
-    const h = parseInt(hora, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${min} ${ampm}`;
+    return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
   };
 
   const getStatusClass = (estado) => {
@@ -200,360 +92,520 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent }) {
     }
   };
 
-
-  const departamentosUnicos = ["Todos", ...new Set(eventRequests.map((e) => e.dependencia).filter(Boolean))];
-
-  const filteredRequests = eventRequests
-    .filter((req) => {
-      const matchSearch = searchTerm === "" || 
-        req.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        `#EVT-${req.id_evento}`.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      if (!matchSearch) return false;
-
-      const matchDept = departmentFilter === "Todos" || req.dependencia === departmentFilter;
-      const matchStatus = statusFilter === "Todos" || req.estado === statusFilter;
-      const matchDate = !dateFilter || (req.fecha_inicio && req.fecha_inicio.startsWith(dateFilter));
-      return matchDept && matchStatus && matchDate;
-    })
-    .sort((a, b) => {
-      const dA = new Date(a.fecha_inicio).getTime();
-      const dB = new Date(b.fecha_inicio).getTime();
-      return sortOrder === "asc" ? dA - dB : dB - dA;
-    });
-
-  // Lógica de Paginación
-  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Resetear a pág 1 si los filtros cambian
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [departmentFilter, statusFilter, dateFilter, sortOrder]);
+  // C├ílculos estad├¡sticos
   const totalSolicitudes = eventRequests.length;
   const pendientes = eventRequests.filter((e) => e.estado === "Pendiente").length;
-  const finalizados = eventRequests.filter((e) => e.estado === "Finalizado" || e.estado === "Aprobado").length;
+  const aprobados = eventRequests.filter((e) => e.estado === "Aprobado").length;
+  const finalizados = eventRequests.filter((e) => e.estado === "Finalizado").length;
 
-  if (usuario?.rol === 'Personal de Apoyo') {
-    return <MisTareasApoyo usuario={usuario} />;
-  }
+  const totalPresupuestoUtilizado = eventRequests
+    .filter(e => e.estado === "Aprobado" || e.estado === "Finalizado")
+    .reduce((acc, curr) => acc + (parseFloat(curr.monto_poa) || 0), 0);
+
+  // Estado general (Donut)
+
+  const statusData = [
+    { name: "Pendientes", value: pendientes, color: "#f59e0b" },
+    { name: "Aprobados", value: aprobados, color: "#3b82f6" },
+    { name: "Finalizados", value: finalizados, color: "#10b981" },
+    { name: "Rechazados", value: eventRequests.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
+  ].filter(item => item.value > 0);
+
+  const venueBudgets = {};
+  eventRequests.forEach(req => {
+    if (req.estado === "Aprobado" || req.estado === "Finalizado") {
+      const recinto = req.recinto || "Otros";
+      const monto = parseFloat(req.monto_poa) || 0;
+      venueBudgets[recinto] = (venueBudgets[recinto] || 0) + monto;
+    }
+  });
+
+  const venueData = Object.entries(venueBudgets).map(([name, value]) => ({
+    name: name.replace(" Sede ", "").replace(" Oriental", "").replace(" Santo Domingo", "SD"),
+    value
+  })).sort((a, b) => b.value - a.value);
+
+  const maxBudget = Math.max(...venueData.map(v => v.value), 10000);
+
+  // Obtener los pr├│ximos 5 eventos activos
+  const proximosEventos = eventRequests
+    .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
+    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
+    .slice(0, 5);
 
   return (
-    <>
-      <div className="stats-cards">
-        <div className="stat-card">
-          <div className="stat-icon requests">
-            <FiFileText aria-hidden="true" />
+    <div className="saas-dashboard-container fade-in">
+      
+      {/* 4 CARDS DE ESTAD├ìSTICAS PREMIUM */}
+      <div className="stats-cards-grid">
+        <div className="saas-stat-card primary-glow" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+          <div className="card-top">
+            <span className="card-label">Solicitudes Totales</span>
+            <div className="card-icon-container bg-primary-light">
+              <FiFileText className="card-icon text-primary" />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">MIS SOLICITUDES</span>
+          <div className="card-bottom">
             <h3>{totalSolicitudes}</h3>
-            <span className="stat-trend positive">Total registrado</span>
+            <span className="card-trend text-green">
+              <FiArrowUpRight /> Activas en el sistema
+            </span>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon pending">
-            <FiClock aria-hidden="true" />
+
+        <div className="saas-stat-card warning-glow" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+          <div className="card-top">
+            <span className="card-label">Eventos Pendientes</span>
+            <div className="card-icon-container bg-warning-light">
+              <FiClock className="card-icon text-warning" />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">MIS PENDIENTES</span>
+          <div className="card-bottom">
             <h3>{pendientes}</h3>
-            <span className="stat-trend warning">Por realizarse</span>
+            <span className="card-trend text-orange">Revisi├│n requerida</span>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon approved">
-            <FiCheckCircle aria-hidden="true" />
+
+        <div className="saas-stat-card success-glow" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+          <div className="card-top">
+            <span className="card-label">Eventos Confirmados</span>
+            <div className="card-icon-container bg-success-light">
+              <FiCheckCircle className="card-icon text-success" />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">MIS FINALIZADOS</span>
-            <h3>{finalizados}</h3>
-            <span className="stat-trend positive">Concluidos</span>
+          <div className="card-bottom">
+            <h3>{aprobados + finalizados}</h3>
+            <span className="card-trend text-green">Listos en agenda</span>
+          </div>
+        </div>
+
+        <div className="saas-stat-card budget-glow" onClick={() => setActiveTab && setActiveTab("PoaAdmin")}>
+          <div className="card-top">
+            <span className="card-label">Presupuesto POA Aprobado</span>
+            <div className="card-icon-container bg-info-light">
+              <FiDollarSign className="card-icon text-info" />
+            </div>
+          </div>
+          <div className="card-bottom">
+            <h3>{formatMonedaDOP(totalPresupuestoUtilizado)}</h3>
+            <span className="card-trend text-purple">Deducido del POA</span>
           </div>
         </div>
       </div>
 
-
-      <div className="recent-requests-section">
-        <div className="section-header">
-          <h3>{usuario?.rol === "Solicitante" ? "Mi Historial de Solicitudes" : "Todas las Solicitudes"}</h3>
-          <div className="section-filters">
-            {usuario?.rol !== "Solicitante" && (
-              <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
-                {departamentosUnicos.map((d) => (
-                  <option key={d} value={d}>{d === "Todos" ? "Todos los Departamentos" : d}</option>
-                ))}
-              </select>
-            )}
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="Todos">Todos los estados</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Rechazado">Rechazado</option>
-              <option value="Finalizado">Finalizado</option>
-            </select>
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-            <button className="sort-btn" onClick={() => setSortOrder((o) => o === "asc" ? "desc" : "asc")}>
-              {sortOrder === "asc" ? "↑↓ Asc" : "↓↑ Desc"}
-            </button>
-            <button className="sort-btn icon-only-btn" onClick={cargarEventos} title="Recargar"><FiRefreshCw /></button>
-          </div>
-        </div>
-
-        <div className="table-container">
-          {loading ? (
-            <p style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>Cargando eventos...</p>
-          ) : error ? (
-            <p style={{ textAlign: "center", padding: "30px", color: "#dc2626" }}>{error}</p>
-          ) : (
-            <table className="requests-table">
-              <thead>
-                <tr>
-                  <th>NOMBRE</th>
-                  {usuario?.rol !== "Solicitante" && <th>SOLICITANTE</th>}
-                  {usuario?.rol !== "Solicitante" && <th>DEPENDENCIA</th>}
-                  <th>FECHA</th>
-                  <th>RECINTO</th>
-                  <th>ESTADO</th>
-                  <th>ESTADO POA</th>
-                  <th>DETALLES</th>
-                  {usuario?.rol !== "Administrador V-A-F" && <th>ACCIONES</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.map((req) => (
-                  <tr key={req.id_evento}>
-                    <td>
-                      <strong>{req.nombre}</strong><br />
-                      <span className="text-muted">#EVT-{req.id_evento}</span>
-                    </td>
-                    {usuario?.rol !== "Solicitante" && <td>{req.solicitante || "—"}</td>}
-                    {usuario?.rol !== "Solicitante" && <td>{req.dependencia || "—"}</td>}
-                    <td>{formatFecha(req.fecha_inicio)}</td>
-                    <td>{req.recinto || "—"}</td>
-                    <td>
-                      <span className={`status ${getStatusClass(req.estado)}`}>
-                        {req.estado || "Pendiente"}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status ${getStatusClass(req.estado_poa)}`}>
-                        {req.estado_poa || "Ninguno"}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="details-btn" onClick={() => openModal(req)}>
-                        <FiEye /> Ver
-                      </button>
-                    </td>
-                    {usuario?.rol !== "Administrador V-A-F" && (
-                    <td>
-                      <div style={{ display: 'flex', gap: '5px' }}>
-                        {usuario?.rol === "Solicitante" ? (
-                          <button className="details-btn" style={{ background: '#f59e0b', color: 'white' }} onClick={() => onEditEvent(req)}>
-                            <FiEdit2 /> Editar
-                          </button>
-                        ) : (
-                          <select
-                            value={req.estado || "Pendiente"}
-                            onChange={(e) => handleIntentarCambioEstado(req.id_evento, e.target.value)}
-                            className="table-select"
-                          >
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Aprobado">Aprobado</option>
-                            <option value="Rechazado">Rechazado</option>
-                            <option value="Finalizado">Finalizado</option>
-                          </select>
-                        )}
-                      </div>
-                    </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* CONTROLES DE PAGINACIÓN */}
-        {filteredRequests.length > 0 && (
-          <div className="pagination-container">
-            <div className="pagination-info">
-              Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredRequests.length)} de {filteredRequests.length} solicitudes
-            </div>
-            <div className="pagination-controls">
-              <button 
-                className="page-btn" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                <FiChevronLeft /> Anterior
-              </button>
-              <span className="page-number">
-                Página {currentPage} de {totalPages || 1}
-              </span>
-              <button 
-                className="page-btn" 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                Siguiente <FiChevronRight />
-              </button>
+      {/* SECCI├ôN ANAL├ìTICA - GR├üFICOS NATIVOS INTERACTIVOS */}
+      <div className="charts-grid-saas">
+        
+        {/* CHART 1: ESTADO DE SOLICITUDES (SVG DONUT CHART) */}
+        <div className="saas-chart-card saas-donut-card">
+          <div className="chart-header">
+            <div>
+              <h4>Distribuci├│n de Estados</h4>
+              <p>Porcentajes de aprobaci├│n actuales</p>
             </div>
           </div>
-        )}
-
-        {/* MODAL DETALLES REDISEÑADO */}
-        {isModalOpen && selectedRequest && (
-          <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "650px", padding: "0" }}>
-              <div className="modal-header" style={{ padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0" }}>
-                <h2 style={{ margin: 0, fontSize: "20px" }}>Detalle de Solicitud: #{selectedRequest.id_evento}</h2>
-                <button onClick={closeModal} style={{ background: "transparent", border: "none", fontSize: "20px", cursor: "pointer", color: "#64748b" }}>&times;</button>
+          <div className="chart-wrapper donut-center" style={{ height: '240px' }}>
+            {loading ? (
+              <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="loader" style={{ marginBottom: '10px' }}></div>
+                <p>Cargando distribuci├│n...</p>
               </div>
-              <div className="modal-body" style={{ padding: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            ) : statusData.length === 0 ? (
+              <div className="no-data-placeholder">Sin solicitudes registradas</div>
+            ) : (
+              <div className="donut-chart-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ position: 'relative', width: '120px', height: '120px' }}>
+                  <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+                    {(() => {
+                      let accumulatedPercentage = 0;
+                      return statusData.map((item, idx) => {
+                        const percentage = item.value / totalSolicitudes;
+                        const strokeDash = `${percentage * 251.2} 251.2`;
+                        const strokeOffset = 251.2 - (accumulatedPercentage * 251.2) + 62.8; // Iniciando arriba
+                        accumulatedPercentage += percentage;
+                        
+                        return (
+                          <circle 
+                            key={idx}
+                            cx="50" 
+                            cy="50" 
+                            r="40" 
+                            fill="transparent" 
+                            stroke={item.color} 
+                            strokeWidth="12" 
+                            strokeDasharray={strokeDash}
+                            strokeDashoffset={strokeOffset}
+                            strokeLinecap="round"
+                            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center'
+                  }}>
+                    <span style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', display: 'block', lineHeight: 1 }}>{totalSolicitudes}</span>
+                    <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total</span>
+                  </div>
+                </div>
                 
-                <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "15px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                  <h3 style={{ margin: "0 0 5px 0", fontSize: "16px", color: "#1e40af" }}>{selectedRequest.nombre}</h3>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#64748b" }}>Solicitado por: <strong>{selectedRequest.solicitante || "—"}</strong></p>
+                <div className="donut-legend" style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px', width: '100%' }}>
+                  {statusData.map((item, index) => (
+                    <div key={index} className="donut-legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="dot" style={{ backgroundColor: item.color, width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' }}></span>
+                      <span className="name" style={{ fontSize: '11px', fontWeight: '600', color: '#475569' }}>
+                        {item.name}: {item.value}
+                      </span>
+                    </div>
+                  ))}
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-                <div className="detail-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Dependencia:</label>
-                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.dependencia || "—"}</p>
-                </div>
-                <div className="detail-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Recinto:</label>
-                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.recinto || "—"}</p>
-                </div>
+        {/* CHART 2: PRESUPUESTO POR RECINTO (SVG BAR CHART) */}
+        <div className="saas-chart-card saas-budget-card">
+          <div className="chart-header">
+            <div>
+              <h4>Presupuesto POA Aprobado por Recinto</h4>
+              <p>Inversi├│n financiera en eventos por campus de la UAPA (en DOP)</p>
+            </div>
+            <button className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos"><FiRefreshCw /></button>
+          </div>
+          
+          <div className="budget-chart-layout">
+            {/* Visualizaci├│n descriptiva del presupuesto */}
+            <div className="budget-summary-panel">
+              <div className="budget-total-indicator">
+                <span>Total Invertido</span>
+                <h3>{formatMonedaDOP(totalPresupuestoUtilizado)}</h3>
+              </div>
+              <div className="budget-venues-list">
+                {venueData.slice(0, 4).map((v, idx) => (
+                  <div key={idx} className="budget-venue-item">
+                    <div className="venue-indicator" style={{ backgroundColor: ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"][idx % 4] }}></div>
+                    <div className="venue-info">
+                      <span className="venue-name">{v.name}</span>
+                      <span className="venue-amount">{formatMonedaDOP(v.value)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-                <div className="detail-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Modalidad y Tipo:</label>
-                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.modalidad || "—"} - {selectedRequest.tipo_evento || "—"}</p>
-                </div>
-                <div className="detail-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Fechas y Horario:</label>
-                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>
-                    {formatFecha(selectedRequest.fecha_inicio)} {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? `al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
-                    <br/><span style={{ color: "#64748b", fontSize: "13px" }}>{selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} a {selectedRequest.hora_fin ? formatHora(selectedRequest.hora_fin) : "—"}</span>
-                  </p>
-                </div>
+            {/* El gr├ífico SVG */}
+            <div className="chart-wrapper budget-svg-wrapper" style={{ height: '240px', position: 'relative' }}>
+            {loading ? (
+              <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="loader" style={{ marginBottom: '10px' }}></div>
+                <p>Cargando presupuesto...</p>
+              </div>
+            ) : venueData.length === 0 ? (
+              <div className="no-data-placeholder">Sin presupuestos aprobados</div>
+            ) : (
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <svg viewBox="0 0 500 200" width="100%" height="100%" style={{ overflow: 'visible' }}>
+                  {/* Grid Lines */}
+                  {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => (
+                    <line 
+                      key={idx} 
+                      x1="40" 
+                      y1={170 - ratio * 140} 
+                      x2="480" 
+                      y2={170 - ratio * 140} 
+                      stroke="#f1f5f9" 
+                      strokeWidth="1" 
+                    />
+                  ))}
 
-                <div className="detail-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Asistentes Esperados:</label>
-                  <p style={{ margin: "5px 0 0 0", fontWeight: "500" }}>{selectedRequest.cantidad_asistentes || "—"}</p>
-                </div>
-                <div className="detail-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Presupuesto POA:</label>
-                  <p style={{ margin: "5px 0 0 0", fontWeight: "500", color: "#16a34a" }}>{selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || ''}` : "—"}</p>
-                </div>
+                  {/* Eje X Labels - solo mostrar nombre corto */}
+                  {venueData.map((v, idx) => {
+                    const totalBars = venueData.length;
+                    const spacing = totalBars <= 1 ? 0 : 420 / (totalBars - 1);
+                    const x = 50 + idx * spacing + 15;
+                    const shortName = v.name.length > 10 ? v.name.substring(0, 9) + 'ΓÇª' : v.name;
+                    return (
+                      <text key={idx} x={x} y="190" fill="#94a3b8" fontSize="9" textAnchor="middle">
+                        {shortName}
+                      </text>
+                    );
+                  })}
 
-                <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0, padding: "10px", background: "#f1f5f9", borderRadius: "6px" }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Logística (Alimentos / Detalles):</label>
-                  <p style={{ margin: "5px 0 0 0", fontSize: "13px" }}>
-                    <strong>Catering:</strong> {selectedRequest.alimentos || "Ninguno"}<br/>
-                    <strong>Corporativo:</strong> {selectedRequest.detalles_corporativos || "Ninguno"}
-                  </p>
-                </div>
+                  {/* Eje Y Labels */}
+                  {[0, 0.5, 1].map((ratio, idx) => {
+                    const y = 173 - ratio * 140;
+                    const val = ratio * maxBudget;
+                    return (
+                      <text key={idx} x="30" y={y} fill="#94a3b8" fontSize="9" textAnchor="end">
+                        {val >= 1000 ? `$${Math.round(val / 1000)}k` : `$${val}`}
+                      </text>
+                    );
+                  })}
 
-                <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0 }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Audiovisual Requerido:</label>
-                  <p style={{ margin: "5px 0 0 0", fontSize: "13px" }}>
-                    {selectedRequest.necesita_audiovisual ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") : "No"}
-                  </p>
-                </div>
+                  {/* Dibujar Barras SVG */}
+                  {venueData.map((v, idx) => {
+                    const barWidth = Math.min(40, Math.floor(380 / Math.max(venueData.length, 1)) - 10);
+                    const totalBars = venueData.length;
+                    const spacing = totalBars <= 1 ? 0 : 420 / (totalBars - 1);
+                    const x = 50 + idx * spacing - barWidth / 2 + 15;
+                    const barHeight = (v.value / maxBudget) * 140;
+                    const y = 170 - barHeight;
+                    const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"];
+                    const barColor = colors[idx % colors.length];
 
-                {selectedRequest.observaciones && (
-                  <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0 }}>
-                    <label style={{ fontSize: "12px", color: "#94a3b8", display: "block" }}>Observaciones de Montaje:</label>
-                    <p style={{ margin: "5px 0 0 0", fontSize: "13px", color: "#475569" }}>{selectedRequest.observaciones}</p>
+                    return (
+                      <g key={idx}
+                     onMouseEnter={() => setActiveTooltip({ type: 'budget', id: idx, x: x + barWidth/2, y, label: `${v.name}: ${formatMonedaDOP(v.value)}` })}
+                         onMouseLeave={() => setActiveTooltip(null)}
+                         style={{ cursor: 'pointer' }}
+                      >
+                        <rect 
+                          x={x} 
+                          y={y} 
+                          width={barWidth} 
+                          height={Math.max(barHeight, 2)} 
+                          fill={barColor} 
+                          rx="5" 
+                          ry="5"
+                          style={{ transition: 'all 0.3s' }}
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Tooltip flotante interactivo para Barras */}
+                {activeTooltip && activeTooltip.type === 'budget' && (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${(activeTooltip.x / 500) * 100}%`,
+                    top: `${(activeTooltip.y / 200) * 100 - 15}%`,
+                    transform: 'translate(-50%, -100%)',
+                    background: '#0f172a',
+                    color: '#fff',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    pointerEvents: 'none',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    whiteSpace: 'nowrap',
+                    zIndex: 10
+                  }}>
+                    {activeTooltip.label}
                   </div>
                 )}
-
-                {selectedRequest.motivo_rechazo_poa && (
-                  <div className="detail-group" style={{ gridColumn: "1 / -1", margin: 0, padding: "12px", background: "#fee2e2", borderLeft: "4px solid #dc2626", borderRadius: "4px" }}>
-                    <label style={{ fontSize: "13px", color: "#dc2626", display: "block", fontWeight: "bold" }}>Razón de Rechazo (Administración POA):</label>
-                    <p style={{ margin: "5px 0 0 0", fontSize: "14px", color: "#b91c1c" }}>{selectedRequest.motivo_rechazo_poa}</p>
-                  </div>
-                )}
-
               </div>
-              <div className="modal-footer" style={{ padding: "15px 20px", borderTop: "1px solid #e2e8f0", textAlign: "right", background: "#f8fafc" }}>
-                <button className="btn-primary" onClick={closeModal} style={{ padding: "8px 20px", borderRadius: "6px", background: "#1e40af", color: "white", border: "none", cursor: "pointer", fontWeight: "500" }}>Cerrar</button>
-              </div>
+            )}
             </div>
           </div>
-        )}
-
-        {/* MODAL CONFIRMACION DE ESTADO GENÉRICO */}
-        {confirmEstadoModal.open && (
-          <div className="modal-overlay" onClick={handleRechazarCambioEstadoGenerico}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px", textAlign: "center", padding: "30px" }}>
-              <h3 style={{ margin: "0 0 15px 0" }}>Confirmación de Acción</h3>
-              <p style={{ color: "#475569", marginBottom: "25px" }}>
-                ¿Deseas realizar la acción "<strong>{confirmEstadoModal.nuevoEstado}</strong>" para este evento?
-              </p>
-              <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
-                <button 
-                  onClick={handleRechazarCambioEstadoGenerico}
-                  style={{ padding: "10px 20px", borderRadius: "6px", background: "white", border: "1px solid #cbd5e1", color: "#475569", cursor: "pointer", fontWeight: "600" }}
-                >
-                  Rechazar
-                </button>
-                <button 
-                  onClick={handleConfirmarCambioEstadoGenerico}
-                  style={{ padding: "10px 20px", borderRadius: "6px", background: "#1e40af", border: "none", color: "white", cursor: "pointer", fontWeight: "600" }}
-                >
-                  Aceptar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL ASIGNAR COORDINADOR (Fase 1) */}
-        {isCoordinadorModalOpen && (
-          <div className="modal-overlay" onClick={() => setIsCoordinadorModalOpen(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '400px'}}>
-              <div className="modal-header">
-                <h2>Aprobar y Asignar Coordinador</h2>
-              </div>
-              <div className="modal-body">
-                <p>Para aprobar este evento, por favor asigne al Coordinador Logístico que será responsable de armar el cronograma.</p>
-                <div className="form-group" style={{marginTop: '15px'}}>
-                  <label>Seleccionar Coordinador:</label>
-                  <select 
-                    style={{width: '100%', padding: '10px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc'}}
-                    value={selectedCoordinador} 
-                    onChange={(e) => setSelectedCoordinador(e.target.value)}
-                  >
-                    <option value="">-- Seleccione una persona --</option>
-                    {coordinadoresPosibles.map(c => (
-                      <option key={c.id_usuario} value={c.id_usuario}>{c.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="modal-footer" style={{display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px'}}>
-                <button className="close-btn" style={{background: '#95a5a6'}} onClick={() => setIsCoordinadorModalOpen(false)}>Cancelar</button>
-                <button className="btn-primary" 
-                  disabled={!selectedCoordinador}
-                  onClick={() => handleCambiarEstado(pendingApprovalEvent, "Aprobado", selectedCoordinador)}
-                  style={{background: '#2ecc71', color: 'white', padding: '8px 15px', border: 'none', borderRadius: '4px', cursor: selectedCoordinador ? 'pointer' : 'not-allowed', opacity: selectedCoordinador ? 1 : 0.5}}
-                >Confirmar y Aprobar</button>
-              </div>
-            </div>
-          </div>
-        )}
-
+        </div>
       </div>
-    </>
+
+      {/* TIMELINE DE EVENTOS Y PANEL DE ACCIONES R├üPIDAS */}
+      <div className="dashboard-double-panel">
+        
+        {/* PANEL IZQUIERDO: TIMELINE PR├ôXIMOS EVENTOS */}
+        <div className="saas-panel-card">
+          <div className="panel-header">
+            <FiCalendar className="panel-icon" />
+            <div>
+              <h4>Pr├│ximos Eventos en Agenda</h4>
+              <p>Eventos aprobados y pendientes programados pr├│ximamente</p>
+            </div>
+          </div>
+          <div className="panel-body">
+            {loading ? (
+              <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '150px' }}>
+                <div className="loader" style={{ marginBottom: '10px' }}></div>
+                <p>Buscando eventos en agenda...</p>
+              </div>
+            ) : proximosEventos.length === 0 ? (
+              <div className="empty-panel-state">
+                <FiActivity className="icon" />
+                <p>No hay eventos activos programados.</p>
+              </div>
+            ) : (
+              <div className="upcoming-events-list">
+                {proximosEventos.map((evt) => {
+                  const dateParts = formatFecha(evt.fecha_inicio).split(' ');
+                  const day = dateParts[0] || 'ΓÇö';
+                  const month = dateParts[1] || 'ΓÇö';
+                  
+                  return (
+                    <div key={evt.id_evento} className="upcoming-event-item" onClick={() => openModal(evt)}>
+                      <div className="event-date-badge">
+                        <span className="day">{day}</span>
+                        <span className="month">{month}</span>
+                      </div>
+                      <div className="event-item-details">
+                        <h5>{evt.nombre}</h5>
+                        <span className="venue">{evt.recinto || "UAPA Virtual"}</span>
+                      </div>
+                      <div className="event-item-meta">
+                        <span className={`status-pill ${getStatusClass(evt.estado)}`}>
+                          {evt.estado}
+                        </span>
+                        <button className="view-quick-btn" title="Ver Ficha T├⌐cnica">
+                          <FiEye />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* PANEL DERECHO: ACCESOS R├üPIDOS Y AVANCE POA */}
+        <div className="saas-panel-card">
+          <div className="panel-header">
+            <FiGrid className="panel-icon" />
+            <div>
+              <h4>Accesos R├ípidos y Control POA</h4>
+              <p>Atajos de productividad y resumen fiscal</p>
+            </div>
+          </div>
+          <div className="panel-body flex-column-body">
+            
+            {/* Atajos r├ípidos (SaaS Premium Buttons) */}
+            <div className="quick-actions-list">
+              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("Eventos")}>
+                <div className="icon-wrapper"><FiPlus /></div>
+                <div className="btn-text">
+                  <strong>Crear Evento</strong>
+                  <span>Nueva solicitud de evento</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("Audiovisual")}>
+                <div className="icon-wrapper"><FiMonitor /></div>
+                <div className="btn-text">
+                  <strong>Solicitud AV</strong>
+                  <span>Reserva de equipos audiovisuales</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
+                <div className="icon-wrapper"><FiCalendar /></div>
+                <div className="btn-text">
+                  <strong>Ver Agenda</strong>
+                  <span>Calendario de actividades</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("Soporte")}>
+                <div className="icon-wrapper"><FiStar /></div>
+                <div className="btn-text">
+                  <strong>Soporte</strong>
+                  <span>Ayuda t├⌐cnica</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Avance presupuesto POA */}
+            <div className="poa-summary-box">
+              <div className="poa-progress-header">
+                <span>Avance de Presupuesto Consumido</span>
+                <strong>{formatMonedaDOP(totalPresupuestoUtilizado)}</strong>
+              </div>
+              <div className="poa-progress-bar-container">
+                <div className="poa-progress-bar-fill" style={{ width: '42%' }}></div>
+              </div>
+              <p className="poa-footer-text">El presupuesto actual refleja los eventos categorizados como Aprobados y Finalizados.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL DETALLES DEL EVENTO */}
+      {isModalOpen && selectedRequest && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Ficha T├⌐cnica del Evento</h3>
+              <span className="modal-event-id">Solicitud #EVT-{selectedRequest.id_evento}</span>
+            </div>
+            <div className="modal-body modern-modal-body">
+              <div className="detail-group full-width">
+                <label>Nombre del Evento</label>
+                <p className="main-event-title">{selectedRequest.nombre}</p>
+              </div>
+              <div className="detail-group">
+                <label>Solicitante</label>
+                <p>{selectedRequest.solicitante || "ΓÇö"}</p>
+              </div>
+              <div className="detail-group">
+                <label>Dependencia</label>
+                <p>{selectedRequest.dependencia || "ΓÇö"}</p>
+              </div>
+              <div className="detail-group">
+                <label>Recinto</label>
+                <p>{selectedRequest.recinto || "ΓÇö"}</p>
+              </div>
+              <div className="detail-group">
+                <label>Modalidad</label>
+                <p>{selectedRequest.modalidad || "ΓÇö"}</p>
+              </div>
+              <div className="detail-group">
+                <label>Tipo de Evento</label>
+                <p>{selectedRequest.tipo_evento || "ΓÇö"}</p>
+              </div>
+              <div className="detail-group">
+                <label>Fechas</label>
+                <p>
+                  {formatFecha(selectedRequest.fecha_inicio)} 
+                  {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
+                </p>
+              </div>
+              <div className="detail-group">
+                <label>Asistentes Esperados</label>
+                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "ΓÇö"}</p>
+              </div>
+              <div className="detail-group">
+                <label>Presupuesto POA Solicitado</label>
+                <p className="poa-monto">
+                  {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
+                </p>
+              </div>
+              <div className="detail-group">
+                <label>Estado de la Solicitud</label>
+                <span className={`status ${getStatusClass(selectedRequest.estado)}`} style={{ alignSelf: 'flex-start', marginTop: '4px' }}>
+                  {selectedRequest.estado || "Pendiente"}
+                </span>
+              </div>
+              {selectedRequest.detalles_corporativos && (
+                <div className="detail-group full-width">
+                  <label>Servicios de Montaje Corporativo</label>
+                  <p className="details-list-text">{selectedRequest.detalles_corporativos}</p>
+                </div>
+              )}
+              {selectedRequest.alimentos && (
+                <div className="detail-group full-width">
+                  <label>Servicio de Alimentos (Catering)</label>
+                  <p className="details-list-text">{selectedRequest.alimentos}</p>
+                </div>
+              )}
+              <div className="detail-group full-width">
+                <label>Equipos Audiovisuales Requeridos</label>
+                <p className="details-list-text">
+                  {selectedRequest.necesita_audiovisual 
+                    ? (selectedRequest.equipos_audiovisuales || "S├¡ (Pendiente/Sin Especificar)") 
+                    : "Ninguno"}
+                </p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="close-btn" onClick={closeModal}>Cerrar ficha</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

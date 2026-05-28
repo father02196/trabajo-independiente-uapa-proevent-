@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
-import searchIcon from "./../img/search.png";
+// Barra de búsqueda global eliminada por preferencia del usuario
 import dashboardIcon from "./../img/dashboard.png";
 import eventosIcon from "./../img/eventos.png";
 import audiovisualIcon from "./../img/audiovisual.png";
@@ -24,6 +24,7 @@ import VisualizarEvaluaciones from "./VisualizarEvaluaciones";
 import NotificationBell from "./NotificationBell";
 import ModuloProveedores from "./ModuloProveedores";
 import GestionCategorias from "./GestionCategorias";
+import GestionEventos from "./GestionEventos";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
@@ -31,7 +32,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     });
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
+    // searchTerm eliminado — búsqueda global removida por preferencia del usuario
     const [editingEvent, setEditingEvent] = useState(null);
     const [eventoEvalId, setEventoEvalId] = useState(null);
 
@@ -68,8 +69,13 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Dashboard":
                 return <DashboardHome 
                     usuario={usuario} 
-                    searchTerm={searchTerm} 
-                    onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} 
+                    onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }}
+                    setActiveTab={setActiveTab}
+                />;
+            case "GestionEventos":
+                return <GestionEventos
+                    usuario={usuario}
+                    onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }}
                 />;
             case "Eventos":
                 return <Eventos 
@@ -86,7 +92,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Evaluacion":
                 return <Evaluacion usuario={usuario} eventoEvalId={eventoEvalId} onEvalConsumed={() => setEventoEvalId(null)} />;
             case "VisualizarEvaluaciones":
-                return <VisualizarEvaluaciones searchTerm={searchTerm} />;
+                return <VisualizarEvaluaciones />;
             case "Bitacora":
                 return <Bitacora />;
             case "AdminAudiovisual":
@@ -104,10 +110,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "GestionSolicitudes":
                 return <GestionSolicitudesAV usuario={usuario} />;
             case "PoaAdmin":
-                return <PoaAdmin 
-                    usuario={usuario} 
-                    searchTerm={searchTerm} 
-                />;
+                return <PoaAdmin usuario={usuario} />;
             default:
                 return <DashboardHome usuario={usuario} />;
         }
@@ -135,6 +138,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return "Inventario Audiovisual";
             case "AdminEvento":
                 return "Catálogos de Eventos";
+            case "GestionEventos":
+                return "Gestión de Solicitudes";
             case "Calendario":
                 return "Calendario de Eventos";
             case "Proveedores":
@@ -188,10 +193,16 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                         Solicitud de Eventos
                                     </li>
                                     {(usuario?.rol === "Administrador de Evento" || usuario?.rol === "Administrador") && (
-                                        <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
-                                            <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                            Catálogos de Eventos
-                                        </li>
+                                        <>
+                                            <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
+                                                <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Catálogos de Eventos
+                                            </li>
+                                            <li className={activeTab === "GestionEventos" ? "active" : ""} onClick={() => setActiveTab("GestionEventos")}>
+                                                <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Gestión de Solicitudes
+                                            </li>
+                                        </>
                                     )}
                                 </ul>
                             </>
@@ -316,15 +327,6 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 <header className="dashboard-header">
                     <h1>{getPageTitle()}</h1>
                     <div className="header-actions">
-                        <div className="search-bar">
-                            <img src={searchIcon} alt="Buscar" className="search-icon-img" />
-                            <input
-                                type="text"
-                                placeholder={activeTab === "Ajustes" ? "Buscar usuario..." : "Buscar eventos o IDs..."}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
                         <NotificationBell
                             usuario={usuario}
                             onGoToEvaluacion={(eventoId) => {
