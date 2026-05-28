@@ -1,6 +1,6 @@
-﻿/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
-   AjustesUsuarios.css ΓÇö ProEvent UAPA Premium
-   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+﻿/* ═══════════════════════════════════════════════════════════
+   AjustesUsuarios.css — ProEvent UAPA Premium
+   ═══════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .ajustes-page {
@@ -11,7 +11,7 @@
   color: #0F172A;
 }
 
-/* ΓöÇΓöÇΓöÇ Page header ΓöÇΓöÇΓöÇ */
+/* ─── Page header ─── */
 .ajustes-page-header {
   margin-bottom: 28px;
 }
@@ -29,7 +29,7 @@
   color: #64748B;
 }
 
-/* ΓöÇΓöÇΓöÇ Layout tabs ΓöÇΓöÇΓöÇ */
+/* ─── Layout tabs ─── */
 .ajustes-tabs {
   display: flex;
   gap: 4px;
@@ -61,7 +61,7 @@
 
 .ajustes-tab:hover:not(.active) { color: #334155; }
 
-/* ΓöÇΓöÇΓöÇ Tabla de usuarios ΓöÇΓöÇΓöÇ */
+/* ─── Tabla de usuarios ─── */
 .ajustes-table-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -251,7 +251,7 @@
 .ajustes-action-btn.delete:hover { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
 .ajustes-action-btn.edit:hover { background: #EFF6FF; border-color: #BFDBFE; color: #2563EB; }
 
-/* ΓöÇΓöÇΓöÇ Formulario de ajustes (perfil/config) ΓöÇΓöÇΓöÇ */
+/* ─── Formulario de ajustes (perfil/config) ─── */
 .ajustes-form-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -471,3 +471,4 @@
   .ajustes-page { padding: 20px 16px; }
   .ajustes-form-row { grid-template-columns: 1fr; }
 }
+

@@ -21,9 +21,17 @@ function Calendario({ usuario }) {
         : `${API}/calendario-eventos`;
       const res = await fetch(url);
       const data = await res.json();
-      setCalendarEvents(data);
+      // Normalizar fechas: MySQL puede devolver objetos Date o strings con T00:00:00Z
+      // Los convertimos todos a string ISO "YYYY-MM-DD" para que startsWith() funcione
+      const normalized = Array.isArray(data) ? data.map(evt => ({
+        ...evt,
+        start: evt.start ? String(evt.start).substring(0, 10) : null,
+        end:   evt.end   ? String(evt.end).substring(0, 10)   : null,
+      })) : [];
+      setCalendarEvents(normalized);
     } catch (err) {
       console.error("Error al cargar calendario:", err);
+      setCalendarEvents([]);
     } finally {
       setLoadingCal(false);
     }

@@ -1,6 +1,6 @@
-﻿/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
-   SoporteHome.css ΓÇö ProEvent UAPA Premium
-   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+﻿/* ═══════════════════════════════════════════════════════════
+   SoporteHome.css — ProEvent UAPA Premium
+   ═══════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .soporte-page {
@@ -11,7 +11,7 @@
   color: #0F172A;
 }
 
-/* ΓöÇΓöÇΓöÇ Hero soporte ΓöÇΓöÇΓöÇ */
+/* ─── Hero soporte ─── */
 .soporte-hero {
   background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
   border-radius: 24px;
@@ -87,7 +87,7 @@
 
 .soporte-search-bar input::placeholder { color: rgba(255,255,255,0.35); }
 
-/* ΓöÇΓöÇΓöÇ Cards de contacto r├ípido ΓöÇΓöÇΓöÇ */
+/* ─── Cards de contacto r├ípido ─── */
 .soporte-contact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -144,7 +144,7 @@
   line-height: 1.5;
 }
 
-/* ΓöÇΓöÇΓöÇ FAQ Section ΓöÇΓöÇΓöÇ */
+/* ─── FAQ Section ─── */
 .soporte-faq-section {
   margin-bottom: 32px;
 }
@@ -216,7 +216,7 @@
   padding-top: 14px;
 }
 
-/* ΓöÇΓöÇΓöÇ Tickets section ΓöÇΓöÇΓöÇ */
+/* ─── Tickets section ─── */
 .soporte-tickets-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -326,3 +326,4 @@
   .soporte-hero { padding: 32px 20px; }
   .soporte-contact-grid { grid-template-columns: repeat(2, 1fr); }
 }
+

@@ -1,6 +1,6 @@
-﻿/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
-   Bitacora.css ΓÇö ProEvent UAPA Premium
-   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+﻿/* ═══════════════════════════════════════════════════════════
+   Bitacora.css — ProEvent UAPA Premium
+   ═══════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .bitacora-page {
@@ -11,7 +11,7 @@
   color: #0F172A;
 }
 
-/* ΓöÇΓöÇΓöÇ Page header ΓöÇΓöÇΓöÇ */
+/* ─── Page header ─── */
 .bitacora-header {
   display: flex;
   align-items: flex-start;
@@ -34,7 +34,7 @@
   color: #64748B;
 }
 
-/* ΓöÇΓöÇΓöÇ Stat row ΓöÇΓöÇΓöÇ */
+/* ─── Stat row ─── */
 .bitacora-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -74,7 +74,7 @@
   line-height: 1;
 }
 
-/* ΓöÇΓöÇΓöÇ Tabla card ΓöÇΓöÇΓöÇ */
+/* ─── Tabla card ─── */
 .bitacora-table-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -83,7 +83,7 @@
   overflow: hidden;
 }
 
-/* ΓöÇΓöÇΓöÇ Toolbar de la tabla ΓöÇΓöÇΓöÇ */
+/* ─── Toolbar de la tabla ─── */
 .bitacora-toolbar {
   display: flex;
   align-items: center;
@@ -155,7 +155,7 @@
   background: #fff;
 }
 
-/* ΓöÇΓöÇΓöÇ Tabla ΓöÇΓöÇΓöÇ */
+/* ─── Tabla ─── */
 .bitacora-table {
   width: 100%;
   border-collapse: collapse;
@@ -189,7 +189,7 @@
 .bitacora-table tbody tr:last-child td { border-bottom: none; }
 .bitacora-table tbody tr:hover { background: #F8FAFC; }
 
-/* ΓöÇΓöÇΓöÇ Badges de acci├│n ΓöÇΓöÇΓöÇ */
+/* ─── Badges de acci├│n ─── */
 .action-badge {
   display: inline-flex;
   align-items: center;
@@ -208,7 +208,7 @@
 .action-badge.login    { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
 .action-badge.logout   { background: #F8FAFC; color: #475569; border: 1px solid #E2E8F0; }
 
-/* ΓöÇΓöÇΓöÇ Columna usuario ΓöÇΓöÇΓöÇ */
+/* ─── Columna usuario ─── */
 .bitacora-user-cell {
   display: flex;
   align-items: center;
@@ -240,7 +240,7 @@
   color: #94A3B8;
 }
 
-/* ΓöÇΓöÇΓöÇ Timestamp ΓöÇΓöÇΓöÇ */
+/* ─── Timestamp ─── */
 .bitacora-time {
   font-size: 12.5px;
   color: #64748B;
@@ -252,7 +252,7 @@
 .bitacora-date { font-weight: 500; color: #334155; }
 .bitacora-hour { color: #94A3B8; }
 
-/* ΓöÇΓöÇΓöÇ Paginaci├│n ΓöÇΓöÇΓöÇ */
+/* ─── Paginaci├│n ─── */
 .bitacora-pagination {
   display: flex;
   align-items: center;
@@ -317,3 +317,4 @@
   .bitacora-page { padding: 20px 16px; }
   .bitacora-toolbar { flex-direction: column; align-items: flex-start; }
 }
+

@@ -1,6 +1,6 @@
-﻿/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
-   VisualizarEvaluaciones.css ΓÇö ProEvent UAPA Premium
-   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+﻿/* ═══════════════════════════════════════════════════════════
+   VisualizarEvaluaciones.css — ProEvent UAPA Premium
+   ═══════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 
 .veval-container {
@@ -11,7 +11,7 @@
   color: #0f172a;
 }
 
-/* ΓöÇΓöÇΓöÇ Header ΓöÇΓöÇΓöÇ */
+/* ─── Header ─── */
 .veval-header {
   display: flex;
   align-items: flex-start;
@@ -61,7 +61,7 @@
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* ΓöÇΓöÇΓöÇ KPI Stats ΓöÇΓöÇΓöÇ */
+/* ─── KPI Stats ─── */
 .veval-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -129,7 +129,7 @@
   font-weight: 600;
 }
 
-/* ΓöÇΓöÇΓöÇ Main Card & Table ΓöÇΓöÇΓöÇ */
+/* ─── Main Card & Table ─── */
 .veval-main-card {
   background: #ffffff;
   border-radius: 20px;
@@ -436,3 +436,4 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
