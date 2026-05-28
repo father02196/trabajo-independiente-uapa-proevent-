@@ -23,6 +23,7 @@ import PoaAdmin from "./PoaAdmin";
 import VisualizarEvaluaciones from "./VisualizarEvaluaciones";
 import NotificationBell from "./NotificationBell";
 import ModuloProveedores from "./ModuloProveedores";
+import GestionCategorias from "./GestionCategorias";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
@@ -97,7 +98,9 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Calendario":
                 return <Calendario usuario={usuario} />;
             case "Proveedores":
-                return <ModuloProveedores usuario={usuario} />;
+                return usuario?.rol === "Administrador" ? <ModuloProveedores usuario={usuario} /> : <DashboardHome usuario={usuario} />;
+            case "GestionCategorias":
+                return usuario?.rol === "Administrador" ? <GestionCategorias usuario={usuario} /> : <DashboardHome usuario={usuario} />;
             case "GestionSolicitudes":
                 return <GestionSolicitudesAV usuario={usuario} />;
             case "PoaAdmin":
@@ -136,6 +139,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return "Calendario de Eventos";
             case "Proveedores":
                 return "Módulo de Proveedores y Logística";
+            case "GestionCategorias":
+                return "Gestión de Categorías";
             case "GestionSolicitudes":
                 return "Gestión de Solicitudes Audiovisuales";
             case "PoaAdmin":
@@ -225,7 +230,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             </>
                         )}
 
-                        {(usuario?.rol === "Administrador" || usuario?.rol === "Administrador V-A-F" || usuario?.rol === "Administrador de Evento") && (
+                        {usuario?.rol === "Administrador" && (
                             <>
                                 <li className="nav-group-header" onClick={() => toggleMenu('proveedores')}>
                                     <span>Módulo Proveedores</span>
@@ -235,6 +240,10 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                     <li className={activeTab === "Proveedores" ? "active" : ""} onClick={() => setActiveTab("Proveedores")}>
                                         <FiTruck className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                         Gestión Operativa
+                                    </li>
+                                    <li className={activeTab === "GestionCategorias" ? "active" : ""} onClick={() => setActiveTab("GestionCategorias")}>
+                                        <FiTruck className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                        Gestión de Categorías
                                     </li>
                                 </ul>
                             </>

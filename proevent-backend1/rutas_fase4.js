@@ -62,11 +62,40 @@ module.exports = (db, transporter) => {
 
   // 2. Obtener lista de proveedores (Para Admin y para disparador)
   router.get('/admin/proveedores', (req, res) => {
-    db.query('SELECT p.*, t.nombre as categoria FROM proveedor_externo p JOIN tipo_servicio_externo t ON p.id_tipo_servicio = t.id_tipo_servicio', (err, results) => {
+    db.query('SELECT p.*, t.nombre as categoria FROM proveedor_externo p JOIN tipo_servicio_externo t ON p.id_tipo_servicio = t.id_tipo_servicio ORDER BY p.fecha_registro DESC', (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(results);
     });
   });
+
+  // --- Módulo: Directorio de Suplidores | Función: Editar Proveedor ---
+  router.put('/admin/proveedor/:id', (req, res) => {
+    const { id } = req.params;
+    const { nombre_empresa, rnc_cedula, id_tipo_servicio, persona_contacto, correo, telefono } = req.body;
+    const query = `
+      UPDATE proveedor_externo 
+      SET nombre_empresa = ?, rnc_cedula = ?, id_tipo_servicio = ?, persona_contacto = ?, correo = ?, telefono = ? 
+      WHERE id_proveedor = ?
+    `;
+    db.query(query, [nombre_empresa, rnc_cedula, id_tipo_servicio, persona_contacto, correo, telefono, id], (err, results) => {
+      if (err) {
+        if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'RNC o Correo ya en uso por otro proveedor.' });
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Proveedor actualizado con éxito' });
+    });
+  });
+
+  // --- Módulo: Directorio de Suplidores | Función: Cambiar Estado Proveedor ---
+  router.put('/admin/proveedor/:id/estado', (req, res) => {
+    const { id } = req.params;
+    const { estado } = req.body; // 'Activo' o 'Inactivo'
+    db.query('UPDATE proveedor_externo SET estado = ? WHERE id_proveedor = ?', [estado, id], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: `Proveedor marcado como ${estado}` });
+    });
+  });
+
 
   // 2.1 Crear Solicitud de Cotización (Activa la Mejora 3 - Notificación Interna)
   router.post('/admin/solicitud-cotizacion', (req, res) => {
@@ -304,6 +333,38 @@ module.exports = (db, transporter) => {
         console.error('Error con OpenAI API:', aiError);
         res.status(500).json({ error: 'Error comunicándose con la IA. Verifique su OPENAI_API_KEY.', detalles: aiError.message });
       }
+    });
+  });
+
+  // --- Módulo: Gestión de Categorías | Funciones CRUD ---
+  router.get('/admin/categorias-servicio', (req, res) => {
+    db.query('SELECT * FROM tipo_servicio_externo ORDER BY id_tipo_servicio ASC', (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
+  });
+
+  router.post('/admin/categorias-servicio', (req, res) => {
+    const { nombre, clasificacion } = req.body;
+    db.query('INSERT INTO tipo_servicio_externo (nombre, clasificacion) VALUES (?, ?)', [nombre, clasificacion || 'Corriente'], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Categoría creada', id: results.insertId });
+    });
+  });
+
+  router.put('/admin/categorias-servicio/:id', (req, res) => {
+    const { nombre, clasificacion } = req.body;
+    db.query('UPDATE tipo_servicio_externo SET nombre = ?, clasificacion = ? WHERE id_tipo_servicio = ?', [nombre, clasificacion, req.params.id], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Categoría actualizada' });
+    });
+  });
+
+  router.put('/admin/categorias-servicio/:id/estado', (req, res) => {
+    const { estado } = req.body;
+    db.query('UPDATE tipo_servicio_externo SET estado = ? WHERE id_tipo_servicio = ?', [estado, req.params.id], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: `Categoría marcada como ${estado}` });
     });
   });
 
