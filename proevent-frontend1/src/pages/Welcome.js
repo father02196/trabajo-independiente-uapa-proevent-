@@ -16,7 +16,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Solicitud de Eventos",
-    desc: "Gestiona y solicita eventos institucionales de manera r├ípida y estructurada, con todos los requisitos en un solo formulario.",
+    desc: "Gestiona y solicita eventos institucionales de manera rápida y estructurada, con todos los requisitos en un solo formulario.",
   },
   {
     icon: (
@@ -26,7 +26,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Soporte Audiovisual",
-    desc: "Solicita grabaciones, transmisiones en vivo y cobertura audiovisual con al menos 5 d├¡as de anticipaci├│n.",
+    desc: "Solicita grabaciones, transmisiones en vivo y cobertura audiovisual con al menos 5 días de anticipación.",
   },
   {
     icon: (
@@ -39,7 +39,7 @@ const FEATURES = [
         <line x1="3" y1="18" x2="3.01" y2="18" />
       </svg>
     ),
-    title: "Gesti├│n de Presupuesto POA",
+    title: "Gestión de Presupuesto POA",
     desc: "Verifica y gestiona los presupuestos del Plan Operativo Anual vinculados a cada actividad institucional.",
   },
   {
@@ -50,7 +50,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Modalidad y Lugar",
-    desc: "Define la modalidad (presencial, virtual o h├¡brida) y el lugar del evento con disponibilidad en tiempo real.",
+    desc: "Define la modalidad (presencial, virtual o híbrida) y el lugar del evento con disponibilidad en tiempo real.",
   },
   {
     icon: (
@@ -63,7 +63,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Servicios de Catering",
-    desc: "Coordina alimentos y bebidas para tus eventos cumpliendo con las pol├¡ticas institucionales establecidas.",
+    desc: "Coordina alimentos y bebidas para tus eventos cumpliendo con las políticas institucionales establecidas.",
   },
 ];
 
@@ -73,11 +73,11 @@ const POLICIES = [
     color: "blue",
     items: [
       "Toda solicitud debe realizarse conforme al tipo de actividad y los plazos establecidos.",
-      "Protocolo y Eventos coordina reconocimientos institucionales y actividades con p├║blico externo.",
-      "Reuniones presenciales (2-4 hrs): Solo se ofrecer├í agua, caf├⌐ o t├⌐.",
-      "Solicitudes de alimentos: 15 d├¡as laborables de anticipaci├│n (20 si requiere contrataci├│n externa).",
+      "Protocolo y Eventos coordina reconocimientos institucionales y actividades con público externo.",
+      "Reuniones presenciales (2-4 hrs): Solo se ofrecerá agua, café o té.",
+      "Solicitudes de alimentos: 15 días laborables de anticipación (20 si requiere contratación externa).",
       "Toda actividad debe estar autorizada en el POA y tener presupuesto.",
-      "Requisitos obligatorios: Programa, autorizaci├│n del Vicerrector/Director y lista de invitados.",
+      "Requisitos obligatorios: Programa, autorización del Vicerrector/Director y lista de invitados.",
       "Es obligatorio cotizar con al menos tres proveedores para servicios o bienes externos.",
     ],
   },
@@ -85,22 +85,22 @@ const POLICIES = [
     category: "Audiovisual",
     color: "orange",
     items: [
-      "Grabaci├│n de video, cobertura y transmisi├│n en vivo deben solicitarse con al menos 5 d├¡as de antelaci├│n.",
-      "Consultas: produccionaudiovisual@uapa.edu.do o extensi├│n 470.",
-      "Actividades fuera de sede requieren gestionar transporte del equipo t├⌐cnico: extensi├│n 239.",
-      "Si su grabaci├│n requiere teleprompter, debe enviar el texto al momento de hacer la solicitud.",
+      "Grabación de video, cobertura y transmisión en vivo deben solicitarse con al menos 5 días de antelación.",
+      "Consultas: produccionaudiovisual@uapa.edu.do o extensión 470.",
+      "Actividades fuera de sede requieren gestionar transporte del equipo técnico: extensión 239.",
+      "Si su grabación requiere teleprompter, debe enviar el texto al momento de hacer la solicitud.",
     ],
   },
 ];
 
-/* ΓöÇΓöÇ Checkmark SVG ΓöÇΓöÇ */
+/* ── Checkmark SVG ── */
 const CheckIcon = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="2.5 8.5 6 12 13.5 4" />
   </svg>
 );
 
-function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
+function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores }) {
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [scrolled, setScrolled]         = useState(false);
@@ -150,32 +150,33 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
   return (
     <div className="welcome-wrapper">
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ NAVBAR ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ NAVBAR ══════════════════════ */}
       <header className={`welcome-header${scrolled ? " scrolled" : ""}`}>
         <div className="header-logo-area">
           <img src={uapaLogo} alt="UAPA Logo" className="header-logo-img" />
         </div>
 
         <nav className="header-nav">
-          <a href="#features"  className="nav-link">M├│dulos</a>
-          <a href="#stats"     className="nav-link">Estad├¡sticas</a>
-          <a href="#policies"  className="nav-link">Pol├¡ticas</a>
+          <a href="#features"  className="nav-link">Módulos</a>
+          <a href="#stats"     className="nav-link">Estadísticas</a>
+          <a href="#policies"  className="nav-link">Políticas</a>
           <a href="#contact"   className="nav-link">Contacto</a>
+          <button className="nav-link" onClick={onPortalProveedores} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'inherit', fontWeight: 'inherit', padding: 0, color: 'inherit' }}>Portal B2B</button>
           {isLoggedIn ? (
-            <button className="nav-cta-btn" onClick={onLogoutClick}>Cerrar Sesi├│n</button>
+            <button className="nav-cta-btn" onClick={onLogoutClick}>Cerrar Sesión</button>
           ) : (
-            <button className="nav-cta-btn" onClick={onLoginClick}>Iniciar Sesi├│n</button>
+            <button className="nav-cta-btn" onClick={onLoginClick}>Iniciar Sesión</button>
           )}
         </nav>
 
-        <button className="menu-icon" onClick={toggleSidebar} aria-label="Men├║">
+        <button className="menu-icon" onClick={toggleSidebar} aria-label="Menú">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
             <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
           </svg>
         </button>
       </header>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ SIDEBAR ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ SIDEBAR ══════════════════════ */}
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       <nav className={`sidebar${sidebarOpen ? " open" : ""}`}>
         <div className="sidebar-header">
@@ -183,25 +184,26 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
             <div className="sidebar-brand-icon">PE</div>
             <span>ProEvent</span>
           </div>
-          <button className="close-btn" onClick={toggleSidebar}>├ù</button>
+          <button className="close-btn" onClick={toggleSidebar}>×</button>
         </div>
         <ul className="sidebar-menu">
-          <li><a href="#features"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>≡ƒôï M├│dulos</a></li>
-          <li><a href="#policies"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>≡ƒô£ Pol├¡ticas</a></li>
-          <li><button className="sidebar-link" onClick={openHelpModal}>≡ƒåÿ Ayuda y Contacto</button></li>
+          <li><a href="#features"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>📋 Módulos</a></li>
+          <li><a href="#policies"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>📜 Políticas</a></li>
+          <li><button className="sidebar-link" onClick={openHelpModal}>🆘 Ayuda y Contacto</button></li>
+          <li><button className="sidebar-link" onClick={() => { onPortalProveedores(); setSidebarOpen(false); }}>🏢 Portal Proveedores</button></li>
           {isLoggedIn ? (
             <li className="sidebar-bottom-item">
-              <button className="sidebar-link logout-link" onClick={onLogoutClick}>≡ƒÜ¬ Cerrar Sesi├│n</button>
+              <button className="sidebar-link logout-link" onClick={onLogoutClick}>🚪 Cerrar Sesión</button>
             </li>
           ) : (
             <li className="sidebar-bottom-item">
-              <button className="sidebar-link login-link" onClick={onLoginClick}>≡ƒöÉ Iniciar Sesi├│n</button>
+              <button className="sidebar-link login-link" onClick={onLoginClick}>🔐 Iniciar Sesión</button>
             </li>
           )}
         </ul>
       </nav>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ HERO ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ HERO ══════════════════════ */}
       <section className="hero-section">
         {/* Background decorative shapes */}
         <div className="hero-bg-shapes">
@@ -210,7 +212,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
           <div className="hero-shape shape-3" />
         </div>
 
-        {/* Left ΓÇö Copy */}
+        {/* Left — Copy */}
         <div className="hero-content">
           <div className="hero-badge">
             <span className="badge-dot" />
@@ -218,12 +220,12 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
           </div>
 
           <h1 className="hero-title">
-            Gesti├│n de Eventos<br />
+            Gestión de Eventos<br />
             <span className="hero-title-accent">Institucionales</span>
           </h1>
 
           <p className="hero-subtitle">
-            ProEvent centraliza la coordinaci├│n de protocolos, eventos acad├⌐micos y
+            ProEvent centraliza la coordinación de protocolos, eventos académicos y
             servicios audiovisuales de la Universidad UAPA, garantizando eficiencia,
             transparencia y cumplimiento institucional.
           </p>
@@ -241,7 +243,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
                 </svg>
               </button>
             )}
-            <a href="#features" className="hero-btn secondary">Conocer m├ís</a>
+            <a href="#features" className="hero-btn secondary">Conocer más</a>
           </div>
 
           {/* Trust indicators */}
@@ -267,7 +269,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
           </div>
         </div>
 
-        {/* Right ΓÇö Dashboard Mockup */}
+        {/* Right — Dashboard Mockup */}
         <div className="hero-visual">
           {/* Floating top badge */}
           <div className="hero-float-badge badge-top">
@@ -281,34 +283,34 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
               <div className="mockup-dot red" />
               <div className="mockup-dot yellow" />
               <div className="mockup-dot green" />
-              <span className="mockup-title">ProEvent ┬╖ Dashboard</span>
+              <span className="mockup-title">ProEvent · Dashboard</span>
             </div>
 
             <div className="mockup-body">
               {/* Mini stat cards */}
               <div className="mockup-stats-row">
                 <div className="mockup-mini-stat">
-                  <div className="mockup-mini-stat-value blue">{stats.eventos || "ΓÇö"}</div>
+                  <div className="mockup-mini-stat-value blue">{stats.eventos || "—"}</div>
                   <div className="mockup-mini-stat-label">Eventos</div>
                 </div>
                 <div className="mockup-mini-stat">
-                  <div className="mockup-mini-stat-value green">{stats.audiovisual || "ΓÇö"}</div>
+                  <div className="mockup-mini-stat-value green">{stats.audiovisual || "—"}</div>
                   <div className="mockup-mini-stat-label">Audiovisual</div>
                 </div>
                 <div className="mockup-mini-stat">
-                  <div className="mockup-mini-stat-value orange">{stats.usuarios || "ΓÇö"}</div>
+                  <div className="mockup-mini-stat-value orange">{stats.usuarios || "—"}</div>
                   <div className="mockup-mini-stat-label">Usuarios</div>
                 </div>
               </div>
 
               {/* Data rows */}
               <div className="mockup-row">
-                <div className="mockup-label">M├│dulo activo</div>
+                <div className="mockup-label">Módulo activo</div>
                 <div className="mockup-value highlight">Solicitud de Eventos</div>
               </div>
               <div className="mockup-row">
                 <div className="mockup-label">Estado</div>
-                <div className="mockup-badge active">Γ£ô Aprobado</div>
+                <div className="mockup-badge active">✓ Aprobado</div>
               </div>
               <div className="mockup-row">
                 <div className="mockup-label">Modalidad</div>
@@ -321,7 +323,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
 
               {/* Progress bar */}
               <div className="mockup-progress">
-                <div className="mockup-progress-label">Progreso de preparaci├│n</div>
+                <div className="mockup-progress-label">Progreso de preparación</div>
                 <div className="mockup-progress-bar">
                   <div className="mockup-progress-fill" style={{ width: "78%" }} />
                 </div>
@@ -344,7 +346,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
         </div>
       </section>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ INFO STRIP ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ INFO STRIP ══════════════════════ */}
       <section className="info-strip">
         <div className="info-strip-inner">
           <div className="info-strip-item">
@@ -358,7 +360,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
             </div>
             <div>
               <div className="info-strip-title">Solicitud de Eventos</div>
-              <div className="info-strip-desc">Env├¡a tu solicitud con anticipaci├│n seg├║n las pol├¡ticas institucionales.</div>
+              <div className="info-strip-desc">Envía tu solicitud con anticipación según las políticas institucionales.</div>
             </div>
           </div>
           <div className="info-strip-divider" />
@@ -371,7 +373,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
             </div>
             <div>
               <div className="info-strip-title">Cobertura Audiovisual</div>
-              <div className="info-strip-desc">Solicita servicios audiovisuales con m├¡nimo 5 d├¡as de antelaci├│n.</div>
+              <div className="info-strip-desc">Solicita servicios audiovisuales con mínimo 5 días de antelación.</div>
             </div>
           </div>
           <div className="info-strip-divider" />
@@ -391,13 +393,13 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
         </div>
       </section>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ FEATURES ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ FEATURES ══════════════════════ */}
       <section id="features" className="features-section">
         <div className="section-header">
-          <div className="section-tag">M├│dulos del Sistema</div>
+          <div className="section-tag">Módulos del Sistema</div>
           <h2 className="section-title">Todo lo que necesitas en un solo lugar</h2>
           <p className="section-subtitle">
-            ProEvent integra todos los procesos de coordinaci├│n de eventos institucionales
+            ProEvent integra todos los procesos de coordinación de eventos institucionales
             en una plataforma moderna y eficiente.
           </p>
         </div>
@@ -412,12 +414,12 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
         </div>
       </section>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ HOW IT WORKS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ HOW IT WORKS ══════════════════════ */}
       <section className="how-section">
         <div className="how-bg" />
         <div className="how-inner">
           <div className="section-header light">
-            <div className="section-tag light">┬┐C├│mo Funciona?</div>
+            <div className="section-tag light">¿Cómo Funciona?</div>
             <h2 className="section-title">Proceso simple y transparente</h2>
             <p className="section-subtitle">
               Cuatro pasos para gestionar cualquier evento o servicio institucional de forma eficiente.
@@ -425,10 +427,10 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
           </div>
           <div className="steps-grid">
             {[
-              { num: "01", title: "Inicia Sesi├│n",           desc: "Accede con tus credenciales institucionales UAPA." },
+              { num: "01", title: "Inicia Sesión",           desc: "Accede con tus credenciales institucionales UAPA." },
               { num: "02", title: "Completa el Formulario",  desc: "Llena todos los campos requeridos para tu tipo de solicitud." },
-              { num: "03", title: "Revisi├│n y Aprobaci├│n",   desc: "El equipo de Protocolo revisar├í y aprobar├í tu solicitud." },
-              { num: "04", title: "Coordinaci├│n del Evento", desc: "ProEvent coordina todos los recursos y servicios necesarios." },
+              { num: "03", title: "Revisión y Aprobación",   desc: "El equipo de Protocolo revisará y aprobará tu solicitud." },
+              { num: "04", title: "Coordinación del Evento", desc: "ProEvent coordina todos los recursos y servicios necesarios." },
             ].map((step, i) => (
               <div key={step.num} className="step-card">
                 <div className="step-num">{step.num}</div>
@@ -441,21 +443,21 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
         </div>
       </section>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ STATS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ STATS ══════════════════════ */}
       <section id="stats" className="stats-section">
         <div className="section-header">
           <div className="section-tag">Impacto del Sistema</div>
           <h2 className="section-title">Resultados que Hablan Solos</h2>
           <p className="section-subtitle">
-            ProEvent optimiza la gesti├│n institucional a trav├⌐s de datos precisos y procesos coordinados.
+            ProEvent optimiza la gestión institucional a través de datos precisos y procesos coordinados.
           </p>
         </div>
         <div className="stats-container">
           {[
-            { label: "Eventos Gestionados",    value: stats.eventos,    icon: "≡ƒôà", color: "blue"   },
-            { label: "Servicios Audiovisuales", value: stats.audiovisual, icon: "≡ƒÄÑ", color: "orange" },
-            { label: "Usuarios Registrados",   value: stats.usuarios,   icon: "≡ƒæÑ", color: "navy"   },
-            { label: "Sistema Operativo",      value: "100%",           icon: "ΓÜí", color: "gold"   },
+            { label: "Eventos Gestionados",    value: stats.eventos,    icon: "📅", color: "blue"   },
+            { label: "Servicios Audiovisuales", value: stats.audiovisual, icon: "🎥", color: "orange" },
+            { label: "Usuarios Registrados",   value: stats.usuarios,   icon: "👥", color: "navy"   },
+            { label: "Sistema Operativo",      value: "100%",           icon: "⚡", color: "gold"   },
           ].map((stat) => (
             <div key={stat.label} className={`stat-box ${stat.color}`}>
               <div className="stat-box-icon">{stat.icon}</div>
@@ -466,11 +468,11 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
         </div>
       </section>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ POLICIES ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ POLICIES ══════════════════════ */}
       <section id="policies" className="policies-section">
         <div className="section-header">
           <div className="section-tag">Reglamento Institucional</div>
-          <h2 className="section-title">Normas y Pol├¡ticas</h2>
+          <h2 className="section-title">Normas y Políticas</h2>
           <p className="section-subtitle">
             Conoce las directrices institucionales para garantizar el correcto desarrollo de cada actividad.
           </p>
@@ -506,14 +508,14 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
         </div>
       </section>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ CTA BANNER ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ CTA BANNER ══════════════════════ */}
       {!isLoggedIn && (
         <section className="cta-section">
           <div className="cta-content">
-            <h2 className="cta-title">┬┐Listo para gestionar tu pr├│ximo evento?</h2>
+            <h2 className="cta-title">¿Listo para gestionar tu próximo evento?</h2>
             <p className="cta-subtitle">Accede al sistema con tus credenciales institucionales y comienza hoy mismo.</p>
             <button className="hero-btn primary cta-main-btn" onClick={onLoginClick}>
-              Iniciar Sesi├│n en ProEvent
+              Iniciar Sesión en ProEvent
             </button>
           </div>
           <div className="cta-shapes">
@@ -523,13 +525,13 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
         </section>
       )}
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ FOOTER ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ FOOTER ══════════════════════ */}
       <footer id="contact" className="site-footer">
         <div className="footer-inner">
           <div className="footer-brand">
             <img src={uapaLogo} alt="UAPA" className="footer-logo" />
             <p className="footer-tagline">
-              Sistema de Gesti├│n de Protocolos y Eventos Institucionales de la Universidad APEC (UAPA).
+              Sistema de Gestión de Protocolos y Eventos Institucionales de la Universidad APEC (UAPA).
             </p>
             <div className="footer-social">
               <a href="https://www.uapa.edu.do" target="_blank" rel="noreferrer" className="footer-social-link" aria-label="Web UAPA">
@@ -543,7 +545,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
           </div>
 
           <div className="footer-col">
-            <h4 className="footer-col-title">M├│dulos</h4>
+            <h4 className="footer-col-title">Módulos</h4>
             <ul className="footer-links">
               <li><a href="#features">Solicitud de Eventos</a></li>
               <li><a href="#features">Soporte Audiovisual</a></li>
@@ -554,40 +556,40 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
           <div className="footer-col">
             <h4 className="footer-col-title">Contacto</h4>
             <ul className="footer-links">
-              <li><span>≡ƒôº eventos@uapa.edu.do</span></li>
-              <li><span>≡ƒôº produccionaudiovisual@uapa.edu.do</span></li>
-              <li><span>≡ƒô₧ (809) 724-0266 ext. 112</span></li>
+              <li><span>📧 eventos@uapa.edu.do</span></li>
+              <li><span>📧 produccionaudiovisual@uapa.edu.do</span></li>
+              <li><span>📞 (809) 724-0266 ext. 112</span></li>
               <li><button className="footer-help-btn" onClick={openHelpModal}>Centro de Ayuda</button></li>
             </ul>
           </div>
         </div>
         <div className="footer-bottom">
-          <p>┬⌐ {new Date().getFullYear()} UAPA ┬╖ ProEvent ┬╖ Sistema de Gesti├│n Institucional. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} UAPA · ProEvent · Sistema de Gestión Institucional. Todos los derechos reservados.</p>
         </div>
       </footer>
 
-      {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ HELP MODAL ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+      {/* ══════════════════════ HELP MODAL ══════════════════════ */}
       {showHelpModal && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeHelpModal()}>
           <div className="modal-content help-modal">
-            <button className="modal-close" onClick={closeHelpModal}>├ù</button>
+            <button className="modal-close" onClick={closeHelpModal}>×</button>
             <div className="modal-icon-header">
-              <div className="modal-icon-circle">≡ƒåÿ</div>
+              <div className="modal-icon-circle">🆘</div>
               <h3 className="modal-title">Centro de Ayuda</h3>
-              <p className="modal-desc">Contacta a los encargados correspondientes seg├║n tu tipo de solicitud.</p>
+              <p className="modal-desc">Contacta a los encargados correspondientes según tu tipo de solicitud.</p>
             </div>
             <div className="contact-info">
               <div className="contact-group blue">
-                <h4>Coordinaci├│n de Eventos</h4>
+                <h4>Coordinación de Eventos</h4>
                 <p><strong>Correo:</strong> eventos@uapa.edu.do</p>
-                <p><strong>Tel├⌐fono:</strong> (809) 724-0266</p>
-                <p><strong>Extensi├│n:</strong> 112 / 113</p>
+                <p><strong>Teléfono:</strong> (809) 724-0266</p>
+                <p><strong>Extensión:</strong> 112 / 113</p>
               </div>
               <div className="contact-group orange">
                 <h4>Soporte Audiovisual</h4>
                 <p><strong>Correo:</strong> produccionaudiovisual@uapa.edu.do</p>
-                <p><strong>Tel├⌐fono:</strong> (809) 724-0266</p>
-                <p><strong>Extensi├│n:</strong> 470 / 239</p>
+                <p><strong>Teléfono:</strong> (809) 724-0266</p>
+                <p><strong>Extensión:</strong> 470 / 239</p>
               </div>
             </div>
             <button className="primary-btn" onClick={closeHelpModal}>Cerrar</button>
