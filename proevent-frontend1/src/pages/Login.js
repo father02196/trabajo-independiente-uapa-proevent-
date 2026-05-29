@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import './../css/Login.css';
 import viewIcon  from "./../img/view.png";
 import hideIcon  from "./../img/hide.png";

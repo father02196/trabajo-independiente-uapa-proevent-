@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import StatCard from '../components/StatCard';
 import { FiStar, FiCheckCircle, FiAlertTriangle, FiRefreshCw, FiBarChart2, FiClipboard, FiList, FiMapPin } from 'react-icons/fi';
