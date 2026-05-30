@@ -1,33 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 import './../css/Login.css';
-import viewIcon  from "./../img/view.png";
-import hideIcon  from "./../img/hide.png";
-import userIcon  from "./../img/user.png";
-import lockIcon  from "./../img/lock.png";
+import viewIcon from "./../img/view.png";
+import hideIcon from "./../img/hide.png";
+import userIcon from "./../img/user.png";
+import lockIcon from "./../img/lock.png";
 
 function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
-  const [email,        setEmail]        = useState("");
-  const [password,     setPassword]     = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error,        setError]        = useState("");
-  const [loading,      setLoading]      = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const googleButtonRef = useRef(null);
 
-  /* ΓöÇΓöÇ Google Sign-In ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
+  /* ── Google Sign-In ──────────────────────────────────── */
   const handleGoogleCallback = async (response) => {
     setLoading(true);
     setError("");
     try {
-      const res  = await fetch("http://localhost:8080/login-google", {
-        method:  "POST",
+      const res = await fetch("http://localhost:8080/login-google", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ credential: response.credential }),
+        body: JSON.stringify({ credential: response.credential }),
       });
       const data = await res.json();
       if (res.ok) {
         onLogin({ ...data.usuario, token: data.token });
       } else {
-        setError(data.mensaje || "Error al iniciar sesi├│n con Google.");
+        setError(data.mensaje || "Error al iniciar sesión con Google.");
       }
     } catch {
       setError("No se pudo conectar al servidor.");
@@ -37,16 +37,16 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   };
 
   useEffect(() => {
-    const script   = document.createElement("script");
-    script.src     = "https://accounts.google.com/gsi/client";
-    script.async   = true;
-    script.defer   = true;
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
     document.body.appendChild(script);
-    script.onload  = () => {
+    script.onload = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
           client_id: "426335318098-v39ood0lcapc22lgoq3lons62hbf507m.apps.googleusercontent.com",
-          callback:  handleGoogleCallback,
+          callback: handleGoogleCallback,
         });
         window.google.accounts.id.renderButton(googleButtonRef.current, {
           theme: "outline", size: "large", width: "100%", text: "continue_with",
@@ -56,41 +56,41 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
     return () => { document.body.removeChild(script); };
   }, []); // eslint-disable-line
 
-  /* ΓöÇΓöÇ Credenciales ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
+  /* ── Credenciales ────────────────────────────────────── */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!email)              return setError("El correo no puede estar vac├¡o.");
-    if (password.length < 6) return setError("La contrase├▒a debe tener al menos 6 caracteres.");
+    if (!email) return setError("El correo no puede estar vacío.");
+    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
 
     setLoading(true);
     try {
-      const res  = await fetch("http://localhost:8080/login", {
-        method:  "POST",
+      const res = await fetch("http://localhost:8080/login", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ correo: email, contrasena: password }),
+        body: JSON.stringify({ correo: email, contrasena: password }),
       });
       const data = await res.json();
       if (res.ok) {
         onLogin({ ...data.usuario, token: data.token });
       } else {
-        setError(data.mensaje || "Correo o contrase├▒a incorrectos.");
+        setError(data.mensaje || "Correo o contraseña incorrectos.");
       }
     } catch {
-      setError("No se pudo conectar al servidor. Verifique que el backend est├⌐ activo.");
+      setError("No se pudo conectar al servidor. Verifique que el backend esté activo.");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ΓöÇΓöÇ JSX ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
+  /* ── JSX ─────────────────────────────────────────────── */
   return (
     <div className="lc-bg">
 
-      {/* Bot├│n volver flotante */}
+      {/* Botón volver flotante */}
       {onBackClick && (
         <button className="lc-back" onClick={onBackClick}>
-          ΓåÉ Volver al inicio
+          ← Volver al inicio...
         </button>
       )}
 
@@ -102,7 +102,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
           <div className="lc-logo-badge">PE</div>
           <h1 className="lc-title">ProEvent</h1>
           <p className="lc-subtitle">
-            Inicia sesi├│n en tu cuenta institucional
+            Inicia sesión en tu cuenta institucional
           </p>
         </div>
 
@@ -111,7 +111,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
 
           {/* Campo correo */}
           <div className="lc-field">
-            <label className="lc-label" htmlFor="lc-email">Correo electr├│nico</label>
+            <label className="lc-label" htmlFor="lc-email">Correo electrónico</label>
             <div className="lc-input-wrap">
               <img src={userIcon} alt="" className="lc-input-icon" />
               <input
@@ -126,16 +126,16 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
             </div>
           </div>
 
-          {/* Campo contrase├▒a */}
+          {/* Campo contraseña */}
           <div className="lc-field">
             <div className="lc-label-row">
-              <label className="lc-label" htmlFor="lc-password">Contrase├▒a</label>
+              <label className="lc-label" htmlFor="lc-password">Contraseña</label>
               <button
                 type="button"
                 className="lc-forgot"
                 onClick={onForgotPasswordClick}
               >
-                ┬┐Olvidaste tu contrase├▒a?
+                ¿Olvidaste tu contraseña?
               </button>
             </div>
             <div className="lc-input-wrap">
@@ -144,7 +144,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 id="lc-password"
                 type={showPassword ? "text" : "password"}
                 className="lc-input"
-                placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
@@ -153,7 +153,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 type="button"
                 className="lc-pw-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Ocultar contrase├▒a" : "Mostrar contrase├▒a"}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 <img
                   src={showPassword ? hideIcon : viewIcon}
@@ -167,7 +167,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
           {/* Error */}
           {error && (
             <div className="lc-error" role="alert">
-              <span className="lc-error-icon">ΓÜá</span>
+              <span className="lc-error-icon">⚠</span>
               <span>{error}</span>
             </div>
           )}
@@ -181,7 +181,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
           >
             {loading
               ? <span className="lc-spinner" />
-              : "Iniciar Sesi├│n"
+              : "Iniciar Sesión"
             }
           </button>
 
@@ -199,7 +199,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
 
         {/* Footer */}
         <p className="lc-footer-text">
-          ┬┐Necesitas acceso?{" "}
+          ¿Necesitas acceso?{" "}
           <a href="#!" onClick={(e) => e.preventDefault()} className="lc-footer-link">
             Contacta al administrador
           </a>
@@ -208,7 +208,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
       </div>
 
       {/* Marca discreta al fondo */}
-      <p className="lc-watermark">UAPA ┬╖ ProEvent ┬⌐ 2025</p>
+      <p className="lc-watermark">UAPA · ProEvent © 2025</p>
 
     </div>
   );

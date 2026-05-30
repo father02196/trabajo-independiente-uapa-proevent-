@@ -5,13 +5,6 @@ import hideIcon from "./../img/hide.png";
 import userIcon from "./../img/user.png";
 import lockIcon from "./../img/lock.png";
 
-const RIGHT_FEATURES = [
-  { icon: "📄", text: "Subida digital de cotizaciones PDF" },
-  { icon: "💰", text: "Proceso de licitación transparente" },
-  { icon: "🤖", text: "Análisis inteligente con IA" },
-  { icon: "🔒", text: "Plataforma segura B2B" },
-];
-
 function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -48,109 +41,129 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-wrapper">
+    <div className="lc-bg">
 
-        {/* ── LEFT: Form panel ── */}
-        <div className="login-left">
-          <div className="login-form-box">
+      {/* Botón volver flotante */}
+      {onBackClick && (
+        <button className="lc-back" onClick={onBackClick}>
+          ← Volver al inicio
+        </button>
+      )}
 
-            {/* Back to home */}
-            {onBackClick && (
-              <button className="login-back-link" onClick={onBackClick}>
-                <span className="login-back-icon">←</span> Volver al inicio
+      {/* Card central */}
+      <div className="lc-card">
+
+        {/* Header de la card */}
+        <div className="lc-header">
+          <div className="lc-logo-badge" style={{ background: 'linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%)', boxShadow: '0 4px 12px rgba(142, 68, 173, 0.30)' }}>
+            B2B
+          </div>
+          <h1 className="lc-title">Portal de Suplidores</h1>
+          <p className="lc-subtitle">
+            Acceso para licitación automatizada UAPA
+          </p>
+        </div>
+
+        {/* Formulario */}
+        <form className="lc-form" onSubmit={handleSubmit} noValidate>
+
+          {/* Campo correo */}
+          <div className="lc-field">
+            <label className="lc-label" htmlFor="b2b-email">Correo de la Empresa</label>
+            <div className="lc-input-wrap">
+              <img src={userIcon} alt="" className="lc-input-icon" />
+              <input
+                id="b2b-email"
+                type="email"
+                className="lc-input"
+                placeholder="contacto@empresa.com"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+          </div>
+
+          {/* Campo contraseña */}
+          <div className="lc-field">
+            <div className="lc-label-row">
+              <label className="lc-label" htmlFor="b2b-password">Contraseña B2B</label>
+              <button
+                type="button"
+                className="lc-forgot"
+                onClick={(e) => e.preventDefault()}
+              >
+                ¿Olvidaste tu contraseña?
               </button>
-            )}
-
-            {/* Brand */}
-            <div className="login-brand-row">
-              <div className="login-brand-icon" style={{backgroundColor: '#2c3e50', color: 'white'}}>B2B</div>
-              <div>
-                <p className="welcome-label">Bienvenido al</p>
-                <h1 className="brand-name">Portal de <span className="brand-name-highlight">Proveedores</span></h1>
-              </div>
             </div>
-
-            <p className="brand-subtitle">
-              Inicia sesión con las credenciales que la UAPA te envió por correo para someter tus cotizaciones.
-            </p>
-
-            <div className="form-divider">
-              <div className="form-divider-line" />
-              <span className="form-divider-text">Acceso de Suplidor</span>
-              <div className="form-divider-line" />
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="input-group">
-                <img src={userIcon} alt="usuario" className="input-icon" />
-                <input
-                  type="email"
-                  placeholder="Correo de la Empresa"
-                  value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
-                  autoComplete="email"
-                />
-              </div>
-
-              <div className="input-group">
-                <img src={lockIcon} alt="contraseña" className="input-icon" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Contraseña B2B"
-                  value={contrasena}
-                  onChange={(e) => setContrasena(e.target.value)}
-                  autoComplete="current-password"
-                />
+            <div className="lc-input-wrap">
+              <img src={lockIcon} alt="" className="lc-input-icon" />
+              <input
+                id="b2b-password"
+                type={showPassword ? "text" : "password"}
+                className="lc-input"
+                placeholder="••••••••"
+                value={contrasena}
+                onChange={(e) => setContrasena(e.target.value)}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="lc-pw-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
                 <img
                   src={showPassword ? hideIcon : viewIcon}
-                  alt={showPassword ? "Ocultar" : "Ver"}
-                  className="toggle-password"
-                  onClick={() => setShowPassword(!showPassword)}
+                  alt=""
+                  className="lc-pw-icon"
                 />
-              </div>
-
-              {error && (
-                <div className="login-error">
-                  <span>⚠️</span>
-                  {error}
-                </div>
-              )}
-
-              <button type="submit" className="signin-btn" disabled={loading} style={{marginTop: '20px'}}>
-                {loading ? "Verificando..." : "Acceder al Portal"}
               </button>
-            </form>
-
-            <p className="signup-text" style={{marginTop: '20px'}}>
-              ¿Aún no eres proveedor?&nbsp;
-              <a href="#" onClick={(e) => e.preventDefault()}>
-                Contacta al depto. de compras
-              </a>
-            </p>
-          </div>
-        </div>
-
-        {/* ── RIGHT: Brand panel ── */}
-        <div className="login-right">
-          <div className="login-right-content">
-            <div className="login-right-icon" style={{backgroundColor: '#8e44ad', width: '60px', height: '60px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '24px', marginBottom: '20px'}}>B2B</div>
-            <h2 className="brand-name-right">Red de Suplidores</h2>
-            <p className="brand-desc">
-              Sistema B2B para la licitación inteligente y automatizada de los proveedores externos de la UAPA.
-            </p>
-            <div className="login-right-features">
-              {RIGHT_FEATURES.map((f) => (
-                <div key={f.text} className="login-right-feature">
-                  <div className="feature-bullet">{f.icon}</div>
-                  <span className="feature-bullet-text">{f.text}</span>
-                </div>
-              ))}
             </div>
           </div>
+
+          {/* Error */}
+          {error && (
+            <div className="lc-error" role="alert">
+              <span className="lc-error-icon">⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="lc-btn-primary"
+            style={{ background: '#8e44ad', boxShadow: '0 1px 2px rgba(142, 68, 173, 0.20), 0 4px 12px rgba(142, 68, 173, 0.22)' }}
+            disabled={loading}
+          >
+            {loading
+              ? <span className="lc-spinner" />
+              : "Acceder al Portal Seguro"
+            }
+          </button>
+
+        </form>
+
+        {/* Divisor */}
+        <div className="lc-sep">
+          <span className="lc-sep-line" />
+          <span className="lc-sep-text">¿Aún no eres proveedor?</span>
+          <span className="lc-sep-line" />
         </div>
 
+        {/* Footer */}
+        <p className="lc-footer-text" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
+          <a href="#!" onClick={(e) => e.preventDefault()} className="lc-footer-link" style={{ color: '#8e44ad' }}>
+            Contacta al departamento de compras
+          </a>
+        </p>
+
       </div>
+
+      {/* Marca discreta al fondo */}
+      <p className="lc-watermark">Plataforma Inteligente B2B · ProEvent © 2025</p>
+
     </div>
   );
 }

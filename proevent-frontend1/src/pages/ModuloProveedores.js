@@ -181,10 +181,10 @@ function ModuloProveedores({ usuario }) {
             <div className="proveedores-header">
                 <h1 className="proveedores-title">Módulo de Proveedores y Licitaciones</h1>
                 
-                <div style={{marginTop: '15px', display: 'flex', gap: '10px'}}>
-                    <button className={`btn-tab ${activeTab === 'logistica' ? 'active' : ''}`} onClick={() => setActiveTab('logistica')} style={tabStyle(activeTab === 'logistica')}>Logística Operativa</button>
-                    <button className={`btn-tab ${activeTab === 'directorio' ? 'active' : ''}`} onClick={() => setActiveTab('directorio')} style={tabStyle(activeTab === 'directorio')}>Directorio de Suplidores</button>
-                    <button className={`btn-tab ${activeTab === 'ia' ? 'active' : ''}`} onClick={() => setActiveTab('ia')} style={tabStyle(activeTab === 'ia')}>Licitaciones (IA)</button>
+                <div className="proveedores-tabs">
+                    <button className={`proveedores-tab ${activeTab === 'logistica' ? 'active' : ''}`} onClick={() => setActiveTab('logistica')}>Logística Operativa</button>
+                    <button className={`proveedores-tab ${activeTab === 'directorio' ? 'active' : ''}`} onClick={() => setActiveTab('directorio')}>Directorio de Suplidores</button>
+                    <button className={`proveedores-tab ${activeTab === 'ia' ? 'active' : ''}`} onClick={() => setActiveTab('ia')}>Licitaciones (IA)</button>
                 </div>
             </div>
 
@@ -247,9 +247,9 @@ function ModuloProveedores({ usuario }) {
 
                 return (
                 <>
-                    <div style={{marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '15px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'}}>
+                    <div className="filtros-proveedores" style={{justifyContent: 'space-between', alignItems: 'flex-end'}}>
                         <div style={{display: 'flex', gap: '15px', flex: 1}}>
-                            <div className="form-group" style={{marginBottom: 0, flex: 2}}>
+                            <div className="filtro-grupo" style={{flex: 2}}>
                                 <label style={{fontSize: '12px', color: '#64748b'}}>Buscar suplidor (Nombre, RNC, Correo):</label>
                                 <input 
                                     type="text" 
@@ -259,7 +259,7 @@ function ModuloProveedores({ usuario }) {
                                     style={{width: '100%'}}
                                 />
                             </div>
-                            <div className="form-group" style={{marginBottom: 0, flex: 1}}>
+                            <div className="filtro-grupo" style={{flex: 1}}>
                                 <label style={{fontSize: '12px', color: '#64748b'}}>Filtrar por Categoría:</label>
                                 <select 
                                     value={filtroCategoria} 
@@ -332,16 +332,17 @@ function ModuloProveedores({ usuario }) {
                         <p>Aquí se muestran las licitaciones que la Inteligencia Artificial ya evaluó y adjudicó. Como Encargado de Compras, puedes subir la factura saldada para poder finalizar el evento logísticamente.</p>
                     </div>
 
-                    <table className="requests-table">
-                        <thead>
-                            <tr>
-                                <th>Evento (Req.)</th>
-                                <th>Proveedor Ganador</th>
-                                <th>Monto Total</th>
-                                <th>Estado Pago</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
+                    <div className="tabla-proveedores-container">
+                        <table className="tabla-proveedores">
+                            <thead>
+                                <tr>
+                                    <th>Evento (Req.)</th>
+                                    <th>Proveedor Ganador</th>
+                                    <th>Monto Total</th>
+                                    <th>Estado Pago</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
                         <tbody>
                             {licitacionesAdjudicadas.length === 0 ? (
                                 <tr><td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>No hay licitaciones adjudicadas aún.</td></tr>
@@ -398,7 +399,8 @@ function ModuloProveedores({ usuario }) {
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
             )}
 
@@ -442,15 +444,5 @@ function ModuloProveedores({ usuario }) {
         </div>
     );
 }
-
-const tabStyle = (isActive) => ({
-    padding: '10px 20px', 
-    border: 'none', 
-    background: isActive ? '#3498db' : '#ecf0f1', 
-    color: isActive ? 'white' : '#7f8c8d', 
-    borderRadius: '4px', 
-    cursor: 'pointer',
-    fontWeight: 'bold'
-});
 
 export default ModuloProveedores;

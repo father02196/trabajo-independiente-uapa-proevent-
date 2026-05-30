@@ -14,7 +14,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Paginaci├│n
+  // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -81,7 +81,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   };
 
   const handleEliminarEvento = async (id_evento) => {
-    if (!window.confirm("┬┐Est├ís seguro de que deseas eliminar este evento? Esta acci├│n no se puede deshacer.")) return;
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.")) return;
     setLoading(true);
     try {
       const res = await fetch(`${API}/eventos/${id_evento}`, {
@@ -106,14 +106,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   };
 
   const formatFecha = (fechaStr) => {
-    if (!fechaStr) return "ΓÇö";
+    if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
     fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
   
   const formatHora = (horaStr) => {
-    if (!horaStr) return "ΓÇö";
+    if (!horaStr) return "—";
     const [hora, min] = horaStr.split(':');
     const h = parseInt(hora, 10);
     const ampm = h >= 12 ? 'PM' : 'AM';
@@ -153,7 +153,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       return sortOrder === "asc" ? dA - dB : dB - dA;
     });
 
-  // Paginaci├│n
+  // Paginación
   const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -186,16 +186,16 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <label><FiFilter /> Estado</label>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="Todos">Todos los estados</option>
-              <option value="Pendiente">≡ƒƒí Pendientes</option>
-              <option value="Aprobado">≡ƒƒó Aprobados</option>
-              <option value="Rechazado">≡ƒö┤ Rechazados</option>
-              <option value="Finalizado">≡ƒö╡ Finalizados</option>
+              <option value="Pendiente">🟡 Pendientes</option>
+              <option value="Aprobado">🟢 Aprobados</option>
+              <option value="Rechazado">🔴 Rechazados</option>
+              <option value="Finalizado">🔵 Finalizados</option>
             </select>
           </div>
 
           {usuario?.rol !== "Solicitante" && (
             <div className="filter-item">
-              <label>≡ƒÅó Departamento / Dependencia</label>
+              <label>🏢 Departamento / Dependencia</label>
               <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
                 {departamentosUnicos.map((d) => (
                   <option key={d} value={d}>{d === "Todos" ? "Todos los Departamentos" : d}</option>
@@ -214,12 +214,12 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           </div>
 
           <div className="filter-item">
-            <label>Γçà Ordenar por Fecha</label>
+            <label>⇅ Ordenar por Fecha</label>
             <button 
               className={`sort-toggle-btn ${sortOrder === "asc" ? "asc" : "desc"}`} 
               onClick={() => setSortOrder((o) => o === "asc" ? "desc" : "asc")}
             >
-              {sortOrder === "asc" ? "M├ís antiguos primero" : "M├ís recientes primero"}
+              {sortOrder === "asc" ? "Más antiguos primero" : "Más recientes primero"}
             </button>
           </div>
         </div>
@@ -235,13 +235,13 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           ) : error ? (
             <div className="table-state-error">
               <p>{error}</p>
-              <button className="retry-btn" onClick={cargarEventos}>Reintentar conexi├│n</button>
+              <button className="retry-btn" onClick={cargarEventos}>Reintentar conexión</button>
             </div>
           ) : filteredRequests.length === 0 ? (
             <div className="table-state-empty">
               <FiFileText className="empty-icon" />
               <h4>No se encontraron solicitudes</h4>
-              <p>Prueba ajustando los filtros de b├║squeda o fecha.</p>
+              <p>Prueba ajustando los filtros de búsqueda o fecha.</p>
             </div>
           ) : (
             <table className="requests-table modern-table">
@@ -254,8 +254,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   <th>RECINTO / LUGAR</th>
                   <th>ESTADO EVENTO</th>
                   <th>CONTABILIDAD POA</th>
-                  <th>M├üS DETALLES</th>
-                  {usuario?.rol !== "Administrador V-A-F" && <th>ACCIONES DE GESTI├ôN</th>}
+                  <th>MÁS DETALLES</th>
+                  {usuario?.rol !== "Administrador V-A-F" && <th>ACCIONES DE GESTIÓN</th>}
                 </tr>
               </thead>
               <tbody>
@@ -271,11 +271,11 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       <td>
                         <div className="solicitante-cell">
                           <span className="avatar-char">{req.solicitante ? req.solicitante.charAt(0).toUpperCase() : "U"}</span>
-                          <span>{req.solicitante || "ΓÇö"}</span>
+                          <span>{req.solicitante || "—"}</span>
                         </div>
                       </td>
                     )}
-                    {usuario?.rol !== "Solicitante" && <td>{req.dependencia || "ΓÇö"}</td>}
+                    {usuario?.rol !== "Solicitante" && <td>{req.dependencia || "—"}</td>}
                     <td>
                       <div className="date-cell">
                         <FiCalendar className="date-icon" />
@@ -284,7 +284,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     </td>
                     <td>
                       <div className="venue-cell">
-                        <span>{req.recinto || "ΓÇö"}</span>
+                        <span>{req.recinto || "—"}</span>
                       </div>
                     </td>
                     <td>
@@ -347,7 +347,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           )}
         </div>
 
-        {/* CONTROLES DE PAGINACI├ôN */}
+        {/* CONTROLES DE PAGINACIÓN */}
         {!loading && filteredRequests.length > 0 && (
           <div className="pagination-container">
             <div className="pagination-info">
@@ -362,7 +362,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 <FiChevronLeft /> Anterior
               </button>
               <span className="page-number">
-                P├íg. {currentPage} de {totalPages || 1}
+                Pág. {currentPage} de {totalPages || 1}
               </span>
               <button 
                 className="page-btn" 
@@ -381,7 +381,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Ficha T├⌐cnica del Evento</h3>
+              <h3>Ficha Técnica del Evento</h3>
               <span className="modal-event-id">Solicitud #EVT-{selectedRequest.id_evento}</span>
             </div>
             <div className="modal-body modern-modal-body">
@@ -391,23 +391,23 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               </div>
               <div className="detail-group">
                 <label>Solicitante</label>
-                <p>{selectedRequest.solicitante || "ΓÇö"}</p>
+                <p>{selectedRequest.solicitante || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Dependencia</label>
-                <p>{selectedRequest.dependencia || "ΓÇö"}</p>
+                <p>{selectedRequest.dependencia || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Recinto</label>
-                <p>{selectedRequest.recinto || "ΓÇö"}</p>
+                <p>{selectedRequest.recinto || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Modalidad</label>
-                <p>{selectedRequest.modalidad || "ΓÇö"}</p>
+                <p>{selectedRequest.modalidad || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Tipo de Evento</label>
-                <p>{selectedRequest.tipo_evento || "ΓÇö"}</p>
+                <p>{selectedRequest.tipo_evento || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Fechas</label>
@@ -419,13 +419,13 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               <div className="detail-group">
                 <label>Horario</label>
                 <p>
-                  {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "ΓÇö"} 
+                  {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} 
                   {selectedRequest.hora_fin ? ` a ${formatHora(selectedRequest.hora_fin)}` : ""}
                 </p>
               </div>
               <div className="detail-group">
                 <label>Asistentes Esperados</label>
-                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "ΓÇö"}</p>
+                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Presupuesto POA Solicitado</label>
@@ -455,7 +455,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 <label>Equipos Audiovisuales Requeridos</label>
                 <p className="details-list-text">
                   {selectedRequest.necesita_audiovisual 
-                    ? (selectedRequest.equipos_audiovisuales || "S├¡ (Pendiente/Sin Especificar)") 
+                    ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
                     : "Ninguno"}
                 </p>
               </div>

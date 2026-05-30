@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
-   Welcome.css — ProEvent UAPA ┬╖ Premium SaaS Light
-   Inspirado en Stripe ┬╖ Linear ┬╖ Vercel ┬╖ Notion
+   Welcome.css — ProEvent UAPA · Premium SaaS Light
+   Inspirado en Stripe · Linear · Vercel · Notion
    Paleta: Blanco / Gris suave / Azul #2563EB
    ═══════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -1107,7 +1107,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   POL├ìTICAS SECTION
+   POLÍTICAS SECTION
    ═══════════════════════════════════════════════════════════ */
 .policies-section {
   padding: 100px 48px;
@@ -1600,4 +1600,3 @@
   .steps-grid { grid-template-columns: 1fr 1fr; }
   .stats-container { grid-template-columns: 1fr 1fr; }
 }
-

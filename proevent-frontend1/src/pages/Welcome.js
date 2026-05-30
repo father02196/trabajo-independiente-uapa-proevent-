@@ -101,13 +101,13 @@ const CheckIcon = () => (
 );
 
 function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores }) {
-  const [sidebarOpen, setSidebarOpen]   = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [scrolled, setScrolled]         = useState(false);
-  const [stats, setStats]               = useState({ eventos: 0, audiovisual: 0, usuarios: 0 });
+  const [scrolled, setScrolled] = useState(false);
+  const [stats, setStats] = useState({ eventos: 0, audiovisual: 0, usuarios: 0 });
 
-  const toggleSidebar  = () => setSidebarOpen((v) => !v);
-  const openHelpModal  = () => { setShowHelpModal(true); setSidebarOpen(false); };
+  const toggleSidebar = () => setSidebarOpen((v) => !v);
+  const openHelpModal = () => { setShowHelpModal(true); setSidebarOpen(false); };
   const closeHelpModal = () => setShowHelpModal(false);
 
   useEffect(() => {
@@ -120,9 +120,9 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         ]);
         const [ev, av, us] = await Promise.all([resEv.json(), resAv.json(), resUs.json()]);
         setStats({
-          eventos:    Array.isArray(ev) ? ev.length : 0,
+          eventos: Array.isArray(ev) ? ev.length : 0,
           audiovisual: Array.isArray(av) ? av.length : 0,
-          usuarios:   Array.isArray(us) ? us.length : 0,
+          usuarios: Array.isArray(us) ? us.length : 0,
         });
       } catch (err) {
         console.error("Error fetching landing stats:", err);
@@ -157,11 +157,11 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
 
         <nav className="header-nav">
-          <a href="#features"  className="nav-link">Módulos</a>
-          <a href="#stats"     className="nav-link">Estadísticas</a>
-          <a href="#policies"  className="nav-link">Políticas</a>
-          <a href="#contact"   className="nav-link">Contacto</a>
-          <button className="nav-link" onClick={onPortalProveedores} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'inherit', fontWeight: 'inherit', padding: 0, color: 'inherit' }}>Portal B2B</button>
+          <a href="#features" className="nav-link">Módulos</a>
+          <a href="#stats" className="nav-link">Estadísticas</a>
+          <a href="#policies" className="nav-link">Políticas</a>
+          <a href="#contact" className="nav-link">Contacto</a>
+          <button className="nav-link" onClick={onPortalProveedores} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'inherit', fontWeight: 'inherit', padding: 0, color: 'inherit' }}>Portal Proveedores</button>
           {isLoggedIn ? (
             <button className="nav-cta-btn" onClick={onLogoutClick}>Cerrar Sesión</button>
           ) : (
@@ -187,8 +187,8 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
           <button className="close-btn" onClick={toggleSidebar}>×</button>
         </div>
         <ul className="sidebar-menu">
-          <li><a href="#features"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>📋 Módulos</a></li>
-          <li><a href="#policies"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>📜 Políticas</a></li>
+          <li><a href="#features" className="sidebar-link" onClick={() => setSidebarOpen(false)}>📋 Módulos</a></li>
+          <li><a href="#policies" className="sidebar-link" onClick={() => setSidebarOpen(false)}>📜 Políticas</a></li>
           <li><button className="sidebar-link" onClick={openHelpModal}>🆘 Ayuda y Contacto</button></li>
           <li><button className="sidebar-link" onClick={() => { onPortalProveedores(); setSidebarOpen(false); }}>🏢 Portal Proveedores</button></li>
           {isLoggedIn ? (
@@ -239,7 +239,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
               <button className="hero-btn primary" onClick={onLoginClick}>
                 Acceder al Sistema
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="2" y1="8" x2="14" y2="8"/><polyline points="9 3 14 8 9 13"/>
+                  <line x1="2" y1="8" x2="14" y2="8" /><polyline points="9 3 14 8 9 13" />
                 </svg>
               </button>
             )}
@@ -427,9 +427,9 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
           </div>
           <div className="steps-grid">
             {[
-              { num: "01", title: "Inicia Sesión",           desc: "Accede con tus credenciales institucionales UAPA." },
-              { num: "02", title: "Completa el Formulario",  desc: "Llena todos los campos requeridos para tu tipo de solicitud." },
-              { num: "03", title: "Revisión y Aprobación",   desc: "El equipo de Protocolo revisará y aprobará tu solicitud." },
+              { num: "01", title: "Inicia Sesión", desc: "Accede con tus credenciales institucionales UAPA." },
+              { num: "02", title: "Completa el Formulario", desc: "Llena todos los campos requeridos para tu tipo de solicitud." },
+              { num: "03", title: "Revisión y Aprobación", desc: "El equipo de Protocolo revisará y aprobará tu solicitud." },
               { num: "04", title: "Coordinación del Evento", desc: "ProEvent coordina todos los recursos y servicios necesarios." },
             ].map((step, i) => (
               <div key={step.num} className="step-card">
@@ -454,10 +454,10 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
         <div className="stats-container">
           {[
-            { label: "Eventos Gestionados",    value: stats.eventos,    icon: "📅", color: "blue"   },
+            { label: "Eventos Gestionados", value: stats.eventos, icon: "📅", color: "blue" },
             { label: "Servicios Audiovisuales", value: stats.audiovisual, icon: "🎥", color: "orange" },
-            { label: "Usuarios Registrados",   value: stats.usuarios,   icon: "👥", color: "navy"   },
-            { label: "Sistema Operativo",      value: "100%",           icon: "⚡", color: "gold"   },
+            { label: "Usuarios Registrados", value: stats.usuarios, icon: "👥", color: "navy" },
+            { label: "Sistema Operativo", value: "100%", icon: "⚡", color: "gold" },
           ].map((stat) => (
             <div key={stat.label} className={`stat-box ${stat.color}`}>
               <div className="stat-box-icon">{stat.icon}</div>
@@ -486,8 +486,8 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                       <rect x="3" y="4" width="18" height="18" rx="2" />
                       <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8"  y1="2" x2="8"  y2="6" />
-                      <line x1="3"  y1="10" x2="21" y2="10" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
                     </svg>
                   ) : (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

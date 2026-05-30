@@ -55,7 +55,7 @@
   margin-bottom: 24px;
 }
 
-/* Barra de b├║squeda soporte */
+/* Barra de búsqueda soporte */
 .soporte-search-bar {
   display: flex;
   align-items: center;
@@ -87,7 +87,7 @@
 
 .soporte-search-bar input::placeholder { color: rgba(255,255,255,0.35); }
 
-/* ─── Cards de contacto r├ípido ─── */
+/* ─── Cards de contacto rápido ─── */
 .soporte-contact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -326,4 +326,3 @@
   .soporte-hero { padding: 32px 20px; }
   .soporte-contact-grid { grid-template-columns: repeat(2, 1fr); }
 }
-

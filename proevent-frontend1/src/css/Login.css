@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    Login.css — ProEvent UAPA
-   Single-card ┬╖ Minimalista ┬╖ SaaS Premium
+   Single-card · Minimalista · SaaS Premium
    Inspirado en Stripe, Linear, Vercel, Notion
    ═══════════════════════════════════════════════════════════════ */
 
@@ -38,7 +38,7 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   BOT├ôN VOLVER
+   BOTÓN VOLVER
 ───────────────────────────────────────────────────────────── */
 .lc-back {
   position: absolute;
@@ -199,7 +199,7 @@
   font-size: 13.5px;
 }
 
-/* ├ìconos dentro del input */
+/* Íconos dentro del input */
 .lc-input-icon {
   position: absolute;
   left: 12px;
@@ -215,7 +215,7 @@
   opacity: 0.65;
 }
 
-/* Bot├│n toggle contrase├▒a */
+/* Botón toggle contraseña */
 .lc-pw-toggle {
   position: absolute;
   right: 10px;
@@ -246,7 +246,7 @@
   opacity: 0.70;
 }
 
-/* Olvid├⌐ contrase├▒a */
+/* Olvidé contraseña */
 .lc-forgot {
   background: none;
   border: none;
@@ -290,7 +290,7 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   BOT├ôN PRINCIPAL
+   BOTÓN PRINCIPAL
 ───────────────────────────────────────────────────────────── */
 .lc-btn-primary {
   width: 100%;
@@ -311,7 +311,7 @@
   min-height: 46px;
   margin-top: 4px;
 
-  /* Transici├│n suave Stripe-style */
+  /* Transición suave Stripe-style */
   transition:
     background    0.2s ease,
     box-shadow    0.2s ease,
@@ -471,4 +471,3 @@
 @keyframes lc-spin {
   to { transform: rotate(360deg); }
 }
-

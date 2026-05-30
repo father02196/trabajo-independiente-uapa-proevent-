@@ -58,7 +58,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
         // toast.success("Datos sincronizados"); // Opcional, puede ser molesto cada vez que entra.
       }
     } catch (err) {
-      setError("No se pudo establecer conexi├│n con el servidor ProEvent.");
+      setError("No se pudo establecer conexión con el servidor ProEvent.");
       import("react-hot-toast").then((module) => {
         module.toast.error("Error al conectar con el servidor.");
       });
@@ -76,7 +76,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
   };
 
   const formatFecha = (fechaStr) => {
-    if (!fechaStr) return "ΓÇö";
+    if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
     fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
@@ -92,7 +92,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
     }
   };
 
-  // C├ílculos estad├¡sticos
+  // Cálculos estadísticos
   const totalSolicitudes = eventRequests.length;
   const pendientes = eventRequests.filter((e) => e.estado === "Pendiente").length;
   const aprobados = eventRequests.filter((e) => e.estado === "Aprobado").length;
@@ -127,7 +127,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
 
   const maxBudget = Math.max(...venueData.map(v => v.value), 10000);
 
-  // Obtener los pr├│ximos 5 eventos activos
+  // Obtener los próximos 5 eventos activos
   const proximosEventos = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
     .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
@@ -136,7 +136,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
   return (
     <div className="saas-dashboard-container fade-in">
       
-      {/* 4 CARDS DE ESTAD├ìSTICAS PREMIUM */}
+      {/* 4 CARDS DE ESTADÍSTICAS PREMIUM */}
       <div className="stats-cards-grid">
         <div className="saas-stat-card primary-glow" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
           <div className="card-top">
@@ -162,7 +162,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
           </div>
           <div className="card-bottom">
             <h3>{pendientes}</h3>
-            <span className="card-trend text-orange">Revisi├│n requerida</span>
+            <span className="card-trend text-orange">Revisión requerida</span>
           </div>
         </div>
 
@@ -193,22 +193,22 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
         </div>
       </div>
 
-      {/* SECCI├ôN ANAL├ìTICA - GR├üFICOS NATIVOS INTERACTIVOS */}
+      {/* SECCIÓN ANALÍTICA - GRÁFICOS NATIVOS INTERACTIVOS */}
       <div className="charts-grid-saas">
         
         {/* CHART 1: ESTADO DE SOLICITUDES (SVG DONUT CHART) */}
         <div className="saas-chart-card saas-donut-card">
           <div className="chart-header">
             <div>
-              <h4>Distribuci├│n de Estados</h4>
-              <p>Porcentajes de aprobaci├│n actuales</p>
+              <h4>Distribución de Estados</h4>
+              <p>Porcentajes de aprobación actuales</p>
             </div>
           </div>
           <div className="chart-wrapper donut-center" style={{ height: '240px' }}>
             {loading ? (
               <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
                 <div className="loader" style={{ marginBottom: '10px' }}></div>
-                <p>Cargando distribuci├│n...</p>
+                <p>Cargando distribución...</p>
               </div>
             ) : statusData.length === 0 ? (
               <div className="no-data-placeholder">Sin solicitudes registradas</div>
@@ -274,13 +274,13 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
           <div className="chart-header">
             <div>
               <h4>Presupuesto POA Aprobado por Recinto</h4>
-              <p>Inversi├│n financiera en eventos por campus de la UAPA (en DOP)</p>
+              <p>Inversión financiera en eventos por campus de la UAPA (en DOP)</p>
             </div>
             <button className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos"><FiRefreshCw /></button>
           </div>
           
           <div className="budget-chart-layout">
-            {/* Visualizaci├│n descriptiva del presupuesto */}
+            {/* Visualización descriptiva del presupuesto */}
             <div className="budget-summary-panel">
               <div className="budget-total-indicator">
                 <span>Total Invertido</span>
@@ -299,7 +299,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
               </div>
             </div>
 
-            {/* El gr├ífico SVG */}
+            {/* El gráfico SVG */}
             <div className="chart-wrapper budget-svg-wrapper" style={{ height: '240px', position: 'relative' }}>
             {loading ? (
               <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -329,7 +329,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                     const totalBars = venueData.length;
                     const spacing = totalBars <= 1 ? 0 : 420 / (totalBars - 1);
                     const x = 50 + idx * spacing + 15;
-                    const shortName = v.name.length > 10 ? v.name.substring(0, 9) + 'ΓÇª' : v.name;
+                    const shortName = v.name.length > 10 ? v.name.substring(0, 9) + '…' : v.name;
                     return (
                       <text key={idx} x={x} y="190" fill="#94a3b8" fontSize="9" textAnchor="middle">
                         {shortName}
@@ -408,16 +408,16 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
         </div>
       </div>
 
-      {/* TIMELINE DE EVENTOS Y PANEL DE ACCIONES R├üPIDAS */}
+      {/* TIMELINE DE EVENTOS Y PANEL DE ACCIONES RÁPIDAS */}
       <div className="dashboard-double-panel">
         
-        {/* PANEL IZQUIERDO: TIMELINE PR├ôXIMOS EVENTOS */}
+        {/* PANEL IZQUIERDO: TIMELINE PRÓXIMOS EVENTOS */}
         <div className="saas-panel-card">
           <div className="panel-header">
             <FiCalendar className="panel-icon" />
             <div>
-              <h4>Pr├│ximos Eventos en Agenda</h4>
-              <p>Eventos aprobados y pendientes programados pr├│ximamente</p>
+              <h4>Próximos Eventos en Agenda</h4>
+              <p>Eventos aprobados y pendientes programados próximamente</p>
             </div>
           </div>
           <div className="panel-body">
@@ -435,8 +435,8 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
               <div className="upcoming-events-list">
                 {proximosEventos.map((evt) => {
                   const dateParts = formatFecha(evt.fecha_inicio).split(' ');
-                  const day = dateParts[0] || 'ΓÇö';
-                  const month = dateParts[1] || 'ΓÇö';
+                  const day = dateParts[0] || '—';
+                  const month = dateParts[1] || '—';
                   
                   return (
                     <div key={evt.id_evento} className="upcoming-event-item" onClick={() => openModal(evt)}>
@@ -452,7 +452,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                         <span className={`status-pill ${getStatusClass(evt.estado)}`}>
                           {evt.estado}
                         </span>
-                        <button className="view-quick-btn" title="Ver Ficha T├⌐cnica">
+                        <button className="view-quick-btn" title="Ver Ficha Técnica">
                           <FiEye />
                         </button>
                       </div>
@@ -464,18 +464,18 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
           </div>
         </div>
 
-        {/* PANEL DERECHO: ACCESOS R├üPIDOS Y AVANCE POA */}
+        {/* PANEL DERECHO: ACCESOS RÁPIDOS Y AVANCE POA */}
         <div className="saas-panel-card">
           <div className="panel-header">
             <FiGrid className="panel-icon" />
             <div>
-              <h4>Accesos R├ípidos y Control POA</h4>
+              <h4>Accesos Rápidos y Control POA</h4>
               <p>Atajos de productividad y resumen fiscal</p>
             </div>
           </div>
           <div className="panel-body flex-column-body">
             
-            {/* Atajos r├ípidos (SaaS Premium Buttons) */}
+            {/* Atajos rápidos (SaaS Premium Buttons) */}
             <div className="quick-actions-list">
               <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("Eventos")}>
                 <div className="icon-wrapper"><FiPlus /></div>
@@ -502,7 +502,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                 <div className="icon-wrapper"><FiStar /></div>
                 <div className="btn-text">
                   <strong>Soporte</strong>
-                  <span>Ayuda t├⌐cnica</span>
+                  <span>Ayuda técnica</span>
                 </div>
               </div>
             </div>
@@ -527,7 +527,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Ficha T├⌐cnica del Evento</h3>
+              <h3>Ficha Técnica del Evento</h3>
               <span className="modal-event-id">Solicitud #EVT-{selectedRequest.id_evento}</span>
             </div>
             <div className="modal-body modern-modal-body">
@@ -537,23 +537,23 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
               </div>
               <div className="detail-group">
                 <label>Solicitante</label>
-                <p>{selectedRequest.solicitante || "ΓÇö"}</p>
+                <p>{selectedRequest.solicitante || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Dependencia</label>
-                <p>{selectedRequest.dependencia || "ΓÇö"}</p>
+                <p>{selectedRequest.dependencia || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Recinto</label>
-                <p>{selectedRequest.recinto || "ΓÇö"}</p>
+                <p>{selectedRequest.recinto || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Modalidad</label>
-                <p>{selectedRequest.modalidad || "ΓÇö"}</p>
+                <p>{selectedRequest.modalidad || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Tipo de Evento</label>
-                <p>{selectedRequest.tipo_evento || "ΓÇö"}</p>
+                <p>{selectedRequest.tipo_evento || "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Fechas</label>
@@ -564,7 +564,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
               </div>
               <div className="detail-group">
                 <label>Asistentes Esperados</label>
-                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "ΓÇö"}</p>
+                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</p>
               </div>
               <div className="detail-group">
                 <label>Presupuesto POA Solicitado</label>
@@ -594,7 +594,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                 <label>Equipos Audiovisuales Requeridos</label>
                 <p className="details-list-text">
                   {selectedRequest.necesita_audiovisual 
-                    ? (selectedRequest.equipos_audiovisuales || "S├¡ (Pendiente/Sin Especificar)") 
+                    ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
                     : "Ninguno"}
                 </p>
               </div>

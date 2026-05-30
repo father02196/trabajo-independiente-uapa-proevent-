@@ -189,7 +189,7 @@
 .bitacora-table tbody tr:last-child td { border-bottom: none; }
 .bitacora-table tbody tr:hover { background: #F8FAFC; }
 
-/* ─── Badges de acci├│n ─── */
+/* ─── Badges de acción ─── */
 .action-badge {
   display: inline-flex;
   align-items: center;
@@ -252,7 +252,7 @@
 .bitacora-date { font-weight: 500; color: #334155; }
 .bitacora-hour { color: #94A3B8; }
 
-/* ─── Paginaci├│n ─── */
+/* ─── Paginación ─── */
 .bitacora-pagination {
   display: flex;
   align-items: center;
@@ -294,7 +294,7 @@
 .bitacora-page-btn:hover { background: #F1F5F9; border-color: #CBD5E1; color: #334155; }
 .bitacora-page-btn.active { background: #3B82F6; border-color: #3B82F6; color: #fff; }
 
-/* Bot├│n export */
+/* Botón export */
 .btn-export {
   display: inline-flex;
   align-items: center;
@@ -317,4 +317,3 @@
   .bitacora-page { padding: 20px 16px; }
   .bitacora-toolbar { flex-direction: column; align-items: flex-start; }
 }
-
