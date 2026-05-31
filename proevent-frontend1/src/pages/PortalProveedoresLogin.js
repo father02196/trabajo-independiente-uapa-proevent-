@@ -162,7 +162,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
       </div>
 
       {/* Marca discreta al fondo */}
-      <p className="lc-watermark">Plataforma Inteligente B2B · ProEvent © 2025</p>
+      <p className="lc-watermark">Plataforma Inteligente B2B - ProEvent © 2025</p>
 
     </div>
   );

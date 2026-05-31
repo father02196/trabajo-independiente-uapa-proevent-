@@ -10,8 +10,8 @@ const LS_KEY = 'proevent_seen_notifications';
  * 
  * Props:
  *  - usuario: { id_usuario, rol }
- *  - onGoToEvaluacion: (eventoId?) => void   → Solicitante: navega al form de evaluación
- *  - onGoToVisualizarEvaluaciones: () => void → Admin: navega al historial
+ *  - onGoToEvaluacion: (eventoId?) => void   -> Solicitante: navega al form de evaluación
+ *  - onGoToVisualizarEvaluaciones: () => void -> Admin: navega al historial
  */
 export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones }) {
   const [open, setOpen] = useState(false);

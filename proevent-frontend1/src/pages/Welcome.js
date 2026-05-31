@@ -150,7 +150,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
   return (
     <div className="welcome-wrapper">
 
-      {/* ══════════════════════ NAVBAR ══════════════════════ */}
+      {/* ====================== NAVBAR ====================== */}
       <header className={`welcome-header${scrolled ? " scrolled" : ""}`}>
         <div className="header-logo-area">
           <img src={uapaLogo} alt="UAPA Logo" className="header-logo-img" />
@@ -176,7 +176,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </button>
       </header>
 
-      {/* ══════════════════════ SIDEBAR ══════════════════════ */}
+      {/* ====================== SIDEBAR ====================== */}
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       <nav className={`sidebar${sidebarOpen ? " open" : ""}`}>
         <div className="sidebar-header">
@@ -203,7 +203,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </ul>
       </nav>
 
-      {/* ══════════════════════ HERO ══════════════════════ */}
+      {/* ====================== HERO ====================== */}
       <section className="hero-section">
         {/* Background decorative shapes */}
         <div className="hero-bg-shapes">
@@ -283,7 +283,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
               <div className="mockup-dot red" />
               <div className="mockup-dot yellow" />
               <div className="mockup-dot green" />
-              <span className="mockup-title">ProEvent · Dashboard</span>
+              <span className="mockup-title">ProEvent - Dashboard</span>
             </div>
 
             <div className="mockup-body">
@@ -346,7 +346,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
       </section>
 
-      {/* ══════════════════════ INFO STRIP ══════════════════════ */}
+      {/* ====================== INFO STRIP ====================== */}
       <section className="info-strip">
         <div className="info-strip-inner">
           <div className="info-strip-item">
@@ -393,7 +393,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
       </section>
 
-      {/* ══════════════════════ FEATURES ══════════════════════ */}
+      {/* ====================== FEATURES ====================== */}
       <section id="features" className="features-section">
         <div className="section-header">
           <div className="section-tag">Módulos del Sistema</div>
@@ -414,7 +414,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
       </section>
 
-      {/* ══════════════════════ HOW IT WORKS ══════════════════════ */}
+      {/* ====================== HOW IT WORKS ====================== */}
       <section className="how-section">
         <div className="how-bg" />
         <div className="how-inner">
@@ -443,7 +443,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
       </section>
 
-      {/* ══════════════════════ STATS ══════════════════════ */}
+      {/* ====================== STATS ====================== */}
       <section id="stats" className="stats-section">
         <div className="section-header">
           <div className="section-tag">Impacto del Sistema</div>
@@ -468,7 +468,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
       </section>
 
-      {/* ══════════════════════ POLICIES ══════════════════════ */}
+      {/* ====================== POLICIES ====================== */}
       <section id="policies" className="policies-section">
         <div className="section-header">
           <div className="section-tag">Reglamento Institucional</div>
@@ -508,7 +508,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </div>
       </section>
 
-      {/* ══════════════════════ CTA BANNER ══════════════════════ */}
+      {/* ====================== CTA BANNER ====================== */}
       {!isLoggedIn && (
         <section className="cta-section">
           <div className="cta-content">
@@ -525,7 +525,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
         </section>
       )}
 
-      {/* ══════════════════════ FOOTER ══════════════════════ */}
+      {/* ====================== FOOTER ====================== */}
       <footer id="contact" className="site-footer">
         <div className="footer-inner">
           <div className="footer-brand">
@@ -564,11 +564,11 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
           </div>
         </div>
         <div className="footer-bottom">
-          <p>© {new Date().getFullYear()} UAPA · ProEvent · Sistema de Gestión Institucional. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} UAPA - ProEvent - Sistema de Gestión Institucional. Todos los derechos reservados.</p>
         </div>
       </footer>
 
-      {/* ══════════════════════ HELP MODAL ══════════════════════ */}
+      {/* ====================== HELP MODAL ====================== */}
       {showHelpModal && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeHelpModal()}>
           <div className="modal-content help-modal">

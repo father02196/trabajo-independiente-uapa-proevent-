@@ -208,7 +208,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
       </div>
 
       {/* Marca discreta al fondo */}
-      <p className="lc-watermark">UAPA · ProEvent © 2025</p>
+      <p className="lc-watermark">UAPA - ProEvent © 2025</p>
 
     </div>
   );
