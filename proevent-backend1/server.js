@@ -33,6 +33,7 @@ const db = mysql.createPool({ // El Pool mantiene las conexiones vivas y las reu
   password: '', // Sin contraseña (por defecto de fábrica en instaladores locales)
   database: 'uapa_proevent', // El esquema lógico objetivo que debe existir en MySQL
   port: 3306, // Puerto específico diferente al 3306 por defecto, configurado localmente
+  charset: 'utf8mb4', // FORZAR CODIFICACIÓN UTF-8 PARA EVITAR CORRUPCIÓN DE ACENTOS Y EMOJIS
   waitForConnections: true, // Si todas las conexiones están en uso, las siguientes esperan libres en lugar de fallar
   connectionLimit: 10, // Define el número máximo de conexiones para no saturar la base de datos
   queueLimit: 0 // Sin límite en la cola de peticiones en espera (0 = infinito)
