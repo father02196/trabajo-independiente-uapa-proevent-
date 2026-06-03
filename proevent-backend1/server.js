@@ -5,6 +5,8 @@ const cors = require('cors'); // Middleware que habilita CORS permitiendo que el
 const crypto = require('crypto'); // Módulo de criptografía nativo de Node (usado para generar tokens de contraseña)
 const nodemailer = require('nodemailer'); // Librería estándar para el transporte y envío de correos electrónicos
 const { OAuth2Client } = require('google-auth-library'); // SDK de Google para verificar tokens de sesión OAuth2
+const multer = require('multer'); // Middleware para el manejo de subida de archivos (multipart/form-data)
+const path = require('path'); // Módulo de Node para trabajar con rutas de archivos
 require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env
 
 // --- CONFIGURACIÓN DE GOOGLE OAUTH ---
@@ -1322,6 +1324,50 @@ app.delete('/alimentos/:id', (req, res) => { // Remueve Item fisico de sistema g
     res.json({ mensaje: 'Alimento Eliminado' }); // Terminado HTTP End response write socket close output message
   });
 });
+
+// ── FASE: FLUJO DOCUMENTAL (SUBIDA DE ARCHIVOS) ──
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'uploads'));
+  },
+  filename: (req, file, cb) => {
+    // Generar un nombre único basado en timestamp
+    cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_'));
+  }
+});
+const upload = multer({ storage });
+
+// Endpoint para subir documentos asociados a un evento
+app.post('/api/eventos/:id/documentos', upload.single('archivo'), (req, res) => {
+  const id_evento = req.params.id;
+  
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo' });
+  }
+
+  const ruta_archivo = req.file.filename;
+  const nombre_original = req.file.originalname;
+  // Extraemos tipo_documento y id_usuario del body (FormData)
+  const tipo_documento = req.body.tipo_documento || 'Otro';
+  const id_usuario_subio = req.body.id_usuario || null;
+  
+  const query = 'INSERT INTO documento_evento (id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?)';
+  
+  db.query(query, [id_evento, tipo_documento, nombre_original, ruta_archivo, id_usuario_subio], (err, result) => {
+    if (err) {
+      console.error("Error al registrar documento:", err);
+      return res.status(500).json({ error: 'Error al registrar el documento en la base de datos' });
+    }
+    res.status(201).json({ 
+      mensaje: 'Documento subido y registrado con éxito', 
+      ruta: ruta_archivo,
+      id_documento: result.insertId 
+    });
+  });
+});
+
+// Exponer la carpeta uploads estáticamente para que el frontend pueda descargar los archivos si es necesario
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── FASE 1: MÓDULOS DE SERVICIOS EXTERNOS, ORGANIZADORES Y CRONOGRAMA ──
 

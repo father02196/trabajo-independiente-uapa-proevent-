@@ -59,6 +59,8 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const [exito, setExito] = useState("");
   const [needsAV, setNeedsAV] = useState(null);
 
+  const [archivo, setArchivo] = useState(null); // Nuevo estado para Flujo Documental
+
   const [avData, setAvData] = useState({ equipos: [], observaciones: "" });
 
   const [poaFiscal, setPoaFiscal] = useState(null);
@@ -224,6 +226,29 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         setError(result.mensaje || result.error || "Error al enviar la solicitud.");
       } else {
         const id_evento = result.id_evento || data.id_evento;
+
+        // --- SUBIDA DE ARCHIVO (Flujo Documental) ---
+        if (archivo) {
+          const formData = new FormData();
+          formData.append("archivo", archivo);
+          formData.append("tipo_documento", "Carta de Justificación / Cotización");
+          formData.append("id_usuario", usuario?.id_usuario || "");
+
+          try {
+            const docRes = await fetch(`${API}/api/eventos/${id_evento}/documentos`, {
+              method: "POST",
+              headers: { 
+                "x-usuario-id": usuario?.id_usuario || ""
+              },
+              body: formData
+            });
+            if (!docRes.ok) {
+              console.error("Error al subir documento");
+            }
+          } catch (docErr) {
+            console.error("Error de conexión al subir documento:", docErr);
+          }
+        }
         
         if (needsAV === true && avData.equipos.length > 0) {
           try {
@@ -322,7 +347,24 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         <ServiciosCatering data={data} setData={setData} />
       )}
       {activeSection === "Presupuesto y POA" && (
-        <PresupuestoPOA data={data} setData={setData} />
+        <>
+          <PresupuestoPOA data={data} setData={setData} />
+          
+          <div className="form-section" style={{ marginTop: '20px', background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <h3 style={{ color: '#1e40af', marginBottom: '10px' }}>📎 Flujo Documental Adjunto</h3>
+            <p className="help-text" style={{ marginBottom: '15px' }}>
+              Adjunta la carta de justificación, cotizaciones preliminares o plan de trabajo (PDF, Word, Excel).
+            </p>
+            <input 
+              type="file" 
+              className="modern-input" 
+              onChange={(e) => setArchivo(e.target.files[0])} 
+              accept=".pdf,.doc,.docx,.xls,.xlsx"
+              style={{ padding: '10px', background: 'white', border: '1px dashed #cbd5e1', cursor: 'pointer' }}
+            />
+            {archivo && <p style={{ marginTop: '10px', color: '#15803d', fontSize: '0.9rem' }}>✅ Archivo seleccionado: {archivo.name}</p>}
+          </div>
+        </>
       )}
       
       {activeSection === "Audiovisual" && (
