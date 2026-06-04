@@ -25,6 +25,7 @@ import NotificationBell from "./NotificationBell";
 import ModuloProveedores from "./ModuloProveedores";
 import GestionCategorias from "./GestionCategorias";
 import GestionEventos from "./GestionEventos";
+import CronogramaGlobal from "./CronogramaGlobal";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
@@ -111,6 +112,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return <GestionSolicitudesAV usuario={usuario} />;
             case "PoaAdmin":
                 return <PoaAdmin usuario={usuario} />;
+            case "CronogramaGlobal":
+                return <CronogramaGlobal usuario={usuario} />;
             default:
                 return <DashboardHome usuario={usuario} />;
         }
@@ -150,6 +153,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return "Gestión de Solicitudes Audiovisuales";
             case "PoaAdmin":
                 return "Plan Operativo Anual";
+            case "CronogramaGlobal":
+                return "Cronograma Logístico";
             case "VisualizarEvaluaciones":
                 return "Historial de Evaluaciones";
             default:
@@ -201,6 +206,10 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                             <li className={activeTab === "GestionEventos" ? "active" : ""} onClick={() => setActiveTab("GestionEventos")}>
                                                 <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                                 Gestión de Solicitudes
+                                            </li>
+                                            <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
+                                                <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Cronograma Logístico
                                             </li>
                                         </>
                                     )}
