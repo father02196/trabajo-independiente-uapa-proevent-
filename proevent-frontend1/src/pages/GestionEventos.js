@@ -487,40 +487,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 </div>
               )}
 
-              {usuario?.rol !== "Solicitante" && (
-                <div className="detail-group full-width" style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '10px' }}>
-                  <h4 style={{ color: '#1e40af', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    👨‍💼 Asignación de Personal Operativo
-                  </h4>
-                  
-                  <div style={{ marginBottom: '15px' }}>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Coordinador del Evento:</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <select 
-                        className="table-select-premium" 
-                        style={{ flex: 1, padding: '8px', borderRadius: '6px' }}
-                        onChange={(e) => asignarRol(selectedRequest.id_evento, e.target.value, 'Coordinador')}
-                      >
-                        <option value="">-- Asignar nuevo coordinador --</option>
-                        {coordinadores.map(c => <option key={c.id_usuario} value={c.id_usuario}>{c.nombre}</option>)}
-                      </select>
-                    </div>
-                  </div>
 
-                  {organizadoresAsignados.length > 0 && (
-                    <div style={{ marginTop: '10px' }}>
-                      <label style={{ fontSize: '0.85rem', color: '#64748b' }}>Personal actualmente asignado:</label>
-                      <ul style={{ listStyle: 'none', padding: 0, marginTop: '5px' }}>
-                        {organizadoresAsignados.map(org => (
-                          <li key={org.id_evento_org} style={{ background: '#e0f2fe', padding: '6px 12px', borderRadius: '4px', marginBottom: '4px', fontSize: '0.9rem', color: '#0369a1', display: 'flex', justifyContent: 'space-between' }}>
-                            <span><strong>{org.nombre}</strong> ({org.rol_organizacion})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
               {selectedRequest.alimentos && (
                 <div className="detail-group full-width">
                   <label>Servicio de Alimentos (Catering)</label>

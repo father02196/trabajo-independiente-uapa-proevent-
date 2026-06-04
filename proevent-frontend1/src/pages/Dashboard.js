@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiChevronLeft, FiEye, FiEdit2, FiFilter, FiSearch, FiTrash2 } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 // Barra de búsqueda global eliminada por preferencia del usuario
@@ -26,6 +26,7 @@ import ModuloProveedores from "./ModuloProveedores";
 import GestionCategorias from "./GestionCategorias";
 import GestionEventos from "./GestionEventos";
 import CronogramaGlobal from "./CronogramaGlobal";
+import AsignacionPersonal from "./AsignacionPersonal";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
@@ -112,6 +113,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return <GestionSolicitudesAV usuario={usuario} />;
             case "PoaAdmin":
                 return <PoaAdmin usuario={usuario} />;
+            case "AsignacionPersonal":
+                return <AsignacionPersonal usuario={usuario} />;
             case "CronogramaGlobal":
                 return <CronogramaGlobal usuario={usuario} />;
             default:
@@ -153,6 +156,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return "Gestión de Solicitudes Audiovisuales";
             case "PoaAdmin":
                 return "Plan Operativo Anual";
+            case "AsignacionPersonal":
+                return "Asignación de Personal Operativo";
             case "CronogramaGlobal":
                 return "Cronograma Logístico";
             case "VisualizarEvaluaciones":
@@ -206,6 +211,10 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                             <li className={activeTab === "GestionEventos" ? "active" : ""} onClick={() => setActiveTab("GestionEventos")}>
                                                 <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                                 Gestión de Solicitudes
+                                            </li>
+                                            <li className={activeTab === "AsignacionPersonal" ? "active" : ""} onClick={() => setActiveTab("AsignacionPersonal")}>
+                                                <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Asignación de Personal
                                             </li>
                                             <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
                                                 <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
