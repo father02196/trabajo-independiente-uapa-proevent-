@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiMonitor } from "react-icons/fi";
+import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiMonitor, FiCalendar, FiMapPin, FiCoffee, FiDollarSign } from "react-icons/fi";
 import InformacionGeneral from "./InformacionGeneral";
 import ModalidadLugar from "./ModalidadLugar";
 import ServiciosCatering from "./ServiciosCatering";
 import PresupuestoPOA from "./PresupuestoPOA";
 import AudiovisualMiniForm from "./AudiovisualMiniForm";
+import './../css/Eventos.css';
 
 const API = "http://localhost:8080";
 
@@ -113,8 +114,6 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
           return `La fecha seleccionada está fuera del año fiscal activo (${pInicio} al ${pFin}).`;
         }
         
-        // Validar que no sea un año pasado (comparando el inicio del POA con el año actual si se requiere, 
-        // pero la instrucción dice "no se agrege fecha de años fiscales pasados", lo cual se cumple si solo validamos contra el POA ACTIVO)
         const hoy = new Date().toISOString().substring(0, 10);
         if (data.inicio < hoy) {
             return "No se permite registrar eventos en fechas pasadas.";
@@ -145,6 +144,18 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     : baseSecciones;
 
   const seccionActualIndex = secciones.indexOf(activeSection);
+
+  // Iconos para cada sección
+  const seccionIcons = [
+    <FiCalendar key="info" />,
+    <FiMapPin key="lugar" />,
+    <FiCoffee key="catering" />,
+    <FiDollarSign key="poa" />,
+    <FiMonitor key="av" />
+  ];
+
+  // Labels cortos para el wizard
+  const seccionLabels = ["Información", "Lugar", "Servicios", "Presupuesto", "Audiovisual"];
 
   const handleSiguiente = () => {
     const err = validarSeccion(activeSection);
@@ -306,37 +317,54 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
 
   return (
     <form onSubmit={handleSubmit} className="form-container">
-      <h2>Nueva Solicitud de Evento</h2>
-
-      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-        {secciones.map((s, i) => (
-          <div key={s} style={{
-            padding: "4px 12px",
-            borderRadius: "20px",
-            fontSize: "12px",
-            fontWeight: i === seccionActualIndex ? "bold" : "normal",
-            background: i < seccionActualIndex ? "#22c55e" : i === seccionActualIndex ? "#1e40af" : "#e2e8f0",
-            color: i <= seccionActualIndex ? "white" : "#64748b"
-          }}>
-            {i + 1}. {s.split(" ")[0]}
-          </div>
-        ))}
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h2>
+          {editingEvent ? "Editar Solicitud de Evento" : "Nueva Solicitud de Evento"}
+        </h2>
+        <p className="form-sub-title">
+          {editingEvent 
+            ? `Modificando evento #EVT-${editingEvent.id_evento} — completa todos los pasos requeridos`
+            : "Completa los pasos a continuación para registrar un nuevo evento institucional"
+          }
+        </p>
       </div>
 
+      {/* Step Wizard Premium */}
+      <div className="step-wizard">
+        {secciones.map((s, i) => {
+          const isCompleted = i < seccionActualIndex;
+          const isActive = i === seccionActualIndex;
+          return (
+            <div
+              key={s}
+              className={`step-wizard-item ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}
+            >
+              <div className="step-circle">
+                {isCompleted ? <FiCheckCircle style={{ fontSize: '18px' }} /> : (i + 1)}
+              </div>
+              <span className="step-label">{seccionLabels[i] || s.split(" ")[0]}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Alerts */}
       {exito && (
-        <div style={{ background: "#dcfce7", border: "1px solid #16a34a", color: "#15803d", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", fontWeight: "500", display: "flex", alignItems: "center", gap: "10px" }}>
-          <FiCheckCircle aria-hidden="true" />
-          {exito}
+        <div className="form-alert form-alert-success" style={{ marginBottom: '20px' }}>
+          <FiCheckCircle size={18} aria-hidden="true" />
+          <span>{exito}</span>
         </div>
       )}
 
       {error && (
-        <div style={{ background: "#fee2e2", border: "1px solid #dc2626", color: "#dc2626", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <FiAlertTriangle aria-hidden="true" />
-          {error}
+        <div className="form-alert form-alert-error" style={{ marginBottom: '20px' }}>
+          <FiAlertTriangle size={18} aria-hidden="true" />
+          <span>{error}</span>
         </div>
       )}
 
+      {/* Sección activa */}
       {activeSection === "Información General" && (
         <InformacionGeneral data={data} setData={setData} />
       )}
@@ -370,25 +398,24 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       {activeSection === "Audiovisual" && (
         <div className="audiovisual-step">
           {needsAV === null ? (
-            <div style={{ padding: '30px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <div style={{ color: 'var(--navy)', marginBottom: '20px' }}>
-                <FiMonitor style={{ fontSize: '48px', opacity: 0.5 }} />
+            <div className="av-question-card">
+              <div className="av-question-icon">
+                <FiMonitor />
               </div>
-              <h3 style={{ marginBottom: '10px' }}>¿Desea gestionar equipos audiovisuales?</h3>
-              <p style={{ color: '#64748b', marginBottom: '24px' }}>Esto incluye proyectores, micrófonos, sonido, cámaras, etc.</p>
-              
-              <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <h3>¿Desea gestionar equipos audiovisuales?</h3>
+              <p>Esto incluye proyectores, micrófonos, sonido, cámaras y más.</p>
+              <div className="av-choices">
                 <button 
                   type="button" 
+                  className="av-yes-btn"
                   onClick={() => setNeedsAV(true)}
-                  style={{ padding: '12px 30px', borderRadius: '8px', border: 'none', background: 'var(--navy)', color: 'white', fontWeight: '700', cursor: 'pointer' }}
                 >
-                  Sí, necesito
+                  <FiMonitor /> Sí, necesito equipos
                 </button>
                 <button 
                   type="button" 
+                  className="av-no-btn"
                   onClick={() => setNeedsAV(false)}
-                  style={{ padding: '12px 30px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#334155', fontWeight: '700', cursor: 'pointer' }}
                 >
                   No, solo el evento
                 </button>
@@ -396,22 +423,31 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
             </div>
           ) : needsAV === true ? (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
-                <button type="button" onClick={() => setNeedsAV(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px' }}>
-                  <FiArrowLeft /> Cambiar respuesta
+              <div style={{ marginBottom: '16px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setNeedsAV(null)} 
+                  className="btn btn-ghost"
+                  style={{ fontSize: '13px', padding: '6px 12px' }}
+                >
+                  <FiArrowLeft size={14} /> Cambiar respuesta
                 </button>
               </div>
               <AudiovisualMiniForm avData={avData} setAvData={setAvData} />
             </div>
           ) : (
-            <div style={{ padding: '40px', textAlign: 'center', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
-              <FiCheckCircle style={{ fontSize: '48px', color: '#16a34a', marginBottom: '15px' }} />
-              <h3>No se requieren servicios audiovisuales</h3>
-              <p style={{ color: '#15803d' }}>Puede proceder a finalizar el registro de su evento.</p>
+            <div className="av-success-card">
+              <FiCheckCircle style={{ fontSize: '52px', color: '#059669', marginBottom: '16px' }} />
+              <h3 style={{ color: '#065F46', fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>
+                No se requieren servicios audiovisuales
+              </h3>
+              <p style={{ color: '#15803d', fontSize: '14px', marginBottom: '20px' }}>
+                Puede proceder a finalizar el registro de su evento.
+              </p>
               <button 
                 type="button" 
                 onClick={() => setNeedsAV(null)}
-                style={{ marginTop: '20px', background: 'none', border: 'none', color: '#16a34a', textDecoration: 'underline', cursor: 'pointer' }}
+                className="av-change-link"
               >
                 Cambiar respuesta si se equivocó
               </button>
@@ -420,31 +456,50 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         </div>
       )}
 
-      <div className="actions" style={{ display: "flex", gap: "10px", marginTop: "24px", flexWrap: "wrap" }}>
+      {/* Botones de navegación */}
+      <div className="actions">
         {!esPrimeraSeccion && (
-          <button type="button" onClick={handleAnterior}
-            style={{ padding: "10px 20px", borderRadius: "6px", border: "1px solid #94a3b8", background: "#f8fafc", color: "#334155", cursor: "pointer", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "8px", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
-            <FiArrowLeft aria-hidden="true" />
+          <button type="button" onClick={handleAnterior} className="btn btn-secondary">
+            <FiArrowLeft aria-hidden="true" size={15} />
             Atrás
           </button>
         )}
 
-        <button type="button" onClick={handleBorrador}
-          style={{ padding: "10px 20px", borderRadius: "6px", border: "1px solid #94a3b8", background: "#f8fafc", color: "#334155", cursor: "pointer", fontWeight: "600", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+        <div className="spacer" />
+
+        <button type="button" onClick={handleBorrador} className="btn btn-ghost">
           Guardar Borrador
         </button>
 
         {!esUltimaSeccion ? (
-          <button type="button" onClick={handleSiguiente}
-            style={{ padding: "10px 20px", borderRadius: "6px", border: "none", background: "#1e40af", color: "white", cursor: "pointer", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            Siguiente
-            <FiArrowRight aria-hidden="true" />
+          <button type="button" onClick={handleSiguiente} className="btn btn-primary">
+            Continuar
+            <FiArrowRight aria-hidden="true" size={15} />
           </button>
         ) : (
-          <button type="submit" disabled={loading}
-            style={{ padding: "10px 24px", borderRadius: "6px", border: "none", background: loading ? "#94a3b8" : "#16a34a", color: "white", cursor: loading ? "not-allowed" : "pointer", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            {!loading && <FiCheckCircle aria-hidden="true" />}
-            {loading ? "Enviando..." : "Finalizar y Enviar Solicitud"}
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="btn btn-success"
+          >
+            {loading ? (
+              <>
+                <span style={{
+                  display: 'inline-block',
+                  width: '14px', height: '14px',
+                  border: '2px solid rgba(255,255,255,0.4)',
+                  borderTopColor: '#fff',
+                  borderRadius: '50%',
+                  animation: 'spin 0.7s linear infinite'
+                }} />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <FiCheckCircle aria-hidden="true" size={15} />
+                Finalizar y Enviar Solicitud
+              </>
+            )}
           </button>
         )}
       </div>

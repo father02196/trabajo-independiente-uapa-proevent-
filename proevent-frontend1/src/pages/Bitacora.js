@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiUser, FiActivity } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText } from 'react-icons/fi';
 import './../css/Dashboard.css'; // Reutilizamos estilos base
 import './../css/Bitacora.css';
 
@@ -81,11 +81,16 @@ export default function Bitacora() {
     }, [searchQuery, filtroAccion]);
 
     return (
-        <div className="bitacora-container">
-            <div className="section-header" style={{ marginBottom: '20px' }}>
-                <div>
-                    <h2 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: '8px' }}>Bitácora de Movimientos</h2>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Consulta el historial de auditoría y acciones realizadas en la plataforma.</p>
+        <div className="admin-page-container fade-in">
+            <div className="admin-controls-card">
+                <div className="controls-header">
+                    <div className="title-section">
+                        <FiFileText className="header-icon" />
+                        <div>
+                            <h3>Bitácora de Movimientos</h3>
+                            <p className="subtitle">Consulta el historial de auditoría y acciones realizadas en la plataforma.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -115,13 +120,14 @@ export default function Bitacora() {
                 </div>
             </div>
 
-            <div className="table-container bitacora-table-wrapper">
+            <div className="saas-panel-card">
+                <div className="panel-body" style={{ overflowX: 'auto', padding: '0' }}>
                 {loading ? (
-                    <div className="loading-state">Cargando registros de auditoría...</div>
+                    <div className="loading-state" style={{ padding: '20px', textAlign: 'center' }}>Cargando registros de auditoría...</div>
                 ) : error ? (
-                    <div className="error-state">{error}</div>
+                    <div className="error-state" style={{ padding: '20px', textAlign: 'center', color: '#ef4444' }}>{error}</div>
                 ) : (
-                    <table className="requests-table bitacora-table">
+                    <table className="requests-table">
                         <thead>
                             <tr>
                                 <th>FECHA Y HORA</th>
@@ -169,6 +175,7 @@ export default function Bitacora() {
                         </tbody>
                     </table>
                 )}
+                </div>
             </div>
 
             {/* CONTROLES DE PAGINACIÓN */}

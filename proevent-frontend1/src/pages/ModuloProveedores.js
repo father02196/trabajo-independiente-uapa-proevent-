@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower } from 'react-icons/fi';
+import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 import './../css/ModuloProveedores.css';
 
 
@@ -178,14 +178,26 @@ function ModuloProveedores({ usuario }) {
 
     return (
         <div className="proveedores-container">
+            {/* Header */}
             <div className="proveedores-header">
                 <h1 className="proveedores-title">Módulo de Proveedores y Licitaciones</h1>
-                
-                <div className="proveedores-tabs">
-                    <button className={`proveedores-tab ${activeTab === 'logistica' ? 'active' : ''}`} onClick={() => setActiveTab('logistica')}>Logística Operativa</button>
-                    <button className={`proveedores-tab ${activeTab === 'directorio' ? 'active' : ''}`} onClick={() => setActiveTab('directorio')}>Directorio de Suplidores</button>
-                    <button className={`proveedores-tab ${activeTab === 'ia' ? 'active' : ''}`} onClick={() => setActiveTab('ia')}>Licitaciones (IA)</button>
-                </div>
+                <p className="proveedores-subtitle">Gestiona suplidores, logística operativa y licitaciones adjudicadas por IA</p>
+            </div>
+
+            {/* Premium Pill Tabs */}
+            <div className="modern-tabs">
+                <button className={activeTab === 'logistica' ? 'active' : ''} onClick={() => setActiveTab('logistica')}>
+                    <FiPackage style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                    Logística Operativa
+                </button>
+                <button className={activeTab === 'directorio' ? 'active' : ''} onClick={() => setActiveTab('directorio')}>
+                    <FiFileText style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                    Directorio de Suplidores
+                </button>
+                <button className={activeTab === 'ia' ? 'active' : ''} onClick={() => setActiveTab('ia')}>
+                    <FiCpu style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                    Licitaciones (IA)
+                </button>
             </div>
 
             {/* TAB: LOGÍSTICA */}
@@ -193,33 +205,80 @@ function ModuloProveedores({ usuario }) {
                 <>
                     <div className="filtros-proveedores">
                         <div className="filtro-grupo">
-                            <label>Estado Recepción:</label>
+                            <label><FiFilter style={{ display: 'inline', marginRight: '4px' }} />Estado de Recepción</label>
                             <select value={filtroEstadoRecepcion} onChange={e => setFiltroEstadoRecepcion(e.target.value)}>
-                                <option value="Todos">Todos</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Recibido">Recibido</option>
-                                <option value="Con Incidencias">Con Incidencias</option>
+                                <option value="Todos">Todos los estados</option>
+                                <option value="Pendiente">⏳ Pendiente</option>
+                                <option value="Recibido">✅ Recibido</option>
+                                <option value="Con Incidencias">⚠️ Con Incidencias</option>
                             </select>
                         </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', marginLeft: 'auto' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={fetchServicios} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <FiRefreshCw size={13} /> Actualizar
+                            </button>
+                        </div>
                     </div>
-                    <div className="tabla-proveedores-container">
-                        <table className="tabla-proveedores">
+
+                    <div className="table-container">
+                        <table className="modern-table">
                             <thead>
-                                <tr><th>Evento</th><th>Servicio / Cantidad</th><th>Envío Orden</th><th>Acciones</th></tr>
+                                <tr>
+                                    <th>Evento</th>
+                                    <th>Servicio / Detalle</th>
+                                    <th>Estado Envío</th>
+                                    <th style={{ textAlign: 'center' }}>Acción</th>
+                                </tr>
                             </thead>
                             <tbody>
-                                {servicios.map(s => (
-                                    <tr key={s.id_servicio_ext}>
-                                        <td><strong>{s.nombre_evento}</strong></td>
-                                        <td>{s.tipo_servicio}</td>
-                                        <td>{s.fecha_envio_proveedor ? 'Enviado' : 'Pendiente'}</td>
-                                        <td className="acciones-celda">
-                                            {!s.fecha_envio_proveedor && (
-                                                <button className="btn-accion btn-envio" onClick={() => handleEnvio(s.id_servicio_ext)}><FiSend /> Enviar</button>
-                                            )}
+                                {servicios.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                                            <FiPackage style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
+                                            <div style={{ fontWeight: '600', color: '#64748B', marginBottom: '4px' }}>No hay órdenes en logística</div>
+                                            <div style={{ fontSize: '13px' }}>Los servicios externos aparecerán aquí cuando sean asignados a eventos</div>
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    servicios
+                                        .filter(s => filtroEstadoRecepcion === 'Todos' || 
+                                            (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor))
+                                        .map(s => (
+                                            <tr key={s.id_servicio_ext}>
+                                                <td>
+                                                    <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '2px' }}>{s.nombre_evento}</div>
+                                                    <div style={{ fontSize: '12px', color: '#94A3B8' }}>ID: {s.id_servicio_ext}</div>
+                                                </td>
+                                                <td>
+                                                    <span style={{ 
+                                                        background: '#EFF6FF', 
+                                                        color: '#1D4ED8', 
+                                                        padding: '4px 10px', 
+                                                        borderRadius: '8px', 
+                                                        fontSize: '12.5px', 
+                                                        fontWeight: '600' 
+                                                    }}>
+                                                        {s.tipo_servicio}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`badge ${s.fecha_envio_proveedor ? 'enviado' : 'pendiente'}`}>
+                                                        {s.fecha_envio_proveedor ? 'Enviado' : 'Pendiente'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    {!s.fecha_envio_proveedor && (
+                                                        <button 
+                                                            className="btn btn-primary btn-sm" 
+                                                            onClick={() => handleEnvio(s.id_servicio_ext)}
+                                                        >
+                                                            <FiSend size={13} /> Enviar Orden
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -247,24 +306,24 @@ function ModuloProveedores({ usuario }) {
 
                 return (
                 <>
-                    <div className="filtros-proveedores" style={{justifyContent: 'space-between', alignItems: 'flex-end'}}>
-                        <div style={{display: 'flex', gap: '15px', flex: 1}}>
-                            <div className="filtro-grupo" style={{flex: 2}}>
-                                <label style={{fontSize: '12px', color: '#64748b'}}>Buscar suplidor (Nombre, RNC, Correo):</label>
+                    <div className="filtros-proveedores" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '12px', flex: 1, flexWrap: 'wrap' }}>
+                            <div className="filtro-grupo" style={{ flex: 2 }}>
+                                <label><FiSearch style={{ display: 'inline', marginRight: '4px' }} />Buscar suplidor</label>
                                 <input 
                                     type="text" 
-                                    placeholder="Escribe para buscar..." 
+                                    className="input-base"
+                                    placeholder="Nombre, RNC o correo..." 
                                     value={searchTermDirectorio}
                                     onChange={(e) => setSearchTermDirectorio(e.target.value)}
-                                    style={{width: '100%'}}
                                 />
                             </div>
-                            <div className="filtro-grupo" style={{flex: 1}}>
-                                <label style={{fontSize: '12px', color: '#64748b'}}>Filtrar por Categoría:</label>
+                            <div className="filtro-grupo" style={{ flex: 1, minWidth: '180px' }}>
+                                <label><FiFilter style={{ display: 'inline', marginRight: '4px' }} />Categoría</label>
                                 <select 
+                                    className="input-base"
                                     value={filtroCategoria} 
                                     onChange={(e) => setFiltroCategoria(e.target.value)}
-                                    style={{width: '100%'}}
                                 >
                                     <option value="Todas">Todas las categorías</option>
                                     {categoriasUnicas.map(cat => (
@@ -273,50 +332,86 @@ function ModuloProveedores({ usuario }) {
                                 </select>
                             </div>
                         </div>
-                        <button className="btn-save" onClick={() => openModal('nuevo_proveedor', null)} style={{whiteSpace: 'nowrap'}}>
-                            <FiUserPlus style={{marginRight: '8px'}} /> Registrar Nuevo Suplidor
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => openModal('nuevo_proveedor', null)}
+                            style={{ whiteSpace: 'nowrap', marginLeft: '12px', flexShrink: 0 }}
+                        >
+                            <FiUserPlus size={15} /> Registrar Suplidor
                         </button>
                     </div>
-                    <div className="tabla-proveedores-container">
-                        <table className="tabla-proveedores">
+
+                    <div className="table-container">
+                        <table className="modern-table">
                             <thead>
-                                <tr><th>Empresa</th><th>RNC/Cédula</th><th>Categoría</th><th>Contacto</th><th>Correo</th><th>Estado</th><th style={{textAlign: 'center'}}>Acciones</th></tr>
+                                <tr>
+                                    <th>Empresa / RNC</th>
+                                    <th>Categoría</th>
+                                    <th>Persona de Contacto</th>
+                                    <th>Correo</th>
+                                    <th>Estado</th>
+                                    <th style={{ textAlign: 'center' }}>Acciones</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 {proveedoresFiltrados.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" style={{textAlign: 'center', padding: '20px', color: '#64748b'}}>
-                                            No se encontraron proveedores que coincidan con tu búsqueda.
+                                        <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                                            <FiFileText style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
+                                            <div style={{ fontWeight: '600', color: '#64748B', marginBottom: '4px' }}>No se encontraron proveedores</div>
+                                            <div style={{ fontSize: '13px' }}>Intenta ajustar los filtros de búsqueda</div>
                                         </td>
                                     </tr>
                                 ) : (
                                     proveedoresFiltrados.map(p => (
-                                        <tr key={p.id_proveedor} style={{ opacity: p.estado === 'Inactivo' ? 0.6 : 1 }}>
-                                            <td><strong>{p.nombre_empresa}</strong></td>
-                                        <td>{p.rnc_cedula}</td>
-                                        <td>{p.categoria}</td>
-                                        <td>{p.persona_contacto}<br/><small>{p.telefono}</small></td>
-                                        <td>{p.correo}</td>
-                                        <td><span className={`badge ${p.estado === 'Activo' ? 'enviado' : 'rechazado'}`}>{p.estado}</span></td>
-                                        <td style={{textAlign: 'center', display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                                            <button 
-                                                onClick={() => openModal('editar_proveedor', p)}
-                                                style={{background: 'transparent', color: '#1e40af', border: 'none', cursor: 'pointer', fontSize: '18px'}}
-                                                title="Editar Suplidor"
-                                            >
-                                                <FiEdit />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleToggleEstado(p)}
-                                                style={{background: 'transparent', color: p.estado === 'Activo' ? '#dc2626' : '#16a34a', border: 'none', cursor: 'pointer', fontSize: '18px'}}
-                                                title={p.estado === 'Activo' ? "Desactivar Suplidor" : "Activar Suplidor"}
-                                            >
-                                                <FiPower />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                                        <tr key={p.id_proveedor} style={{ opacity: p.estado === 'Inactivo' ? 0.55 : 1, transition: 'opacity 0.2s' }}>
+                                            <td>
+                                                <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '2px' }}>{p.nombre_empresa}</div>
+                                                <div style={{ fontSize: '12px', color: '#94A3B8', fontFamily: 'monospace' }}>{p.rnc_cedula}</div>
+                                            </td>
+                                            <td>
+                                                <span style={{ 
+                                                    background: '#F5F3FF', 
+                                                    color: '#6D28D9', 
+                                                    padding: '4px 10px', 
+                                                    borderRadius: '8px', 
+                                                    fontSize: '12px', 
+                                                    fontWeight: '600' 
+                                                }}>
+                                                    {p.categoria}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div style={{ fontWeight: '500' }}>{p.persona_contacto}</div>
+                                                <div style={{ fontSize: '12px', color: '#94A3B8' }}>{p.telefono}</div>
+                                            </td>
+                                            <td style={{ color: '#475569' }}>{p.correo}</td>
+                                            <td>
+                                                <span className={`badge ${p.estado === 'Activo' ? 'activo' : 'inactivo'}`}>
+                                                    {p.estado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="acciones-celda">
+                                                    <button 
+                                                        onClick={() => openModal('editar_proveedor', p)}
+                                                        className="btn-icon-action"
+                                                        title="Editar Suplidor"
+                                                    >
+                                                        <FiEdit />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleToggleEstado(p)}
+                                                        className={`btn-icon-action ${p.estado === 'Activo' ? 'danger' : ''}`}
+                                                        title={p.estado === 'Activo' ? "Desactivar Suplidor" : "Activar Suplidor"}
+                                                    >
+                                                        <FiPower />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -325,80 +420,138 @@ function ModuloProveedores({ usuario }) {
 
             {/* TAB: LICITACIONES IA Y FACTURAS B2B */}
             {activeTab === 'ia' && (
-                <div style={{padding: '20px', background: 'white', borderRadius: '8px'}}>
-                    <div style={{textAlign: 'center', marginBottom: '30px'}}>
-                        <FiCpu size={50} color="#3498db" style={{marginBottom: '10px'}}/>
-                        <h3>Licitaciones Adjudicadas (Evaluación IA)</h3>
-                        <p>Aquí se muestran las licitaciones que la Inteligencia Artificial ya evaluó y adjudicó. Como Encargado de Compras, puedes subir la factura saldada para poder finalizar el evento logísticamente.</p>
+                <div className="licitaciones-ia-card">
+                    {/* Header premium */}
+                    <div className="licitaciones-ia-header">
+                        <div className="ia-icon-wrapper">
+                            <FiCpu size={28} color="#fff" />
+                        </div>
+                        <h3>Licitaciones Adjudicadas — Evaluación IA</h3>
+                        <p>
+                            Las licitaciones evaluadas y adjudicadas por inteligencia artificial aparecen aquí. 
+                            Como Encargado de Compras, puede subir la factura saldada para finalizar el evento logísticamente.
+                        </p>
                     </div>
 
-                    <div className="tabla-proveedores-container">
-                        <table className="tabla-proveedores">
+                    {/* Tabla */}
+                    <div className="table-container" style={{ borderRadius: '0', border: 'none', boxShadow: 'none' }}>
+                        <table className="modern-table">
                             <thead>
                                 <tr>
-                                    <th>Evento (Req.)</th>
+                                    <th>Evento / Requisitos</th>
                                     <th>Proveedor Ganador</th>
                                     <th>Monto Total</th>
                                     <th>Estado Pago</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
-                        <tbody>
-                            {licitacionesAdjudicadas.length === 0 ? (
-                                <tr><td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>No hay licitaciones adjudicadas aún.</td></tr>
-                            ) : licitacionesAdjudicadas.map(lic => (
-                                <tr key={lic.id_analisis}>
-                                    <td>
-                                        <strong>{lic.nombre_evento}</strong><br/>
-                                        <small className="text-muted">{lic.requisitos}</small>
-                                    </td>
-                                    <td>{lic.proveedor_nombre}</td>
-                                    <td>{lic.monto_total_detectado ? `$${Number(lic.monto_total_detectado).toLocaleString()}` : '—'}</td>
-                                    <td>
-                                        <span className={`status ${lic.estado_pago === 'Pagado' ? 'approved' : 'pending'}`}>
-                                            {lic.estado_pago || 'Pendiente'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {lic.estado_pago !== 'Pagado' ? (
-                                            <div style={{display: 'flex', gap: '5px', alignItems: 'center'}}>
-                                                <input type="file" accept="application/pdf" onChange={e => setFileFactura(e.target.files[0])} style={{width: '150px'}} />
-                                                <button 
-                                                    className="btn-primary" 
-                                                    style={{padding: '5px 10px', fontSize: '12px'}}
-                                                    onClick={async () => {
-                                                        if (!fileFactura) return alert("Seleccione un PDF de factura");
-                                                        const formData = new FormData();
-                                                        formData.append('archivo_factura', fileFactura);
-                                                        try {
-                                                            const res = await fetch(`${API}/admin/factura-proveedor/${lic.id_cotizacion}`, {
-                                                                method: 'POST',
-                                                                headers: { 'x-usuario-id': usuario?.id_usuario || '' },
-                                                                body: formData
-                                                            });
-                                                            if (res.ok) {
-                                                                alert("Factura subida correctamente.");
-                                                                setFileFactura(null);
-                                                                cargarLicitacionesAdjudicadas();
-                                                            } else {
-                                                                const err = await res.json();
-                                                                alert(err.error || "Error al subir");
-                                                            }
-                                                        } catch(e) {
-                                                            alert("Error de red");
-                                                        }
-                                                    }}
-                                                >
-                                                    Subir Factura
-                                                </button>
+                            <tbody>
+                                {licitacionesAdjudicadas.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '60px 24px' }}>
+                                            <FiCpu style={{ fontSize: '40px', color: '#CBD5E1', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                                            <div style={{ fontWeight: '700', color: '#475569', fontSize: '15px', marginBottom: '6px' }}>No hay licitaciones adjudicadas</div>
+                                            <div style={{ fontSize: '13px', color: '#94A3B8' }}>Las licitaciones procesadas por IA aparecerán aquí</div>
+                                        </td>
+                                    </tr>
+                                ) : licitacionesAdjudicadas.map(lic => (
+                                    <tr key={lic.id_analisis}>
+                                        <td>
+                                            <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '3px' }}>{lic.nombre_evento}</div>
+                                            <div style={{ fontSize: '12px', color: '#94A3B8', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {lic.requisitos}
                                             </div>
-                                        ) : (
-                                            <span style={{color: '#2ecc71'}}><strong>✓ Pagado</strong></span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{
+                                                    width: '28px', height: '28px',
+                                                    borderRadius: '8px',
+                                                    background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+                                                    color: '#fff',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '11px', fontWeight: '700', flexShrink: 0
+                                                }}>
+                                                    {lic.proveedor_nombre ? lic.proveedor_nombre.charAt(0).toUpperCase() : 'P'}
+                                                </div>
+                                                <span style={{ fontWeight: '600' }}>{lic.proveedor_nombre}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span style={{ fontWeight: '700', color: '#0F172A', fontSize: '15px' }}>
+                                                {lic.monto_total_detectado 
+                                                    ? `$${Number(lic.monto_total_detectado).toLocaleString('es-DO', { minimumFractionDigits: 2 })}`
+                                                    : '—'
+                                                }
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${lic.estado_pago === 'Pagado' ? 'enviado' : 'pendiente'}`}>
+                                                {lic.estado_pago || 'Pendiente'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {lic.estado_pago !== 'Pagado' ? (
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    <label style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                        padding: '8px 12px',
+                                                        background: '#F8FAFC',
+                                                        border: '1.5px solid #E2E8F0',
+                                                        borderRadius: '10px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '12.5px',
+                                                        fontWeight: '600',
+                                                        color: '#475569',
+                                                        transition: 'all 0.15s'
+                                                    }}>
+                                                        <FiUpload size={13} />
+                                                        {fileFactura ? fileFactura.name.substring(0, 16) + '...' : 'Seleccionar PDF'}
+                                                        <input 
+                                                            type="file" 
+                                                            accept="application/pdf" 
+                                                            onChange={e => setFileFactura(e.target.files[0])} 
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                    </label>
+                                                    <button 
+                                                        className="btn btn-primary btn-sm"
+                                                        disabled={!fileFactura}
+                                                        onClick={async () => {
+                                                            if (!fileFactura) return;
+                                                            const fd = new FormData();
+                                                            fd.append('archivo_factura', fileFactura);
+                                                            try {
+                                                                const res = await fetch(`${API}/admin/factura-proveedor/${lic.id_cotizacion}`, {
+                                                                    method: 'POST',
+                                                                    headers: { 'x-usuario-id': usuario?.id_usuario || '' },
+                                                                    body: fd
+                                                                });
+                                                                if (res.ok) {
+                                                                    alert("Factura subida correctamente.");
+                                                                    setFileFactura(null);
+                                                                    cargarLicitacionesAdjudicadas();
+                                                                } else {
+                                                                    const err = await res.json();
+                                                                    alert(err.error || "Error al subir");
+                                                                }
+                                                            } catch(e) {
+                                                                alert("Error de red");
+                                                            }
+                                                        }}
+                                                    >
+                                                        <FiCheckSquare size={13} /> Subir
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#059669', fontWeight: '700', fontSize: '13.5px' }}>
+                                                    <FiCheckCircle size={16} /> Pagado
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -406,38 +559,126 @@ function ModuloProveedores({ usuario }) {
 
             {/* MODALES CRUD PROVEEDOR */}
             {modalConfig.open && (modalConfig.type === 'nuevo_proveedor' || modalConfig.type === 'editar_proveedor') && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{width: '600px'}}>
-                        <h3 className="modal-title">{modalConfig.type === 'editar_proveedor' ? 'Editar Proveedor' : 'Registrar Proveedor (Acceso B2B)'}</h3>
-                        {modalConfig.type === 'nuevo_proveedor' && (
-                            <p style={{fontSize: '12px', color: '#666', marginBottom: '15px'}}>Se enviarán las credenciales al correo del proveedor automáticamente.</p>
-                        )}
-                        <form onSubmit={handleGuardarProveedor}>
-                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
-                                <div className="form-group"><label>Nombre de Empresa</label><input required value={formData.nombre_empresa} onChange={e=>setFormData({...formData, nombre_empresa: e.target.value})}/></div>
-                                <div className="form-group"><label>RNC / Cédula</label><input required value={formData.rnc_cedula} onChange={e=>setFormData({...formData, rnc_cedula: e.target.value})}/></div>
-                                <div className="form-group">
-                                    <label>Categoría (Tipo de Servicio)</label>
-                                    <select required value={formData.id_tipo_servicio} onChange={e=>setFormData({...formData, id_tipo_servicio: e.target.value})}>
-                                        <option value="">-- Selecciona una categoría --</option>
-                                        {categoriasActivas.map(cat => (
-                                            <option key={cat.id_tipo_servicio} value={cat.id_tipo_servicio}>{cat.nombre} ({cat.clasificacion})</option>
-                                        ))}
-                                    </select>
+                <div className="modal-overlay" onClick={() => setModalConfig({ open: false })}>
+                    <div className="modal-content modal-premium" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <div>
+                                <h3 className="modal-title">
+                                    {modalConfig.type === 'editar_proveedor' ? 'Editar Proveedor' : 'Registrar Proveedor'}
+                                </h3>
+                                <span className="modal-subtitle">
+                                    {modalConfig.type === 'editar_proveedor' ? 'Actualizar datos de suplidor' : 'Dar de alta con acceso B2B'}
+                                </span>
+                            </div>
+                            <span className="badge badge-purple" style={{ fontSize: '14px', padding: '6px 12px' }}>Directorio B2B</span>
+                        </div>
+
+                        <div className="modal-body" style={{ padding: '24px 32px' }}>
+                            {modalConfig.type === 'nuevo_proveedor' && (
+                                <div className="info-card" style={{ marginBottom: '24px', background: '#F0F9FF', borderColor: '#BAE6FD' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0369A1', fontWeight: '600' }}>
+                                        <FiInfo size={16} /> Información Importante
+                                    </div>
+                                    <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#0C4A6E' }}>
+                                        Se enviarán las credenciales de acceso al correo del proveedor automáticamente para que ingrese al portal B2B.
+                                    </p>
                                 </div>
-                                <div className="form-group"><label>Persona de Contacto</label><input required value={formData.persona_contacto} onChange={e=>setFormData({...formData, persona_contacto: e.target.value})}/></div>
-                                <div className="form-group"><label>Correo Electrónico</label><input required type="email" value={formData.correo} onChange={e=>setFormData({...formData, correo: e.target.value})}/></div>
-                                <div className="form-group"><label>Teléfono</label><input required value={formData.telefono} onChange={e=>setFormData({...formData, telefono: e.target.value})}/></div>
-                                
-                                {modalConfig.type === 'nuevo_proveedor' && (
-                                    <div className="form-group"><label>Contraseña B2B</label><input required type="password" value={formData.contrasena} onChange={e=>setFormData({...formData, contrasena: e.target.value})}/></div>
-                                )}
-                            </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-cancel" onClick={() => setModalConfig({open:false})}>Cancelar</button>
-                                <button type="submit" className="btn-save">{modalConfig.type === 'editar_proveedor' ? 'Guardar Cambios' : 'Registrar Suplidor'}</button>
-                            </div>
-                        </form>
+                            )}
+
+                            <form onSubmit={handleGuardarProveedor} id="proveedor-form">
+                                <div className="modal-grid-2">
+                                    <div className="form-group">
+                                        <label>Nombre de Empresa</label>
+                                        <input 
+                                            className="input-base" 
+                                            required 
+                                            placeholder="Ej: Servicios Gráficos S.A."
+                                            value={formData.nombre_empresa || ''} 
+                                            onChange={e => setFormData({ ...formData, nombre_empresa: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>RNC / Cédula</label>
+                                        <input 
+                                            className="input-base" 
+                                            required 
+                                            placeholder="000-00000-0"
+                                            value={formData.rnc_cedula || ''} 
+                                            onChange={e => setFormData({ ...formData, rnc_cedula: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                        <label>Categoría (Tipo de Servicio)</label>
+                                        <select 
+                                            className="input-base" 
+                                            required 
+                                            value={formData.id_tipo_servicio || ''} 
+                                            onChange={e => setFormData({ ...formData, id_tipo_servicio: e.target.value })}
+                                        >
+                                            <option value="">— Selecciona una categoría —</option>
+                                            {categoriasActivas.map(cat => (
+                                                <option key={cat.id_tipo_servicio} value={cat.id_tipo_servicio}>
+                                                    {cat.nombre} ({cat.clasificacion})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Persona de Contacto</label>
+                                        <input 
+                                            className="input-base" 
+                                            required 
+                                            placeholder="Nombre del representante"
+                                            value={formData.persona_contacto || ''} 
+                                            onChange={e => setFormData({ ...formData, persona_contacto: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Teléfono</label>
+                                        <input 
+                                            className="input-base" 
+                                            required 
+                                            placeholder="(809) 000-0000"
+                                            value={formData.telefono || ''} 
+                                            onChange={e => setFormData({ ...formData, telefono: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                        <label>Correo Electrónico</label>
+                                        <input 
+                                            className="input-base" 
+                                            required 
+                                            type="email" 
+                                            placeholder="correo@empresa.com"
+                                            value={formData.correo || ''} 
+                                            onChange={e => setFormData({ ...formData, correo: e.target.value })}
+                                        />
+                                    </div>
+                                    {modalConfig.type === 'nuevo_proveedor' && (
+                                        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                            <label>Contraseña de Acceso B2B</label>
+                                            <input 
+                                                className="input-base" 
+                                                required 
+                                                type="password" 
+                                                placeholder="Mínimo 8 caracteres"
+                                                value={formData.contrasena || ''} 
+                                                onChange={e => setFormData({ ...formData, contrasena: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
+
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={() => setModalConfig({ open: false })}>
+                                Cancelar
+                            </button>
+                            <button type="submit" form="proveedor-form" className="btn btn-primary">
+                                {modalConfig.type === 'editar_proveedor' ? 'Guardar Cambios' : 'Registrar Suplidor'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

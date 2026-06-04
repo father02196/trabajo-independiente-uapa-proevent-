@@ -1,41 +1,50 @@
+/* ===========================================================
+   PortalProveedores.css — ProEvent UAPA | 60-30-10 Premium Design
+   =========================================================== */
+
 .portal-container {
   min-height: 100vh;
-  background-color: #f4f6f9;
+  background-color: var(--bg-main);
   display: flex;
   flex-direction: column;
   font-family: 'Inter', sans-serif;
 }
 
 .portal-header {
-  background-color: #2c3e50;
+  background: linear-gradient(135deg, var(--color-uapa-navy) 0%, #0a3150 100%);
   color: white;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .portal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 10px;
+  letter-spacing: -0.3px;
 }
 
 .btn-logout {
   background-color: transparent;
-  border: 1px solid white;
+  border: 1.5px solid rgba(255,255,255,0.4);
   color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.3s;
+  font-weight: 600;
+  font-size: 13.5px;
+  font-family: 'Inter', sans-serif;
+  transition: var(--transition-smooth);
 }
 .btn-logout:hover {
-  background-color: white;
-  color: #2c3e50;
+  background-color: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.7);
 }
 
 .portal-content {
@@ -47,55 +56,68 @@
   box-sizing: border-box;
 }
 
+/* Login Box */
 .login-box {
-  background: white;
+  background: var(--bg-card);
   padding: 2.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-premium);
   width: 100%;
-  max-width: 400px;
-  margin: 10vh auto;
+  max-width: 420px;
+  margin: 8vh auto;
+  border: 1px solid var(--color-border);
 }
 
 .login-box h2 {
   text-align: center;
-  margin-bottom: 2rem;
-  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  color: var(--color-uapa-navy);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
 }
 
 .form-group {
   margin-bottom: 1.2rem;
 }
+
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 6px;
   font-weight: 600;
-  color: #34495e;
+  font-size: 13px;
+  color: var(--text-light);
 }
-.form-group input, .form-group select, .form-group textarea {
+
+.form-group input,
+.form-group select,
+.form-group textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
   box-sizing: border-box;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-main);
+  background: var(--bg-main);
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--color-primary);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.08);
 }
 
 .btn-primary {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-.btn-primary:hover {
-  background-color: #2980b9;
 }
 
+/* Solicitudes Grid */
 .solicitudes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -104,44 +126,64 @@
 }
 
 .solicitud-card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  border-left: 5px solid #f39c12;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  background: var(--bg-card);
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--color-uapa-navy);
+  box-shadow: var(--shadow-sm);
+  border-top: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  transition: var(--transition-smooth);
+}
+
+.solicitud-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .solicitud-card h3 {
   margin-top: 0;
-  color: #2c3e50;
+  color: var(--color-uapa-navy);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
 }
 
 .badge-info {
   display: inline-block;
-  padding: 4px 8px;
-  background-color: #ecf0f1;
-  color: #7f8c8d;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  padding: 4px 10px;
+  background-color: var(--bg-main);
+  color: var(--text-muted);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
   margin-bottom: 10px;
+  border: 1px solid var(--color-border);
 }
 
 .file-drop-area {
-  border: 2px dashed #bdc3c7;
-  padding: 20px;
+  border: 2px dashed var(--color-border-hover);
+  padding: 24px 20px;
   text-align: center;
-  border-radius: 8px;
-  background-color: #f9fbfd;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-main);
   cursor: pointer;
   margin-bottom: 15px;
+  transition: var(--transition-smooth);
+  color: var(--text-muted);
+  font-size: 14px;
 }
+
 .file-drop-area:hover {
-  background-color: #ecf0f1;
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .file-info {
   margin-top: 10px;
-  font-size: 0.9rem;
-  color: #27ae60;
-  font-weight: bold;
+  font-size: 13px;
+  color: var(--color-success);
+  font-weight: 600;
 }

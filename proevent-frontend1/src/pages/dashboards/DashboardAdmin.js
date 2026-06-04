@@ -70,6 +70,13 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
   };
 
+  const formatFechaLarga = (fechaStr) => {
+    if (!fechaStr) return "—";
+    const fecha = new Date(fechaStr);
+    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
+    return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
+  };
+
   const getStatusClass = (estado) => {
     switch (estado) {
       case "Pendiente": return "pending";
@@ -396,28 +403,45 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                 <p>No hay eventos activos programados.</p>
               </div>
             ) : (
-              <div className="upcoming-events-list">
+              <div className="modern-upcoming-events-list">
                 {proximosEventos.map((evt) => {
-                  const dateParts = formatFecha(evt.fecha_inicio).split(' ');
-                  const day = dateParts[0] || '—';
-                  const month = dateParts[1] || '—';
-                  
                   return (
-                    <div key={evt.id_evento} className="upcoming-event-item" onClick={() => openModal(evt)}>
-                      <div className="event-date-badge">
-                        <span className="day">{day}</span>
-                        <span className="month">{month}</span>
-                      </div>
-                      <div className="event-item-details">
-                        <h5>{evt.nombre}</h5>
-                        <span className="venue">{evt.recinto || "UAPA Virtual"}</span>
-                      </div>
-                      <div className="event-item-meta">
-                        <span className={`status-pill ${getStatusClass(evt.estado)}`}>
-                          {evt.estado}
+                    <div key={evt.id_evento} className="modern-event-card" onClick={() => openModal(evt)}>
+                      <div className="modern-event-header">
+                        <div className="modern-event-date">
+                          <FiCalendar className="modern-date-icon" />
+                          <span>{formatFechaLarga(evt.fecha_inicio)}</span>
+                          {evt.hora_inicio && (
+                            <>
+                              <span className="modern-date-separator">•</span>
+                              <FiClock className="modern-date-icon" />
+                              <span>{evt.hora_inicio}</span>
+                            </>
+                          )}
+                        </div>
+                        <span className={`modern-status-badge modern-status-${evt.estado?.toLowerCase() || 'pendiente'}`}>
+                          {evt.estado || 'Pendiente'}
                         </span>
-                        <button className="view-quick-btn" title="Ver Ficha Técnica">
-                          <FiEye />
+                      </div>
+                      
+                      <div className="modern-event-body">
+                        <h5 className="modern-event-title">{evt.nombre}</h5>
+                        <div className="modern-event-meta-info">
+                          <div className="modern-meta-item">
+                            <FiGrid className="modern-meta-icon" />
+                            <span>{evt.recinto || "UAPA Virtual"}</span>
+                          </div>
+                          <div className="modern-meta-item">
+                            <FiMonitor className="modern-meta-icon" />
+                            <span>{evt.modalidad || "Presencial"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="modern-event-footer">
+                        <button className="modern-view-btn" title="Ver detalles del evento">
+                          <span>Ver Ficha Técnica</span>
+                          <FiArrowUpRight className="modern-btn-icon" />
                         </button>
                       </div>
                     </div>
@@ -484,82 +508,120 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
 
       {isModalOpen && selectedRequest && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Ficha Técnica del Evento</h3>
-              <span className="modal-event-id">Solicitud #EVT-{selectedRequest.id_evento}</span>
+              <div>
+                <h3 className="modal-title">Ficha Técnica del Evento</h3>
+                <span className="modal-subtitle">Revisión general de la solicitud y logística</span>
+              </div>
+              <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
-            <div className="modal-body modern-modal-body">
-              <div className="detail-group full-width">
-                <label>Nombre del Evento</label>
-                <p className="main-event-title">{selectedRequest.nombre}</p>
-              </div>
-              <div className="detail-group">
-                <label>Solicitante</label>
-                <p>{selectedRequest.solicitante || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Dependencia</label>
-                <p>{selectedRequest.dependencia || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Recinto</label>
-                <p>{selectedRequest.recinto || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Modalidad</label>
-                <p>{selectedRequest.modalidad || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Tipo de Evento</label>
-                <p>{selectedRequest.tipo_evento || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Fechas</label>
-                <p>
-                  {formatFecha(selectedRequest.fecha_inicio)} 
-                  {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
-                </p>
-              </div>
-              <div className="detail-group">
-                <label>Asistentes Esperados</label>
-                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Presupuesto POA Solicitado</label>
-                <p className="poa-monto">
-                  {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
-                </p>
-              </div>
-              <div className="detail-group">
-                <label>Estado de la Solicitud</label>
-                <span className={`status ${getStatusClass(selectedRequest.estado)}`} style={{ alignSelf: 'flex-start', marginTop: '4px' }}>
-                  {selectedRequest.estado || "Pendiente"}
-                </span>
-              </div>
-              {selectedRequest.detalles_corporativos && (
-                <div className="detail-group full-width">
-                  <label>Servicios de Montaje Corporativo</label>
-                  <p className="details-list-text">{selectedRequest.detalles_corporativos}</p>
+            
+            <div className="modal-body">
+              <div className="modal-grid-3">
+                {/* Columna 1: Info General */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiFileText size={14} /> Información General
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Nombre del Evento</span>
+                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>{selectedRequest.nombre}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Solicitante</span>
+                    <span className="info-value">{selectedRequest.solicitante || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Dependencia</span>
+                    <span className="info-value">{selectedRequest.dependencia || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Fechas</span>
+                    <span className="info-value">
+                      {formatFecha(selectedRequest.fecha_inicio)} 
+                      {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
+                    </span>
+                  </div>
                 </div>
-              )}
-              {selectedRequest.alimentos && (
-                <div className="detail-group full-width">
-                  <label>Servicio de Alimentos (Catering)</label>
-                  <p className="details-list-text">{selectedRequest.alimentos}</p>
+
+                {/* Columna 2: Logística y Asistencia */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiGrid size={14} /> Logística y Asistencia
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Recinto</span>
+                    <span className="info-value">{selectedRequest.recinto || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Modalidad</span>
+                    <span className="info-value">{selectedRequest.modalidad || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Tipo de Evento</span>
+                    <span className="info-value">{selectedRequest.tipo_evento || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Asistentes Esperados</span>
+                    <span className="info-value">{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</span>
+                  </div>
                 </div>
-              )}
-              <div className="detail-group full-width">
-                <label>Equipos Audiovisuales Requeridos</label>
-                <p className="details-list-text">
-                  {selectedRequest.necesita_audiovisual 
-                    ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
-                    : "Ninguno"}
-                </p>
+
+                {/* Columna 3: Finanzas y Estado */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiDollarSign size={14} /> Presupuesto y Estado
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Presupuesto POA Solicitado</span>
+                    <span className="info-value" style={{ color: '#10B981' }}>
+                      {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
+                    </span>
+                  </div>
+                  <div className="info-row" style={{ marginTop: '12px' }}>
+                    <span className="info-label">Estado de la Solicitud</span>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      {selectedRequest.estado || "Pendiente"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Requerimientos Adicionales a Ancho Completo */}
+              <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiCheckCircle size={14} /> Requerimientos Adicionales
+                  </div>
+                  <div className="modal-grid-3">
+                    {selectedRequest.detalles_corporativos && (
+                      <div className="info-row">
+                        <span className="info-label">Montaje Corporativo</span>
+                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.detalles_corporativos}</span>
+                      </div>
+                    )}
+                    {selectedRequest.alimentos && (
+                      <div className="info-row">
+                        <span className="info-label">Alimentos (Catering)</span>
+                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.alimentos}</span>
+                      </div>
+                    )}
+                    <div className="info-row">
+                      <span className="info-label">Equipos Audiovisuales</span>
+                      <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>
+                        {selectedRequest.necesita_audiovisual 
+                          ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
+                          : "Ninguno"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+            
             <div className="modal-footer">
-              <button className="close-btn" onClick={closeModal}>Cerrar ficha</button>
+              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>

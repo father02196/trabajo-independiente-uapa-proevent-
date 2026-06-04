@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./../css/Dashboard.css";
-import { FiBox, FiSearch, FiInfo, FiX, FiCheckCircle, FiClock, FiAlertCircle } from "react-icons/fi";
+import { FiBox, FiSearch, FiInfo, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 
 const API = "http://localhost:8080";
 
@@ -28,7 +27,6 @@ function InventarioAudiovisual({ usuario }) {
       const dataSolicitudes = await resSolicitudes.json();
       
       setEquipos(Array.isArray(dataEquipos) ? dataEquipos : []);
-      // Normalizar datos de solicitudes basados en el servidor
       const solicitudesFormateadas = Array.isArray(dataSolicitudes) ? dataSolicitudes.map(row => ({
         id_servicio: row.id_servicio,
         id_evento: row.id_evento,
@@ -40,7 +38,7 @@ function InventarioAudiovisual({ usuario }) {
         fecha_evento: row.fecha_inicio,
         recinto: row.recinto,
         nombre_usuario: row.nombre_usuario || "—",
-        equipo: row.equipo // Map de backend a variable
+        equipo: row.equipo 
       })) : [];
       setSolicitudes(solicitudesFormateadas);
     } catch (error) {
@@ -50,9 +48,7 @@ function InventarioAudiovisual({ usuario }) {
     }
   };
 
-  // Calcular inventario
   const inventario = equipos.map(eq => {
-    // Solo contar solicitudes activas que retienen equipo
     const solicitudesActivas = solicitudes.filter(req => 
       req.equipo === eq.nombre && 
       ['Pendiente', 'En revisión', 'Aprobado'].includes(req.estado_av)
@@ -91,81 +87,84 @@ function InventarioAudiovisual({ usuario }) {
   };
 
   return (
-    <div className="tab-content fade-in">
-      <div className="tab-header">
+    <div className="animate-fade">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2>Inventario en Tiempo Real</h2>
-          <p>Supervisa la disponibilidad de los equipos y las solicitudes que los retienen.</p>
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Inventario en Tiempo Real</h1>
+          <p style={{ color: '#64748B', fontSize: '13.5px' }}>Supervisa la disponibilidad de los equipos y las solicitudes que los retienen.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <div className="search-bar" style={{ minWidth: "300px" }}>
-            <FiSearch className="search-icon" />
+          <div style={{ position: 'relative' }}>
+            <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type="text"
+              className="input-base"
               placeholder="Buscar dispositivo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: '36px', width: '260px' }}
             />
           </div>
-          <button className="primary-btn" onClick={cargarDatos}>Actualizar</button>
+          <button className="btn btn-secondary" onClick={cargarDatos}>Actualizar</button>
         </div>
       </div>
 
-      <div className="av-card" style={{ marginTop: '20px' }}>
+      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
         {loading ? (
-          <p style={{ textAlign: "center", padding: "2rem" }}>Cargando inventario...</p>
+          <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
+            <div className="loader" style={{ margin: '0 auto 16px', borderColor: '#E2E8F0', borderTopColor: '#3B82F6' }}></div>
+            <p>Cargando inventario...</p>
+          </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="requests-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="table-container" style={{ margin: 0, boxShadow: 'none' }}>
+            <table className="modern-table">
               <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                  <th style={{ padding: '12px' }}>DISPOSITIVO</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>TOTAL INVENTARIO</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>EN USO / RESERVADO</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>DISPONIBLE</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>ESTADO</th>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>DETALLES DE USO</th>
+                <tr>
+                  <th>Dispositivo</th>
+                  <th style={{ textAlign: 'center' }}>Total Inventario</th>
+                  <th style={{ textAlign: 'center' }}>En Uso / Reservado</th>
+                  <th style={{ textAlign: 'center' }}>Disponible</th>
+                  <th style={{ textAlign: 'center' }}>Estado</th>
+                  <th style={{ textAlign: 'center' }}>Detalles de Uso</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredInventario.map((eq) => (
-                  <tr key={eq.id_equipo} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <FiBox size={16} color="#64748b" />
+                  <tr key={eq.id_equipo}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
+                          <FiBox size={18} />
                         </div>
-                        <strong>{eq.nombre}</strong>
+                        <strong style={{ color: '#0F172A', fontWeight: '600' }}>{eq.nombre}</strong>
                       </div>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center', fontWeight: 'bold' }}>{eq.total}</td>
-                    <td style={{ padding: '12px', textAlign: 'center', color: eq.enUso > 0 ? '#ef4444' : '#64748b' }}>
+                    <td style={{ textAlign: 'center', fontWeight: '700', color: '#334155' }}>{eq.total}</td>
+                    <td style={{ textAlign: 'center', fontWeight: '600', color: eq.enUso > 0 ? '#EF4444' : '#64748B' }}>
                       {eq.enUso}
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <span style={{ 
-                        padding: '4px 8px', 
-                        borderRadius: '4px', 
-                        background: eq.disponible > 0 ? '#dcfce7' : '#fee2e2', 
-                        color: eq.disponible > 0 ? '#16a34a' : '#dc2626',
-                        fontWeight: 'bold'
-                      }}>
+                    <td style={{ textAlign: 'center' }}>
+                      <span className={`status-pill ${eq.disponible > 0 ? 'status-approved' : 'status-rejected'}`} style={{ padding: '4px 10px', fontSize: '13px' }}>
                         {eq.disponible}
                       </span>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <td style={{ textAlign: 'center' }}>
                       {eq.disponible > 0 ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', color: '#16a34a', fontSize: '13px' }}><FiCheckCircle /> Disponible</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#10B981', fontSize: '13px', fontWeight: '600' }}>
+                          <FiCheckCircle /> Disponible
+                        </div>
                       ) : (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', color: '#dc2626', fontSize: '13px' }}><FiAlertCircle /> Agotado</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#EF4444', fontSize: '13px', fontWeight: '600' }}>
+                          <FiAlertCircle /> Agotado
+                        </div>
                       )}
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                    <td style={{ textAlign: 'center' }}>
                       <button 
-                        className="details-btn" 
+                        className="btn btn-secondary btn-sm" 
                         onClick={() => openModal(eq)}
                         disabled={eq.enUso === 0}
-                        style={{ opacity: eq.enUso === 0 ? 0.5 : 1, cursor: eq.enUso === 0 ? 'not-allowed' : 'pointer' }}
+                        style={{ opacity: eq.enUso === 0 ? 0.5 : 1 }}
                       >
                         <FiInfo /> Ver Solicitudes
                       </button>
@@ -174,7 +173,7 @@ function InventarioAudiovisual({ usuario }) {
                 ))}
                 {filteredInventario.length === 0 && (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>
+                    <td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#64748B" }}>
                       No se encontraron dispositivos en el catálogo.
                     </td>
                   </tr>
@@ -187,73 +186,79 @@ function InventarioAudiovisual({ usuario }) {
 
       {isModalOpen && selectedEquipo && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Detalles de Uso: {selectedEquipo.nombre}</h2>
+              <div>
+                <h3 className="modal-title">Detalles de Inventario AV</h3>
+                <span className="modal-subtitle">Revisión de uso y disponibilidad: {selectedEquipo.nombre}</span>
+              </div>
+              <span className="badge badge-purple" style={{ fontSize: '14px', padding: '6px 12px' }}>{selectedEquipo.categoria || 'Audiovisual'}</span>
             </div>
+            
             <div className="modal-body">
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#334155' }}>{selectedEquipo.total}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>Total Inventario</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>{selectedEquipo.total}</div>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase' }}>Total Inventario</div>
                 </div>
-                <div style={{ background: '#fee2e2', padding: '15px', borderRadius: '8px', flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{selectedEquipo.enUso}</div>
-                  <div style={{ fontSize: '12px', color: '#dc2626' }}>En Uso / Reservado</div>
+                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#EF4444', marginBottom: '4px' }}>{selectedEquipo.enUso}</div>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#DC2626', textTransform: 'uppercase' }}>En Uso / Reservado</div>
                 </div>
-                <div style={{ background: '#dcfce7', padding: '15px', borderRadius: '8px', flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#16a34a' }}>{selectedEquipo.disponible}</div>
-                  <div style={{ fontSize: '12px', color: '#16a34a' }}>Disponibles</div>
+                <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#10B981', marginBottom: '4px' }}>{selectedEquipo.disponible}</div>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>Disponibles</div>
                 </div>
               </div>
 
-              <h4 style={{ marginBottom: "15px", color: "var(--primary-color)" }}>Eventos Solicitando este Dispositivo</h4>
-              <div style={{ overflowX: "auto", maxHeight: "300px", overflowY: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-                  <thead style={{ position: 'sticky', top: 0, background: '#f8fafc', zIndex: 1 }}>
-                    <tr style={{ borderBottom: "2px solid #cbd5e1", textAlign: "left" }}>
-                      <th style={{ padding: "10px" }}>ID Evento</th>
-                      <th style={{ padding: "10px" }}>Evento</th>
-                      <th style={{ padding: "10px" }}>Solicitante</th>
-                      <th style={{ padding: "10px" }}>Fecha</th>
-                      <th style={{ padding: "10px" }}>Ubicación</th>
-                      <th style={{ padding: "10px", textAlign: 'center' }}>Cant.</th>
-                      <th style={{ padding: "10px", textAlign: 'center' }}>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedEquipo.solicitudesActivas.map(req => (
-                      <tr key={req.id_servicio} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                        <td style={{ padding: "10px" }}>#EVT-{req.id_evento}</td>
-                        <td style={{ padding: "10px", fontWeight: '600' }}>{req.nombre_evento}</td>
-                        <td style={{ padding: "10px" }}>{req.nombre_usuario}</td>
-                        <td style={{ padding: "10px" }}>{formatFecha(req.fecha_evento)}</td>
-                        <td style={{ padding: "10px" }}>{req.ubicacion || "N/A"}</td>
-                        <td style={{ padding: "10px", textAlign: 'center', fontWeight: 'bold', color: '#ef4444' }}>{req.cantidad}</td>
-                        <td style={{ padding: "10px", textAlign: 'center' }}>
-                          <span style={{ 
-                            padding: '2px 6px', 
-                            borderRadius: '4px', 
-                            fontSize: '12px',
-                            background: req.estado_av === "Aprobado" ? "#dcfce7" : req.estado_av === "En revisión" ? "#fef3c7" : "#e0f2fe",
-                            color: req.estado_av === "Aprobado" ? "#16a34a" : req.estado_av === "En revisión" ? "#d97706" : "#0284c7"
-                          }}>
-                            {req.estado_av}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {selectedEquipo.solicitudesActivas.length === 0 && (
-                      <tr>
-                        <td colSpan="7" style={{ textAlign: 'center', padding: '15px' }}>Ocurrió un error (lista vacía pero botón habilitado).</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="modal-grid-1" style={{ marginTop: '24px' }}>
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiCheckCircle size={14} /> Eventos que solicitan este dispositivo
+                  </div>
+                  <div className="table-container" style={{ margin: 0, boxShadow: 'none', border: '1px solid #E2E8F0', maxHeight: '300px', overflowY: 'auto' }}>
+                    <table className="modern-table">
+                      <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                        <tr>
+                          <th>ID Evento</th>
+                          <th>Evento</th>
+                          <th>Solicitante</th>
+                          <th>Fecha</th>
+                          <th>Ubicación</th>
+                          <th style={{ textAlign: 'center' }}>Cant.</th>
+                          <th style={{ textAlign: 'center' }}>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedEquipo.solicitudesActivas.map(req => (
+                          <tr key={req.id_servicio}>
+                            <td style={{ fontWeight: '600', color: '#64748B' }}>#EVT-{req.id_evento}</td>
+                            <td style={{ fontWeight: '600', color: '#0F172A' }}>{req.nombre_evento}</td>
+                            <td>{req.nombre_usuario}</td>
+                            <td>{formatFecha(req.fecha_evento)}</td>
+                            <td>{req.ubicacion || "N/A"}</td>
+                            <td style={{ textAlign: 'center', fontWeight: '700', color: '#EF4444' }}>{req.cantidad}</td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span className={`badge ${req.estado_av === 'Aprobado' ? 'badge-green' : 'badge-yellow'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>
+                                {req.estado_av}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                        {selectedEquipo.solicitudesActivas.length === 0 && (
+                          <tr>
+                            <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#64748B' }}>No hay solicitudes activas para este dispositivo.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
+            
             <div className="modal-footer">
-              <button className="primary-btn" onClick={closeModal} style={{ background: '#64748b' }}>Cerrar Detalles</button>
+              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Detalles</button>
             </div>
           </div>
         </div>

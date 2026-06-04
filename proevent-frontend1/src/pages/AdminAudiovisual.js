@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import "./../css/AjustesUsuarios.css"; // Usa los estilos base de admin
 import { FiEdit2, FiTrash2, FiPlus, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast } from "react-icons/fi";
 
 const API = "http://localhost:8080";
@@ -12,11 +11,9 @@ export default function AdminAudiovisual({ usuario }) {
   const [equipos, setEquipos] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
-  // Form estado
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [nombre, setNombre] = useState("");
@@ -93,48 +90,43 @@ export default function AdminAudiovisual({ usuario }) {
     }
   };
 
-  // Lógica de Paginación
   const totalPages = Math.ceil(equipos.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = equipos.slice(indexOfFirstItem, indexOfLastItem);
 
   if (usuario?.rol !== "Administrador de Audiovisual" && usuario?.rol !== "Administrador") {
-    return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a esta sección.</div>;
+    return <div style={{ padding: "32px", textAlign: "center", color: "#64748B" }}>No tienes permisos para acceder a esta sección.</div>;
   }
-
+  
   return (
-    <div className="ajustes-container" style={{maxWidth: '800px'}}>
-      <h2>Catálogo de Equipos Audiovisuales</h2>
-      <p style={{marginBottom: "20px", color: "var(--text-light)"}}>
-        Administra los equipos y servicios audiovisuales que los usuarios pueden solicitar.
-      </p>
+    <div className="animate-fade">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Catálogo de Equipos Audiovisuales</h1>
+          <p style={{ color: '#64748B', fontSize: '13.5px' }}>Administra los equipos y servicios audiovisuales disponibles para el recinto.</p>
+        </div>
+      </div>
 
-      <div className="form-card" style={{ marginBottom: "30px", padding: "20px", background: "white", borderRadius: "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-        <h3>{isEditing ? "Editar Equipo" : "Agregar Nuevo Equipo"}</h3>
-        <form onSubmit={handleGuardar} style={{ display: "flex", gap: "10px", alignItems: "flex-end", marginTop: "15px" }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "600" }}>Nombre del Equipo</label>
+      <div className="card" style={{ padding: '24px', marginBottom: '32px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0F172A', marginBottom: '4px' }}>{isEditing ? "Editar Equipo" : "Agregar Nuevo Equipo"}</h3>
+        <p style={{ color: '#64748B', fontSize: '13px', marginBottom: '20px' }}>Ingresa los detalles del equipo para el catálogo institucional.</p>
+        
+        <form onSubmit={handleGuardar} style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ flex: '1 1 250px' }}>
+            <label>Nombre del Equipo</label>
             <input 
               type="text" 
+              className="input-base"
               required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              style={{ width: "100%", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none", transition: "border-color 0.2s" }}
-              placeholder="Ej. Proyector 4K"
-              onFocus={(e) => e.target.style.borderColor = "var(--primary-color)"}
-              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
+              placeholder="Ej. Proyector 4K Laser"
             />
           </div>
-          <div>
-            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "600" }}>Ícono sugerido</label>
-            <select 
-              value={icono} 
-              onChange={e => setIcono(e.target.value)}
-              style={{ padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none", background: "white", cursor: "pointer", transition: "border-color 0.2s" }}
-              onFocus={(e) => e.target.style.borderColor = "var(--primary-color)"}
-              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
-            >
+          <div className="form-group" style={{ flex: '1 1 200px' }}>
+            <label>Ícono Sugerido</label>
+            <select className="input-base" value={icono} onChange={e => setIcono(e.target.value)}>
               <option value="FiMonitor">Monitor / Pantalla</option>
               <option value="FiSpeaker">Sonido</option>
               <option value="FiMic">Microfonía</option>
@@ -144,88 +136,101 @@ export default function AdminAudiovisual({ usuario }) {
               <option value="FiCast">Proyección Local</option>
             </select>
           </div>
-          <div style={{ flex: '0 0 80px' }}>
-            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "600" }}>Cant.</label>
+          <div className="form-group" style={{ width: '120px' }}>
+            <label>Cant. Total</label>
             <input 
               type="number" 
-              required
-              min="0"
+              className="input-base"
+              required min="0"
               value={cantidad_total}
               onChange={(e) => setCantidadTotal(e.target.value)}
-              style={{ width: "100%", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none", transition: "border-color 0.2s" }}
-              onFocus={(e) => e.target.style.borderColor = "var(--primary-color)"}
-              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
             />
           </div>
-          <button type="submit" className="add-btn" disabled={loading} style={{ padding: "12px 24px", borderRadius: "8px", fontWeight: "600", transition: "transform 0.1s, background-color 0.2s", display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
-            {isEditing ? "Guardar Cambios" : <><FiPlus /> Agregar</>}
-          </button>
-          {isEditing && (
-            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); setCantidadTotal(0); }} style={{ padding: "11px 20px", background: "#f1f5f9", color: "#334155", border: "none", borderRadius: "6px", cursor: "pointer" }}>
-              Cancelar
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isEditing ? "Guardar" : <><FiPlus /> Agregar</>}
             </button>
-          )}
+            {isEditing && (
+              <button type="button" onClick={() => { setIsEditing(false); setNombre(""); setCantidadTotal(0); }} className="btn btn-secondary" style={{ height: '42px' }}>
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
-      <div className="users-table-container">
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre del Equipo</th>
-              <th>Ícono Asignado</th>
-              <th>Cant. Total</th>
-              <th style={{textAlign: 'right'}}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.map(eq => (
-              <tr key={eq.id_equipo}>
-                <td>{eq.id_equipo}</td>
-                <td><strong>{eq.nombre}</strong></td>
-                <td>{eq.icono}</td>
-                <td>{eq.cantidad_total || 0}</td>
-                <td style={{textAlign: 'right'}}>
-                  <button className="action-btn edit" onClick={() => handleEditar(eq)}><FiEdit2 /></button>
-                  <button className="action-btn delete" onClick={() => handleEliminar(eq.id_equipo)}><FiTrash2 /></button>
-                </td>
+      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A', margin: 0 }}>Equipos Configurados</h3>
+        </div>
+        <div className="table-container" style={{ margin: 0, boxShadow: 'none' }}>
+          <table className="modern-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre del Equipo</th>
+                <th>Ícono Asignado</th>
+                <th style={{ textAlign: 'center' }}>Cant. Total</th>
+                <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
-            ))}
-            {equipos.length === 0 && (
-              <tr><td colSpan="4" style={{textAlign: 'center', padding: '20px'}}>No hay equipos configurados en el catálogo.</td></tr>
-            )}
-          </tbody>
-        </table>
-
-        {/* CONTROLES DE PAGINACIÓN */}
-        {equipos.length > 0 && (
-          <div className="pagination-container" style={{ marginTop: '0', borderTop: 'none' }}>
-            <div className="pagination-info">
-              Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, equipos.length)} de {equipos.length} equipos
-            </div>
-            <div className="pagination-controls">
-              <button 
-                className="page-btn" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </button>
-              <span className="page-number">
-                Página {currentPage} de {totalPages || 1}
-              </span>
-              <button 
-                className="page-btn" 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        )}
+            </thead>
+            <tbody>
+              {currentItems.map(eq => (
+                <tr key={eq.id_equipo}>
+                  <td style={{ fontWeight: '600', color: '#64748B' }}>#{eq.id_equipo}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #3B82F6, #6366F1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {eq.icono === 'FiMonitor' && <FiMonitor size={18} />}
+                        {eq.icono === 'FiSpeaker' && <FiSpeaker size={18} />}
+                        {eq.icono === 'FiMic' && <FiMic size={18} />}
+                        {eq.icono === 'FiVideo' && <FiVideo size={18} />}
+                        {eq.icono === 'FiRadio' && <FiRadio size={18} />}
+                        {eq.icono === 'FiSun' && <FiSun size={18} />}
+                        {eq.icono === 'FiCast' && <FiCast size={18} />}
+                        {!["FiMonitor", "FiSpeaker", "FiMic", "FiVideo", "FiRadio", "FiSun", "FiCast"].includes(eq.icono) && <FiMonitor size={18} />}
+                      </div>
+                      <span style={{ fontWeight: '600', color: '#0F172A' }}>{eq.nombre}</span>
+                    </div>
+                  </td>
+                  <td><span className="badge badge-slate" style={{ fontFamily: 'monospace' }}>{eq.icono}</span></td>
+                  <td style={{ textAlign: 'center', fontWeight: '700', color: '#334155' }}>{eq.cantidad_total || 0}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleEditar(eq)} title="Editar"><FiEdit2 /></button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleEliminar(eq.id_equipo)} title="Eliminar" style={{ color: '#EF4444', borderColor: '#FECACA', background: '#FEF2F2' }}><FiTrash2 /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {equipos.length === 0 && (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>No hay equipos configurados en el catálogo.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {equipos.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+          <div style={{ fontSize: '13px', color: '#64748B' }}>
+            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, equipos.length)} de {equipos.length} equipos
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+              Anterior
+            </button>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
+              Página {currentPage} de {totalPages || 1}
+            </span>
+            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

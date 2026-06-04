@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./../css/Audiovisual.css";
-import { FiAlertTriangle, FiCheckCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw, FiEye } from "react-icons/fi";
+import { FiAlertTriangle, FiCheckCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw, FiEye, FiFileText, FiList } from "react-icons/fi";
 
 const API = "http://localhost:8080";
 
@@ -11,36 +10,20 @@ const IconMap = {
 export default function Audiovisual({ usuario }) {
   const [eventos, setEventos] = useState([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
-  
-  // Catálogo dinámico
   const [equiposDisponibles, setEquiposDisponibles] = useState([]);
-
-  // Estado para los equipos seleccionados
   const [equiposSeleccionados, setEquiposSeleccionados] = useState({});
   const [observacionesGenerales, setObservacionesGenerales] = useState("");
-  
-  // Estado UI
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
-  const [errorDate, setErrorDate] = useState(null); // Para la validación de 5 días
-
+  const [errorDate, setErrorDate] = useState(null);
   const [solicitudesAV, setSolicitudesAV] = useState([]);
-  
-  // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const openModal = (req) => {
-    setSelectedRequest(req);
-    setIsModalOpen(true);
-  };
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedRequest(null);
-  };
+  const openModal = (req) => { setSelectedRequest(req); setIsModalOpen(true); };
+  const closeModal = () => { setIsModalOpen(false); setSelectedRequest(null); };
 
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
@@ -48,13 +31,10 @@ export default function Audiovisual({ usuario }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
 
-  // 1. Cargar la lista de eventos del usuario y catálogo de equipos
   useEffect(() => {
     fetch(`${API}/eventos`)
       .then((res) => res.json())
-      .then((data) => {
-        setEventos(Array.isArray(data) ? data : []);
-      })
+      .then((data) => setEventos(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Error cargando eventos:", err));
 
     fetch(`${API}/equipos-audiovisuales`)
@@ -62,7 +42,6 @@ export default function Audiovisual({ usuario }) {
       .then(data => setEquiposDisponibles(Array.isArray(data) ? data : []))
       .catch(err => console.error("Error cargando equipos", err));
       
-    // Cargar todas las solicitudes si es administrador
     if (usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") {
       cargarSolicitudesAV();
     }
@@ -94,10 +73,7 @@ export default function Audiovisual({ usuario }) {
               estado_av: req.estado_av
             });
             acc[req.id_evento].total_equipos += 1;
-            
-            // Prioridad al estado pendiente
             if (req.estado_av === 'Pendiente') acc[req.id_evento].estado_av = 'Pendiente';
-            
             return acc;
           }, {}));
           setSolicitudesAV(agrupadas);
@@ -112,23 +88,16 @@ export default function Audiovisual({ usuario }) {
     try {
       const res = await fetch(`${API}/audiovisual/evento/${id_evento}/estado`, {
         method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-usuario-id": usuario?.id_usuario || ""
-        },
+        headers: { "Content-Type": "application/json", "x-usuario-id": usuario?.id_usuario || "" },
         body: JSON.stringify({ estado: nuevoEstado })
       });
-      if (res.ok) {
-        cargarSolicitudesAV();
-      } else {
-        alert("Error al cambiar el estado.");
-      }
+      if (res.ok) cargarSolicitudesAV();
+      else alert("Error al cambiar el estado.");
     } catch {
       alert("No se pudo conectar al servidor.");
     }
   };
 
-  // 2. Manejar selección del evento y validar los 5 días inmediatamente
   const handleSelectEvent = (e) => {
     const evId = e.target.value;
     if (!evId) {
@@ -139,17 +108,14 @@ export default function Audiovisual({ usuario }) {
 
     const ev = eventos.find((ev) => ev.id_evento === Number(evId));
     setEventoSeleccionado(ev);
-    setMensaje(""); // Limpiar mensaje de exito anterior
+    setMensaje(""); 
 
     if (ev) {
-      // Validar Antelación de 5 días
       const fechaEv = new Date(ev.fecha_inicio);
       const hoy = new Date();
       fechaEv.setHours(0,0,0,0);
       hoy.setHours(0,0,0,0);
-      
-      const difTiempo = fechaEv.getTime() - hoy.getTime();
-      const difDias = Math.ceil(difTiempo / (1000 * 3600 * 24));
+      const difDias = Math.ceil((fechaEv.getTime() - hoy.getTime()) / (1000 * 3600 * 24));
       
       if (difDias < 5) {
         setErrorDate(`Políticas institucionales: Toda solicitud audiovisual debe realizarse con un mínimo de 5 días de antelación. Este evento está programado para dentro de ${difDias} día(s).`);
@@ -159,7 +125,6 @@ export default function Audiovisual({ usuario }) {
     }
   };
 
-  // 3. Manejar el Toogle de Equipos
   const handleToggleEquipo = (idEquipo) => {
     setEquiposSeleccionados((prev) => {
       const isSelected = !!prev[idEquipo];
@@ -168,26 +133,18 @@ export default function Audiovisual({ usuario }) {
         delete copy[idEquipo];
         return copy;
       } else {
-        return {
-          ...prev,
-          [idEquipo]: { cantidad: 1, ubicacion: "" } // defaults
-        };
+        return { ...prev, [idEquipo]: { cantidad: 1, ubicacion: "" } };
       }
     });
   };
 
-  // 4. Cambiar detalles del equipo
   const handleChangeEquipo = (idEquipo, field, val) => {
     setEquiposSeleccionados((prev) => ({
       ...prev,
-      [idEquipo]: {
-        ...prev[idEquipo],
-        [field]: val
-      }
+      [idEquipo]: { ...prev[idEquipo], [field]: val }
     }));
   };
 
-  // 5. Enviar el formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (errorDate) return; 
@@ -201,7 +158,6 @@ export default function Audiovisual({ usuario }) {
     setLoading(true);
     setMensaje("");
 
-    // Formatear payload para la nueva ruta del backend
     const serviciosPayload = seleccionados.map((key) => {
       const eqData = equiposSeleccionados[key];
       const eqMeta = equiposDisponibles.find(e => e.id_equipo === Number(key));
@@ -216,23 +172,14 @@ export default function Audiovisual({ usuario }) {
     try {
       const res = await fetch(`${API}/audiovisual`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-usuario-id": usuario?.id_usuario || ""
-        },
-        body: JSON.stringify({
-          id_evento: eventoSeleccionado.id_evento,
-          servicios: serviciosPayload
-        })
+        headers: { "Content-Type": "application/json", "x-usuario-id": usuario?.id_usuario || "" },
+        body: JSON.stringify({ id_evento: eventoSeleccionado.id_evento, servicios: serviciosPayload })
       });
-
       const body = await res.json();
-
       if (!res.ok) {
         setMensaje({ tipo: "error", texto: body.mensaje || "Error al enviar solicitud." });
       } else {
         setMensaje({ tipo: "success", texto: "Solicitud de servicios audiovisuales procesada con éxito." });
-        // Reset form
         setEventoSeleccionado(null);
         setEquiposSeleccionados({});
         setObservacionesGenerales("");
@@ -246,314 +193,294 @@ export default function Audiovisual({ usuario }) {
     }
   };
 
-  // Lógica de Paginación
   const totalPages = Math.ceil(solicitudesAV.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = solicitudesAV.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
-    <div className="audiovisual-section">
-      <div className="av-header">
-        <h1 className="av-title">Solicitud de Servicio Audiovisual</h1>
-        <p className="av-subtitle">
-          Registra los requerimientos técnicos y equipos necesarios para tu evento. 
-          Recuerda que estas solicitudes están sujetas a la validación estricta de 5 días de anticipación.
+    <div className="animate-fade">
+      <div style={{ marginBottom: '28px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', letterSpacing: '-0.5px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ display: 'inline-block', width: '4px', height: '22px', background: 'linear-gradient(180deg, #3B82F6, #6366F1)', borderRadius: '99px' }}></span>
+          Solicitud de Servicio Audiovisual
+        </h1>
+        <p style={{ color: '#64748B', fontSize: '13.5px' }}>
+          Registra requerimientos técnicos y equipos para tu evento. Validación estricta de 5 días de anticipación.
         </p>
       </div>
 
       {mensaje && (
-        <div className={`av-message ${mensaje.tipo}`}>
-          {mensaje.tipo === "error" ? <FiAlertTriangle /> : <FiCheckCircle />}
-          {mensaje.texto}
+        <div className={`form-alert ${mensaje.tipo === "error" ? "form-alert-error" : "form-alert-success"}`} style={{ marginBottom: '24px' }}>
+          {mensaje.tipo === "error" ? <FiAlertTriangle size={18} /> : <FiCheckCircle size={18} />}
+          <span>{mensaje.texto}</span>
         </div>
       )}
 
-      <form className="av-card" onSubmit={handleSubmit}>
-        
-        {/* EVENTO ASOCIADO */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="evento-select">Seleccione el Evento Asociado</label>
-          <select 
-            id="evento-select" 
-            className="form-select" 
-            onChange={handleSelectEvent}
-            defaultValue=""
-          >
-            <option value="" disabled>-- Selecciona un evento programado --</option>
-            {eventos.map(ev => (
-              <option key={ev.id_evento} value={ev.id_evento}>
-                #{ev.id_evento} - {ev.nombre} ({ev.fecha_inicio.substring(0,10)})
-              </option>
-            ))}
-          </select>
+      <div className="card" style={{ padding: '32px', maxWidth: '860px', margin: '0 auto 32px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          <div className="form-group">
+            <label>Seleccione el Evento Asociado</label>
+            <select 
+              id="evento-select" 
+              className="input-base" 
+              onChange={handleSelectEvent}
+              defaultValue=""
+            >
+              <option value="" disabled>-- Selecciona un evento programado --</option>
+              {eventos.map(ev => (
+                <option key={ev.id_evento} value={ev.id_evento}>
+                  #EVT-{ev.id_evento} - {ev.nombre} ({ev.fecha_inicio.substring(0,10)})
+                </option>
+              ))}
+            </select>
 
-          {eventoSeleccionado && !errorDate && (
-            <div className="event-details-box">
-              <div className="detail-item">
-                <span className="detail-label">Modalidad</span>
-                <span className="detail-value">{eventoSeleccionado.modalidad}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Fecha del evento</span>
-                <span className="detail-value">{eventoSeleccionado.fecha_inicio.substring(0, 10)}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Recinto asignado</span>
-                <span className="detail-value">{eventoSeleccionado.recinto || 'Por definir'}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Asistentes est.</span>
-                <span className="detail-value">{eventoSeleccionado.cantidad_asistentes} PAX</span>
-              </div>
-            </div>
-          )}
-
-          {errorDate && (
-            <div className="date-alert">
-              <FiAlertTriangle className="date-alert-icon" />
-              <div>
-                <div className="date-alert-title">Tiempo de solicitud insuficiente</div>
-                <div className="date-alert-desc">{errorDate}</div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* REQUERIMIENTOS AUDIOVISUALES */}
-        <div className="form-group" style={{ 
-          opacity: (eventoSeleccionado && !errorDate) ? 1 : 0.5, 
-          pointerEvents: (eventoSeleccionado && !errorDate) ? 'auto' : 'none' 
-        }}>
-          <label className="form-label">Servicios y Equipos Requeridos</label>
-          <div className="equipment-grid">
-            {equiposDisponibles.map((eq) => {
-              const isActive = !!equiposSeleccionados[eq.id_equipo];
-              const IconComp = IconMap[eq.icono] || IconMap["FiMonitor"];
-              return (
-                <div key={eq.id_equipo} className={`eq-card ${isActive ? 'selected' : ''}`}>
-                  <div className="eq-header" onClick={() => handleToggleEquipo(eq.id_equipo)}>
-                    <input 
-                      type="checkbox" 
-                      className="eq-checkbox" 
-                      checked={isActive} 
-                      readOnly
-                    />
-                    <div style={{ color: isActive ? 'var(--orange)' : 'var(--muted)', display: 'flex' }}>
-                       <IconComp />
-                    </div>
-                    <span className="eq-name">{eq.nombre}</span>
-                  </div>
-
-                  {isActive && (
-                    <div className="eq-details">
-                      <div className="eq-field-row">
-                        <span className="eq-field-label">Cantidad</span>
-                        <input 
-                          type="number" 
-                          min="1" max="50" 
-                          className="eq-number-input"
-                          value={equiposSeleccionados[eq.id_equipo].cantidad}
-                          onChange={(e) => handleChangeEquipo(eq.id_equipo, 'cantidad', e.target.value)}
-                        />
-                      </div>
-                      <div className="eq-field-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span className="eq-field-label">Área / Ubicación del montaje</span>
-                        <input 
-                          type="text" 
-                          placeholder="Ej. Salón Principal, Tarima..." 
-                          className="eq-text-input"
-                          value={equiposSeleccionados[eq.id_equipo].ubicacion}
-                          onChange={(e) => handleChangeEquipo(eq.id_equipo, 'ubicacion', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
+            {eventoSeleccionado && !errorDate && (
+              <div style={{ marginTop: '16px', background: '#F8FAFC', borderRadius: '12px', padding: '16px', display: 'flex', flexWrap: 'wrap', gap: '20px', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Modalidad</span>
+                  <span style={{ fontSize: '14px', color: '#0F172A', fontWeight: '600' }}>{eventoSeleccionado.modalidad}</span>
                 </div>
-              );
-            })}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Fecha</span>
+                  <span style={{ fontSize: '14px', color: '#0F172A', fontWeight: '600' }}>{eventoSeleccionado.fecha_inicio.substring(0, 10)}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Recinto asignado</span>
+                  <span style={{ fontSize: '14px', color: '#0F172A', fontWeight: '600' }}>{eventoSeleccionado.recinto || 'Por definir'}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Asistentes est.</span>
+                  <span style={{ fontSize: '14px', color: '#0F172A', fontWeight: '600' }}>{eventoSeleccionado.cantidad_asistentes} PAX</span>
+                </div>
+              </div>
+            )}
+
+            {errorDate && (
+              <div style={{ marginTop: '16px', padding: '16px', background: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '12px', display: 'flex', gap: '12px' }}>
+                <FiAlertTriangle style={{ color: '#DC2626', fontSize: '20px', flexShrink: 0 }} />
+                <div>
+                  <h4 style={{ color: '#991B1B', margin: '0 0 4px 0', fontSize: '14px', fontWeight: '700' }}>Tiempo insuficiente</h4>
+                  <p style={{ color: '#B91C1C', margin: 0, fontSize: '13px', lineHeight: '1.5' }}>{errorDate}</p>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* OBSERVACIONES */}
-        <div className="form-group" style={{ 
-          opacity: (eventoSeleccionado && !errorDate) ? 1 : 0.5, 
-          pointerEvents: (eventoSeleccionado && !errorDate) ? 'auto' : 'none' 
-        }}>
-          <label className="form-label" htmlFor="obs-generales">Observaciones o Instrucciones Especiales</label>
-          <textarea 
-            id="obs-generales" 
-            className="form-textarea"
-            placeholder="Especifique requerimientos como posición de cámaras, necesidades de iluminación particulares, etc."
-            value={observacionesGenerales}
-            onChange={(e) => setObservacionesGenerales(e.target.value)}
-          ></textarea>
-        </div>
+          <div style={{ opacity: (eventoSeleccionado && !errorDate) ? 1 : 0.5, pointerEvents: (eventoSeleccionado && !errorDate) ? 'auto' : 'none', transition: 'opacity 0.3s' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A', marginBottom: '4px' }}>Servicios y Equipos Requeridos</h3>
+              <p style={{ color: '#64748B', fontSize: '13px' }}>Seleccione los equipos e indique cantidad y ubicación.</p>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+              {equiposDisponibles.map((eq) => {
+                const isActive = !!equiposSeleccionados[eq.id_equipo];
+                const IconComp = IconMap[eq.icono] || IconMap["FiMonitor"];
+                return (
+                  <div key={eq.id_equipo} className="hover-lift" style={{ background: isActive ? '#EFF6FF' : '#fff', border: `1.5px solid ${isActive ? '#3B82F6' : '#E2E8F0'}`, borderRadius: '16px', padding: '20px 16px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: isActive ? '0 0 0 3px rgba(59,130,246,0.1)' : '0 1px 2px rgba(0,0,0,0.04)' }} onClick={() => handleToggleEquipo(eq.id_equipo)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: isActive ? 'linear-gradient(135deg, #3B82F6, #2563EB)' : '#F1F5F9', color: isActive ? '#fff' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
+                        <IconComp />
+                      </div>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', color: isActive ? '#1D4ED8' : '#334155', margin: 0 }}>{eq.nombre}</h4>
+                    </div>
+                    {isActive && (
+                      <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #BFDBFE' }} onClick={e => e.stopPropagation()}>
+                        <div className="form-group" style={{ marginBottom: '12px' }}>
+                          <label style={{ fontSize: '11.5px', color: '#2563EB' }}>Cantidad</label>
+                          <input type="number" min="1" max="50" className="input-base" value={equiposSeleccionados[eq.id_equipo].cantidad} onChange={(e) => handleChangeEquipo(eq.id_equipo, 'cantidad', e.target.value)} style={{ padding: '8px 12px', borderColor: '#BFDBFE' }} />
+                        </div>
+                        <div className="form-group">
+                          <label style={{ fontSize: '11.5px', color: '#2563EB' }}>Ubicación</label>
+                          <input type="text" className="input-base" placeholder="Ej. Tarima" value={equiposSeleccionados[eq.id_equipo].ubicacion} onChange={(e) => handleChangeEquipo(eq.id_equipo, 'ubicacion', e.target.value)} style={{ padding: '8px 12px', borderColor: '#BFDBFE' }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-        <div className="av-actions">
-          <button 
-            type="submit" 
-            className="av-submit-btn" 
-            disabled={loading || !eventoSeleccionado || errorDate || Object.keys(equiposSeleccionados).length === 0}
-          >
-            {loading ? "Procesando..." : "Registrar Solicitud Técnica"}
-          </button>
-        </div>
-      </form>
+          <div className="form-group" style={{ opacity: (eventoSeleccionado && !errorDate) ? 1 : 0.5, pointerEvents: (eventoSeleccionado && !errorDate) ? 'auto' : 'none' }}>
+            <label>Observaciones o Instrucciones Especiales</label>
+            <textarea 
+              className="input-base"
+              placeholder="Especifique requerimientos como posición de cámaras, necesidades de iluminación..."
+              value={observacionesGenerales}
+              onChange={(e) => setObservacionesGenerales(e.target.value)}
+              style={{ minHeight: '90px' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', paddingTop: '24px', borderTop: '1px solid #F1F5F9' }}>
+            <button type="submit" className="btn btn-primary" disabled={loading || !eventoSeleccionado || errorDate || Object.keys(equiposSeleccionados).length === 0}>
+              {loading ? (
+                <><span className="spinner"></span> Procesando...</>
+              ) : (
+                "Registrar Solicitud Técnica"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") && (
-        <div className="av-card" style={{ marginTop: '2rem' }}>
-          <h2 className="av-title" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Gestión de Solicitudes</h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="requests-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A' }}>Gestión de Solicitudes Pendientes</h2>
+          </div>
+          
+          <div className="table-container">
+            <table className="modern-table">
               <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                  <th style={{ padding: '12px' }}>ID EVENTO</th>
-                  <th style={{ padding: '12px' }}>EVENTO</th>
-                  <th style={{ padding: '12px' }}>SOLICITANTE</th>
-                  <th style={{ padding: '12px' }}>CANT. EQ.</th>
-                  <th style={{ padding: '12px' }}>ESTADO</th>
-                  {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") && <th style={{ padding: '12px' }}>DETALLES</th>}
+                <tr>
+                  <th>ID</th>
+                  <th>Evento</th>
+                  <th>Solicitante</th>
+                  <th>Cant. Equipos</th>
+                  <th>Estado</th>
+                  <th style={{ textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {currentItems.map((av) => (
-                  <tr key={av.id_evento} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '12px' }}>#EVT-{av.id_evento}</td>
-                    <td style={{ padding: '12px' }}>{av.nombre_evento}</td>
-                    <td style={{ padding: '12px' }}>{av.nombre_usuario}</td>
-                    <td style={{ padding: '12px' }}>{av.total_equipos} equipo(s)</td>
-                    <td style={{ padding: '12px' }}>
-                      {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") ? (
-                        <select
-                          value={av.estado_av || "Pendiente"}
-                          onChange={(e) => handleCambiarEstado(av.id_evento, e.target.value)}
-                          style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
-                        >
-                          <option value="Pendiente">Pendiente</option>
-                          <option value="En revisión">En revisión</option>
-                          <option value="Aprobado">Aprobado</option>
-                          <option value="Rechazado">Rechazado</option>
-                          <option value="Completado">Completado</option>
-                        </select>
-                      ) : (
-                        <span className={`status ${
-                          av.estado_av === "Pendiente" ? "pending" : 
-                          av.estado_av === "Aprobado" || av.estado_av === "Completado" ? "approved" : 
-                          av.estado_av === "Rechazado" ? "rejected" : "pending"
-                        }`} style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.875rem' }}>
-                          {av.estado_av || "Pendiente"}
-                        </span>
-                      )}
+                  <tr key={av.id_evento}>
+                    <td style={{ fontWeight: '600', color: '#64748B' }}>#EVT-{av.id_evento}</td>
+                    <td style={{ fontWeight: '600', color: '#0F172A' }}>{av.nombre_evento}</td>
+                    <td>{av.nombre_usuario}</td>
+                    <td>
+                      <span className="badge badge-slate">{av.total_equipos} equipo(s)</span>
                     </td>
-                    {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") && (
-                      <td style={{ padding: '12px' }}>
-                        <button className="details-btn" onClick={() => openModal(av)}>
-                          <FiEye /> Ver
-                        </button>
-                      </td>
-                    )}
+                    <td>
+                      <select
+                        className="input-base"
+                        value={av.estado_av || "Pendiente"}
+                        onChange={(e) => handleCambiarEstado(av.id_evento, e.target.value)}
+                        style={{ padding: '6px 12px', fontSize: '13px', width: 'auto', minWidth: '130px' }}
+                      >
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En revisión">En revisión</option>
+                        <option value="Aprobado">Aprobado</option>
+                        <option value="Rechazado">Rechazado</option>
+                        <option value="Completado">Completado</option>
+                      </select>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
+                        <FiEye size={14} /> Ver
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {solicitudesAV.length === 0 && (
                   <tr>
-                    <td colSpan="5" style={{ textAlign: "center", padding: "12px", color: "#64748b" }}>
-                      No hay solicitudes registradas
+                    <td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#64748B" }}>
+                      <FiMonitor size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                      <div style={{ fontWeight: '600' }}>No hay solicitudes audiovisuales registradas</div>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-
-          {/* CONTROLES DE PAGINACIÓN */}
-          {solicitudesAV.length > 0 && (
-            <div className="pagination-container" style={{ marginTop: '10px' }}>
-              <div className="pagination-info">
-                Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, solicitudesAV.length)} de {solicitudesAV.length} solicitudes
-              </div>
-              <div className="pagination-controls">
-                <button 
-                  className="page-btn" 
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  Anterior
-                </button>
-                <span className="page-number">
-                  Página {currentPage} de {totalPages || 1}
-                </span>
-                <button 
-                  className="page-btn" 
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        </>
       )}
 
-      {/* MODAL DETALLES AUDIOVISUAL */}
+      {/* Modal Premium */}
       {isModalOpen && selectedRequest && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Detalles de Solicitud Audiovisual</h2>
+              <div>
+                <h3 className="modal-title">Ficha Técnica Audiovisual</h3>
+                <span className="modal-subtitle">Revisión de reserva de equipos y logística AV</span>
+              </div>
+              <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#AV-{selectedRequest.id_solicitud || selectedRequest.id_evento}</span>
             </div>
+            
             <div className="modal-body">
-              <div className="detail-group">
-                <label>Evento Relacionado:</label>
-                <p>#EVT-{selectedRequest.id_evento} - {selectedRequest.nombre_evento}</p>
+              <div className="modal-grid-2">
+                {/* Columna 1: Info General */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiFileText size={14} /> Información del Evento
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Evento Relacionado</span>
+                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>#EVT-{selectedRequest.id_evento} - {selectedRequest.nombre_evento}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Solicitante</span>
+                    <span className="info-value">{selectedRequest.nombre_usuario || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Fecha del Evento</span>
+                    <span className="info-value">{formatFecha(selectedRequest.fecha_evento)}</span>
+                  </div>
+                </div>
+
+                {/* Columna 2: Estado */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiMonitor size={14} /> Estado de Solicitud AV
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Estado General</span>
+                    <span className={`badge ${selectedRequest.estado_av === 'Aprobado' ? 'badge-green' : selectedRequest.estado_av === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      {selectedRequest.estado_av}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="detail-group">
-                <label>Solicitante:</label>
-                <p>{selectedRequest.nombre_usuario || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Fecha del Evento:</label>
-                <p>{formatFecha(selectedRequest.fecha_evento)}</p>
-              </div>
-              <div className="detail-group">
-                <label>Estado General:</label>
-                <p>{selectedRequest.estado_av}</p>
-              </div>
-              
-              <div style={{ gridColumn: "1 / -1", marginTop: "15px" }}>
-                <h4 style={{ marginBottom: "10px", color: "var(--text-color)" }}>Equipos Solicitados</h4>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid #cbd5e1", textAlign: "left", background: "#f8fafc" }}>
-                        <th style={{ padding: "10px" }}>Equipo</th>
-                        <th style={{ padding: "10px" }}>Cant.</th>
-                        <th style={{ padding: "10px" }}>Ubicación</th>
-                        <th style={{ padding: "10px" }}>Observaciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedRequest.equipos && selectedRequest.equipos.map(eq => (
-                        <tr key={eq.id_servicio} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                          <td style={{ padding: "10px" }}>{eq.equipo}</td>
-                          <td style={{ padding: "10px" }}>{eq.cantidad}</td>
-                          <td style={{ padding: "10px" }}>{eq.ubicacion || "N/D"}</td>
-                          <td style={{ padding: "10px", color: "#64748b" }}>{eq.observaciones || "Ninguna"}</td>
+
+              {/* Equipos Solicitados */}
+              <div className="modal-grid-1" style={{ marginTop: '24px' }}>
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiCheckCircle size={14} /> Desglose de Equipos Solicitados
+                  </div>
+                  <div className="table-container" style={{ margin: 0, boxShadow: 'none', border: '1px solid #E2E8F0' }}>
+                    <table className="modern-table">
+                      <thead>
+                        <tr>
+                          <th>Equipo Requerido</th>
+                          <th style={{ textAlign: 'center' }}>Cantidad</th>
+                          <th>Ubicación</th>
+                          <th>Observaciones Especiales</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {selectedRequest.equipos && selectedRequest.equipos.map(eq => (
+                          <tr key={eq.id_servicio}>
+                            <td style={{ fontWeight: '600', color: '#0F172A' }}>{eq.equipo}</td>
+                            <td style={{ textAlign: 'center', fontWeight: '700', color: '#3B82F6' }}>{eq.cantidad}</td>
+                            <td>{eq.ubicacion || "N/D"}</td>
+                            <td style={{ color: '#64748B', fontSize: '13px' }}>{eq.observaciones || "Ninguna"}</td>
+                          </tr>
+                        ))}
+                        {(!selectedRequest.equipos || selectedRequest.equipos.length === 0) && (
+                          <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', color: '#64748B', padding: '24px' }}>
+                              No hay detalle de equipos registrado para esta solicitud.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
+            
             <div className="modal-footer">
-              <button className="close-btn" onClick={closeModal}>Cerrar</button>
+              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

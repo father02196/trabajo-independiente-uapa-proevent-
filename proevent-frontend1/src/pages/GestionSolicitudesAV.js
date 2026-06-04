@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import "./../css/Audiovisual.css";
-import { FiEye } from "react-icons/fi";
+import { FiEye, FiMonitor, FiFileText, FiCheckCircle } from "react-icons/fi";
+import { toast } from "react-hot-toast";
 
 const API = "http://localhost:8080";
 
@@ -59,17 +59,18 @@ export default function GestionSolicitudesAV({ usuario }) {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
-          "x-usuario-id": usuario?.id_usuario || ""
+          "Authorization": `Bearer ${usuario?.token || ""}`, "x-usuario-id": usuario?.id_usuario || ""
         },
         body: JSON.stringify({ estado: nuevoEstado })
       });
       if (res.ok) {
+        toast.success(`Estado actualizado a ${nuevoEstado}`);
         cargarSolicitudesAV();
       } else {
-        alert("Error al cambiar el estado.");
+        toast.error("Error al cambiar el estado.");
       }
     } catch {
-      alert("No se pudo conectar al servidor.");
+      toast.error("No se pudo conectar al servidor.");
     }
   };
 
@@ -94,141 +95,174 @@ export default function GestionSolicitudesAV({ usuario }) {
   const currentItems = solicitudesAV.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
-    <div className="audiovisual-section">
-      <div className="av-card">
-        <h2 className="av-title" style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>Gestión de Solicitudes Audiovisuales</h2>
-        <div style={{ overflowX: "auto" }}>
-          <table className="requests-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "2px solid #e2e8f0", textAlign: "left" }}>
-                <th style={{ padding: "12px" }}>ID EVENTO</th>
-                <th style={{ padding: "12px" }}>EVENTO</th>
-                <th style={{ padding: "12px" }}>SOLICITANTE</th>
-                <th style={{ padding: "12px" }}>CANT. EQ.</th>
-                <th style={{ padding: "12px" }}>ESTADO</th>
-                <th style={{ padding: "12px" }}>DETALLES</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((av) => (
-                <tr key={av.id_evento} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                  <td style={{ padding: "12px" }}>#EVT-{av.id_evento}</td>
-                  <td style={{ padding: "12px" }}>{av.nombre_evento}</td>
-                  <td style={{ padding: "12px" }}>{av.nombre_usuario}</td>
-                  <td style={{ padding: "12px" }}>{av.total_equipos} equipo(s)</td>
-                  <td style={{ padding: "12px" }}>
-                    <select
-                      value={av.estado_av || "Pendiente"}
-                      onChange={(e) => handleCambiarEstado(av.id_evento, e.target.value)}
-                      style={{ padding: "4px 8px", borderRadius: "4px", border: "1px solid #cbd5e1", cursor: "pointer" }}
-                    >
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="En revisión">En revisión</option>
-                      <option value="Aprobado">Aprobado</option>
-                      <option value="Rechazado">Rechazado</option>
-                      <option value="Completado">Completado</option>
-                    </select>
-                  </td>
-                  <td style={{ padding: "12px" }}>
-                    <button className="details-btn" onClick={() => openModal(av)}>
-                      <FiEye /> Ver
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {solicitudesAV.length === 0 && (
-                <tr>
-                  <td colSpan="6" style={{ textAlign: "center", padding: "12px", color: "#64748b" }}>
-                    No hay solicitudes registradas
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+    <div className="animate-fade">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Gestión de Solicitudes Audiovisuales</h1>
+          <p style={{ color: '#64748B', fontSize: '13.5px' }}>Administra y actualiza el estado de las solicitudes técnicas de los eventos.</p>
         </div>
-
-        {/* CONTROLES DE PAGINACIÓN */}
-        {solicitudesAV.length > 0 && (
-          <div className="pagination-container" style={{ marginTop: "10px" }}>
-            <div className="pagination-info">
-              Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, solicitudesAV.length)} de {solicitudesAV.length} solicitudes
-            </div>
-            <div className="pagination-controls">
-              <button 
-                className="page-btn" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </button>
-              <span className="page-number">
-                Página {currentPage} de {totalPages || 1}
-              </span>
-              <button 
-                className="page-btn" 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+
+      <div className="table-container">
+        <table className="modern-table">
+          <thead>
+            <tr>
+              <th>ID Evento</th>
+              <th>Evento</th>
+              <th>Solicitante</th>
+              <th>Cant. Equipos</th>
+              <th>Estado</th>
+              <th style={{ textAlign: 'center' }}>Detalles</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentItems.map((av) => (
+              <tr key={av.id_evento}>
+                <td style={{ fontWeight: '600', color: '#64748B' }}>#EVT-{av.id_evento}</td>
+                <td style={{ fontWeight: '600', color: '#0F172A' }}>{av.nombre_evento}</td>
+                <td>{av.nombre_usuario}</td>
+                <td><span className="badge badge-slate">{av.total_equipos} equipo(s)</span></td>
+                <td>
+                  <select
+                    value={av.estado_av || "Pendiente"}
+                    onChange={(e) => handleCambiarEstado(av.id_evento, e.target.value)}
+                    className="input-base"
+                    style={{ padding: '6px 12px', fontSize: '13px', width: 'auto', minWidth: '130px' }}
+                  >
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En revisión">En revisión</option>
+                    <option value="Aprobado">Aprobado</option>
+                    <option value="Rechazado">Rechazado</option>
+                    <option value="Completado">Completado</option>
+                  </select>
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
+                    <FiEye size={14} /> Ver
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {solicitudesAV.length === 0 && (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#64748B" }}>
+                  <FiMonitor size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                  <div style={{ fontWeight: '600' }}>No hay solicitudes registradas</div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* CONTROLES DE PAGINACIÓN */}
+      {solicitudesAV.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+          <div style={{ fontSize: '13px', color: '#64748B' }}>
+            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, solicitudesAV.length)} de {solicitudesAV.length} solicitudes
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+              Anterior
+            </button>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
+              Página {currentPage} de {totalPages || 1}
+            </span>
+            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DETALLES AUDIOVISUAL */}
       {isModalOpen && selectedRequest && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "650px" }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Detalles de Solicitud Audiovisual</h2>
+              <div>
+                <h3 className="modal-title">Ficha Técnica Audiovisual</h3>
+                <span className="modal-subtitle">Revisión de reserva de equipos y logística AV</span>
+              </div>
+              <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#AV-{selectedRequest.id_solicitud || selectedRequest.id_evento}</span>
             </div>
+            
             <div className="modal-body">
-              <div className="detail-group">
-                <label>Evento Relacionado:</label>
-                <p>#EVT-{selectedRequest.id_evento} - {selectedRequest.nombre_evento}</p>
+              <div className="modal-grid-2">
+                {/* Columna 1: Info General */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiFileText size={14} /> Información del Evento
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Evento Relacionado</span>
+                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>#EVT-{selectedRequest.id_evento} - {selectedRequest.nombre_evento}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Solicitante</span>
+                    <span className="info-value">{selectedRequest.nombre_usuario || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Fecha del Evento</span>
+                    <span className="info-value">{formatFecha(selectedRequest.fecha_evento)}</span>
+                  </div>
+                </div>
+
+                {/* Columna 2: Estado */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiMonitor size={14} /> Estado de Solicitud AV
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Estado General</span>
+                    <span className={`badge ${selectedRequest.estado_av === 'Aprobado' ? 'badge-green' : selectedRequest.estado_av === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      {selectedRequest.estado_av}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="detail-group">
-                <label>Solicitante:</label>
-                <p>{selectedRequest.nombre_usuario || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Fecha del Evento:</label>
-                <p>{formatFecha(selectedRequest.fecha_evento)}</p>
-              </div>
-              <div className="detail-group">
-                <label>Estado General:</label>
-                <p>{selectedRequest.estado_av}</p>
-              </div>
-              
-              <div style={{ gridColumn: "1 / -1", marginTop: "15px" }}>
-                <h4 style={{ marginBottom: "10px", color: "var(--text-color)" }}>Equipos Solicitados</h4>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid #cbd5e1", textAlign: "left", background: "#f8fafc" }}>
-                        <th style={{ padding: "10px" }}>Equipo</th>
-                        <th style={{ padding: "10px" }}>Cant.</th>
-                        <th style={{ padding: "10px" }}>Ubicación</th>
-                        <th style={{ padding: "10px" }}>Observaciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedRequest.equipos && selectedRequest.equipos.map(eq => (
-                        <tr key={eq.id_servicio} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                          <td style={{ padding: "10px" }}>{eq.equipo}</td>
-                          <td style={{ padding: "10px" }}>{eq.cantidad}</td>
-                          <td style={{ padding: "10px" }}>{eq.ubicacion || "N/D"}</td>
-                          <td style={{ padding: "10px", color: "#64748b" }}>{eq.observaciones || "Ninguna"}</td>
+
+              {/* Equipos Solicitados */}
+              <div className="modal-grid-1" style={{ marginTop: '24px' }}>
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiCheckCircle size={14} /> Desglose de Equipos Solicitados
+                  </div>
+                  <div className="table-container" style={{ margin: 0, boxShadow: 'none', border: '1px solid #E2E8F0' }}>
+                    <table className="modern-table">
+                      <thead>
+                        <tr>
+                          <th>Equipo Requerido</th>
+                          <th style={{ textAlign: 'center' }}>Cantidad</th>
+                          <th>Ubicación</th>
+                          <th>Observaciones Especiales</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {selectedRequest.equipos && selectedRequest.equipos.map(eq => (
+                          <tr key={eq.id_servicio}>
+                            <td style={{ fontWeight: '600', color: '#0F172A' }}>{eq.equipo}</td>
+                            <td style={{ textAlign: 'center', fontWeight: '700', color: '#3B82F6' }}>{eq.cantidad}</td>
+                            <td>{eq.ubicacion || "N/D"}</td>
+                            <td style={{ color: '#64748B', fontSize: '13px' }}>{eq.observaciones || "Ninguna"}</td>
+                          </tr>
+                        ))}
+                        {(!selectedRequest.equipos || selectedRequest.equipos.length === 0) && (
+                          <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', color: '#64748B', padding: '24px' }}>
+                              No hay detalle de equipos registrado para esta solicitud.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
+            
             <div className="modal-footer">
-              <button className="close-btn" onClick={closeModal}>Cerrar</button>
+              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
             </div>
           </div>
         </div>

@@ -103,70 +103,53 @@ export default function AdminEvento({ usuario }) {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dataList.slice(indexOfFirstItem, indexOfLastItem);
 
-  if (usuario?.rol !== "Administrador de Evento") {
+  if (usuario?.rol !== "Administrador de Evento" && usuario?.rol !== "Administrador" && usuario?.rol !== "Especialista de eventos") {
     return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a esta sección.</div>;
   }
 
   const { title, idField } = getConfig();
 
   return (
-    <div className="ajustes-container" style={{maxWidth: '800px'}}>
-      <h2>Mantenimiento de Catálogos de Eventos</h2>
-      <p style={{marginBottom: "20px", color: "var(--text-light)"}}>
+    <div style={{maxWidth: '800px', margin: '0 auto'}}>
+      <h2 style={{fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px'}}>Mantenimiento de Catálogos de Eventos</h2>
+      <p style={{marginBottom: "24px", color: "var(--text-muted)", fontSize: '14px'}}>
         Administra las opciones prestablecidas que se muestran en el formulario de solicitud de eventos.
       </p>
 
       {/* TABS */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
-        <button 
-          onClick={() => setActiveTab("tipos")}
-          style={{ background: activeTab === "tipos" ? "var(--navy)" : "#f1f5f9", color: activeTab === "tipos" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
-        >
-          Tipos de Evento
-        </button>
-        <button 
-          onClick={() => setActiveTab("corporativo")}
-          style={{ background: activeTab === "corporativo" ? "var(--navy)" : "#f1f5f9", color: activeTab === "corporativo" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
-        >
-          Detalles Corporativos
-        </button>
-        <button 
-          onClick={() => setActiveTab("alimentos")}
-          style={{ background: activeTab === "alimentos" ? "var(--navy)" : "#f1f5f9", color: activeTab === "alimentos" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
-        >
-          Opciones de Alimentos
-        </button>
+      <div className="modern-tabs">
+        <button className={activeTab === "tipos" ? "active" : ""} onClick={() => setActiveTab("tipos")}>Tipos de Evento</button>
+        <button className={activeTab === "corporativo" ? "active" : ""} onClick={() => setActiveTab("corporativo")}>Detalles Corporativos</button>
+        <button className={activeTab === "alimentos" ? "active" : ""} onClick={() => setActiveTab("alimentos")}>Opciones de Alimentos</button>
       </div>
 
-      <div className="form-card" style={{ marginBottom: "30px", padding: "20px", background: "white", borderRadius: "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-        <h3>{isEditing ? `Editar opción de ${title}` : `Nueva opción para ${title}`}</h3>
-        <form onSubmit={handleGuardar} style={{ display: "flex", gap: "10px", alignItems: "flex-end", marginTop: "15px" }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "600" }}>Nombre de la Opción</label>
+      <div style={{ marginBottom: '24px', padding: '20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
+        <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px'}}>{isEditing ? `Editar opción de ${title}` : `Nueva opción para ${title}`}</h3>
+        <form onSubmit={handleGuardar} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginTop: '16px' }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label>Nombre de la Opción</label>
             <input 
               type="text" 
               required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              style={{ width: "100%", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none", transition: "border-color 0.2s" }}
+              className="input-base"
               placeholder="Escriba aquí..."
-              onFocus={(e) => e.target.style.borderColor = "var(--navy)"}
-              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
             />
           </div>
-          <button type="submit" className="btn-add-user" disabled={loading} style={{ padding: "12px 24px", borderRadius: "8px", fontWeight: "600", transition: "transform 0.1s, background-color 0.2s", display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
             {isEditing ? "Guardar" : <><FiPlus /> Agregar</>}
           </button>
           {isEditing && (
-            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} className="btn-cancel" style={{ padding: "12px 24px", borderRadius: "8px", cursor: "pointer", fontWeight: "600", transition: "background-color 0.2s" }}>
+            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} className="btn btn-secondary">
               Cancelar
             </button>
           )}
         </form>
       </div>
 
-      <div className="users-table-container">
-        <table className="users-table">
+      <div className="table-container">
+        <table className="modern-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -177,16 +160,18 @@ export default function AdminEvento({ usuario }) {
           <tbody>
             {currentItems.map(item => (
               <tr key={item[idField]}>
-                <td>{item[idField]}</td>
+                <td style={{color: 'var(--text-muted)', fontWeight: 600}}>{item[idField]}</td>
                 <td><strong>{item.nombre}</strong></td>
                 <td style={{textAlign: 'right'}}>
-                  <button className="action-btn edit" onClick={() => handleEditar(item)}><FiEdit2 /></button>
-                  <button className="action-btn delete" onClick={() => handleEliminar(item[idField])}><FiTrash2 /></button>
+                  <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleEditar(item)} title="Editar"><FiEdit2 /></button>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleEliminar(item[idField])} title="Eliminar"><FiTrash2 /></button>
+                  </div>
                 </td>
               </tr>
             ))}
             {dataList.length === 0 && (
-              <tr><td colSpan="3" style={{textAlign: 'center', padding: '20px'}}>Este catálogo está vacío.</td></tr>
+              <tr><td colSpan="3" style={{textAlign: 'center', padding: '40px', color: 'var(--text-muted)'}}>Este catálogo está vacío.</td></tr>
             )}
           </tbody>
         </table>
@@ -197,19 +182,19 @@ export default function AdminEvento({ usuario }) {
             <div className="pagination-info">
               Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, dataList.length)} de {dataList.length} opciones
             </div>
-            <div className="pagination-controls">
+            <div className="pagination-controls" style={{ display: 'flex', gap: '10px' }}>
               <button 
-                className="page-btn" 
+                className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
               >
                 Anterior
               </button>
-              <span className="page-number">
+              <span className="page-number" style={{ alignSelf: 'center', fontWeight: 'bold' }}>
                 Página {currentPage} de {totalPages || 1}
               </span>
               <button 
-                className="page-btn" 
+                className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
               >

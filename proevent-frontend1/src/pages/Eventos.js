@@ -14,50 +14,66 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
       localStorage.setItem("eventos_activeSection", activeSection);
   }, [activeSection]);
 
-  const secciones = [
-    "Información General",
-    "Modalidad y Lugar",
-    "Servicios alimenticios y Detalles coorporativos",
-    "Presupuesto y POA"
-  ];
+  // Secciones extra para modo edición (cronograma y licitaciones)
+  const showExtraTabs = Boolean(editingEvent);
 
-  if (editingEvent) {
-    secciones.push("Cronograma Logístico", "Licitaciones B2B");
+  const extraSecciones = ["Cronograma Logístico", "Licitaciones B2B"];
+  const activeExtraTab = extraSecciones.includes(activeSection) ? activeSection : null;
+
+  // Si se seleccionó una sección extra, renderizar esos componentes
+  if (activeExtraTab === "Cronograma Logístico") {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {showExtraTabs && (
+          <div className="modern-tabs" style={{ marginBottom: '0' }}>
+            <button onClick={() => setActiveSection("Información General")}>
+              ← Solicitud de Evento
+            </button>
+            <button className="active">Cronograma Logístico</button>
+            <button onClick={() => setActiveSection("Licitaciones B2B")}>Licitaciones B2B</button>
+          </div>
+        )}
+        <CronogramaLogistico evento={editingEvent} usuario={usuario} />
+      </div>
+    );
+  }
+
+  if (activeExtraTab === "Licitaciones B2B") {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {showExtraTabs && (
+          <div className="modern-tabs" style={{ marginBottom: '0' }}>
+            <button onClick={() => setActiveSection("Información General")}>
+              ← Solicitud de Evento
+            </button>
+            <button onClick={() => setActiveSection("Cronograma Logístico")}>Cronograma Logístico</button>
+            <button className="active">Licitaciones B2B</button>
+          </div>
+        )}
+        <LicitacionesB2B evento={editingEvent} usuario={usuario} />
+      </div>
+    );
   }
 
   return (
-    <div className="eventos-container">
-      <h2>Gestión de Eventos</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Extra tabs solo en modo edición */}
+      {showExtraTabs && (
+        <div className="modern-tabs" style={{ marginBottom: '0' }}>
+          <button className="active">Solicitud de Evento</button>
+          <button onClick={() => setActiveSection("Cronograma Logístico")}>Cronograma Logístico</button>
+          <button onClick={() => setActiveSection("Licitaciones B2B")}>Licitaciones B2B</button>
+        </div>
+      )}
 
-      {/* Barra de pestañas */}
-      <div className="tabs">
-        {secciones.map(s => (
-          <button
-            key={s}
-            className={activeSection === s ? "active" : ""}
-            onClick={() => setActiveSection(s)}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      {/* Formulario dinámico */}
-      <main className="form-container">
-        {activeSection === "Cronograma Logístico" ? (
-          <CronogramaLogistico evento={editingEvent} usuario={usuario} />
-        ) : activeSection === "Licitaciones B2B" ? (
-          <LicitacionesB2B evento={editingEvent} usuario={usuario} />
-        ) : (
-          <NuevaSolicitudEvento
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-            usuario={usuario}
-            editingEvent={editingEvent}
-            setEditingEvent={setEditingEvent}
-          />
-        )}
-      </main>
+      {/* El formulario multipaso — ya tiene su propio header y wizard */}
+      <NuevaSolicitudEvento
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        usuario={usuario}
+        editingEvent={editingEvent}
+        setEditingEvent={setEditingEvent}
+      />
     </div>
   );
 }

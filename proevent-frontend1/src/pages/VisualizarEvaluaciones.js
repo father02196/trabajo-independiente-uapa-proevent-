@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
   RadarChart, PolarGrid, PolarAngleAxis, Radar
 } from 'recharts';
 import { FiBarChart2, FiPieChart, FiActivity, FiStar, FiChevronLeft, FiChevronRight, FiRefreshCw } from 'react-icons/fi';
-import './../css/VisualizarEvaluaciones.css';
 
 const API = 'http://localhost:8080';
 const ITEMS_PER_PAGE = 10;
-const COLORS = ['#6366f1', '#22d3ee', '#f59e0b', '#ef4444', '#10b981'];
 
 const CHART_TYPES = [
   { id: 'bar', label: 'Barras', icon: <FiBarChart2 /> },
@@ -105,22 +103,14 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
         { name: 'Valoración', valor: ev.valoracion_respuesta === 'Muy eficiente' ? 4 : ev.valoracion_respuesta === 'Excelente' ? 3 : ev.valoracion_respuesta === 'Eficiente' ? 2 : 1 },
       ];
       return (
-        <div className="veval-chart-box">
+        <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', marginTop: '16px' }}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#818cf8" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0.3} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip 
-                contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b' }} 
-              />
-              <Bar dataKey="valor" fill="#041046" radius={[4, 4, 0, 0]} animationDuration={1000} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 12 }} axisLine={false} tickLine={false} dy={10} />
+              <YAxis tick={{ fill: '#64748B', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', color: '#0F172A' }} />
+              <Bar dataKey="valor" fill="#3B82F6" radius={[4, 4, 0, 0]} animationDuration={1000} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -130,15 +120,15 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
     if (tipo === 'pie') {
       const data = buildPieData(ev);
       return (
-        <div className="veval-chart-box">
+        <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', marginTop: '16px' }}>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={85} dataKey="value" startAngle={90} endAngle={450} paddingAngle={5} cornerRadius={4} animationDuration={1200}>
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={index === 0 ? '#818cf8' : 'rgba(255,255,255,0.05)'} stroke="none" />
+                  <Cell key={`cell-${index}`} fill={index === 0 ? '#3B82F6' : '#E2E8F0'} stroke="none" />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b' }} />
+              <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', color: '#0F172A' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -148,13 +138,13 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
     if (tipo === 'radar') {
       const data = buildChartData(ev);
       return (
-        <div className="veval-chart-box">
+        <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', marginTop: '16px' }}>
           <ResponsiveContainer width="100%" height={220}>
             <RadarChart data={data} outerRadius="75%">
-              <PolarGrid stroke="rgba(255,255,255,0.1)" />
-              <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-              <Radar name="Valor" dataKey="value" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.5} animationDuration={1400} />
-              <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#1e293b' }} />
+              <PolarGrid stroke="#E2E8F0" />
+              <PolarAngleAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 12 }} />
+              <Radar name="Valor" dataKey="value" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.5} animationDuration={1400} />
+              <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', color: '#0F172A' }} />
             </RadarChart>
           </ResponsiveContainer>
         </div>
@@ -165,158 +155,148 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
   };
 
   const estrellas = (n) => Array.from({ length: 5 }, (_, i) => (
-    <FiStar key={i} style={{ color: i < n ? '#f59e0b' : 'rgba(255,255,255,0.1)', fontSize: '15px' }} />
+    <FiStar key={i} style={{ color: i < n ? '#F59E0B' : '#E2E8F0', fontSize: '15px' }} fill={i < n ? '#F59E0B' : 'transparent'} />
   ));
 
   return (
-    <div className="veval-container">
-      <div className="veval-header">
-        <div className="veval-title-group">
-          <h2 className="veval-title">Historial de Evaluaciones</h2>
-          <p className="veval-subtitle">Monitoreo de satisfacción y resultados del servicio</p>
+    <div className="animate-fade">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Análisis de Evaluaciones</h1>
+          <p style={{ color: '#64748B', fontSize: '13.5px' }}>Monitorea el nivel de satisfacción y respuesta de los eventos realizados.</p>
         </div>
-        <button className="veval-refresh-btn" onClick={cargar} title="Actualizar">
-          <FiRefreshCw className={loading ? 'spinning' : ''} /> Actualizar Datos
+        <button className="btn btn-secondary" onClick={cargar} disabled={loading}>
+          <FiRefreshCw /> Actualizar Datos
         </button>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="veval-stats-grid">
-        <div className="veval-stat-card">
-          <div className="veval-stat-icon sat"><FiStar /></div>
-          <div className="veval-stat-info">
-            <span className="veval-stat-label">Satisfacción Promedio</span>
-            <div className="veval-stat-value">
-              {stats.avg} <span>/ 5.0</span>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiStar size={24} /></div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Satisfacción Promedio</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A' }}>{stats.avg} <span style={{ fontSize: '14px', color: '#94A3B8' }}>/ 5.0</span></div>
           </div>
         </div>
-        <div className="veval-stat-card">
-          <div className="veval-stat-icon total"><FiActivity /></div>
-          <div className="veval-stat-info">
-            <span className="veval-stat-label">Total de Evaluaciones</span>
-            <div className="veval-stat-value">{stats.total}</div>
+        <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#DBEAFE', color: '#2563EB', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiActivity size={24} /></div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Total de Evaluaciones</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A' }}>{stats.total}</div>
           </div>
         </div>
-        <div className="veval-stat-card">
-          <div className="veval-stat-icon best"><FiBarChart2 /></div>
-          <div className="veval-stat-info">
-            <span className="veval-stat-label">Mejor Recinto</span>
-            <div className="veval-stat-value">{stats.bestRecinto}</div>
+        <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#D1FAE5', color: '#059669', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiBarChart2 size={24} /></div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Mejor Recinto</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>{stats.bestRecinto}</div>
           </div>
         </div>
       </div>
 
-      <div className="veval-main-card">
+      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
         {loading ? (
-          <div className="veval-loading-shimmer">
-            <div className="shimmer-row"></div>
-            <div className="shimmer-row"></div>
-            <div className="shimmer-row"></div>
+          <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
+            <div className="loader" style={{ margin: '0 auto 16px', borderColor: '#E2E8F0', borderTopColor: '#3B82F6' }}></div>
+            <p>Cargando evaluaciones...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="veval-empty">
-            <div className="veval-empty-icon"><FiStar /></div>
-            <h3>No se encontraron evaluaciones</h3>
+          <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
+            <FiStar size={48} style={{ color: '#E2E8F0', margin: '0 auto 16px' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>No se encontraron evaluaciones</h3>
             <p>Ajusta el buscador o intenta actualizar los datos.</p>
           </div>
         ) : (
-          <>
-            <div className="veval-table-scroll">
-              <table className="veval-table premium">
-                <thead>
-                  <tr>
-                    <th>Solicitud</th>
-                    <th>Evento & Fecha</th>
-                    <th>Recinto</th>
-                    <th>Valoración</th>
-                    <th>Satisfacción</th>
-                    <th className="th-center">Acciones Visuales</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginados.map((ev, index) => (
-                    <React.Fragment key={ev.id_evaluacion}>
-                      <tr className={chartSelections[ev.id_evaluacion] ? 'row-expanded' : ''} style={{ '--row-index': index }}>
-                        <td>
-                          <div className="veval-id-badge">#{ev.id_evaluacion}</div>
-                        </td>
-                        <td>
-                          <div className="veval-event-cell">
-                            <strong>{ev.nombre_evento || 'Sin nombre'}</strong>
-                            <span>#{ev.id_evento} • {ev.fecha ? new Date(ev.fecha).toLocaleDateString() : '—'}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="veval-recinto-tag">{ev.recinto}</span>
-                        </td>
-                        <td>
-                          <span className={`veval-status-pill val-${(ev.valoracion_respuesta || '').replace(/\s/g, '_').toLowerCase()}`}>
-                            {ev.valoracion_respuesta}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="veval-rating-cell">
-                            <div className="veval-stars-mini">{estrellas(ev.satisfaccion)}</div>
-                            <span className="veval-comment-hint" title={ev.comentario}>Ver comentario</span>
-                          </div>
-                        </td>
-                        <td className="td-center">
-                          <div className="veval-visual-actions">
-                            {CHART_TYPES.map(ct => (
-                              <button
-                                key={ct.id}
-                                className={`veval-icon-btn ${chartSelections[ev.id_evaluacion] === ct.id ? 'active' : ''}`}
-                                onClick={() => toggleChart(ev.id_evaluacion, ct.id)}
-                                title={`Ver gráfico de ${ct.label}`}
-                              >
-                                {ct.icon}
-                              </button>
-                            ))}
+          <div className="table-container" style={{ margin: 0, boxShadow: 'none' }}>
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th>Solicitud</th>
+                  <th>Evento & Fecha</th>
+                  <th>Recinto</th>
+                  <th>Valoración</th>
+                  <th style={{ textAlign: 'center' }}>Satisfacción</th>
+                  <th style={{ textAlign: 'center' }}>Visualización</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginados.map((ev) => (
+                  <React.Fragment key={ev.id_evaluacion}>
+                    <tr style={{ borderBottom: chartSelections[ev.id_evaluacion] ? 'none' : '1px solid #F1F5F9' }}>
+                      <td style={{ fontWeight: '600', color: '#64748B' }}>#{ev.id_evaluacion}</td>
+                      <td>
+                        <div style={{ fontWeight: '600', color: '#0F172A' }}>{ev.nombre_evento || 'Sin nombre'}</div>
+                        <div style={{ fontSize: '12px', color: '#64748B' }}>#{ev.id_evento} • {ev.fecha ? new Date(ev.fecha).toLocaleDateString() : '—'}</div>
+                      </td>
+                      <td><span className="badge badge-slate">{ev.recinto}</span></td>
+                      <td>
+                        <span className={`status-pill ${ev.valoracion_respuesta === 'Deficiente' ? 'status-rejected' : ev.valoracion_respuesta === 'Muy eficiente' || ev.valoracion_respuesta === 'Excelente' ? 'status-approved' : 'status-pending'}`} style={{ padding: '4px 10px', fontSize: '12px' }}>
+                          {ev.valoracion_respuesta}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '2px' }}>{estrellas(ev.satisfaccion)}</div>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                          {CHART_TYPES.map(ct => (
+                            <button
+                              key={ct.id}
+                              style={{
+                                width: '32px', height: '32px', borderRadius: '8px', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s',
+                                backgroundColor: chartSelections[ev.id_evaluacion] === ct.id ? '#EFF6FF' : '#FFFFFF',
+                                borderColor: chartSelections[ev.id_evaluacion] === ct.id ? '#BFDBFE' : '#E2E8F0',
+                                color: chartSelections[ev.id_evaluacion] === ct.id ? '#3B82F6' : '#64748B'
+                              }}
+                              onClick={() => toggleChart(ev.id_evaluacion, ct.id)}
+                              title={`Ver gráfico de ${ct.label}`}
+                            >
+                              {ct.icon}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                    {chartSelections[ev.id_evaluacion] && (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '0 24px 24px 24px', borderBottom: '1px solid #F1F5F9', background: '#FFFFFF' }}>
+                          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '20px' }}>
+                            <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>Comentario del solicitante:</h4>
+                            <blockquote style={{ fontStyle: 'italic', color: '#475569', fontSize: '14px', paddingLeft: '16px', borderLeft: '4px solid #CBD5E1', margin: 0, marginBottom: '20px' }}>
+                              {ev.comentario ? `"${ev.comentario}"` : "El solicitante no dejó comentarios adicionales."}
+                            </blockquote>
+                            <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0F172A' }}>Gráfico Analítico:</h4>
+                            {renderChart(ev)}
                           </div>
                         </td>
                       </tr>
-                      {chartSelections[ev.id_evaluacion] && (
-                        <tr className="veval-expansion-row">
-                          <td colSpan={6}>
-                            <div className="veval-expansion-content">
-                              <div className="veval-expansion-info">
-                                <h4>Resumen Detallado</h4>
-                                <p><strong>Comentario del solicitante:</strong></p>
-                                <blockquote className="veval-quote">
-                                  {ev.comentario ? `"${ev.comentario}"` : "El solicitante no dejó comentarios adicionales."}
-                                </blockquote>
-                              </div>
-                              <div className="veval-expansion-chart">
-                                {renderChart(ev)}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="veval-footer">
-              <div className="veval-info-total">Resultados: {filtered.length} evaluacion(es)</div>
-              <div className="veval-pagination premium">
-                <button className="page-nav" onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}>
-                  <FiChevronLeft />
-                </button>
-                <div className="page-indicator">
-                  <span>Página</span> <strong>{pagina}</strong> de {totalPages}
-                </div>
-                <button className="page-nav" onClick={() => setPagina(p => Math.min(totalPages, p + 1))} disabled={pagina === totalPages}>
-                  <FiChevronRight />
-                </button>
-              </div>
-            </div>
-          </>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {filtered.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+          <div style={{ fontSize: '13px', color: '#64748B' }}>
+            Resultados: {filtered.length} evaluación(es)
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}>
+              <FiChevronLeft /> Anterior
+            </button>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
+              Página {pagina} de {totalPages}
+            </span>
+            <button className="btn btn-secondary btn-sm" onClick={() => setPagina(p => Math.min(totalPages, p + 1))} disabled={pagina === totalPages}>
+              Siguiente <FiChevronRight />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

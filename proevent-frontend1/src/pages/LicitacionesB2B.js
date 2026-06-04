@@ -48,29 +48,29 @@ function LicitacionesB2B({ evento, usuario }) {
   };
 
   return (
-    <div style={{ padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-      <h3 style={{ borderBottom: '2px solid #e67e22', paddingBottom: '10px', marginBottom: '20px' }}>Solicitar Servicios Externos (Compras)</h3>
-      <p style={{ color: '#7f8c8d', marginBottom: '20px' }}>Si este evento requiere transporte, catering u otros servicios externos, lanza la licitación para que el Encargado de Compras inicie el proceso en el Portal B2B.</p>
+    <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', borderBottom: '2px solid var(--accent-primary)', paddingBottom: '12px', marginBottom: '20px' }}>Solicitar Servicios Externos (Compras)</h3>
+      <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '14px' }}>Si este evento requiere transporte, catering u otros servicios externos, lanza la licitación para que el Encargado de Compras inicie el proceso en el Portal B2B.</p>
       
       {usuario?.rol !== 'Personal de Apoyo' && (
-      <form onSubmit={handleCrearLicitacion} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr auto', gap: '10px', alignItems: 'end' }}>
-        <div className="form-group" style={{ margin: 0 }}>
+      <form onSubmit={handleCrearLicitacion} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr auto', gap: '12px', alignItems: 'end' }}>
+        <div className="form-group">
           <label>Servicio Requerido</label>
-          <select value={nuevaLicitacion.id_tipo_servicio} onChange={e => setNuevaLicitacion({...nuevaLicitacion, id_tipo_servicio: e.target.value})}>
+          <select className="input-base" value={nuevaLicitacion.id_tipo_servicio} onChange={e => setNuevaLicitacion({...nuevaLicitacion, id_tipo_servicio: e.target.value})}>
             <option value="4">Transporte</option>
             <option value="2">Catering Externo</option>
             <option value="3">Sonido y Luces</option>
           </select>
         </div>
-        <div className="form-group" style={{ margin: 0 }}>
+        <div className="form-group">
           <label>Fecha Límite</label>
-          <input type="date" value={nuevaLicitacion.fecha_limite} onChange={e => setNuevaLicitacion({...nuevaLicitacion, fecha_limite: e.target.value})} />
+          <input type="date" className="input-base" value={nuevaLicitacion.fecha_limite} onChange={e => setNuevaLicitacion({...nuevaLicitacion, fecha_limite: e.target.value})} />
         </div>
-        <div className="form-group" style={{ margin: 0 }}>
+        <div className="form-group">
           <label>Requisitos Técnicos</label>
-          <input type="text" placeholder="Ej. Autobús de 50 pasajeros con A/C" value={nuevaLicitacion.requisitos} onChange={e => setNuevaLicitacion({...nuevaLicitacion, requisitos: e.target.value})} />
+          <input type="text" className="input-base" placeholder="Ej. Autobús de 50 pasajeros con A/C" value={nuevaLicitacion.requisitos} onChange={e => setNuevaLicitacion({...nuevaLicitacion, requisitos: e.target.value})} />
         </div>
-        <button type="submit" className="btn-primary" style={{ padding: '10px', height: '40px', background: '#e67e22', border: 'none', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>
+        <button type="submit" className="btn btn-primary">
           <FiSend /> Lanzar
         </button>
       </form>

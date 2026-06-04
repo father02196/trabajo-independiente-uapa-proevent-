@@ -28,78 +28,110 @@ export default function InformacionGeneral({ data, setData }) {
   };
 
   return (
-    <section>
-      <h3>Información General</h3>
+    <div className="space-y-6 animate-fade">
+      <div>
+        <h3 className="text-xl font-bold text-text-main mb-1">Información General</h3>
+        <p className="text-sm text-text-secondary">Proporciona los datos básicos de tu evento.</p>
+      </div>
 
-      {/* Título del evento */}
-      <label>Título del Evento</label>
-      <input
-        type="text"
-        placeholder="Título del Evento"
-        value={data.titulo}
-        onChange={(e) => setData({ ...data, titulo: e.target.value })}
-        required
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Título del evento */}
+        <div className="col-span-1 md:col-span-2">
+          <label className="block text-sm font-bold text-text-main mb-2">Título del Evento <span className="text-danger">*</span></label>
+          <input
+            type="text"
+            className="input-base"
+            placeholder="Ej: Congreso de Ingeniería de Software"
+            value={data.titulo}
+            onChange={(e) => setData({ ...data, titulo: e.target.value })}
+            required
+          />
+        </div>
 
-      {/* Dependencia — cargada desde la BD */}
-      <label>Dependencia solicitante</label>
-      <select value={data.id_dependencia} onChange={handleDependencia} required>
-        <option value="">Seleccione una dependencia...</option>
-        {dependencias.map(d => (
-          <option key={d.id_dependencia} value={d.id_dependencia}>{d.nombre}</option>
-        ))}
-      </select>
+        {/* Dependencia */}
+        <div>
+          <label className="block text-sm font-bold text-text-main mb-2">Dependencia solicitante <span className="text-danger">*</span></label>
+          <select 
+            className="input-base"
+            value={data.id_dependencia} 
+            onChange={handleDependencia} 
+            required
+          >
+            <option value="">-- Seleccione una dependencia --</option>
+            {dependencias.map(d => (
+              <option key={d.id_dependencia} value={d.id_dependencia}>{d.nombre}</option>
+            ))}
+          </select>
+        </div>
 
-      {/* Tipo de evento */}
-      <label>Tipo de Evento</label>
-      <select
-        value={data.tipo}
-        onChange={(e) => setData({ ...data, tipo: e.target.value })}
-        required
-      >
-        <option value="">Seleccione Tipo de Evento</option>
-        {tiposEvento.map(t => (
-          <option key={t.id_tipo_evento} value={t.nombre}>{t.nombre}</option>
-        ))}
-      </select>
+        {/* Tipo de evento */}
+        <div>
+          <label className="block text-sm font-bold text-text-main mb-2">Tipo de Evento <span className="text-danger">*</span></label>
+          <select
+            className="input-base"
+            value={data.tipo}
+            onChange={(e) => setData({ ...data, tipo: e.target.value })}
+            required
+          >
+            <option value="">-- Seleccione Tipo de Evento --</option>
+            {tiposEvento.map(t => (
+              <option key={t.id_tipo_evento} value={t.nombre}>{t.nombre}</option>
+            ))}
+          </select>
+        </div>
 
+        {/* Fecha Inicio */}
+        <div>
+          <label htmlFor="inicio" className="block text-sm font-bold text-text-main mb-2">Fecha de inicio <span className="text-danger">*</span></label>
+          <input
+            id="inicio"
+            type="date"
+            className="input-base"
+            value={data.inicio}
+            onChange={(e) => setData({ ...data, inicio: e.target.value })}
+            required
+          />
+        </div>
 
-      {/* Fechas y horas */}
-      <label htmlFor="inicio">Fecha de inicio</label>
-      <input
-        id="inicio"
-        type="date"
-        value={data.inicio}
-        onChange={(e) => setData({ ...data, inicio: e.target.value })}
-        required
-      />
+        {/* Hora Inicio */}
+        <div>
+          <label htmlFor="horaInicio" className="block text-sm font-bold text-text-main mb-2">Hora de inicio <span className="text-danger">*</span></label>
+          <input
+            id="horaInicio"
+            type="time"
+            className="input-base"
+            value={data.horaInicio || ""}
+            onChange={(e) => setData({ ...data, horaInicio: e.target.value })}
+            required
+          />
+        </div>
 
-      <label htmlFor="horaInicio">Hora de inicio</label>
-      <input
-        id="horaInicio"
-        type="time"
-        value={data.horaInicio || ""}
-        onChange={(e) => setData({ ...data, horaInicio: e.target.value })}
-        required
-      />
+        {/* Fecha Fin */}
+        <div>
+          <label htmlFor="fin" className="block text-sm font-bold text-text-main mb-2">Fecha de finalización <span className="text-danger">*</span></label>
+          <input
+            id="fin"
+            type="date"
+            className="input-base"
+            value={data.fin}
+            onChange={(e) => setData({ ...data, fin: e.target.value })}
+            required
+          />
+        </div>
 
-      <label htmlFor="fin">Fecha de finalización</label>
-      <input
-        id="fin"
-        type="date"
-        value={data.fin}
-        onChange={(e) => setData({ ...data, fin: e.target.value })}
-        required
-      />
-
-      <label htmlFor="horaFin">Hora de cierre</label>
-      <input
-        id="horaFin"
-        type="time"
-        value={data.horaFin || ""}
-        onChange={(e) => setData({ ...data, horaFin: e.target.value })}
-        required
-      />
-    </section>
+        {/* Hora Fin */}
+        <div>
+          <label htmlFor="horaFin" className="block text-sm font-bold text-text-main mb-2">Hora de cierre <span className="text-danger">*</span></label>
+          <input
+            id="horaFin"
+            type="time"
+            className="input-base"
+            value={data.horaFin || ""}
+            onChange={(e) => setData({ ...data, horaFin: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+    </div>
   );
 }

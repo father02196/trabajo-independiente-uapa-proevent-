@@ -176,7 +176,7 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
   const { correo, contrasena } = req.body; // Extrae descriptivamente (Desestructuración) los campos 'correo' y 'contrasena' del cuerpo JSON enviado por el cliente
   // Prepara la consulta para buscar en la base de datos si existe el usuario con ambos campos coincidentes
   db.query(
-    `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol
+    `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol, u.estado
      FROM usuario u
      JOIN rol r ON u.id_rol = r.id_rol
      WHERE u.correo = ? AND u.contrasena = ?`, // Filtra los resultados usando placeholders seguros '(?)'
@@ -187,6 +187,9 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
         return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' }); // Emite explícitamente Rechazo de Autorización (HTTP 401 Unauthorized)
       }
       const usuarioData = results[0]; // Extrae el primer (y esperado único) registro validado desde la matriz del query
+      if (usuarioData.estado === 'inactivo') {
+        return res.status(403).json({ mensaje: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
+      }
       res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); // Entrega alegremente el payload (Datos permitidos) al framework frontend
       // Ejecuta asincrónicamente el guardado del incidente al libro de auditorías (Bitácora)
       registrarMovimiento(usuarioData.id_usuario, usuarioData.id_rol, 'LOGIN', `Sesión Inicada (Manual). Autenticado como ${usuarioData.nombre} (${correo}) bajo el rol de ${usuarioData.rol}.`);
@@ -212,7 +215,7 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
 
     // Ahora, realiza un chequeo intrínseco preguntando si este correo verificado externo existe empadronado positivamente dentro del software local
     db.query(
-      `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol
+      `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol, u.estado
        FROM usuario u
        JOIN rol r ON u.id_rol = r.id_rol
        WHERE u.correo = ?`, // Busca estrictamente en columnario por correo ignorando contraseñas tradicionales
@@ -225,6 +228,9 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
         }
         // Éxito comprobado, el correo está registrado y habilitado funcionalmente
         const usuarioData = results[0]; // Captura y aparta en variable literal pura el paquete local del dependiente institucional
+        if (usuarioData.estado === 'inactivo') {
+          return res.status(403).json({ mensaje: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
+        }
         res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); // Permite entrada pasiva y le dispensa paralelamente su información de acceso interior en estructura JSON al app cliente reactivo
         // Emplaza y archiva operativamente este acceso exterior exitoso de manera singular en el reporte histórico imborrable del sistema corporativo (Bitácora) 
         registrarMovimiento(usuarioData.id_usuario, usuarioData.id_rol, 'LOGIN_GOOGLE', `Sesión Inicada (Google OAuth). Autenticado como ${usuarioData.nombre} (${correo}) bajo el rol de ${usuarioData.rol}.`);
@@ -240,7 +246,7 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
 // OBTENER la lista completa de TODOS LOS USUARIOS adjuntando su denominación de Rol (Join)
 app.get('/usuarios', (req, res) => { // Establece ruta HTTP GET universal en '/usuarios' para listados generales
   db.query( // Dispara y procesa sentencia MySQL a ejecutar 
-    `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol
+    `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol, u.estado
      FROM usuario u
      JOIN rol r ON u.id_rol = r.id_rol`, // Une las dos entidades tabulares para traer el texto legible humano del "Rol" y no solo el ID numérico frío indexado
     (err, results) => { // Función anonima Callback
@@ -343,6 +349,26 @@ app.delete('/usuarios/:id', (req, res) => { // Enruta peticiones Delete apuntand
     res.json({ mensaje: 'Usuario eliminado con éxito' }); // Éxito en borrado
     const adminId = req.headers['x-usuario-id']; // Identificador del autor (El administrador que presionó el botón de borrado)
     if(adminId) registrarMovimiento(adminId, null, 'ELIMINACION_USUARIO', `Eliminación permanente de cuenta de usuario. ID del usuario erradicado: ${id}.`); // Bitácora de extrema sensibilidad para justificar la desaparición de usuarios (Traceability total)
+  });
+});
+
+// CAMBIAR ESTADO DE UN USUARIO (Activar/Desactivar)
+app.put('/usuarios/:id/estado', (req, res) => {
+  const { id } = req.params;
+  const { estado } = req.body;
+  
+  if (estado !== 'activo' && estado !== 'inactivo') {
+    return res.status(400).json({ mensaje: 'Estado inválido. Debe ser activo o inactivo.' });
+  }
+
+  db.query('UPDATE usuario SET estado = ? WHERE id_usuario = ?', [estado, id], (err) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al cambiar estado del usuario', error: err });
+    res.json({ mensaje: `Usuario marcado como ${estado} exitosamente` });
+    
+    const adminId = req.headers['x-usuario-id'];
+    if (adminId) {
+      registrarMovimiento(adminId, null, 'CAMBIO_ESTADO_USUARIO', `El estado del usuario con ID ${id} cambió a: ${estado.toUpperCase()}.`);
+    }
   });
 });
 
@@ -1488,14 +1514,14 @@ app.get('/mis-tareas/:id_usuario', (req, res) => {
 });
 
 app.get('/usuarios-coordinadores', (req, res) => {
-  db.query(`SELECT id_usuario, nombre FROM usuario WHERE id_rol IN (SELECT id_rol FROM rol WHERE nombre = 'Coordinador de Evento' OR nombre = 'Administrador' OR nombre = 'Administrador de Evento')`, (err, results) => {
+  db.query(`SELECT id_usuario, nombre FROM usuario WHERE id_rol IN (SELECT id_rol FROM rol WHERE nombre = 'Coordinador de Evento' OR nombre = 'Administrador' OR nombre = 'Administrador de Evento' OR nombre = 'Especialista de eventos')`, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
 });
 
 app.get('/usuarios-apoyo', (req, res) => {
-  db.query(`SELECT id_usuario, nombre FROM usuario WHERE id_rol IN (SELECT id_rol FROM rol WHERE nombre = 'Personal de Apoyo')`, (err, results) => {
+  db.query(`SELECT id_usuario, nombre FROM usuario WHERE id_rol IN (SELECT id_rol FROM rol WHERE nombre = 'Personal de Apoyo' OR nombre = 'Apoyo logístico')`, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });

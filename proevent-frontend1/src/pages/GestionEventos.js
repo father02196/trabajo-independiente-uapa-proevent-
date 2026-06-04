@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2 } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import './../css/Dashboard.css';
 const API = "http://localhost:8080";
@@ -216,8 +216,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             </div>
           </div>
           <div className="header-actions-group">
-            <button className="refresh-btn" onClick={cargarEventos} title="Recargar lista">
-              <FiRefreshCw className="icon-spin-hover" /> Recargar
+            <button className="btn btn-secondary btn-sm" onClick={cargarEventos} title="Recargar lista">
+              <FiRefreshCw /> Recargar
             </button>
           </div>
         </div>
@@ -225,7 +225,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
         <div className="filters-grid">
           <div className="filter-item">
             <label><FiFilter /> Estado</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select className="input-base" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="Todos">Todos los estados</option>
               <option value="Pendiente">🟡 Pendientes</option>
               <option value="Aprobado">🟢 Aprobados</option>
@@ -237,7 +237,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           {usuario?.rol !== "Solicitante" && (
             <div className="filter-item">
               <label>🏢 Departamento / Dependencia</label>
-              <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
+              <select className="input-base" value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
                 {departamentosUnicos.map((d) => (
                   <option key={d} value={d}>{d === "Todos" ? "Todos los Departamentos" : d}</option>
                 ))}
@@ -249,6 +249,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <label><FiCalendar /> Fecha del Evento</label>
             <input
               type="date"
+              className="input-base"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
             />
@@ -394,19 +395,19 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div className="pagination-info">
               Mostrando <strong>{indexOfFirstItem + 1}</strong> - <strong>{Math.min(indexOfLastItem, filteredRequests.length)}</strong> de <strong>{filteredRequests.length}</strong> solicitudes
             </div>
-            <div className="pagination-controls">
+            <div className="pagination-controls" style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
               <button 
-                className="page-btn" 
+                className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
               >
                 <FiChevronLeft /> Anterior
               </button>
-              <span className="page-number">
+              <span style={{fontWeight: 700, color: 'var(--text-main)', fontSize: '13px'}}>
                 Pág. {currentPage} de {totalPages || 1}
               </span>
               <button 
-                className="page-btn" 
+                className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
               >
@@ -420,98 +421,137 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       {/* MODAL DETALLES */}
       {isModalOpen && selectedRequest && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Ficha Técnica del Evento</h3>
-              <span className="modal-event-id">Solicitud #EVT-{selectedRequest.id_evento}</span>
+              <div>
+                <h3 className="modal-title">Ficha Técnica del Evento</h3>
+                <span className="modal-subtitle">Revisión exhaustiva y logística completa</span>
+              </div>
+              <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
-            <div className="modal-body modern-modal-body">
-              <div className="detail-group full-width">
-                <label>Nombre del Evento</label>
-                <p className="main-event-title">{selectedRequest.nombre}</p>
-              </div>
-              <div className="detail-group">
-                <label>Solicitante</label>
-                <p>{selectedRequest.solicitante || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Dependencia</label>
-                <p>{selectedRequest.dependencia || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Recinto</label>
-                <p>{selectedRequest.recinto || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Modalidad</label>
-                <p>{selectedRequest.modalidad || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Tipo de Evento</label>
-                <p>{selectedRequest.tipo_evento || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Fechas</label>
-                <p>
-                  {formatFecha(selectedRequest.fecha_inicio)} 
-                  {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
-                </p>
-              </div>
-              <div className="detail-group">
-                <label>Horario</label>
-                <p>
-                  {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} 
-                  {selectedRequest.hora_fin ? ` a ${formatHora(selectedRequest.hora_fin)}` : ""}
-                </p>
-              </div>
-              <div className="detail-group">
-                <label>Asistentes Esperados</label>
-                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Presupuesto POA Solicitado</label>
-                <p className="poa-monto">
-                  {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
-                </p>
-              </div>
-              <div className="detail-group">
-                <label>Estado de la Solicitud</label>
-                <span className={`status ${getStatusClass(selectedRequest.estado)}`} style={{ alignSelf: 'flex-start', marginTop: '4px' }}>
-                  {selectedRequest.estado || "Pendiente"}
-                </span>
-              </div>
-              {selectedRequest.detalles_corporativos && (
-                <div className="detail-group full-width">
-                  <label>Servicios de Montaje Corporativo</label>
-                  <p className="details-list-text">{selectedRequest.detalles_corporativos}</p>
+            
+            <div className="modal-body">
+              <div className="modal-grid-3">
+                {/* Columna 1: Info General */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiFileText size={14} /> Información General
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Nombre del Evento</span>
+                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>{selectedRequest.nombre}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Solicitante</span>
+                    <span className="info-value">{selectedRequest.solicitante || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Dependencia</span>
+                    <span className="info-value">{selectedRequest.dependencia || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Fechas</span>
+                    <span className="info-value">
+                      {formatFecha(selectedRequest.fecha_inicio)} 
+                      {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
+                    </span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Horario</span>
+                    <span className="info-value">
+                      {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} 
+                      {selectedRequest.hora_fin ? ` a ${formatHora(selectedRequest.hora_fin)}` : ""}
+                    </span>
+                  </div>
                 </div>
-              )}
+                {/* Columna 2: Logística y Asistencia */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiGrid size={14} /> Logística y Asistencia
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Recinto</span>
+                    <span className="info-value">{selectedRequest.recinto || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Modalidad</span>
+                    <span className="info-value">{selectedRequest.modalidad || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Tipo de Evento</span>
+                    <span className="info-value">{selectedRequest.tipo_evento || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Asistentes Esperados</span>
+                    <span className="info-value">{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</span>
+                  </div>
+                </div>
 
-
-              {selectedRequest.alimentos && (
-                <div className="detail-group full-width">
-                  <label>Servicio de Alimentos (Catering)</label>
-                  <p className="details-list-text">{selectedRequest.alimentos}</p>
+                {/* Columna 3: Finanzas y Estado */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiDollarSign size={14} /> Presupuesto y Estado
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Presupuesto POA Solicitado</span>
+                    <span className="info-value" style={{ color: '#10B981' }}>
+                      {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
+                    </span>
+                  </div>
+                  <div className="info-row" style={{ marginTop: '12px' }}>
+                    <span className="info-label">Estado de la Solicitud</span>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      {selectedRequest.estado || "Pendiente"}
+                    </span>
+                  </div>
+                  </div>
                 </div>
-              )}
-              <div className="detail-group full-width">
-                <label>Equipos Audiovisuales Requeridos</label>
-                <p className="details-list-text">
-                  {selectedRequest.necesita_audiovisual 
-                    ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
-                    : "Ninguno"}
-                </p>
               </div>
-              {selectedRequest.observaciones && (
-                <div className="detail-group full-width">
-                  <label>Observaciones y Notas de Apoyo</label>
-                  <p className="observations-text">{selectedRequest.observaciones}</p>
+
+              {/* Requerimientos Adicionales a Ancho Completo */}
+              <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiCheckCircle size={14} /> Requerimientos Adicionales
+                  </div>
+                  <div className="modal-grid-3">
+                    {selectedRequest.detalles_corporativos && (
+                      <div className="info-row">
+                        <span className="info-label">Montaje Corporativo</span>
+                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.detalles_corporativos}</span>
+                      </div>
+                    )}
+                    {selectedRequest.alimentos && (
+                      <div className="info-row">
+                        <span className="info-label">Alimentos (Catering)</span>
+                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.alimentos}</span>
+                      </div>
+                    )}
+                    <div className="info-row">
+                      <span className="info-label">Equipos Audiovisuales</span>
+                      <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>
+                        {selectedRequest.necesita_audiovisual 
+                          ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
+                          : "Ninguno"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
+                
+                {selectedRequest.observaciones && (
+                  <div className="info-card">
+                    <div className="info-card-title">
+                      <FiFileText size={14} /> Observaciones y Notas de Apoyo
+                    </div>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#475569', fontStyle: 'italic', background: '#F1F5F9', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
+                      "{selectedRequest.observaciones}"
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-
             <div className="modal-footer">
-              <button className="close-btn" onClick={closeModal}>Cerrar ficha</button>
+              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>
