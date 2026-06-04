@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiUsers, FiMapPin, FiCheckCircle, FiCalendar } from "react-icons/fi";
+import { FiUsers, FiMapPin, FiCheckCircle, FiCalendar, FiTrash2 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
 const API = "http://localhost:8080";
@@ -81,6 +81,23 @@ function AsignacionPersonal({ usuario }) {
     }
   };
 
+  const eliminarRol = async (id_evento_org, id_evento) => {
+    if (!window.confirm("¿Seguro que deseas remover a esta persona de la organización del evento?")) return;
+    try {
+      const res = await fetch(`${API}/organizadores/${id_evento_org}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.success("Personal removido del evento");
+        cargarOrganizadoresAsignados(id_evento);
+      } else {
+        toast.error("Error al remover personal");
+      }
+    } catch (err) {
+      toast.error("Error de conexión");
+    }
+  };
+
   if (usuario?.rol === "Solicitante") {
     return <div style={{ padding: '20px' }}>No tienes permisos para asignar personal operativo.</div>;
   }
@@ -149,6 +166,13 @@ function AsignacionPersonal({ usuario }) {
                     {organizadoresAsignados.map(org => (
                       <li key={org.id_evento_org} style={{ background: '#e0f2fe', padding: '10px 15px', borderRadius: '6px', marginBottom: '8px', fontSize: '0.95rem', color: '#0369a1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span><strong>{org.nombre}</strong> <span style={{opacity: 0.8, fontSize: '0.85rem', marginLeft: '8px'}}>({org.rol_organizacion})</span></span>
+                        <button 
+                          onClick={() => eliminarRol(org.id_evento_org, eventoSeleccionado.id_evento)}
+                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center' }}
+                          title="Remover asignación"
+                        >
+                          <FiTrash2 size={18} />
+                        </button>
                       </li>
                     ))}
                   </ul>
