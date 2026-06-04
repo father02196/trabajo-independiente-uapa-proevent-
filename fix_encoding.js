@@ -57,21 +57,7 @@ async function fixEncoding() {
   }
   console.log('✅ Dependencias corregidas');
 
-  // Fix roles
-  const roles = [
-    [1, 'Administrador'],
-    [2, 'Especialista de eventos'],
-    [3, 'Solicitante'],
-    [4, 'Apoyo logístico'],
-    [5, 'Responsable de área audiovisual'],
-    [6, 'Asesor legal'],
-    [7, 'Proveedor externo'],
-  ];
-  for (const [id, nombre] of roles) {
-    await conn.execute('UPDATE rol SET nombre=? WHERE id_rol=?', [nombre, id]).catch(() => {});
-  }
-  console.log('✅ Roles corregidos');
-
+  // Fix roles (OMITIDO PARA NO ROMPER LOS ROLES ACTUALES DEL SISTEMA)
   // Fix recintos
   const recintos = [
     [1, 'Cibao Oriental'],
