@@ -54,10 +54,13 @@ export default function AudiovisualMiniForm({ avData, setAvData }) {
   };
 
   return (
-    <div className="av-mini-form" style={{ marginTop: '10px' }}>
-      <p style={{ marginBottom: '15px', color: '#64748b', fontSize: '14px' }}>Seleccione los equipos necesarios para su evento:</p>
+    <div className="av-mini-form animate-fade">
+      <div style={{ marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A', marginBottom: '4px' }}>Equipos Disponibles</h3>
+        <p style={{ color: '#64748B', fontSize: '13px' }}>Seleccione los equipos necesarios para este evento haciendo clic en ellos.</p>
+      </div>
       
-      <div className="equipment-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
         {equiposDisponibles.map((eq) => {
           const selectedEq = avData.equipos.find(e => e.id_equipo === eq.id_equipo);
           const isActive = !!selectedEq;
@@ -66,52 +69,59 @@ export default function AudiovisualMiniForm({ avData, setAvData }) {
           return (
             <div 
               key={eq.id_equipo} 
-              className={`eq-card ${isActive ? 'selected' : ''}`}
+              className={`hover-lift`}
               style={{
-                padding: '15px',
-                border: `2px solid ${isActive ? 'var(--orange)' : '#f1f5f9'}`,
-                borderRadius: '12px',
+                background: isActive ? '#EFF6FF' : '#fff',
+                border: `1.5px solid ${isActive ? '#3B82F6' : '#E2E8F0'}`,
+                borderRadius: '16px',
+                padding: '20px 16px',
                 cursor: 'pointer',
-                background: isActive ? '#fff7ed' : '#ffffff',
-                boxShadow: isActive ? '0 4px 12px rgba(254,131,1,0.1)' : 'none',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                boxShadow: isActive ? '0 0 0 3px rgba(59,130,246,0.1)' : '0 1px 2px rgba(0,0,0,0.04)',
+                position: 'relative',
+                overflow: 'hidden'
               }}
+              onClick={() => handleToggleEquipo(eq.id_equipo, eq.nombre)}
             >
-              <div 
-                style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-                onClick={() => handleToggleEquipo(eq.id_equipo, eq.nombre)}
-              >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ 
-                  width: '32px', height: '32px', borderRadius: '8px', 
-                  backgroundColor: isActive ? 'var(--orange)' : '#f8fafc',
-                  color: isActive ? 'white' : '#64748b',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  width: '44px', height: '44px', borderRadius: '12px', 
+                  background: isActive ? 'linear-gradient(135deg, #3B82F6, #2563EB)' : '#F1F5F9',
+                  color: isActive ? '#fff' : '#64748B',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', transition: 'all 0.2s', flexShrink: 0
                 }}>
                   <IconComp />
                 </div>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: isActive ? 'var(--navy)' : '#334155' }}>{eq.nombre}</span>
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: '700', color: isActive ? '#1D4ED8' : '#334155', margin: 0, lineHeight: 1.2 }}>{eq.nombre}</h4>
+                  {!isActive && <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: '600' }}>Clic para agregar</span>}
+                </div>
               </div>
               
               {isActive && (
-                <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #fed7aa' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Cantidad:</span>
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #BFDBFE' }} onClick={(e) => e.stopPropagation()}>
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '11.5px', color: '#2563EB' }}>Cantidad Necesaria</label>
                     <input 
-                      type="number" min="1" 
+                      type="number" min="1" max="50"
+                      className="input-base"
                       value={selectedEq.cantidad}
                       onChange={(e) => handleChangeEquipo(eq.id_equipo, 'cantidad', parseInt(e.target.value) || 1)}
-                      style={{ width: '60px', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
-                      onClick={(e) => e.stopPropagation()}
+                      style={{ padding: '8px 12px', background: '#fff', borderColor: '#BFDBFE' }}
                     />
                   </div>
-                  <input 
-                    type="text" 
-                    placeholder="Ubicación específica..."
-                    value={selectedEq.ubicacion}
-                    onChange={(e) => handleChangeEquipo(eq.id_equipo, 'ubicacion', e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <div className="form-group">
+                    <label style={{ fontSize: '11.5px', color: '#2563EB' }}>Ubicación en el evento</label>
+                    <input 
+                      type="text" 
+                      className="input-base"
+                      placeholder="Ej: Salón principal, Tarima..."
+                      value={selectedEq.ubicacion}
+                      onChange={(e) => handleChangeEquipo(eq.id_equipo, 'ubicacion', e.target.value)}
+                      style={{ padding: '8px 12px', background: '#fff', borderColor: '#BFDBFE' }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -119,13 +129,15 @@ export default function AudiovisualMiniForm({ avData, setAvData }) {
         })}
       </div>
 
-      <div style={{ marginTop: '25px', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: '8px', color: 'var(--navy)' }}>Observaciones Generales de Audiovisual</label>
+      <div style={{ marginTop: '32px' }} className="form-group">
+        <label style={{ fontSize: '14px' }}>Observaciones Generales de Audiovisual (Opcional)</label>
+        <p className="help-text">Especifique si hay requisitos particulares de conexión, pruebas de sonido previas, etc.</p>
         <textarea 
-          placeholder="Ej: Necesitamos los micrófonos probados 30 minutos antes. El proyector debe estar en la mesa central."
+          className="input-base"
+          placeholder="Escriba cualquier instrucción especial para el equipo de producción audiovisual..."
           value={avData.observaciones}
           onChange={(e) => handleObservacionesChange(e.target.value)}
-          style={{ width: '100%', minHeight: '90px', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical' }}
+          style={{ minHeight: '100px' }}
         />
       </div>
     </div>

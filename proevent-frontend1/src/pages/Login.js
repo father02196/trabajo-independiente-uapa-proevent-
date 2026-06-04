@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import './../css/Login.css';
-import viewIcon from "./../img/view.png";
-import hideIcon from "./../img/hide.png";
-import userIcon from "./../img/user.png";
-import lockIcon from "./../img/lock.png";
+import viewIcon  from "./../img/view.png";
+import hideIcon  from "./../img/hide.png";
+import userIcon  from "./../img/user.png";
+import lockIcon  from "./../img/lock.png";
 
 function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email,        setEmail]        = useState("");
+  const [password,     setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error,        setError]        = useState("");
+  const [loading,      setLoading]      = useState(false);
   const googleButtonRef = useRef(null);
 
   /* ── Google Sign-In ──────────────────────────────────── */
@@ -18,10 +18,10 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8080/login-google", {
-        method: "POST",
+      const res  = await fetch("http://localhost:8080/login-google", {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: response.credential }),
+        body:    JSON.stringify({ credential: response.credential }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -37,16 +37,16 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   };
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
+    const script   = document.createElement("script");
+    script.src     = "https://accounts.google.com/gsi/client";
+    script.async   = true;
+    script.defer   = true;
     document.body.appendChild(script);
-    script.onload = () => {
+    script.onload  = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
           client_id: "426335318098-v39ood0lcapc22lgoq3lons62hbf507m.apps.googleusercontent.com",
-          callback: handleGoogleCallback,
+          callback:  handleGoogleCallback,
         });
         window.google.accounts.id.renderButton(googleButtonRef.current, {
           theme: "outline", size: "large", width: "100%", text: "continue_with",
@@ -60,15 +60,15 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!email) return setError("El correo no puede estar vacío.");
+    if (!email)              return setError("El correo no puede estar vacío.");
     if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/login", {
-        method: "POST",
+      const res  = await fetch("http://localhost:8080/login", {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correo: email, contrasena: password }),
+        body:    JSON.stringify({ correo: email, contrasena: password }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -90,7 +90,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
       {/* Botón volver flotante */}
       {onBackClick && (
         <button className="lc-back" onClick={onBackClick}>
-          ← Volver al inicio...
+          ← Volver al inicio
         </button>
       )}
 
@@ -208,7 +208,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
       </div>
 
       {/* Marca discreta al fondo */}
-      <p className="lc-watermark">UAPA - ProEvent © 2025</p>
+      <p className="lc-watermark">UAPA · ProEvent © 2025</p>
 
     </div>
   );

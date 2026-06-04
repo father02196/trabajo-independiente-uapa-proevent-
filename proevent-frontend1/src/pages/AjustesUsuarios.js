@@ -15,6 +15,7 @@ function AjustesUsuarios({ usuario }) {
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [filterStatus, setFilterStatus] = useState('todos');
     
     // Paginación
     const [currentPage, setCurrentPage] = useState(1);
@@ -59,7 +60,7 @@ function AjustesUsuarios({ usuario }) {
                     method: 'PUT',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'x-usuario-id': usuario?.id_usuario || ''
+                        'Authorization': `Bearer ${usuario?.token || ""}`, 'x-usuario-id': usuario?.id_usuario || ''
                     },
                     body: JSON.stringify({ nombre, correo: email, contrasena: password, id_rol: idRol })
                 });
@@ -76,7 +77,7 @@ function AjustesUsuarios({ usuario }) {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'x-usuario-id': usuario?.id_usuario || ''
+                        'Authorization': `Bearer ${usuario?.token || ""}`, 'x-usuario-id': usuario?.id_usuario || ''
                     },
                     body: JSON.stringify({ nombre, correo: email, contrasena: password, id_rol: idRol })
                 });
@@ -121,7 +122,7 @@ function AjustesUsuarios({ usuario }) {
         try {
             const res = await fetch(`${API}/usuarios/${id}`, { 
                 method: 'DELETE',
-                headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+                headers: { 'Authorization': `Bearer ${usuario?.token || ""}`, 'x-usuario-id': usuario?.id_usuario || '' }
             });
             const data = await res.json();
             if (!res.ok) {
@@ -134,11 +135,47 @@ function AjustesUsuarios({ usuario }) {
         }
     };
 
-    const filteredUsuarios = usuarios.filter(usuario =>
-        usuario.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.rol.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredUsuarios = usuarios.filter(usuario => {
+        const nombreMatch = (usuario.nombre || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const correoMatch = (usuario.correo || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const rolMatch = (usuario.rol || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const searchMatch = nombreMatch || correoMatch || rolMatch;
+
+        const estadoActual = usuario.estado || 'activo';
+        if (filterStatus === 'todos') return searchMatch;
+        return searchMatch && estadoActual === filterStatus;
+    });
+
+    const handleToggleEstado = async (usuarioToToggle) => {
+        const estadoActual = usuarioToToggle.estado || 'activo';
+        const nuevoEstado = estadoActual === 'inactivo' ? 'activo' : 'inactivo';
+        const accionText = nuevoEstado === 'activo' ? 'activar' : 'desactivar';
+        const mensajeConfirmacion = nuevoEstado === 'inactivo' 
+            ? `¿Estás seguro de que deseas desactivar al usuario ${usuarioToToggle.nombre}? No podrá iniciar sesión en el sistema.`
+            : `¿Estás seguro de que deseas activar al usuario ${usuarioToToggle.nombre}? Recuperará el acceso al sistema.`;
+
+        if (!window.confirm(mensajeConfirmacion)) return;
+
+        try {
+            const res = await fetch(`${API}/usuarios/${usuarioToToggle.id_usuario}/estado`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${usuario?.token || ""}`, 
+                    'x-usuario-id': usuario?.id_usuario || '' 
+                },
+                body: JSON.stringify({ estado: nuevoEstado })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.mensaje || 'Error al cambiar el estado');
+            } else {
+                cargarUsuarios();
+            }
+        } catch (err) {
+            alert('No se pudo conectar al servidor.');
+        }
+    };
 
     // Lógica de Paginación
     const totalPages = Math.ceil(filteredUsuarios.length / itemsPerPage);
@@ -152,115 +189,150 @@ function AjustesUsuarios({ usuario }) {
     }, [searchTerm]);
 
     return (
-        <div className="ajustes-container">
-            <div className="ajustes-header">
-                <h2>Gestión de Usuarios</h2>
+        <div className="ajustes-page fade-in">
+            <div className="ajustes-page-header">
+                <h1>Gestión de Usuarios</h1>
                 <p>Agrega, edita o elimina usuarios del sistema. Solo para administradores.</p>
             </div>
 
-            <div className="ajustes-content">
-                <form className="add-user-form full-width-form" onSubmit={handleAddOrUpdateUser}>
-                    <h3>{editingId ? 'Editar Usuario' : 'Agregar Nuevo Usuario'}</h3>
+            <div className="ajustes-form-card" style={{ marginBottom: '24px' }}>
+                <div className="ajustes-form-section">
+                    <h3 className="ajustes-section-title">{editingId ? 'Editar Usuario' : 'Agregar Nuevo Usuario'}</h3>
+                    <p className="ajustes-section-desc">Ingresa la información del usuario a registrar en la plataforma.</p>
+                    
+                    {error && <p style={{ color: '#EF4444', fontSize: '13.5px', marginBottom: '14px', fontWeight: '600' }}>{error}</p>}
 
-                    {error && <p style={{ color: 'red', fontSize: '14px', marginBottom: '10px' }}>{error}</p>}
+                    <form onSubmit={handleAddOrUpdateUser}>
+                        <div className="ajustes-form-row">
+                            <div className="ajustes-form-group">
+                                <label>Nombre Completo</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej. Juan Pérez"
+                                    value={nombre}
+                                    onChange={(e) => setNombre(e.target.value)}
+                                    required
+                                />
+                            </div>
 
-                    <div className="form-row">
-                        <div className="form-group half-width">
-                            <label>Nombre Completo</label>
-                            <input
-                                type="text"
-                                placeholder="Ej. Juan Pérez"
-                                value={nombre}
-                                onChange={(e) => setNombre(e.target.value)}
-                                required
-                            />
+                            <div className="ajustes-form-group">
+                                <label>Correo Electrónico (UAPA)</label>
+                                <input
+                                    type="email"
+                                    placeholder="ejemplo@uapa.edu.do"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
                         </div>
 
-                        <div className="form-group half-width">
-                            <label>Correo Electrónico (UAPA)</label>
-                            <input
-                                type="email"
-                                placeholder="ejemplo@uapa.edu.do"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
+                        <div className="ajustes-form-row" style={{ marginTop: '16px' }}>
+                            <div className="ajustes-form-group">
+                                <label>Contraseña {editingId ? '(Opcional al editar)' : 'Provisional'}</label>
+                                <input
+                                    type="password"
+                                    placeholder={editingId ? 'Dejar en blanco para mantener' : 'Mínimo 8 caracteres'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required={!editingId}
+                                />
+                            </div>
 
-                    <div className="form-row">
-                        <div className="form-group half-width">
-                            <label>Contraseña {editingId ? '(Opcional al editar)' : 'Provisional'}</label>
-                            <input
-                                type="password"
-                                placeholder={editingId ? 'Dejar en blanco para mantener' : 'Mínimo 8 caracteres'}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required={!editingId}
-                            />
+                            <div className="ajustes-form-group">
+                                <label>Rol del Usuario</label>
+                                <select value={idRol} onChange={(e) => setIdRol(e.target.value)} required>
+                                    <option value="">Seleccione un rol...</option>
+                                    {roles.map(r => (
+                                    <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
-                        <div className="form-group half-width">
-                            <label>Rol del Usuario</label>
-                            <select value={idRol} onChange={(e) => setIdRol(e.target.value)}>
-                                <option value="">Seleccione un rol...</option>
-                                {roles.map(r => (
-                                <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>
-                                ))}
-                            </select>
+                        <div className="ajustes-form-footer" style={{ marginTop: '24px', padding: '0', background: 'transparent', borderTop: 'none', justifyContent: 'flex-start' }}>
+                            {editingId && (
+                                <button type="button" className="btn-ajustes-secondary" onClick={resetForm}>Cancelar</button>
+                            )}
+                            <button type="submit" className="btn-ajustes-primary" disabled={loading}>
+                                {loading ? 'Guardando...' : editingId ? 'Actualizar Usuario' : 'Guardar Usuario'}
+                            </button>
                         </div>
-                    </div>
-
-                    <div className="form-actions">
-                        {editingId && (
-                            <button type="button" className="btn-cancel" onClick={resetForm}>Cancelar</button>
-                        )}
-                        <button type="submit" className="btn-add-user" disabled={loading}>
-                            {loading ? 'Guardando...' : editingId ? 'Actualizar Usuario' : 'Guardar Usuario'}
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
 
-            <div className="recent-requests-section" style={{ marginTop: '30px' }}>
-                <div className="section-header">
-                    <h3>Usuarios Registrados</h3>
-                    <div className="section-filters">
-                        <input
-                            type="text"
-                            placeholder="Buscar usuario..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '14px', width: '250px' }}
-                        />
+            <div className="ajustes-table-card">
+                <div className="ajustes-table-toolbar">
+                    <h2>Usuarios Registrados</h2>
+                    <div className="ajustes-toolbar-right" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <div className="ajustes-filter-group" style={{ display: 'flex', background: '#F1F5F9', borderRadius: '8px', padding: '4px' }}>
+                            <button className={`filter-tab ${filterStatus === 'todos' ? 'active' : ''}`} onClick={() => setFilterStatus('todos')}>Todos</button>
+                            <button className={`filter-tab ${filterStatus === 'activo' ? 'active' : ''}`} onClick={() => setFilterStatus('activo')}>Activos</button>
+                            <button className={`filter-tab ${filterStatus === 'inactivo' ? 'active' : ''}`} onClick={() => setFilterStatus('inactivo')}>Inactivos</button>
+                        </div>
+                        <div className="ajustes-search">
+                            <span className="ajustes-search-icon" style={{ fontSize: '13px' }}>🔍</span>
+                            <input
+                                type="text"
+                                placeholder="Buscar usuario..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
+                
                 <div className="table-container">
-                    <table className="requests-table">
+                    <table className="ajustes-table">
                         <thead>
                             <tr>
                                 <th>USUARIO</th>
                                 <th>CORREO ELECTRÓNICO</th>
                                 <th>ROL</th>
-                                <th>ACCIONES</th>
+                                <th>ESTADO</th>
+                                <th style={{textAlign: 'center'}}>ACCIONES</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {currentItems.map(usuario => (
-                                <tr key={usuario.id_usuario}>
-                                    <td><strong>{usuario.nombre}</strong></td>
-                                    <td>{usuario.correo}</td>
-                                    <td><span className="badge">{usuario.rol}</span></td>
+                            {currentItems.map(usuario => {
+                                const roleName = (usuario.rol || '').toLowerCase();
+                                const roleClass = roleName.includes('admin') ? 'admin' : roleName.includes('soporte') ? 'support' : 'staff';
+                                return (
+                                <tr key={usuario.id_usuario} className="table-hover-row">
                                     <td>
-                                        <button className="action-btn edit" onClick={() => handleEdit(usuario)}>Editar</button>
-                                        <button className="action-btn delete" onClick={() => handleDelete(usuario.id_usuario)}>Eliminar</button>
+                                        <div className="ajustes-user-cell">
+                                            <div className="ajustes-avatar">{usuario.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U'}</div>
+                                            <div className="ajustes-user-name">{usuario.nombre}</div>
+                                        </div>
+                                    </td>
+                                    <td><div className="ajustes-user-email">{usuario.correo}</div></td>
+                                    <td><span className={`role-badge ${roleClass}`}>{usuario.rol}</span></td>
+                                    <td>
+                                        <span className={`status-badge ${usuario.estado === 'inactivo' ? 'inactive' : 'active'}`}>
+                                            {usuario.estado === 'inactivo' ? 'Inactivo' : 'Activo'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="ajustes-actions" style={{ justifyContent: 'center' }}>
+                                            <button className="ajustes-action-btn edit" onClick={() => handleEdit(usuario)} title="Editar">✎</button>
+                                            <button 
+                                                className={`ajustes-action-btn toggle-state ${usuario.estado === 'inactivo' ? 'to-activate' : 'to-deactivate'}`} 
+                                                onClick={() => handleToggleEstado(usuario)} 
+                                                title={usuario.estado === 'inactivo' ? 'Activar Usuario' : 'Desactivar Usuario'}
+                                                style={{ fontSize: '15px' }}
+                                            >
+                                                {usuario.estado === 'inactivo' ? '✓' : '⊘'}
+                                            </button>
+                                            <button className="ajustes-action-btn delete" onClick={() => handleDelete(usuario.id_usuario)} title="Eliminar Permanente">🗑</button>
+                                        </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                             {filteredUsuarios.length === 0 && (
                                 <tr>
-                                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
-                                        No hay usuarios registrados.
+                                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
+                                        No hay usuarios registrados que coincidan con la búsqueda.
                                     </td>
                                 </tr>
                             )}
@@ -268,11 +340,10 @@ function AjustesUsuarios({ usuario }) {
                     </table>
                 </div>
 
-                {/* CONTROLES DE PAGINACIÓN */}
                 {filteredUsuarios.length > 0 && (
-                    <div className="pagination-container" style={{ marginTop: '0', borderTop: 'none' }}>
+                    <div className="pagination-container">
                         <div className="pagination-info">
-                            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredUsuarios.length)} de {filteredUsuarios.length} usuarios
+                            Mostrando <strong>{indexOfFirstItem + 1}</strong> - <strong>{Math.min(indexOfLastItem, filteredUsuarios.length)}</strong> de <strong>{filteredUsuarios.length}</strong> usuarios
                         </div>
                         <div className="pagination-controls">
                             <button 

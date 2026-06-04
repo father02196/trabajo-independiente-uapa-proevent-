@@ -1,6 +1,6 @@
-/* ===========================================================
+/* ═══════════════════════════════════════════════════════════
    AjustesUsuarios.css — ProEvent UAPA Premium
-   =========================================================== */
+   ═══════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .ajustes-page {
@@ -221,9 +221,28 @@
   background: currentColor;
 }
 
-.user-status.active   { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
-.user-status.inactive { background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; }
+.user-status.active, .status-badge.active   { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+.user-status.inactive, .status-badge.inactive { background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; }
 .user-status.suspended { background: #FEF2F2; color: #7F1D1D; border: 1px solid #FECACA; }
+
+/* Filter Tabs */
+.filter-tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-tab.active {
+  background: #fff;
+  color: #0F172A;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
 
 /* Acciones tabla */
 .ajustes-actions {
@@ -250,6 +269,8 @@
 .ajustes-action-btn:hover { background: #F8FAFC; border-color: #CBD5E1; color: #334155; }
 .ajustes-action-btn.delete:hover { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
 .ajustes-action-btn.edit:hover { background: #EFF6FF; border-color: #BFDBFE; color: #2563EB; }
+.ajustes-action-btn.toggle-state.to-activate:hover { background: #ECFDF5; border-color: #A7F3D0; color: #10B981; }
+.ajustes-action-btn.toggle-state.to-deactivate:hover { background: #FFF7ED; border-color: #FED7AA; color: #F97316; }
 
 /* ─── Formulario de ajustes (perfil/config) ─── */
 .ajustes-form-card {
@@ -471,4 +492,3 @@
   .ajustes-page { padding: 20px 16px; }
   .ajustes-form-row { grid-template-columns: 1fr; }
 }
-

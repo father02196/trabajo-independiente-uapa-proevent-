@@ -289,48 +289,75 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
 
       {isModalOpen && selectedRequest && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Ficha Técnica de Mi Solicitud</h3>
-              <span className="modal-event-id">Solicitud #EVT-{selectedRequest.id_evento}</span>
+              <div>
+                <h3 className="modal-title">Ficha Técnica de Mi Solicitud</h3>
+                <span className="modal-subtitle">Resumen de tu solicitud y logística</span>
+              </div>
+              <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
-            <div className="modal-body modern-modal-body">
-              <div className="detail-group full-width">
-                <label>Nombre del Evento</label>
-                <p className="main-event-title">{selectedRequest.nombre}</p>
-              </div>
-              <div className="detail-group">
-                <label>Recinto</label>
-                <p>{selectedRequest.recinto || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Modalidad</label>
-                <p>{selectedRequest.modalidad || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Tipo de Evento</label>
-                <p>{selectedRequest.tipo_evento || "—"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Fechas</label>
-                <p>
-                  {formatFecha(selectedRequest.fecha_inicio)} 
-                  {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
-                </p>
-              </div>
-              <div className="detail-group">
-                <label>Asistentes Esperados</label>
-                <p>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</p>
-              </div>
-              <div className="detail-group full-width">
-                <label>Estado de la Solicitud</label>
-                <span className={`status ${getStatusClass(selectedRequest.estado)}`} style={{ alignSelf: 'flex-start', marginTop: '4px' }}>
-                  {selectedRequest.estado || "Pendiente"}
-                </span>
+            
+            <div className="modal-body">
+              <div className="modal-grid-3">
+                {/* Columna 1: Info General */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiFileText size={14} /> Información General
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Nombre del Evento</span>
+                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>{selectedRequest.nombre}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Fechas</span>
+                    <span className="info-value">
+                      {formatFecha(selectedRequest.fecha_inicio)} 
+                      {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Columna 2: Logística y Asistencia */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiGrid size={14} /> Logística y Asistencia
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Recinto</span>
+                    <span className="info-value">{selectedRequest.recinto || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Modalidad</span>
+                    <span className="info-value">{selectedRequest.modalidad || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Tipo de Evento</span>
+                    <span className="info-value">{selectedRequest.tipo_evento || "—"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Asistentes Esperados</span>
+                    <span className="info-value">{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</span>
+                  </div>
+                </div>
+
+                {/* Columna 3: Finanzas y Estado */}
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiStar size={14} /> Estado
+                  </div>
+                  <div className="info-row" style={{ marginTop: '12px' }}>
+                    <span className="info-label">Estado de la Solicitud</span>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      {selectedRequest.estado || "Pendiente"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
+            
             <div className="modal-footer">
-              <button className="close-btn" onClick={closeModal}>Cerrar ficha</button>
+              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>

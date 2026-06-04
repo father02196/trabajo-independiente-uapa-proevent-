@@ -125,177 +125,156 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
   }
 
   return (
-    <div className="tab-content fade-in">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div className="animate-fade">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h2>Plan Operativo Anual (POA)</h2>
-          <p>Administración de fondos y aprobaciones de presupuesto para eventos.</p>
+          <h2 style={{fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px'}}>Plan Operativo Anual (POA)</h2>
+          <p style={{color: 'var(--text-muted)', fontSize: '14px'}}>Administración de fondos y aprobaciones de presupuesto para eventos.</p>
         </div>
         <button 
           type="button" 
+          className="btn btn-secondary"
           onClick={cargarPoaData} 
           disabled={loading}
-          style={{ 
-            padding: '10px 18px', 
-            borderRadius: '6px', 
-            background: '#1e40af', 
-            color: 'white', 
-            border: 'none', 
-            cursor: loading ? 'not-allowed' : 'pointer', 
-            fontWeight: '600', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            opacity: loading ? 0.7 : 1
-          }}
         >
-          <FiRefreshCw /> {loading ? "Actualizando..." : "Actualizar Información"}
+          <FiRefreshCw /> {loading ? "Actualizando..." : "Actualizar"}
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-        <div className="av-card" style={{ flex: 1 }}>
-          <h3>Aperturar Año Fiscal POA</h3>
-          <form onSubmit={handleCrearPoa} style={{ display: "flex", flexDirection: "column", gap: "15px", marginTop: "15px" }}>
-            <div>
-              <label style={{ display: "block", marginBottom: "5px", fontWeight: "600" }}>Fecha de Inicio</label>
-              <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} required style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1" }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
+          <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '16px'}}>Aperturar Año Fiscal POA</h3>
+          <form onSubmit={handleCrearPoa} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="form-group">
+              <label>Fecha de Inicio</label>
+              <input type="date" className="input-base" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} required />
             </div>
-            <div>
-              <label style={{ display: "block", marginBottom: "5px", fontWeight: "600" }}>Fecha de Término</label>
-              <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} required style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1" }} />
+            <div className="form-group">
+              <label>Fecha de Término</label>
+              <input type="date" className="input-base" value={fechaFin} onChange={e => setFechaFin(e.target.value)} required />
             </div>
-            <div>
-              <label style={{ display: "block", marginBottom: "5px", fontWeight: "600" }}>Monto Aprobado (DOP)</label>
-              <input type="number" step="0.01" value={montoTotal} onChange={e => setMontoTotal(e.target.value)} required placeholder="Ej. 1500000.00" style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1" }} />
+            <div className="form-group">
+              <label>Monto Aprobado (DOP)</label>
+              <input type="number" className="input-base" step="0.01" value={montoTotal} onChange={e => setMontoTotal(e.target.value)} required placeholder="Ej. 1500000.00" />
             </div>
-            <button type="submit" className="primary-btn" disabled={loading}>Guardar Presupuesto POA</button>
+            <button type="submit" className="btn btn-primary" disabled={loading}>Guardar Presupuesto POA</button>
           </form>
         </div>
 
-        <div className="av-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
+        <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column' }}>
           {poaActual ? (
             <div style={{ textAlign: 'center' }}>
-              <FiDollarSign size={40} color="#16a34a" />
-              <h3 style={{ margin: "5px 0", color: "#334155" }}>Resumen del POA Activo</h3>
-              <p style={{ color: "#64748b", fontSize: "12px" }}>Del {poaActual.fecha_inicio.substring(0, 10)} al {poaActual.fecha_fin.substring(0, 10)}</p>
+              <FiDollarSign size={40} color="var(--success)" />
+              <h3 style={{ margin: '8px 0 4px 0', color: 'var(--text-main)', fontWeight: 700 }}>Resumen del POA Activo</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Del {poaActual.fecha_inicio.substring(0, 10)} al {poaActual.fecha_fin.substring(0, 10)}</p>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
-                <div style={{ padding: '10px', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
-                  <div style={{ fontSize: "11px", color: "#64748b", fontWeight: "bold" }}>MONTO TOTAL</div>
-                  <div style={{ fontSize: "14px", fontWeight: "bold", color: "#334155" }}>RD$ {Number(poaActual.monto_total).toLocaleString("en-US", {minimumFractionDigits: 2})}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
+                <div style={{ padding: '14px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-soft)', textAlign: 'left' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>MONTO TOTAL</div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>RD$ {Number(poaActual.monto_total).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                 </div>
-                <div style={{ padding: '10px', background: '#dcfce7', borderRadius: '8px', border: '1px solid #bbf7d0', textAlign: 'left' }}>
-                  <div style={{ fontSize: "11px", color: "#16a34a", fontWeight: "bold" }}>DISPONIBLE</div>
-                  <div style={{ fontSize: "14px", fontWeight: "bold", color: "#16a34a" }}>RD$ {Number(poaActual.monto_disponible).toLocaleString("en-US", {minimumFractionDigits: 2})}</div>
+                <div style={{ padding: '14px', background: 'var(--success-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--success-border)', textAlign: 'left' }}>
+                  <div style={{ fontSize: '11px', color: '#065F46', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>DISPONIBLE</div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--success)', marginTop: '4px' }}>RD$ {Number(poaActual.monto_disponible).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                 </div>
-                <div style={{ padding: '10px', background: '#fff1f2', borderRadius: '8px', border: '1px solid #fecdd3', gridColumn: 'span 2', textAlign: 'left' }}>
-                  <div style={{ fontSize: "11px", color: "#e11d48", fontWeight: "bold" }}>SOLICITUDES RECHAZADAS (TOTAL)</div>
-                  <div style={{ fontSize: "18px", fontWeight: "bold", color: "#e11d48" }}>RD$ {totalRechazado.toLocaleString("en-US", {minimumFractionDigits: 2})}</div>
+                <div style={{ padding: '14px', background: 'var(--danger-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--danger-border)', gridColumn: 'span 2', textAlign: 'left' }}>
+                  <div style={{ fontSize: '11px', color: '#7F1D1D', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>SOLICITUDES RECHAZADAS (TOTAL)</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--danger)', marginTop: '4px' }}>RD$ {totalRechazado.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                 </div>
               </div>
             </div>
           ) : (
-            <div style={{ color: "#64748b", textAlign: "center", padding: "40px 0" }}>
-              <FiCalendar size={40} style={{ opacity: 0.5, marginBottom: "10px" }} />
+            <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <FiCalendar size={40} style={{ opacity: 0.4, marginBottom: '10px' }} />
               <p>No hay un año fiscal registrado aún.</p>
             </div>
           )}
         </div>
       </div>
 
-      <div className="av-card" style={{ marginTop: '20px' }}>
-        <h3>Historial de Movimientos y Solicitudes del Poa</h3>
-        <table className="requests-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+      <div className="table-container" style={{ marginTop: '24px' }}>
+        <div style={{padding: '16px 16px 0 16px'}}>
+          <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)'}}>Historial de Movimientos y Solicitudes del POA</h3>
+        </div>
+        <table className="modern-table" style={{ marginTop: '12px' }}>
           <thead>
-            <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', background: '#f1f5f9' }}>
-              <th style={{ padding: '12px' }}>FECHA</th>
-              <th style={{ padding: '12px' }}>EVENTO</th>
-              <th style={{ padding: '12px' }}>SOLICITANTE</th>
-              <th style={{ padding: '12px' }}>SOLICITUD ORIG.</th>
-              <th style={{ padding: '12px' }}>DESCUENTO (DOP)</th>
-              <th style={{ padding: '12px' }}>ESTADO</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>DETALLES</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>ACCIONES</th>
+            <tr>
+              <th>FECHA</th>
+              <th>EVENTO</th>
+              <th>SOLICITANTE</th>
+              <th>SOLICITUD ORIG.</th>
+              <th>DESCUENTO (DOP)</th>
+              <th>ESTADO</th>
+              <th style={{textAlign: 'center'}}>ACCIONES</th>
             </tr>
           </thead>
           <tbody>
             {filteredMovimientos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(mov => (
-              <tr key={mov.id_movimiento} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '12px' }}>{mov.fecha_movimiento.substring(0, 10)}</td>
-                <td style={{ padding: '12px' }}><strong>#EVT-{mov.id_evento}</strong><br/><span style={{fontSize: "12px", color: "#64748b"}}>{mov.nombre_evento}</span></td>
-                <td style={{ padding: '12px' }}>{mov.solicitante || "N/D"}</td>
-                <td style={{ padding: '12px' }}>{Number(mov.monto_solicitado_original).toLocaleString("en-US", {minimumFractionDigits: 2})} {mov.moneda_original} <br/><span style={{fontSize: "10px", color: "#94a3b8"}}>Tasa: {mov.tasa_cambio}</span></td>
-                <td style={{ padding: '12px', fontWeight: 'bold', color: '#ef4444' }}>- RD$ {Number(mov.monto_descontado_dop).toLocaleString("en-US", {minimumFractionDigits: 2})}</td>
+              <tr key={mov.id_movimiento} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '12px', fontSize: '13.5px', color: 'var(--text-muted)' }}>{mov.fecha_movimiento.substring(0, 10)}</td>
+                <td style={{ padding: '12px' }}><strong style={{ color: 'var(--color-uapa-navy)', fontSize: '13px' }}>#EVT-{mov.id_evento}</strong><br/><span style={{fontSize: "12px", color: "var(--text-muted)"}}>{mov.nombre_evento}</span></td>
+                <td style={{ padding: '12px', fontSize: '13.5px', color: 'var(--text-main)' }}>{mov.solicitante || "N/D"}</td>
+                <td style={{ padding: '12px', fontSize: '13px', color: 'var(--text-light)' }}>{Number(mov.monto_solicitado_original).toLocaleString("en-US", {minimumFractionDigits: 2})} {mov.moneda_original} <br/><span style={{fontSize: "10px", color: "var(--text-muted)"}}>Tasa: {mov.tasa_cambio}</span></td>
+                <td style={{ padding: '12px', fontWeight: '700', color: 'var(--color-error)', fontSize: '13.5px' }}>- RD$ {Number(mov.monto_descontado_dop).toLocaleString("en-US", {minimumFractionDigits: 2})}</td>
                 <td style={{ padding: '12px' }}>
                   <span style={{ 
-                    padding: '4px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold',
-                    background: mov.estado === 'Aprobado' ? '#dcfce7' : mov.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7',
-                    color: mov.estado === 'Aprobado' ? '#16a34a' : mov.estado === 'Rechazado' ? '#dc2626' : '#d97706'
+                    padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '12px', fontWeight: '700',
+                    background: mov.estado === 'Aprobado' ? 'var(--color-success-light)' : mov.estado === 'Rechazado' ? 'var(--color-error-light)' : 'var(--color-warning-light)',
+                    color: mov.estado === 'Aprobado' ? '#065F46' : mov.estado === 'Rechazado' ? '#7F1D1D' : '#92400E'
                   }}>
                     {mov.estado}
                   </span>
                   {mov.estado === 'Rechazado' && mov.motivo_rechazo && (
-                    <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px', maxWidth: '150px' }}>Motivo: {mov.motivo_rechazo}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--color-error)', marginTop: '4px', maxWidth: '150px' }}>Motivo: {mov.motivo_rechazo}</div>
                   )}
                 </td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <button className="details-btn" onClick={() => openModalDetalles(mov)} style={{ padding: '6px 12px', fontSize: '12px', background: '#334155', color: 'white', borderRadius: '4px', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                    <FiEye /> Ver
-                  </button>
-                </td>
-                <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <div className="saas-action-group">
+                    <button 
+                      className="saas-action-btn saas-btn-view" 
+                      onClick={() => openModalDetalles(mov)}
+                      title="Ver Detalles"
+                    >
+                      <FiEye size={15} />
+                    </button>
                     <button 
                       onClick={() => handleCambiarEstado(mov.id_movimiento, 'Aprobado')} 
-                      style={{ 
-                        background: mov.estado === 'Aprobado' ? '#16a34a' : '#94a3b8', 
-                        color: 'white', border: 'none', padding: '8px', borderRadius: '4px', 
-                        cursor: 'pointer', 
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                        opacity: 1
-                      }} 
-                      title="Aprobar el presupuesto"
+                      className={`saas-action-btn saas-btn-approve ${mov.estado === 'Aprobado' ? 'is-active' : ''}`}
+                      title="Aprobar Presupuesto"
                     >
-                      <FiCheckCircle size={16} />
+                      <FiCheckCircle size={15} />
                     </button>
                     <button 
                       onClick={() => {setMovRechazoId(mov.id_movimiento); setModalRechazo(true);}} 
-                      style={{ 
-                        background: mov.estado === 'Rechazado' ? '#dc2626' : '#94a3b8', 
-                        color: 'white', border: 'none', padding: '8px', borderRadius: '4px', 
-                        cursor: 'pointer', 
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                        opacity: 1
-                      }} 
-                      title="Rechazar el presupuesto"
+                      className={`saas-action-btn saas-btn-reject ${mov.estado === 'Rechazado' ? 'is-active' : ''}`}
+                      title="Rechazar Presupuesto"
                     >
-                      <FiXCircle size={16} />
+                      <FiXCircle size={15} />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
             {movimientos.length === 0 && (
-              <tr><td colSpan="8" style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>No hay movimientos en el POA registrado.</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>No hay movimientos en el POA registrado.</td></tr>
             )}
           </tbody>
         </table>
 
         {movimientos.length > itemsPerPage && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', padding: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', padding: '10px', alignItems: 'center' }}>
             <button 
+              className="btn btn-secondary btn-sm"
               disabled={currentPage === 1} 
               onClick={() => setCurrentPage(prev => prev - 1)}
-              style={{ padding: '5px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: 'white' }}
             >
               Anterior
             </button>
-            <span style={{ padding: '5px 10px', fontWeight: 'bold' }}>Pág. {currentPage} de {Math.ceil(movimientos.length / itemsPerPage)}</span>
+            <span style={{ padding: '5px 14px', fontWeight: '700', color: 'var(--color-uapa-navy)', fontSize: '14px' }}>Pág. {currentPage} de {Math.ceil(movimientos.length / itemsPerPage)}</span>
             <button 
+              className="btn btn-secondary btn-sm"
               disabled={currentPage * itemsPerPage >= movimientos.length} 
               onClick={() => setCurrentPage(prev => prev + 1)}
-              style={{ padding: '5px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: currentPage * itemsPerPage >= movimientos.length ? 'not-allowed' : 'pointer', background: 'white' }}
             >
               Siguiente
             </button>
@@ -308,28 +287,29 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
             <div className="modal-header"><h2>Motivo de Rechazo</h2></div>
             <div className="modal-body" style={{ display: "block", textAlign: "left" }}>
-              <p style={{ marginBottom: "12px", color: "#475569", lineHeight: "1.5", fontSize: "14px" }}>Por favor, indica la razón por la cual se rechaza este presupuesto (el monto descontado de la solicitud se devolverá al balance disponible del año fiscal en este momento).</p>
+              <p style={{ marginBottom: "12px", color: "var(--text-light)", lineHeight: "1.6", fontSize: "14px" }}>Por favor, indica la razón por la cual se rechaza este presupuesto (el monto descontado de la solicitud se devolverá al balance disponible del año fiscal en este momento).</p>
               <textarea 
                 value={motivoRechazo} 
                 onChange={e => setMotivoRechazo(e.target.value)} 
                 rows="4" 
-                style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", resize: "none", outline: "none", fontSize: "14px", fontFamily: "inherit" }}
+                className="input-base"
+                style={{ resize: "none" }}
                 placeholder="Escribe la razón del rechazo aquí..."
               ></textarea>
             </div>
-            <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #e2e8f0" }}>
+            <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "15px", paddingTop: "15px", borderTop: "1px solid var(--color-border)" }}>
               <button 
                 type="button" 
+                className="btn btn-secondary"
                 onClick={() => setModalRechazo(false)}
-                style={{ padding: "10px 18px", borderRadius: "8px", background: "white", color: "#475569", border: "1px solid #cbd5e1", cursor: "pointer", fontWeight: "600", transition: "all 0.2s" }}
               >
                 Cancelar
               </button>
               <button 
                 type="button" 
+                className="btn btn-danger"
                 onClick={() => handleCambiarEstado(movRechazoId, 'Rechazado', motivoRechazo)} 
                 disabled={!motivoRechazo.trim()}
-                style={{ padding: "10px 18px", borderRadius: "8px", background: "#ef4444", color: "white", border: "none", cursor: !motivoRechazo.trim() ? "not-allowed" : "pointer", fontWeight: "600", transition: "all 0.2s", opacity: !motivoRechazo.trim() ? 0.5 : 1 }}
               >
                 Confirmar Rechazo
               </button>
@@ -406,7 +386,7 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
               </div>
             </div>
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '15px' }}>
-              <button className="close-btn" onClick={closeModalDetalles} style={{ padding: '8px 20px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 'bold' }}>Cerrar</button>
+              <button className="btn btn-secondary" onClick={closeModalDetalles}>Cerrar</button>
             </div>
           </div>
         </div>

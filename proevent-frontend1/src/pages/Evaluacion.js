@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './../css/Evaluacion.css';
-import { FiStar, FiCheckCircle, FiAlertTriangle, FiRefreshCw, FiBarChart2, FiClipboard, FiList, FiMapPin } from 'react-icons/fi';
+import { FiStar, FiCheckCircle, FiAlertTriangle, FiRefreshCw, FiBarChart2, FiClipboard, FiMapPin } from 'react-icons/fi';
 
 const API = 'http://localhost:8080';
 
@@ -8,7 +7,6 @@ const RECINTOS = ['Cibao Oriental', 'Nagua', 'Santo Domingo Oriental', 'Santiago
 const VALORACIONES = ['Muy eficiente', 'Excelente', 'Eficiente', 'Deficiente'];
 
 function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
-  /* ── Estado del formulario ── */
   const [respuesta, setRespuesta] = useState('');
   const [recinto, setRecinto] = useState('');
   const [eventoId, setEventoId] = useState('');
@@ -16,27 +14,21 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
   const [satisfaccion, setSatisfaccion] = useState(0);
   const [comentario, setComentario] = useState('');
 
-  /* ── Estado de UI ── */
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [enviado, setEnviado] = useState(false);
 
-  /* ── Panel Admin ── */
   const [evaluaciones, setEvaluaciones] = useState([]);
-  const [vistaAdmin, setVistaAdmin] = useState('tabla');
-  // Lógica de roles de RM-fronters
   const isAdmin = Boolean(usuario?.rol && (usuario.rol.includes('Administrador') || usuario.rol.includes('admin') || (typeof usuario.rol === 'string' && usuario.rol.toLowerCase().includes('admin'))));
 
-  /* ── Pre-carga desde notificación ── */
   useEffect(() => {
     if (eventoEvalId) {
       setEventoId(String(eventoEvalId));
       if (onEvalConsumed) onEvalConsumed();
     }
-  }, [eventoEvalId]);
+  }, [eventoEvalId, onEvalConsumed]);
 
-  /* ── Carga inicial ── */
   useEffect(() => {
     fetch(`${API}/eventos`)
       .then(r => r.json())
@@ -67,7 +59,6 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
       .catch(() => setEvaluaciones([]));
   };
 
-  /* ── Envío del formulario ── */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!respuesta || !recinto || !eventoId || !valoracion || !satisfaccion) {
@@ -117,7 +108,6 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
     setEnviado(false);
   };
 
-  /* ── Estadísticas para el panel admin ── */
   const bestRecinto = React.useMemo(() => {
     if (!evaluaciones.length) return '-';
     const counts = {};
@@ -133,22 +123,17 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
     if (!evaluaciones.length) return null;
     const total = evaluaciones.length;
     const promSat = Math.round(evaluaciones.reduce((sum, ev) => sum + (ev.satisfaccion || 0), 0) / total);
-    const dist = {};
-    VALORACIONES.forEach(v => {
-      dist[v] = evaluaciones.filter(ev => ev.valoracion_respuesta === v).length;
-    });
-    return { total, promSat, dist, bestRecinto };
+    return { total, promSat, bestRecinto };
   }, [evaluaciones, bestRecinto]);
 
-  /* ── Pantalla de éxito ── */
   if (enviado) {
     return (
-      <div className="evaluacion-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="eval-form-card" style={{ padding: '40px', textAlign: 'center', maxWidth: '500px' }}>
-          <FiCheckCircle style={{ fontSize: '60px', color: '#10B981', margin: '0 auto 20px' }} />
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0F172A', marginBottom: '10px' }}>¡Evaluación enviada!</h2>
-          <p style={{ color: '#64748B', marginBottom: '25px', lineHeight: '1.6' }}>Gracias por tu valoración. Tu opinión nos ayuda a mejorar los servicios del Departamento de Protocolo y Eventos.</p>
-          <button className="btn-eval-primary" onClick={resetForm} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+      <div className="animate-fade" style={{ maxWidth: '600px', margin: '40px auto' }}>
+        <div className="card" style={{ padding: '40px', textAlign: 'center', borderTop: '4px solid #10B981' }}>
+          <FiCheckCircle size={64} style={{ color: '#10B981', margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>¡Evaluación enviada!</h2>
+          <p style={{ color: '#64748B', marginBottom: '24px' }}>Gracias por tu valoración. Tu opinión nos ayuda a mejorar los servicios del Departamento de Protocolo y Eventos.</p>
+          <button className="btn btn-primary" onClick={resetForm} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}>
             <FiRefreshCw /> Enviar otra evaluación
           </button>
         </div>
@@ -157,47 +142,26 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
   }
 
   return (
-    <div className="evaluacion-page">
-      
-      {/* ── HEADER ── */}
-      <div className="eval-page-header">
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FiStar style={{ color: '#3B82F6' }} />
-          Evaluación de Servicios
-        </h1>
-        <p>Ayúdanos a mejorar. Valora la atención y el servicio recibido por el Departamento de Protocolo y Eventos.</p>
+    <div className="animate-fade">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Evaluación de Servicios</h1>
+          <p style={{ color: '#64748B', fontSize: '13.5px' }}>Ayúdanos a mejorar. Valora la atención y el servicio recibido.</p>
+        </div>
       </div>
 
-      {mensaje && (
-        <div className={`eval-result-banner ${mensaje.tipo === 'error' ? 'poor' : 'excellent'}`}>
-          <div className="eval-result-info">
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              {mensaje.tipo === 'error' ? <FiAlertTriangle /> : <FiCheckCircle />}
-              {mensaje.texto}
-            </h3>
-          </div>
-        </div>
-      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {mensaje && (
+            <div style={{ padding: '16px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px', background: mensaje.tipo === 'error' ? '#FEF2F2' : '#F0FDF4', color: mensaje.tipo === 'error' ? '#EF4444' : '#10B981', border: `1px solid ${mensaje.tipo === 'error' ? '#FECACA' : '#BBF7D0'}` }}>
+              {mensaje.tipo === 'error' ? <FiAlertTriangle size={20} /> : <FiCheckCircle size={20} />}
+              <span style={{ fontWeight: '600', fontSize: '14px' }}>{mensaje.texto}</span>
+            </div>
+          )}
 
-      {/* ── FORMULARIO ── */}
-      <div className="eval-form-card" style={{ marginBottom: '40px' }}>
-        <div className="eval-form-header">
-          <h2>Formulario de Retroalimentación</h2>
-          <p>Completa los siguientes campos obligatorios para enviarnos tu opinión.</p>
-        </div>
-
-        <form className="eval-form-body" onSubmit={handleSubmit}>
-          
-          {/* Evento */}
-          <div className="eval-criterion">
-            <label className="eval-criterion-label">
-              Evento evaluado <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>
-            </label>
-            <select
-              style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0', background: '#fff', fontSize: '14px', outline: 'none' }}
-              value={eventoId}
-              onChange={e => setEventoId(e.target.value)}
-            >
+          <div className="card" style={{ padding: '24px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>Evento evaluado <span style={{ color: '#EF4444' }}>*</span></label>
+            <select className="input-base" value={eventoId} onChange={e => setEventoId(e.target.value)}>
               <option value="">-- Selecciona el evento que fue atendido --</option>
               {eventos.map(ev => (
                 <option key={ev.id_evento} value={ev.id_evento}>
@@ -205,61 +169,38 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
                 </option>
               ))}
             </select>
-            {eventos.length === 0 && (
-              <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '8px' }}>Solo se muestran eventos con estado Finalizado.</p>
-            )}
+            {eventos.length === 0 && <p style={{ fontSize: '12px', color: '#64748B', marginTop: '8px' }}>Solo se muestran eventos con estado <strong>Finalizado</strong>.</p>}
           </div>
 
-          {/* ¿Ha solicitado alguna actividad? */}
-          <div className="eval-criterion">
-            <label className="eval-criterion-label">
-              ¿Has solicitado alguna actividad al Departamento de Protocolo y Eventos? <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>
+          <div className="card" style={{ padding: '24px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '16px' }}>
+              ¿Has solicitado alguna actividad al Departamento de Protocolo y Eventos? <span style={{ color: '#EF4444' }}>*</span>
             </label>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '16px' }}>
               {['Si', 'No'].map(op => (
-                <label
-                  key={op}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px',
-                    borderRadius: '10px', border: respuesta === op ? '1.5px solid #3B82F6' : '1.5px solid #E2E8F0',
-                    background: respuesta === op ? '#EFF6FF' : '#fff', color: respuesta === op ? '#1D4ED8' : '#475569',
-                    cursor: 'pointer', fontWeight: respuesta === op ? '600' : '500', transition: 'all 0.2s'
-                  }}
-                  onClick={() => setRespuesta(op)}
-                >
-                  <div style={{
-                    width: '18px', height: '18px', borderRadius: '50%',
-                    border: respuesta === op ? '5px solid #3B82F6' : '2px solid #CBD5E1', background: '#fff'
-                  }} />
+                <label key={op} style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', transition: 'all 0.2s',
+                  borderColor: respuesta === op ? '#3B82F6' : '#E2E8F0', backgroundColor: respuesta === op ? '#EFF6FF' : '#FFFFFF', color: respuesta === op ? '#1D4ED8' : '#475569', fontWeight: respuesta === op ? '700' : '500'
+                }} onClick={() => setRespuesta(op)}>
+                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: `2px solid ${respuesta === op ? '#3B82F6' : '#CBD5E1'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {respuesta === op && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3B82F6' }} />}
+                  </div>
                   {op}
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Recinto */}
-          <div className="eval-criterion">
-            <label className="eval-criterion-label">
-              Recinto <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>
-            </label>
+          <div className="card" style={{ padding: '24px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '16px' }}>Recinto <span style={{ color: '#EF4444' }}>*</span></label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
               {RECINTOS.map(r => (
-                <label
-                  key={r}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px',
-                    borderRadius: '10px', border: recinto === r ? '1.5px solid #3B82F6' : '1.5px solid #E2E8F0',
-                    background: recinto === r ? '#EFF6FF' : '#fff', color: recinto === r ? '#1D4ED8' : '#475569',
-                    cursor: 'pointer', fontWeight: recinto === r ? '600' : '500', transition: 'all 0.2s'
-                  }}
-                  onClick={() => setRecinto(r)}
-                >
-                  <div style={{
-                    width: '18px', height: '18px', borderRadius: '4px',
-                    background: recinto === r ? '#3B82F6' : '#fff', border: recinto === r ? 'none' : '2px solid #CBD5E1',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    {recinto === r && <FiCheckCircle style={{ color: '#fff', fontSize: '12px' }} />}
+                <label key={r} style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', transition: 'all 0.2s',
+                  borderColor: recinto === r ? '#3B82F6' : '#E2E8F0', backgroundColor: recinto === r ? '#EFF6FF' : '#FFFFFF', color: recinto === r ? '#1D4ED8' : '#475569', fontWeight: recinto === r ? '700' : '500'
+                }} onClick={() => setRecinto(r)}>
+                  <div style={{ width: '16px', height: '16px', borderRadius: '4px', border: `2px solid ${recinto === r ? '#3B82F6' : '#CBD5E1'}`, backgroundColor: recinto === r ? '#3B82F6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {recinto === r && <FiCheckCircle color="white" size={12} />}
                   </div>
                   {r}
                 </label>
@@ -267,148 +208,150 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
             </div>
           </div>
 
-          {/* Valoración de respuesta inicial */}
-          <div className="eval-criterion">
-            <label className="eval-criterion-label">
-              ¿Cómo valora la respuesta inicial a la solicitud? <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>
+          <div className="card" style={{ padding: '24px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '16px' }}>
+              ¿Cómo valora la respuesta inicial a la solicitud? <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
               {VALORACIONES.map(v => (
-                <label
-                  key={v}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-                    borderRadius: '10px', border: valoracion === v ? '1.5px solid #3B82F6' : '1.5px solid #E2E8F0',
-                    background: valoracion === v ? '#EFF6FF' : '#fff', color: valoracion === v ? '#1D4ED8' : '#475569',
-                    cursor: 'pointer', fontWeight: valoracion === v ? '600' : '500', transition: 'all 0.2s', flex: '1 1 200px'
-                  }}
-                  onClick={() => setValoracion(v)}
-                >
-                  <div style={{
-                    width: '18px', height: '18px', borderRadius: '50%',
-                    border: valoracion === v ? '5px solid #3B82F6' : '2px solid #CBD5E1', background: '#fff'
-                  }} />
+                <label key={v} style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', transition: 'all 0.2s',
+                  borderColor: valoracion === v ? '#3B82F6' : '#E2E8F0', backgroundColor: valoracion === v ? '#EFF6FF' : '#FFFFFF', color: valoracion === v ? '#1D4ED8' : '#475569', fontWeight: valoracion === v ? '700' : '500'
+                }} onClick={() => setValoracion(v)}>
+                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: `2px solid ${valoracion === v ? '#3B82F6' : '#CBD5E1'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {valoracion === v && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3B82F6' }} />}
+                  </div>
                   {v}
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Satisfacción general (Star Rating) */}
-          <div className="eval-criterion" style={{ textAlign: 'center', padding: '30px 20px' }}>
-            <label className="eval-criterion-label" style={{ justifyContent: 'center', marginBottom: '20px', fontSize: '15px' }}>
-              ¿Cuál es tu nivel de satisfacción en relación a la coordinación general? <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>
+          <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
+            <label style={{ display: 'block', fontSize: '15px', fontWeight: '800', color: '#0F172A', marginBottom: '20px' }}>
+              Nivel de satisfacción en relación a la coordinación <span style={{ color: '#EF4444' }}>*</span>
             </label>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#94A3B8' }}>Poco satisfecho</span>
-              <div className="star-rating">
-                {[5, 4, 3, 2, 1].map(n => (
-                  <React.Fragment key={n}>
-                    <input 
-                      type="radio" 
-                      id={`star${n}`} 
-                      name="rating" 
-                      value={n} 
-                      checked={satisfaccion === n} 
-                      onChange={() => setSatisfaccion(n)} 
-                    />
-                    <label htmlFor={`star${n}`} style={{ color: satisfaccion >= n ? '#F59E0B' : '#E2E8F0' }}>★</label>
-                  </React.Fragment>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#64748B' }}>Poco satisfecho</span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button key={n} type="button" onClick={() => setSatisfaccion(n)} style={{
+                    width: '48px', height: '48px', borderRadius: '50%', fontSize: '18px', fontWeight: '800', transition: 'all 0.2s', cursor: 'pointer',
+                    backgroundColor: satisfaccion === n ? '#3B82F6' : satisfaccion > 0 && n <= satisfaccion ? '#EFF6FF' : '#F8FAFC',
+                    color: satisfaccion === n ? 'white' : satisfaccion > 0 && n <= satisfaccion ? '#3B82F6' : '#64748B',
+                    border: `2px solid ${satisfaccion === n ? '#3B82F6' : satisfaccion > 0 && n <= satisfaccion ? '#BFDBFE' : '#E2E8F0'}`,
+                    transform: satisfaccion === n ? 'scale(1.1)' : 'scale(1)',
+                    boxShadow: satisfaccion === n ? '0 4px 14px rgba(59, 130, 246, 0.4)' : 'none'
+                  }}>
+                    {n}
+                  </button>
                 ))}
               </div>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#94A3B8' }}>Muy satisfecho</span>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#64748B' }}>Muy satisfecho</span>
             </div>
           </div>
 
-          {/* Comentarios */}
-          <div className="eval-comment-group">
-            <label style={{ display: 'block', marginBottom: '8px' }}>
-              Comentarios adicionales <span style={{ fontWeight: 'normal', color: '#94A3B8' }}>(opcional)</span>
-            </label>
+          <div className="card" style={{ padding: '24px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>Comentarios adicionales <span style={{ color: '#64748B', fontWeight: '400', fontSize: '12px' }}>(opcional)</span></label>
             <textarea
-              className="eval-textarea"
-              placeholder="Cuéntanos más sobre tu experiencia con el departamento..."
+              className="input-base"
+              placeholder="Cuéntanos más sobre tu experiencia..."
               value={comentario}
               onChange={e => setComentario(e.target.value)}
+              rows={4}
             />
           </div>
 
-        </form>
-
-        <div className="eval-form-footer">
-          <button type="submit" className="btn-eval-primary" disabled={loading} onClick={handleSubmit}>
-            {loading ? 'Enviando...' : 'Enviar Evaluación'}
-          </button>
-        </div>
-      </div>
-
-      {/* ── PANEL ADMINISTRADOR ── */}
-      {isAdmin && (
-        <div style={{ marginTop: '40px' }}>
-          <div className="eval-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <FiBarChart2 style={{ color: '#3B82F6' }} />
-                Resultados Globales de Evaluación
-              </h2>
-              <p style={{ marginTop: '4px', color: '#64748B', fontSize: '14px' }}>Resumen estadístico de satisfacción</p>
-            </div>
-            <button className="btn-eval-secondary" onClick={cargarEvaluaciones} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FiRefreshCw /> Actualizar
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '12px 32px', fontSize: '15px' }}>
+              {loading ? 'Enviando...' : 'Enviar Evaluación'}
             </button>
           </div>
+        </form>
 
-          {evaluaciones.length === 0 ? (
-            <div className="eval-form-card" style={{ padding: '40px', textAlign: 'center' }}>
-              <FiClipboard style={{ fontSize: '48px', color: '#CBD5E1', margin: '0 auto 16px' }} />
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#475569', marginBottom: '8px' }}>Aún no hay evaluaciones</h3>
-              <p style={{ color: '#94A3B8', fontSize: '14px' }}>Los resultados aparecerán aquí cuando los usuarios comiencen a evaluar eventos.</p>
+        {isAdmin && (
+          <div style={{ marginTop: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <FiBarChart2 size={24} color="#3B82F6" />
+                <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', margin: 0 }}>Historial de Evaluaciones</h2>
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={cargarEvaluaciones}>
+                <FiRefreshCw /> Actualizar Datos
+              </button>
             </div>
-          ) : (
-            <div className="eval-cards-grid">
-              <div className="eval-card">
-                <div className="eval-card-top">
-                  <div className="eval-card-title">Satisfacción Promedio</div>
-                  <div className="eval-score-badge excellent"><FiStar style={{ fontSize: '20px' }} /></div>
+
+            {stats && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiStar size={24} /></div>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Promedio</div>
+                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A' }}>{stats.promSat} / 5</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '36px', fontWeight: '900', color: '#0F172A', lineHeight: '1', marginBottom: '8px' }}>
-                  {stats?.promSat} <span style={{ fontSize: '16px', color: '#94A3B8', fontWeight: '600' }}>/ 5</span>
+                <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#DBEAFE', color: '#2563EB', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiClipboard size={24} /></div>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Total Eval.</div>
+                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A' }}>{stats.total}</div>
+                  </div>
                 </div>
-                <div className="eval-stars">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <span key={n} className={`eval-star ${n <= (stats?.promSat || 0) ? 'filled' : ''}`}>★</span>
-                  ))}
+                <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#D1FAE5', color: '#059669', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiMapPin size={24} /></div>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Mejor Recinto</div>
+                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>{bestRecinto}</div>
+                  </div>
                 </div>
               </div>
+            )}
 
-              <div className="eval-card">
-                <div className="eval-card-top">
-                  <div className="eval-card-title">Total Evaluaciones</div>
-                  <div className="eval-score-badge good"><FiClipboard style={{ fontSize: '20px' }} /></div>
-                </div>
-                <div style={{ fontSize: '36px', fontWeight: '900', color: '#0F172A', lineHeight: '1', marginBottom: '16px' }}>
-                  {stats?.total}
-                </div>
-                <p style={{ fontSize: '13px', color: '#64748B' }}>Respuestas procesadas</p>
-              </div>
-
-              <div className="eval-card">
-                <div className="eval-card-top">
-                  <div className="eval-card-title">Mejor Recinto</div>
-                  <div className="eval-score-badge average"><FiMapPin style={{ fontSize: '20px' }} /></div>
-                </div>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A', lineHeight: '1.2', marginBottom: '16px' }}>
-                  {stats?.bestRecinto}
-                </div>
-                <div className="eval-card-meta">
-                  <span className="eval-meta-chip">Mayor satisfacción</span>
-                </div>
+            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+              <div className="table-container" style={{ margin: 0, boxShadow: 'none' }}>
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Evento</th>
+                      <th>Recinto</th>
+                      <th>Valoración Resp.</th>
+                      <th style={{ textAlign: 'center' }}>Satisfacción</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {evaluaciones.length === 0 ? (
+                      <tr><td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>No hay evaluaciones registradas.</td></tr>
+                    ) : (
+                      evaluaciones.map(ev => (
+                        <tr key={ev.id_evaluacion}>
+                          <td style={{ fontWeight: '600', color: '#64748B' }}>#{ev.id_evaluacion}</td>
+                          <td style={{ fontWeight: '600', color: '#0F172A' }}>{ev.nombre_evento || `Evento #${ev.id_evento}`}</td>
+                          <td>{ev.recinto}</td>
+                          <td>
+                            <span className={`status-pill ${ev.valoracion_respuesta === 'Deficiente' ? 'status-rejected' : ev.valoracion_respuesta === 'Muy eficiente' || ev.valoracion_respuesta === 'Excelente' ? 'status-approved' : 'status-pending'}`} style={{ padding: '4px 10px', fontSize: '12px' }}>
+                              {ev.valoracion_respuesta}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
+                              {[1,2,3,4,5].map(n => (
+                                <FiStar key={n} color={n <= ev.satisfaccion ? '#F59E0B' : '#E2E8F0'} fill={n <= ev.satisfaccion ? '#F59E0B' : 'transparent'} />
+                              ))}
+                            </div>
+                          </td>
+                          <td style={{ color: '#64748B', fontSize: '13px' }}>{ev.fecha_evento ? String(ev.fecha_evento).substring(0, 10) : ''}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
-        </div>
-      )}
-
+          </div>
+        )}
+      </div>
     </div>
   );
 }
