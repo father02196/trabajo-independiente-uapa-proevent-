@@ -869,6 +869,7 @@ CREATE TABLE `tipo_servicio_externo` (
   `id_tipo_servicio` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(100) NOT NULL,
   `clasificacion` enum('Corriente','Especializado') DEFAULT 'Corriente',
+  `estado` enum('Activo','Inactivo') DEFAULT 'Activo',
   PRIMARY KEY (`id_tipo_servicio`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

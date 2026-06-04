@@ -1527,7 +1527,7 @@ app.delete('/cronograma/:id_actividad', (req, res) => {
 // ── FASE 2: MOTOR DE GESTIÓN DOCUMENTAL Y CONTRACTUAL ──
 
 const fs = require('fs');
-const path = require('path');
+
 // const multer = require('multer');
 
 // Configuración de Multer para almacenar archivos localmente
@@ -1549,8 +1549,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 */
 
-// Mock temporal de upload
-const upload = { single: () => (req, res, next) => next() };
+// Mock temporal de upload fue eliminado porque ya implementamos multer de forma real
 
 // Hacer pública la carpeta de uploads para descargar
 app.use('/uploads', express.static(uploadDir));
