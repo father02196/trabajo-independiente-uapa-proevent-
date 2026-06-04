@@ -504,7 +504,6 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       {selectedRequest.estado || "Pendiente"}
                     </span>
                   </div>
-                  </div>
                 </div>
               </div>
 
