@@ -95,6 +95,9 @@ function App() {
           onLogin={(usuarioData) => {
             setIsLoggedIn(true);
             setUsuario(usuarioData);
+            // Asegurar que inicie siempre en la pantalla "Dashboard" principal
+            sessionStorage.removeItem("dashboard_activeTab");
+            localStorage.removeItem("dashboard_activeTab"); // por compatibilidad legacy
             setPage("dashboard");
           }}
           onBackClick={() => setPage("welcome")}

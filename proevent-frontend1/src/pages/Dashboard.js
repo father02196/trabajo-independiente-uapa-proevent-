@@ -30,7 +30,7 @@ import AsignacionPersonal from "./AsignacionPersonal";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
-        return localStorage.getItem("dashboard_activeTab") || "Dashboard";
+        return sessionStorage.getItem("dashboard_activeTab") || "Dashboard";
     });
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -39,7 +39,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [eventoEvalId, setEventoEvalId] = useState(null);
 
     const [openMenus, setOpenMenus] = useState(() => {
-        const savedMenus = localStorage.getItem("dashboard_openMenus");
+        const savedMenus = sessionStorage.getItem("dashboard_openMenus");
         return savedMenus ? JSON.parse(savedMenus) : {
             eventos: false,
             audiovisual: false,
@@ -49,11 +49,11 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     });
 
     React.useEffect(() => {
-        localStorage.setItem("dashboard_activeTab", activeTab);
+        sessionStorage.setItem("dashboard_activeTab", activeTab);
     }, [activeTab]);
 
     React.useEffect(() => {
-        localStorage.setItem("dashboard_openMenus", JSON.stringify(openMenus));
+        sessionStorage.setItem("dashboard_openMenus", JSON.stringify(openMenus));
     }, [openMenus]);
 
     const toggleMenu = (menu) => setOpenMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
