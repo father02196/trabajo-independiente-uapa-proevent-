@@ -9,44 +9,44 @@ import PortalProveedoresDashboard from "./pages/PortalProveedoresDashboard";
 
 function App() {
   const [page, setPage] = useState(() => {
-    return localStorage.getItem("page") || "welcome";
+    return sessionStorage.getItem("page") || "welcome";
   });
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem("isLoggedIn") === "true";
+    return sessionStorage.getItem("isLoggedIn") === "true";
   });
   const [usuario, setUsuario] = useState(() => {
-    const savedUser = localStorage.getItem("usuario");
+    const savedUser = sessionStorage.getItem("usuario");
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [resetToken, setResetToken] = useState(null);
   
   // Estado para proveedor
   const [proveedor, setProveedor] = useState(() => {
-    const saved = localStorage.getItem("proveedor");
+    const saved = sessionStorage.getItem("proveedor");
     return saved ? JSON.parse(saved) : null;
   });
 
   useEffect(() => {
-    localStorage.setItem("page", page);
+    sessionStorage.setItem("page", page);
   }, [page]);
 
   useEffect(() => {
-    localStorage.setItem("isLoggedIn", isLoggedIn);
+    sessionStorage.setItem("isLoggedIn", isLoggedIn);
   }, [isLoggedIn]);
 
   useEffect(() => {
     if (usuario) {
-      localStorage.setItem("usuario", JSON.stringify(usuario));
+      sessionStorage.setItem("usuario", JSON.stringify(usuario));
     } else {
-      localStorage.removeItem("usuario");
+      sessionStorage.removeItem("usuario");
     }
   }, [usuario]);
 
   useEffect(() => {
     if (proveedor) {
-      localStorage.setItem("proveedor", JSON.stringify(proveedor));
+      sessionStorage.setItem("proveedor", JSON.stringify(proveedor));
     } else {
-      localStorage.removeItem("proveedor");
+      sessionStorage.removeItem("proveedor");
     }
   }, [proveedor]);
 
@@ -95,6 +95,7 @@ function App() {
             setIsLoggedIn(false);
             setUsuario(null);
           }}
+          onDashboardClick={() => setPage("dashboard")}
           onPortalProveedores={() => setPage("proveedores-login")}
         />
       ) : page === "proveedores-login" ? (

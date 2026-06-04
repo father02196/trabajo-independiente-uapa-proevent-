@@ -100,7 +100,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores }) {
+function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, onPortalProveedores }) {
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [scrolled, setScrolled]         = useState(false);
@@ -232,7 +232,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onPortalProveedores 
 
           <div className="hero-actions">
             {isLoggedIn ? (
-              <button className="hero-btn primary" onClick={onLogoutClick}>
+              <button className="hero-btn primary" onClick={onDashboardClick}>
                 Mi Cuenta
               </button>
             ) : (
