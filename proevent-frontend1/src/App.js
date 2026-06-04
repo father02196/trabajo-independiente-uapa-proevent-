@@ -8,23 +8,40 @@ import PortalProveedoresLogin from "./pages/PortalProveedoresLogin";
 import PortalProveedoresDashboard from "./pages/PortalProveedoresDashboard";
 
 function App() {
-  const [page, setPage] = useState(() => {
-    return sessionStorage.getItem("page") || "welcome";
-  });
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return sessionStorage.getItem("isLoggedIn") === "true";
   });
+  const [proveedor, setProveedor] = useState(() => {
+    const saved = sessionStorage.getItem("proveedor");
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [page, setPage] = useState(() => {
+    const savedPage = sessionStorage.getItem("page");
+    const isLogged = sessionStorage.getItem("isLoggedIn") === "true";
+    const hasProveedor = sessionStorage.getItem("proveedor") !== null;
+
+    // Si es un usuario administrativo/solicitante logueado y recarga, forzar al dashboard
+    if (isLogged) {
+      if (!savedPage || savedPage === "welcome" || savedPage === "login") return "dashboard";
+      return savedPage;
+    }
+    
+    // Si es un proveedor logueado y recarga, forzar al dashboard de proveedores
+    if (hasProveedor) {
+      if (!savedPage || savedPage === "welcome" || savedPage === "proveedores-login") return "proveedores-dashboard";
+      return savedPage;
+    }
+
+    // Si no está logueado, mostrar landing page por defecto o la página guardada
+    return savedPage || "welcome";
+  });
+
   const [usuario, setUsuario] = useState(() => {
     const savedUser = sessionStorage.getItem("usuario");
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [resetToken, setResetToken] = useState(null);
-  
-  // Estado para proveedor
-  const [proveedor, setProveedor] = useState(() => {
-    const saved = sessionStorage.getItem("proveedor");
-    return saved ? JSON.parse(saved) : null;
-  });
 
   useEffect(() => {
     sessionStorage.setItem("page", page);
