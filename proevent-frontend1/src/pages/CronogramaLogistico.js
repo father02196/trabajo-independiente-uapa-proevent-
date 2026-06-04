@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiCheck, FiClock, FiUser } from 'react-icons/fi';
+import { FiPlus, FiCheck, FiClock, FiUser, FiCalendar, FiAlertCircle } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 
 const API = "http://localhost:8080";
 
@@ -21,7 +22,7 @@ function CronogramaLogistico({ evento, usuario }) {
       const data = await res.json();
       setTareas(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      console.error("Error al cargar tareas:", e);
     }
   };
 
@@ -31,14 +32,14 @@ function CronogramaLogistico({ evento, usuario }) {
       const data = await res.json();
       setApoyos(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      console.error("Error al cargar apoyos:", e);
     }
   };
 
   const handleCrearTarea = async (e) => {
     e.preventDefault();
     if (!nuevaTarea.nombre_actividad || !nuevaTarea.fecha_cumplimiento || !nuevaTarea.id_usuario_responsable) {
-      alert("Por favor complete todos los campos de la tarea.");
+      toast.error("Por favor completa todos los campos de la tarea.");
       return;
     }
     try {
@@ -53,12 +54,14 @@ function CronogramaLogistico({ evento, usuario }) {
       });
       if (res.ok) {
         setNuevaTarea({ nombre_actividad: '', id_usuario_responsable: '', fecha_cumplimiento: '' });
+        toast.success("Tarea agregada al cronograma");
         cargarTareas();
       } else {
-        alert("Error al crear tarea");
+        toast.error("Error al crear tarea");
       }
     } catch (e) {
       console.error(e);
+      toast.error("Error de conexión al guardar tarea");
     }
   };
 
@@ -69,75 +72,124 @@ function CronogramaLogistico({ evento, usuario }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado })
       });
-      if (res.ok) cargarTareas();
+      if (res.ok) {
+        toast.success(`Tarea marcada como ${estado}`);
+        cargarTareas();
+      }
     } catch (e) {
       console.error(e);
+      toast.error("Error de conexión al actualizar estado");
     }
   };
 
+  const isAdminOrCoord = ["Administrador", "Administrador de Evento", "Coordinador de Evento", "Solicitante"].includes(usuario?.rol);
+  // Nota: Solicitante también puede ver, pero no puede asignar según la vista antigua.
+
   return (
-    <div style={{ padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-      <h3 style={{ borderBottom: '2px solid #3498db', paddingBottom: '10px', marginBottom: '20px' }}>Cronograma Logístico (Personal de Apoyo)</h3>
+    <div className="cronograma-module modern-section">
+      <div className="section-header-row">
+        <h4><FiCalendar className="icon" /> Cronograma Logístico Operativo</h4>
+      </div>
       
-      {/* Formulario Crear Tarea */}
+      {/* Formulario Crear Tarea (No visible para Personal de Apoyo) */}
       {usuario?.rol !== 'Personal de Apoyo' && (
-      <form onSubmit={handleCrearTarea} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '10px', marginBottom: '30px', alignItems: 'end' }}>
+      <form onSubmit={handleCrearTarea} className="cronograma-form" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '15px', marginBottom: '25px', alignItems: 'end', background: '#f8fafd', padding: '15px', borderRadius: '8px', border: '1px solid #e1e8ed' }}>
         <div className="form-group" style={{ margin: 0 }}>
-          <label>Actividad a realizar</label>
-          <input type="text" placeholder="Ej. Acomodar 50 sillas" value={nuevaTarea.nombre_actividad} onChange={e => setNuevaTarea({...nuevaTarea, nombre_actividad: e.target.value})} />
+          <label style={{ fontSize: '0.85rem', color: '#555', fontWeight: 600 }}>Actividad a realizar</label>
+          <input 
+            type="text" 
+            placeholder="Ej. Acomodar 50 sillas en el auditorio" 
+            value={nuevaTarea.nombre_actividad} 
+            onChange={e => setNuevaTarea({...nuevaTarea, nombre_actividad: e.target.value})} 
+            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
         </div>
         <div className="form-group" style={{ margin: 0 }}>
-          <label>Responsable</label>
-          <select value={nuevaTarea.id_usuario_responsable} onChange={e => setNuevaTarea({...nuevaTarea, id_usuario_responsable: e.target.value})}>
-            <option value="">-- Seleccionar --</option>
+          <label style={{ fontSize: '0.85rem', color: '#555', fontWeight: 600 }}>Delegado a</label>
+          <select 
+            value={nuevaTarea.id_usuario_responsable} 
+            onChange={e => setNuevaTarea({...nuevaTarea, id_usuario_responsable: e.target.value})}
+            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          >
+            <option value="">-- Personal de Apoyo --</option>
             {apoyos.map(a => <option key={a.id_usuario} value={a.id_usuario}>{a.nombre}</option>)}
           </select>
         </div>
         <div className="form-group" style={{ margin: 0 }}>
-          <label>Fecha Cumplimiento</label>
-          <input type="date" value={nuevaTarea.fecha_cumplimiento} onChange={e => setNuevaTarea({...nuevaTarea, fecha_cumplimiento: e.target.value})} />
+          <label style={{ fontSize: '0.85rem', color: '#555', fontWeight: 600 }}>Fecha Cumplimiento</label>
+          <input 
+            type="date" 
+            value={nuevaTarea.fecha_cumplimiento} 
+            onChange={e => setNuevaTarea({...nuevaTarea, fecha_cumplimiento: e.target.value})} 
+            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
         </div>
-        <button type="submit" className="btn-primary" style={{ padding: '10px', height: '40px', background: '#3498db', border: 'none', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>
-          <FiPlus /> Añadir
+        <button type="submit" className="action-btn positive" style={{ padding: '8px 15px', height: '37px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FiPlus /> Programar Tarea
         </button>
       </form>
       )}
 
-      {/* Lista de Tareas */}
-      <table className="requests-table">
-        <thead>
-          <tr>
-            <th>Actividad</th>
-            <th>Responsable</th>
-            <th>Fecha Límite</th>
-            <th>Estado</th>
-            {usuario?.rol !== 'Solicitante' && <th>Acciones</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {tareas.length === 0 ? (
-            <tr><td colSpan="5" style={{ textAlign: 'center' }}>No hay tareas programadas.</td></tr>
-          ) : tareas.map(t => (
-            <tr key={t.id_actividad}>
-              <td>{t.nombre_actividad}</td>
-              <td><FiUser /> {t.responsable || 'Sin asignar'}</td>
-              <td><FiClock /> {new Date(t.fecha_cumplimiento).toLocaleDateString('es-DO')}</td>
-              <td>
-                <span className={`status ${t.estado === 'Completada' ? 'approved' : 'pending'}`}>{t.estado}</span>
-              </td>
-              {usuario?.rol !== 'Solicitante' && (
-              <td>
-                {t.estado !== 'Completada' && (
-                  <button onClick={() => handleCompletarTarea(t.id_actividad, 'Completada')} style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
-                    <FiCheck /> Marcar Lista
-                  </button>
-                )}
-              </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Lista de Tareas (Cards o Tabla Moderna) */}
+      <div className="tareas-list">
+        {tareas.length === 0 ? (
+          <div className="empty-state-message" style={{ textAlign: 'center', padding: '30px', background: '#f9f9f9', borderRadius: '8px', color: '#888' }}>
+            <FiAlertCircle size={24} style={{ marginBottom: '10px', color: '#ccc' }} />
+            <p>No hay tareas logísticas programadas para este evento aún.</p>
+          </div>
+        ) : (
+          <div className="modern-table-container">
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th>Actividad Asignada</th>
+                  <th>Responsable</th>
+                  <th>Límite</th>
+                  <th>Estado</th>
+                  {usuario?.rol !== 'Solicitante' && <th>Acción</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {tareas.map(t => (
+                  <tr key={t.id_actividad}>
+                    <td style={{ fontWeight: 500, color: '#333' }}>{t.nombre_actividad}</td>
+                    <td>
+                      <div className="user-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#eef2f5', padding: '4px 8px', borderRadius: '20px', fontSize: '0.85rem' }}>
+                        <FiUser /> {t.responsable || 'Sin asignar'}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem', color: '#666' }}>
+                        <FiClock /> {new Date(t.fecha_cumplimiento).toLocaleDateString('es-DO')}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${t.estado === 'Completada' ? 'approved' : 'pending'}`}>
+                        {t.estado}
+                      </span>
+                    </td>
+                    {usuario?.rol !== 'Solicitante' && (
+                    <td>
+                      {t.estado !== 'Completada' ? (
+                        <button 
+                          className="action-btn success" 
+                          onClick={() => handleCompletarTarea(t.id_actividad, 'Completada')} 
+                          style={{ padding: '4px 10px', fontSize: '0.85rem' }}
+                        >
+                          <FiCheck /> Marcar
+                        </button>
+                      ) : (
+                        <span style={{ color: '#2ecc71', fontSize: '0.85rem', fontWeight: 600 }}>Finalizado</span>
+                      )}
+                    </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
