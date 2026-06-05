@@ -60,14 +60,14 @@ function Calendario({ usuario }) {
       const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
 
       days.push(
-        <div key={d} className={`calendar-day ${isToday ? 'today' : ''}`} style={{ minHeight: '100px', padding: '8px', border: '1px solid #E2E8F0', borderRadius: '8px', background: isToday ? '#F8FAFC' : '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
-          <span className="day-number" style={{ fontWeight: '700', fontSize: '14px', color: isToday ? '#3B82F6' : '#64748B', alignSelf: 'flex-end', marginBottom: '8px' }}>{d}</span>
-          <div className="event-indicators" style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flex: 1 }}>
+        <div key={d} className={`calendar-day ${isToday ? 'today' : ''}`} style={{ padding: '6px', border: '1px solid #E2E8F0', borderRadius: '6px', background: isToday ? '#F8FAFC' : '#FFFFFF', display: 'flex', flexDirection: 'column', minHeight: '0' }}>
+          <span className="day-number" style={{ fontWeight: '700', fontSize: '12.5px', color: isToday ? '#3B82F6' : '#64748B', alignSelf: 'flex-end', marginBottom: '4px' }}>{d}</span>
+          <div className="event-indicators" style={{ display: 'flex', flexDirection: 'column', gap: '3px', overflowY: 'auto', flex: 1 }}>
             {dayEvents.map((e, idx) => (
               <div key={idx} style={{ 
-                  fontSize: '11px', 
-                  padding: '4px 6px', 
-                  borderRadius: '4px', 
+                  fontSize: '10.5px', 
+                  padding: '3px 5px', 
+                  borderRadius: '3px', 
                   whiteSpace: 'nowrap', 
                   overflow: 'hidden', 
                   textOverflow: 'ellipsis',
@@ -87,51 +87,73 @@ function Calendario({ usuario }) {
   };
 
   return (
-    <div className="animate-fade">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Calendario de Eventos</h1>
-          <p style={{ color: '#64748B', fontSize: '13.5px' }}>{usuario?.rol === "Solicitante" ? "Visualiza la programación de tus eventos y reservas." : "Visualiza la programación general de todos los eventos."}</p>
+    <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column' }}>
+      
+      {/* Controles del Calendario Fuera de la Tarjeta */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '16px' }}>
+        
+        {/* Título, Descripción y Leyenda */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Calendario de Eventos</h1>
+            <p style={{ color: '#64748B', fontSize: '13.5px', margin: 0 }}>
+              {usuario?.rol === "Solicitante" ? "Visualiza la programación de tus eventos y reservas." : "Visualiza la programación general de todos los eventos."}
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#DBEAFE', border: '1px solid #BFDBFE' }}></div>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Tus Eventos</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0' }}></div>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Ocupado (Otros)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#8B5CF6' }}></div>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Con Audiovisual</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-            <FiCalendar className="text-primary" /> {currentDate.toLocaleString('es-DO', { month: 'long', year: 'numeric' }).toUpperCase()}
+      {/* Cuadrícula Principal (Tarjeta) — altura ajustada al contenido */}
+      <div className="card" style={{ padding: '14px 18px 16px', display: 'flex', flexDirection: 'column', marginBottom: 0 }}>
+
+        {/* Encabezado del Mes + Navegación (dentro de la tarjeta) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <FiCalendar className="text-primary" />
+            {currentDate.toLocaleString('es-DO', { month: 'long', year: 'numeric' })}
           </h3>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             <button className="btn btn-secondary btn-sm" onClick={handlePrevMonth}><FiChevronLeft /> Anterior</button>
             <button className="btn btn-secondary btn-sm" onClick={handleNextMonth}>Siguiente <FiChevronRight /></button>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-          {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
-            <div key={d} style={{ textAlign: 'center', fontWeight: '700', fontSize: '13px', color: '#64748B', paddingBottom: '8px' }}>{d}</div>
-          ))}
-          {loadingCal ? (
-            <div style={{ gridColumn: 'span 7', padding: '60px', textAlign: 'center', color: '#64748B' }}>
-              <div className="loader" style={{ margin: '0 auto 16px', borderColor: '#E2E8F0', borderTopColor: '#3B82F6' }}></div>
-              Cargando calendario...
-            </div>
-          ) : renderCalendar()}
-        </div>
-      </div>
+        {/* Separador sutil */}
+        <div style={{ height: '1px', background: '#F1F5F9', marginBottom: '10px' }} />
 
-      <div className="card" style={{ padding: '16px 24px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#DBEAFE', border: '1px solid #BFDBFE' }}></div>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Tus Eventos</span>
+        {/* Cabecera de Días de la Semana */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginBottom: '6px' }}>
+          {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
+            <div key={d} style={{ textAlign: 'center', fontWeight: '700', fontSize: '11.5px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '4px' }}>{d}</div>
+          ))}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0' }}></div>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Ocupado (Otros)</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#8B5CF6' }}></div>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Con Audiovisual</span>
-        </div>
+
+        {/* Celdas del Calendario — filas con altura fija generosa, sin espacio sobrante */}
+        {loadingCal ? (
+          <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
+            <div className="loader" style={{ marginBottom: '12px', borderColor: '#E2E8F0', borderTopColor: '#3B82F6', width: '28px', height: '28px' }}></div>
+            <span style={{ fontSize: '14px' }}>Cargando calendario...</span>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(82px, auto)', gap: '5px' }}>
+            {renderCalendar()}
+          </div>
+        )}
       </div>
     </div>
   );
