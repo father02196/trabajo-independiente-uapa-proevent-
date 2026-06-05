@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiUser, FiActivity, FiClock } from 'react-icons/fi';
 import './../css/Dashboard.css'; // Reutilizamos estilos base
 import './../css/Bitacora.css';
 
@@ -17,6 +17,7 @@ export default function Bitacora() {
     // Estados para los filtros
     const [searchQuery, setSearchQuery] = useState(''); // Para ID o Nombre
     const [filtroAccion, setFiltroAccion] = useState('Todas');
+    const [rangoFecha, setRangoFecha] = useState('todos');
     const [accionesUnicas, setAccionesUnicas] = useState([]);
 
     useEffect(() => {
@@ -66,7 +67,29 @@ export default function Bitacora() {
         // Match Acción (Select)
         const matchAccion = filtroAccion === 'Todas' || reg.accion === filtroAccion;
 
-        return matchSearch && matchAccion;
+        let matchFecha = true;
+        if (rangoFecha !== 'todos' && reg.fecha) {
+            const fechaReg = new Date(reg.fecha);
+            const hoy = new Date();
+            
+            if (rangoFecha === 'hoy') {
+                matchFecha = fechaReg.toDateString() === hoy.toDateString();
+            } else if (rangoFecha === 'semana') {
+                const hace7dias = new Date();
+                hace7dias.setDate(hoy.getDate() - 7);
+                matchFecha = fechaReg >= hace7dias;
+            } else if (rangoFecha === 'mes') {
+                const hace30dias = new Date();
+                hace30dias.setDate(hoy.getDate() - 30);
+                matchFecha = fechaReg >= hace30dias;
+            } else if (rangoFecha === 'este_año') {
+                matchFecha = fechaReg.getFullYear() === hoy.getFullYear();
+            } else if (rangoFecha === 'año_pasado') {
+                matchFecha = fechaReg.getFullYear() === hoy.getFullYear() - 1;
+            }
+        }
+
+        return matchSearch && matchAccion && matchFecha;
     });
 
     // Lógica de Paginación
@@ -78,19 +101,14 @@ export default function Bitacora() {
     // Resetear a pág 1 si los filtros cambian
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, filtroAccion]);
+    }, [searchQuery, filtroAccion, rangoFecha]);
 
     return (
-        <div className="admin-page-container fade-in">
-            <div className="admin-controls-card">
-                <div className="controls-header">
-                    <div className="title-section">
-                        <FiFileText className="header-icon" />
-                        <div>
-                            <h3>Bitácora de Movimientos</h3>
-                            <p className="subtitle">Consulta el historial de auditoría y acciones realizadas en la plataforma.</p>
-                        </div>
-                    </div>
+        <div className="bitacora-container">
+            <div className="section-header" style={{ marginBottom: '20px' }}>
+                <div>
+                    <h2 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: '8px' }}>Bitácora de Movimientos</h2>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Consulta el historial de auditoría y acciones realizadas en la plataforma.</p>
                 </div>
             </div>
 
@@ -118,16 +136,30 @@ export default function Bitacora() {
                         ))}
                     </select>
                 </div>
+                <div className="filter-group">
+                    <FiClock className="filter-icon" />
+                    <select 
+                        value={rangoFecha} 
+                        onChange={(e) => setRangoFecha(e.target.value)}
+                        className="bitacora-select"
+                    >
+                        <option value="todos">Cualquier fecha</option>
+                        <option value="hoy">Hoy</option>
+                        <option value="semana">Últimos 7 días</option>
+                        <option value="mes">Últimos 30 días</option>
+                        <option value="este_año">Este Año</option>
+                        <option value="año_pasado">Año Pasado</option>
+                    </select>
+                </div>
             </div>
 
-            <div className="saas-panel-card">
-                <div className="panel-body" style={{ overflowX: 'auto', padding: '0' }}>
+            <div className="table-container bitacora-table-wrapper">
                 {loading ? (
-                    <div className="loading-state" style={{ padding: '20px', textAlign: 'center' }}>Cargando registros de auditoría...</div>
+                    <div className="loading-state">Cargando registros de auditoría...</div>
                 ) : error ? (
-                    <div className="error-state" style={{ padding: '20px', textAlign: 'center', color: '#ef4444' }}>{error}</div>
+                    <div className="error-state">{error}</div>
                 ) : (
-                    <table className="requests-table">
+                    <table className="requests-table bitacora-table">
                         <thead>
                             <tr>
                                 <th>FECHA Y HORA</th>
@@ -175,7 +207,6 @@ export default function Bitacora() {
                         </tbody>
                     </table>
                 )}
-                </div>
             </div>
 
             {/* CONTROLES DE PAGINACIÓN */}

@@ -115,24 +115,11 @@ function AjustesUsuarios({ usuario }) {
         setIdRol(rolEncontrado ? rolEncontrado.id_rol : roles[0]?.id_rol);
         setEditingId(usuario.id_usuario);
         setError('');
-    };
-
-    const handleDelete = async (id) => {
-        if (!window.confirm('¿Deseas eliminar este usuario de forma permanente?')) return;
-        try {
-            const res = await fetch(`${API}/usuarios/${id}`, { 
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${usuario?.token || ""}`, 'x-usuario-id': usuario?.id_usuario || '' }
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                alert(data.mensaje || 'Error al eliminar usuario');
-            } else {
-                cargarUsuarios();
-            }
-        } catch (err) {
-            alert('No se pudo conectar al servidor.');
-        }
+        
+        // Scroll hacia el formulario (utiliza scrollIntoView por si está en un contenedor con overflow)
+        setTimeout(() => {
+            document.querySelector('.ajustes-page-header')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
     };
 
     const filteredUsuarios = usuarios.filter(usuario => {
@@ -324,7 +311,6 @@ function AjustesUsuarios({ usuario }) {
                                             >
                                                 {usuario.estado === 'inactivo' ? '✓' : '⊘'}
                                             </button>
-                                            <button className="ajustes-action-btn delete" onClick={() => handleDelete(usuario.id_usuario)} title="Eliminar Permanente">🗑</button>
                                         </div>
                                     </td>
                                 </tr>
