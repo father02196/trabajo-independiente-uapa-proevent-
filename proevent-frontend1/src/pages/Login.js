@@ -87,18 +87,15 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   return (
     <div className="lc-bg">
 
-      {/* Botón volver flotante */}
-      {onBackClick && (
-        <button className="lc-back" onClick={onBackClick}>
-          ← Volver al inicio
-        </button>
-      )}
+
 
       {/* Card central */}
       <div className="lc-card">
 
-        {/* Header de la card */}
         <div className="lc-header">
+          {onBackClick && (
+            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+          )}
           <div className="lc-logo-badge">PE</div>
           <h1 className="lc-title">ProEvent</h1>
           <p className="lc-subtitle">

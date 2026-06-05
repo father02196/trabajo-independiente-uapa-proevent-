@@ -43,20 +43,16 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
   return (
     <div className="lc-bg">
 
-      {/* Botón volver flotante */}
-      {onBackClick && (
-        <button className="lc-back" onClick={onBackClick}>
-          ← Volver al inicio
-        </button>
-      )}
-
       {/* Card central */}
       <div className="lc-card">
 
         {/* Header de la card */}
         <div className="lc-header">
-          <div className="lc-logo-badge" style={{ background: 'linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%)', boxShadow: '0 4px 12px rgba(142, 68, 173, 0.30)' }}>
-            B2B
+          {onBackClick && (
+            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+          )}
+          <div className="lc-logo-badge">
+            PE
           </div>
           <h1 className="lc-title">Portal de Suplidores</h1>
           <p className="lc-subtitle">
@@ -87,7 +83,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
           {/* Campo contraseña */}
           <div className="lc-field">
             <div className="lc-label-row">
-              <label className="lc-label" htmlFor="b2b-password">Contraseña B2B</label>
+              <label className="lc-label" htmlFor="b2b-password">Contraseña</label>
               <button
                 type="button"
                 className="lc-forgot"
@@ -134,7 +130,6 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
           <button
             type="submit"
             className="lc-btn-primary"
-            style={{ background: '#8e44ad', boxShadow: '0 1px 2px rgba(142, 68, 173, 0.20), 0 4px 12px rgba(142, 68, 173, 0.22)' }}
             disabled={loading}
           >
             {loading
@@ -154,7 +149,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
 
         {/* Footer */}
         <p className="lc-footer-text" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
-          <a href="#!" onClick={(e) => e.preventDefault()} className="lc-footer-link" style={{ color: '#8e44ad' }}>
+          <a href="#!" onClick={(e) => e.preventDefault()} className="lc-footer-link">
             Contacta al departamento de compras
           </a>
         </p>
@@ -162,7 +157,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
       </div>
 
       {/* Marca discreta al fondo */}
-      <p className="lc-watermark">Plataforma Inteligente B2B - ProEvent © 2025</p>
+      <p className="lc-watermark">Portal de Suplidores - ProEvent © 2025</p>
 
     </div>
   );

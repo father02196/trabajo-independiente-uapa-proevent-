@@ -40,28 +40,27 @@
 /* ─────────────────────────────────────────────────────────────
    BOTÓN VOLVER
 ───────────────────────────────────────────────────────────── */
-.lc-back {
+.lc-header .lc-back {
   position: absolute;
-  top: 24px;
-  left: 28px;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 7px 14px;
+  left: 0;
+  top: 16px;
+  background: none;
+  border: none;
+  color: #6b7280;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  padding: 0;
+  margin: 0;
   cursor: pointer;
-  font-family: inherit;
-  backdrop-filter: blur(8px);
-  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
 }
 
-.lc-back:hover {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.14);
-  transform: translateY(-1px);
+.lc-header .lc-back:hover {
+  color: #374151;
+  text-decoration: underline;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -83,6 +82,16 @@
     0 24px 48px rgba(0, 0, 0, 0.06);
 
   animation: lc-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lc-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 12px 24px rgba(0, 0, 0, 0.06),
+    0 32px 64px rgba(0, 0, 0, 0.08);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -94,6 +103,8 @@
   align-items: center;
   text-align: center;
   margin-bottom: 32px;
+  position: relative;
+  width: 100%;
 }
 
 .lc-logo-badge {
@@ -112,6 +123,14 @@
   box-shadow:
     0 4px 12px rgba(37, 99, 235, 0.30),
     0 1px 3px rgba(37, 99, 235, 0.20);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lc-logo-badge:hover {
+  transform: scale(1.05) rotate(2deg);
+  box-shadow:
+    0 6px 16px rgba(37, 99, 235, 0.40),
+    0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
 .lc-title {
@@ -184,14 +203,15 @@
 }
 
 .lc-input:hover {
-  border-color: #d1d5db;
-  background: #f3f4f6;
+  border-color: #93c5fd;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
 }
 
 .lc-input:focus {
   border-color: #2563eb;
   background: #ffffff;
-  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.10);
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.15), 0 2px 8px rgba(37, 99, 235, 0.12);
 }
 
 .lc-input::placeholder {
@@ -315,7 +335,7 @@
   transition:
     background    0.2s ease,
     box-shadow    0.2s ease,
-    transform     0.15s ease;
+    transform     0.25s ease;
 
   box-shadow:
     0 1px 2px rgba(37, 99, 235, 0.20),
@@ -327,7 +347,7 @@
   box-shadow:
     0 2px 4px rgba(37, 99, 235, 0.25),
     0 8px 20px rgba(37, 99, 235, 0.28);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .lc-btn-primary:active:not(:disabled) {
@@ -432,12 +452,7 @@
     max-width: 100%;
   }
 
-  .lc-back {
-    top: 16px;
-    left: 16px;
-    font-size: 12px;
-    padding: 6px 12px;
-  }
+
 
   .lc-title { font-size: 20px; }
 }

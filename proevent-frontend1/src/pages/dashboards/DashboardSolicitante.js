@@ -82,7 +82,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   return (
     <div className="saas-dashboard-container fade-in">
       <div className="stats-cards-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-        <div className="saas-stat-card primary-glow" onClick={() => setActiveTab && setActiveTab("Eventos")}>
+        <div className="saas-stat-card primary-glow">
           <div className="card-top">
             <span className="card-label">Mis Solicitudes</span>
             <div className="card-icon-container bg-primary-light">
@@ -97,7 +97,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
           </div>
         </div>
 
-        <div className="saas-stat-card warning-glow" onClick={() => setActiveTab && setActiveTab("Eventos")}>
+        <div className="saas-stat-card warning-glow">
           <div className="card-top">
             <span className="card-label">En Proceso de Revisión</span>
             <div className="card-icon-container bg-warning-light">
@@ -110,7 +110,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
           </div>
         </div>
 
-        <div className="saas-stat-card success-glow" onClick={() => setActiveTab && setActiveTab("Eventos")}>
+        <div className="saas-stat-card success-glow">
           <div className="card-top">
             <span className="card-label">Aprobadas / Finalizadas</span>
             <div className="card-icon-container bg-success-light">

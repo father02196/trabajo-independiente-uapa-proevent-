@@ -127,7 +127,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
   return (
     <div className="saas-dashboard-container fade-in">
       <div className="stats-cards-grid">
-        <div className="saas-stat-card primary-glow" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+        <div className="saas-stat-card primary-glow">
           <div className="card-top">
             <span className="card-label">Solicitudes Totales</span>
             <div className="card-icon-container bg-primary-light">
@@ -142,7 +142,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
           </div>
         </div>
 
-        <div className="saas-stat-card warning-glow" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+        <div className="saas-stat-card warning-glow">
           <div className="card-top">
             <span className="card-label">Eventos Pendientes</span>
             <div className="card-icon-container bg-warning-light">
@@ -155,7 +155,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
           </div>
         </div>
 
-        <div className="saas-stat-card success-glow" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+        <div className="saas-stat-card success-glow">
           <div className="card-top">
             <span className="card-label">Eventos Confirmados</span>
             <div className="card-icon-container bg-success-light">
@@ -168,7 +168,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
           </div>
         </div>
 
-        <div className="saas-stat-card budget-glow" onClick={() => setActiveTab && setActiveTab("PoaAdmin")}>
+        <div className="saas-stat-card budget-glow">
           <div className="card-top">
             <span className="card-label">Presupuesto POA Aprobado</span>
             <div className="card-icon-container bg-info-light">

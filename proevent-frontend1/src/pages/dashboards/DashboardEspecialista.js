@@ -88,7 +88,7 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
   return (
     <div className="saas-dashboard-container fade-in">
       <div className="stats-cards-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-        <div className="saas-stat-card primary-glow" onClick={() => setActiveTab && setActiveTab(isAudioVisualAdmin ? "GestionSolicitudes" : "GestionEventos")}>
+        <div className="saas-stat-card primary-glow">
           <div className="card-top">
             <span className="card-label">Total Solicitudes Globales</span>
             <div className="card-icon-container bg-primary-light">
@@ -103,7 +103,7 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
           </div>
         </div>
 
-        <div className="saas-stat-card warning-glow" onClick={() => setActiveTab && setActiveTab(isAudioVisualAdmin ? "GestionSolicitudes" : "GestionEventos")}>
+        <div className="saas-stat-card warning-glow">
           <div className="card-top">
             <span className="card-label">Pendientes por Revisar</span>
             <div className="card-icon-container bg-warning-light">
@@ -116,7 +116,7 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
           </div>
         </div>
 
-        <div className="saas-stat-card success-glow" onClick={() => setActiveTab && setActiveTab(isAudioVisualAdmin ? "GestionSolicitudes" : "GestionEventos")}>
+        <div className="saas-stat-card success-glow">
           <div className="card-top">
             <span className="card-label">Eventos Confirmados</span>
             <div className="card-icon-container bg-success-light">
