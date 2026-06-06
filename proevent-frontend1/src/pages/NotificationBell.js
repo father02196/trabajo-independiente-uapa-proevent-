@@ -12,8 +12,9 @@ const LS_KEY = 'proevent_seen_notifications';
  *  - usuario: { id_usuario, rol }
  *  - onGoToEvaluacion: (eventoId?) => void   -> Solicitante: navega al form de evaluación
  *  - onGoToVisualizarEvaluaciones: () => void -> Admin: navega al historial
+ *  - onGoToPoaAdmin: () => void -> Admin: navega a presupuesto POA
  */
-export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones }) {
+export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones, onGoToPoaAdmin }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [seenIds, setSeenIds] = useState(() => {
@@ -122,11 +123,13 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
   const handleNotifClick = (notif) => {
     markSeen(notif.id);
     setOpen(false);
-    if (isSolicitante && notif.id_evento) {
+    
+    if (notif.id.startsWith('evt-')) {
       onGoToEvaluacion && onGoToEvaluacion(notif.id_evento);
-    }
-    if (isAdmin) {
+    } else if (notif.id.startsWith('eval-')) {
       onGoToVisualizarEvaluaciones && onGoToVisualizarEvaluaciones();
+    } else if (notif.id.startsWith('poa-')) {
+      onGoToPoaAdmin && onGoToPoaAdmin();
     }
   };
 
