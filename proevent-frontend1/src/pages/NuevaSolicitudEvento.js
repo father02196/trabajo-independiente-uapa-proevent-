@@ -135,13 +135,12 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     "Información General",
     "Modalidad y Lugar",
     "Servicios alimenticios y Detalles coorporativos",
-    "Presupuesto y POA"
+    "Presupuesto y POA",
+    "Audiovisual"
   ];
 
-  // Las secciones cambian si el usuario es Solicitante
-  const secciones = usuario?.rol === "Solicitante" 
-    ? [...baseSecciones, "Audiovisual"] 
-    : baseSecciones;
+  // Las secciones son iguales para todos los roles ahora
+  const secciones = baseSecciones;
 
   const seccionActualIndex = secciones.indexOf(activeSection);
 
@@ -180,17 +179,27 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     if (e) e.preventDefault();
     setError("");
 
-    if (usuario?.rol === "Solicitante") {
-      if (activeSection === "Audiovisual") {
-        if (needsAV === null) {
-          setError("Por favor, selecciona si deseas gestionar equipos audiovisuales.");
-          return;
-        }
-        if (needsAV === true && avData.equipos.length === 0) {
-          setError("Selecciona al menos un equipo o marca que no necesitas.");
-          return;
-        }
+    // Validate all sections before final submission
+    for (let i = 0; i < secciones.length; i++) {
+      const section = secciones[i];
+      if (section === "Audiovisual") continue; // Validado abajo
+      const err = validarSeccion(section);
+      if (err) {
+        setActiveSection(section);
+        setError(`Falta completar ${seccionLabels[i]}: ${err}`);
+        return;
       }
+    }
+
+    if (needsAV === null) {
+      setActiveSection("Audiovisual");
+      setError("Por favor, selecciona si deseas gestionar equipos audiovisuales.");
+      return;
+    }
+    if (needsAV === true && avData.equipos.length === 0) {
+      setActiveSection("Audiovisual");
+      setError("Selecciona al menos un equipo o marca que no necesitas.");
+      return;
     }
 
     ejecutarEnvioFinal();
@@ -339,6 +348,9 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
             <div
               key={s}
               className={`step-wizard-item ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}
+              onClick={() => { setError(""); setActiveSection(secciones[i]); }}
+              style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+              title={`Ir a ${seccionLabels[i]}`}
             >
               <div className="step-circle">
                 {isCompleted ? <FiCheckCircle style={{ fontSize: '18px' }} /> : (i + 1)}
@@ -375,24 +387,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         <ServiciosCatering data={data} setData={setData} />
       )}
       {activeSection === "Presupuesto y POA" && (
-        <>
-          <PresupuestoPOA data={data} setData={setData} />
-          
-          <div className="form-section" style={{ marginTop: '20px', background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ color: '#1e40af', marginBottom: '10px' }}>📎 Flujo Documental Adjunto</h3>
-            <p className="help-text" style={{ marginBottom: '15px' }}>
-              Adjunta la carta de justificación, cotizaciones preliminares o plan de trabajo (PDF, Word, Excel).
-            </p>
-            <input 
-              type="file" 
-              className="modern-input" 
-              onChange={(e) => setArchivo(e.target.files[0])} 
-              accept=".pdf,.doc,.docx,.xls,.xlsx"
-              style={{ padding: '10px', background: 'white', border: '1px dashed #cbd5e1', cursor: 'pointer' }}
-            />
-            {archivo && <p style={{ marginTop: '10px', color: '#15803d', fontSize: '0.9rem' }}>✅ Archivo seleccionado: {archivo.name}</p>}
-          </div>
-        </>
+        <PresupuestoPOA data={data} setData={setData} archivo={archivo} setArchivo={setArchivo} />
       )}
       
       {activeSection === "Audiovisual" && (

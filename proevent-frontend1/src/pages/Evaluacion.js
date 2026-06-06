@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiStar, FiCheckCircle, FiAlertTriangle, FiRefreshCw, FiBarChart2, FiClipboard, FiMapPin } from 'react-icons/fi';
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
 
 const API = 'http://localhost:8080';
 
@@ -125,6 +127,8 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
     const promSat = Math.round(evaluaciones.reduce((sum, ev) => sum + (ev.satisfaccion || 0), 0) / total);
     return { total, promSat, bestRecinto };
   }, [evaluaciones, bestRecinto]);
+
+  const { items: sortedEvaluaciones, requestSort: requestSortEval, sortConfig: sortConfigEval } = useSortableData(evaluaciones, { key: 'id_evaluacion', direction: 'descending' });
 
   if (enviado) {
     return (
@@ -312,19 +316,19 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
                 <table className="modern-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Evento</th>
-                      <th>Recinto</th>
-                      <th>Valoración Resp.</th>
-                      <th style={{ textAlign: 'center' }}>Satisfacción</th>
-                      <th>Fecha</th>
+                      <SortableHeader label="ID" sortKey="id_evaluacion" sortConfig={sortConfigEval} requestSort={requestSortEval} />
+                      <SortableHeader label="Evento" sortKey="nombre_evento" sortConfig={sortConfigEval} requestSort={requestSortEval} />
+                      <SortableHeader label="Recinto" sortKey="recinto" sortConfig={sortConfigEval} requestSort={requestSortEval} />
+                      <SortableHeader label="Valoración Resp." sortKey="valoracion_respuesta" sortConfig={sortConfigEval} requestSort={requestSortEval} />
+                      <SortableHeader label="Satisfacción" sortKey="satisfaccion" sortConfig={sortConfigEval} requestSort={requestSortEval} style={{ textAlign: 'center' }} />
+                      <SortableHeader label="Fecha" sortKey="fecha_evento" sortConfig={sortConfigEval} requestSort={requestSortEval} />
                     </tr>
                   </thead>
                   <tbody>
                     {evaluaciones.length === 0 ? (
                       <tr><td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>No hay evaluaciones registradas.</td></tr>
                     ) : (
-                      evaluaciones.map(ev => (
+                      sortedEvaluaciones.map(ev => (
                         <tr key={ev.id_evaluacion}>
                           <td style={{ fontWeight: '600', color: '#64748B' }}>#{ev.id_evaluacion}</td>
                           <td style={{ fontWeight: '600', color: '#0F172A' }}>{ev.nombre_evento || `Evento #${ev.id_evento}`}</td>

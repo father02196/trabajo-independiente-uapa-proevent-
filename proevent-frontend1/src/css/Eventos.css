@@ -9,16 +9,26 @@
   background: #fff;
   border: 1px solid #E2E8F0;
   border-radius: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 20px 48px rgba(0,0,0,0.03);
-  padding: 32px;
-  max-width: 860px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 20px 48px rgba(0,0,0,0.04);
+  padding: 36px 40px;
+  max-width: 980px;       /* expanded from 860px — same width for ALL steps */
+  width: 100%;
   margin: 0 auto;
   font-family: 'Inter', sans-serif;
   display: flex;
   flex-direction: column;
   gap: 0;
+  /* Hover lift — same system as the rest of ProEvent */
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
+.form-container:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.09), 0 24px 56px rgba(0,0,0,0.05);
+}
+
+/* ─── Header ─── */
 .form-container h2 {
   font-size: 22px;
   font-weight: 800;
@@ -37,6 +47,7 @@
   height: 22px;
   background: linear-gradient(180deg, #3B82F6, #6366F1);
   border-radius: 99px;
+  flex-shrink: 0;
 }
 
 .form-sub-title {
@@ -50,9 +61,9 @@
   display: flex;
   align-items: center;
   gap: 0;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   position: relative;
-  padding: 20px 0;
+  padding: 12px 0 20px;
 }
 
 .step-wizard-item {
@@ -61,7 +72,6 @@
   align-items: center;
   position: relative;
   flex: 1;
-  cursor: default;
 }
 
 .step-wizard-item:not(:last-child)::after {
@@ -125,41 +135,40 @@
   max-width: 80px;
 }
 
-.step-wizard-item.active .step-label {
-  color: #2563EB;
+.step-wizard-item.active .step-label  { color: #2563EB; }
+.step-wizard-item.completed .step-label { color: #059669; }
+
+/* Hover effect on step items (clickable) */
+.step-wizard-item:hover .step-circle {
+  border-color: #93C5FD;
+  color: #3B82F6;
+  transform: translateY(-2px);
+}
+.step-wizard-item.active:hover .step-circle,
+.step-wizard-item.completed:hover .step-circle {
+  transform: scale(1.1) translateY(-2px);
 }
 
-.step-wizard-item.completed .step-label {
-  color: #059669;
-}
-
-/* Legacy step-indicator support (backward compat) */
-.step-indicator {
+/* ─── Step content area — identical min-height for all steps ─── */
+.step-content-area {
+  min-height: 340px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 24px;
+  flex-direction: column;
 }
-.step-indicator .step {
-  padding: 6px 14px;
-  border-radius: 99px;
-  font-size: 12.5px;
-  font-weight: 600;
-  background: #F1F5F9;
-  color: #94A3B8;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-  border: 1.5px solid transparent;
+
+/* ─── Section Heading (shared by ALL steps) ─── */
+.step-section-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
 }
-.step-indicator .step.active {
-  background: #EFF6FF;
-  color: #2563EB;
-  border-color: #BFDBFE;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.10);
-}
-.step-indicator .step.completed {
-  background: #ECFDF5;
-  color: #059669;
-  border-color: #A7F3D0;
+
+.step-section-desc {
+  font-size: 13.5px;
+  color: #64748B;
+  margin-bottom: 0;
 }
 
 /* ─── Section dentro del form ─── */
@@ -172,8 +181,8 @@
 }
 
 @keyframes formFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
@@ -192,21 +201,19 @@
   gap: 8px;
 }
 
-.form-container section h3 svg {
-  color: #3B82F6;
-}
+.form-container section h3 svg { color: #3B82F6; }
 
 /* ─── Grid de formulario ─── */
 .form-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 .form-grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 .form-field {
@@ -215,11 +222,9 @@
   gap: 6px;
 }
 
-.form-field.col-span-2 {
-  grid-column: span 2;
-}
+.form-field.col-span-2 { grid-column: span 2; }
 
-/* Campos de formulario */
+/* Labels */
 .form-container label,
 .form-field label {
   display: block;
@@ -229,12 +234,15 @@
   letter-spacing: 0.01em;
 }
 
+/* Inputs — consistent across ALL steps */
 .form-container input[type="text"],
 .form-container input[type="number"],
 .form-container input[type="date"],
 .form-container input[type="time"],
+.form-container input[type="file"],
 .form-container select,
-.form-container textarea {
+.form-container textarea,
+.input-base {
   width: 100%;
   padding: 11px 15px;
   font-size: 14px;
@@ -247,40 +255,44 @@
   transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
   -webkit-appearance: none;
+  box-sizing: border-box;
 }
 
 .form-container input:focus,
 .form-container select:focus,
-.form-container textarea:focus {
+.form-container textarea:focus,
+.input-base:focus {
   border-color: #3B82F6;
   background: #fff;
   box-shadow: 0 0 0 4px rgba(59,130,246,0.11), inset 0 1px 2px rgba(0,0,0,0.02);
 }
 
-.form-container input::placeholder { color: #94A3B8; }
+.form-container input::placeholder,
+.input-base::placeholder { color: #94A3B8; }
 
-.form-container textarea {
+.form-container textarea,
+.input-base textarea {
   min-height: 100px;
   resize: vertical;
   line-height: 1.6;
 }
 
-/* ─── Modalidad Cards (Presencial / Virtual / Híbrida) ─── */
+/* ─── Step 2: Modalidad Cards ─── */
 .modalidad-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 16px;
   margin-top: 4px;
 }
 
 .modalidad-card {
   border: 1.5px solid #E2E8F0;
   border-radius: 16px;
-  padding: 20px 16px;
+  padding: 24px 16px;
   text-align: center;
   cursor: pointer;
   background: #F8FAFC;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -299,17 +311,7 @@
   transition: opacity 0.2s;
 }
 
-.modalidad-card input {
-  display: none;
-}
-
-.modalidad-card img.modalidad-icon {
-  width: 44px;
-  height: 44px;
-  margin-bottom: 4px;
-  object-fit: contain;
-  transition: transform 0.25s;
-}
+.modalidad-card input { display: none; }
 
 .modalidad-card h4 {
   font-size: 13.5px;
@@ -327,17 +329,13 @@
 }
 
 .modalidad-card:hover {
-  transform: translateY(-3px);
-  border-color: #CBD5E1;
+  transform: translateY(-4px);
+  border-color: #93C5FD;
   background: #F1F5F9;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 32px rgba(59,130,246,0.10);
 }
 
 .modalidad-card:hover::before { opacity: 1; }
-
-.modalidad-card:hover img.modalidad-icon {
-  transform: scale(1.08);
-}
 
 .modalidad-card.active {
   border-color: #3B82F6;
@@ -345,21 +343,26 @@
   box-shadow: 0 0 0 3px rgba(59,130,246,0.12), 0 4px 18px rgba(59,130,246,0.08);
 }
 
-.modalidad-card.active h4 {
-  color: #1D4ED8;
-}
-
+.modalidad-card.active h4 { color: #1D4ED8; }
 .modalidad-card.active::before { opacity: 1; }
 
-/* ─── Checklist de Alimentos y Detalles Corporativos ─── */
+/* ─── Step 3: Checklist — full width usage ─── */
 .checklist {
   border: 1.5px solid #E2E8F0;
   border-radius: 16px;
   background: #F8FAFC;
-  padding: 20px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  width: 100%;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.checklist:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
 }
 
 .checklist h4 {
@@ -374,31 +377,36 @@
   gap: 8px;
 }
 
+/* Grid inside checklist — uses more columns now that container is wider */
 .checklist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
 }
 
+.form-container label.check-item,
 .check-item {
-  display: flex;
+  display: flex !important;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  gap: 18px;
+  font-size: 13.5px;
   color: #334155;
   font-weight: 500;
   cursor: pointer;
   user-select: none;
-  padding: 8px 12px;
-  border-radius: 10px;
+  padding: 14px 20px;
+  border-radius: 12px;
   border: 1.5px solid transparent;
-  transition: all 0.15s;
+  transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
   background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  min-height: 52px;
 }
 
 .check-item:hover {
   background: #EFF6FF;
   border-color: #BFDBFE;
+  transform: translateX(2px);
 }
 
 .check-item input[type="checkbox"] {
@@ -416,17 +424,38 @@
   font-weight: 600;
 }
 
-/* ─── Audiovisual Step ─── */
+/* ─── Step 4: Presupuesto — doc upload card ─── */
+.doc-upload-card {
+  background: linear-gradient(135deg, #F8FAFC, #EFF6FF);
+  border-radius: 16px;
+  border: 1.5px dashed #BFDBFE;
+  padding: 24px;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.doc-upload-card:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 6px 20px rgba(59,130,246,0.08);
+  transform: translateY(-2px);
+}
+
+/* ─── Step 5: Audiovisual ─── */
 .audiovisual-step {
   animation: formFadeIn 0.3s cubic-bezier(0.4,0,0.2,1) both;
 }
 
 .av-question-card {
-  padding: 40px 32px;
+  padding: 48px 40px;
   text-align: center;
   background: linear-gradient(135deg, #F8FAFC, #EFF6FF);
   border-radius: 20px;
   border: 1.5px solid #DBEAFE;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.av-question-card:hover {
+  box-shadow: 0 8px 28px rgba(59,130,246,0.09);
+  transform: translateY(-2px);
 }
 
 .av-question-icon {
@@ -457,7 +486,7 @@
 }
 
 .av-yes-btn {
-  padding: 13px 32px;
+  padding: 13px 36px;
   border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #3B82F6, #2563EB);
@@ -466,7 +495,7 @@
   font-size: 14px;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(59,130,246,0.35);
-  transition: all 0.25s;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
   font-family: 'Inter', sans-serif;
   display: flex;
   align-items: center;
@@ -479,7 +508,7 @@
 }
 
 .av-no-btn {
-  padding: 13px 32px;
+  padding: 13px 36px;
   border-radius: 12px;
   border: 1.5px solid #E2E8F0;
   background: #fff;
@@ -487,7 +516,7 @@
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.25s;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
   font-family: 'Inter', sans-serif;
 }
 
@@ -498,11 +527,17 @@
 }
 
 .av-success-card {
-  padding: 40px 32px;
+  padding: 48px 40px;
   text-align: center;
   background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
   border-radius: 20px;
   border: 1.5px solid #A7F3D0;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.av-success-card:hover {
+  box-shadow: 0 8px 28px rgba(16,185,129,0.10);
+  transform: translateY(-2px);
 }
 
 .av-change-link {
@@ -518,7 +553,7 @@
 }
 .av-change-link:hover { color: #047857; }
 
-/* ─── Notificaciones ─── */
+/* ─── Alerts ─── */
 .form-alert {
   display: flex;
   align-items: flex-start;
@@ -560,12 +595,9 @@
   flex-wrap: wrap;
 }
 
-.actions .spacer {
-  flex: 1;
-}
+.actions .spacer { flex: 1; }
 
-/* Los botones btn-primary, btn-secondary, btn-ghost
-   vienen del sistema global en index.css */
+/* ─── Botones del formulario ─── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -594,9 +626,7 @@
   box-shadow: 0 8px 24px rgba(59,130,246,0.40);
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
-}
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
 
 .btn-secondary {
   background: #fff;
@@ -633,17 +663,39 @@
   box-shadow: 0 8px 24px rgba(16,185,129,0.40);
 }
 
+.btn-danger {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.30);
+}
+
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(239,68,68,0.40);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
 }
 
-/* ─── Responsivo ─── */
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .form-container {
+    padding: 28px 24px;
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .form-container {
     padding: 20px 16px;
     border-radius: 16px;
+  }
+
+  .form-container:hover {
+    transform: none; /* disable hover lift on mobile */
   }
 
   .step-wizard {
@@ -673,9 +725,7 @@
     grid-template-columns: 1fr;
   }
 
-  .form-field.col-span-2 {
-    grid-column: span 1;
-  }
+  .form-field.col-span-2 { grid-column: span 1; }
 
   .actions {
     flex-direction: column-reverse;
@@ -689,9 +739,7 @@
     justify-content: center;
   }
 
-  .av-choices {
-    flex-direction: column;
-  }
+  .av-choices { flex-direction: column; }
 
   .av-yes-btn,
   .av-no-btn {
@@ -702,10 +750,12 @@
   .checklist-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  /* grid override for md: prefix classes */
+  .md\:grid-cols-2 { grid-template-columns: 1fr !important; }
+  .md\:col-span-2  { grid-column: span 1 !important; }
 }
 
 @media (max-width: 480px) {
-  .checklist-grid {
-    grid-template-columns: 1fr;
-  }
+  .checklist-grid { grid-template-columns: 1fr; }
 }

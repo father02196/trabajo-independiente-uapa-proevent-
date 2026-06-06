@@ -138,8 +138,9 @@
 }
 
 .solicitud-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
+  border-color: #CBD5E1;
 }
 
 .solicitud-card h3 {

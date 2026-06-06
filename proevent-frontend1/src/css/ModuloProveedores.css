@@ -238,6 +238,12 @@
   transform: translateY(-1px);
 }
 
+.solicitud-card:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
+  border-color: #CBD5E1;
+}
+
 .btn-icon-action.danger:hover {
   background: #FEF2F2;
   border-color: #FECACA;

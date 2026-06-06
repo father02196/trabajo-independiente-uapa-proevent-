@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FiBriefcase, FiCoffee } from "react-icons/fi";
 
 const API = "http://localhost:8080";
 
@@ -28,54 +29,90 @@ export default function ServiciosyDetalles({ data, setData }) {
   };
 
   return (
-    <div className="space-y-8 animate-fade">
+    <div className="space-y-6 animate-fade">
       <div>
         <h3 className="text-xl font-bold text-text-main mb-1">Servicios alimenticios y Detalles corporativos</h3>
         <p className="text-sm text-text-secondary">Selecciona los elementos extra que requerirá el evento.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Lista de detalles corporativos */}
-        <div className="p-6 border border-border-soft rounded-xl bg-bg-card shadow-sm">
-          <h4 className="text-base font-bold text-text-main mb-4 border-b border-border-soft pb-2">Tipos de detalles corporativos</h4>
-          <div className="space-y-3">
-            {detallesCorp.map((d) => {
-              const isChecked = data.items?.includes(d.nombre) || false;
-              return (
-                <label key={d.id_detalle_corp} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isChecked ? 'bg-accent-light border-accent-primary text-accent-primary font-semibold' : 'border-transparent hover:bg-bg-subtle text-text-secondary'}`}>
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-accent-primary rounded border-border-medium focus:ring-accent-primary"
-                    checked={isChecked}
-                    onChange={() => toggleItem(d.nombre, "items")}
-                  />
-                  <span>{d.nombre}</span>
-                </label>
-              );
-            })}
-            {detallesCorp.length === 0 && <p className="text-sm text-text-muted">No hay detalles disponibles.</p>}
+      <div className="space-y-6">
+        {/* Detalles Corporativos */}
+        <div>
+          <label className="block text-sm font-bold text-text-main mb-3">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FiBriefcase size={15} style={{ color: '#3B82F6' }} />
+              Tipos de detalles corporativos
+            </span>
+          </label>
+          <div className="checklist">
+            <div className="checklist-grid">
+              {detallesCorp.map((d) => {
+                const isChecked = data.items?.includes(d.nombre) || false;
+                return (
+                  <label key={d.id_detalle_corp} className="check-item" style={{ gap: '16px', padding: '14px 20px', minHeight: '52px' }}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleItem(d.nombre, "items")}
+                      style={{ transform: 'scale(1.15)', cursor: 'pointer', flexShrink: 0 }}
+                    />
+                    <span style={{ 
+                      marginLeft: '8px',
+                      color: isChecked ? '#2563EB' : '#334155', 
+                      fontWeight: isChecked ? 600 : 500,
+                      lineHeight: '1.4'
+                    }}>
+                      {d.nombre}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            {detallesCorp.length === 0 && (
+              <p className="text-sm text-text-secondary" style={{ textAlign: 'center', padding: '12px 0' }}>
+                No hay detalles disponibles.
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Lista de alimentos y bebidas */}
-        <div className="p-6 border border-border-soft rounded-xl bg-bg-card shadow-sm">
-          <h4 className="text-base font-bold text-text-main mb-4 border-b border-border-soft pb-2">Alimentos y bebidas</h4>
-          <div className="space-y-3">
-            {alimentos.map((a) => {
-              const isChecked = data.catering?.includes(a.nombre) || false;
-              return (
-                <label key={a.id_alimento} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isChecked ? 'bg-accent-light border-accent-primary text-accent-primary font-semibold' : 'border-transparent hover:bg-bg-subtle text-text-secondary'}`}>
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-accent-primary rounded border-border-medium focus:ring-accent-primary"
-                    checked={isChecked}
-                    onChange={() => toggleItem(a.nombre, "catering")}
-                  />
-                  <span>{a.nombre}</span>
-                </label>
-              );
-            })}
-            {alimentos.length === 0 && <p className="text-sm text-text-muted">No hay alimentos disponibles.</p>}
+        {/* Alimentos y Bebidas */}
+        <div>
+          <label className="block text-sm font-bold text-text-main mb-3">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FiCoffee size={15} style={{ color: '#3B82F6' }} />
+              Alimentos y bebidas
+            </span>
+          </label>
+          <div className="checklist">
+            <div className="checklist-grid">
+              {alimentos.map((a) => {
+                const isChecked = data.catering?.includes(a.nombre) || false;
+                return (
+                  <label key={a.id_alimento} className="check-item" style={{ gap: '16px', padding: '14px 20px', minHeight: '52px' }}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleItem(a.nombre, "catering")}
+                      style={{ transform: 'scale(1.15)', cursor: 'pointer', flexShrink: 0 }}
+                    />
+                    <span style={{ 
+                      marginLeft: '8px',
+                      color: isChecked ? '#2563EB' : '#334155', 
+                      fontWeight: isChecked ? 600 : 500,
+                      lineHeight: '1.4'
+                    }}>
+                      {a.nombre}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            {alimentos.length === 0 && (
+              <p className="text-sm text-text-secondary" style={{ textAlign: 'center', padding: '12px 0' }}>
+                No hay alimentos disponibles.
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -596,8 +596,8 @@
 }
 
 .saas-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
   border-color: #cbd5e1;
 }
 
@@ -676,7 +676,10 @@
   transition: box-shadow 0.2s;
 }
 
-.saas-chart-card:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
+.saas-chart-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+}
 
 .saas-budget-card { grid-column: auto; }
 

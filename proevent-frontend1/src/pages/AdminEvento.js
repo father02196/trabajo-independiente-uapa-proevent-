@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./../css/AjustesUsuarios.css";
 import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -98,16 +100,17 @@ export default function AdminEvento({ usuario }) {
   };
 
   // Lógica de Paginación
-  const totalPages = Math.ceil(dataList.length / itemsPerPage);
+  const { title, idField } = getConfig();
+  const { items: sortedDataList, requestSort, sortConfig } = useSortableData(dataList, { key: idField, direction: 'ascending' });
+
+  const totalPages = Math.ceil(sortedDataList.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = dataList.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = sortedDataList.slice(indexOfFirstItem, indexOfLastItem);
 
   if (usuario?.rol !== "Administrador de Evento" && usuario?.rol !== "Administrador" && usuario?.rol !== "Especialista de eventos") {
     return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a esta sección.</div>;
   }
-
-  const { title, idField } = getConfig();
 
   return (
     <div style={{maxWidth: '800px', margin: '0 auto'}}>
@@ -152,8 +155,8 @@ export default function AdminEvento({ usuario }) {
         <table className="modern-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Descripción en el catálogo ({title})</th>
+              <SortableHeader label="ID" sortKey={idField} sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label={`Descripción en el catálogo (${title})`} sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
               <th style={{textAlign: 'right'}}>Acciones</th>
             </tr>
           </thead>

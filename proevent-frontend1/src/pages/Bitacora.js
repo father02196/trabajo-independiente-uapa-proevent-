@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText } from 'react-icons/fi';
-import './../css/Dashboard.css'; // Reutilizamos estilos base
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
+import './../css/Dashboard.css';
 import './../css/Bitacora.css';
 
 const API = 'http://localhost:8080';
@@ -70,10 +72,11 @@ export default function Bitacora() {
     });
 
     // Lógica de Paginación
-    const totalPages = Math.ceil(registrosFiltrados.length / itemsPerPage);
+    const { items: sortedRegistros, requestSort, sortConfig } = useSortableData(registrosFiltrados, { key: 'fecha', direction: 'descending' });
+    const totalPages = Math.ceil(sortedRegistros.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = registrosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
+    const currentItems = sortedRegistros.slice(indexOfFirstItem, indexOfLastItem);
 
     // Resetear a pág 1 si los filtros cambian
     useEffect(() => {
@@ -130,10 +133,10 @@ export default function Bitacora() {
                     <table className="requests-table">
                         <thead>
                             <tr>
-                                <th>FECHA Y HORA</th>
-                                <th>ACCIÓN Y DETALLE</th>
-                                <th>USUARIO AUTOR</th>
-                                <th>ROL</th>
+                                <SortableHeader label="FECHA Y HORA" sortKey="fecha" sortConfig={sortConfig} requestSort={requestSort} />
+                                <SortableHeader label="ACCIÓN Y DETALLE" sortKey="accion" sortConfig={sortConfig} requestSort={requestSort} />
+                                <SortableHeader label="USUARIO AUTOR" sortKey="nombre_usuario" sortConfig={sortConfig} requestSort={requestSort} />
+                                <SortableHeader label="ROL" sortKey="rol_usuario" sortConfig={sortConfig} requestSort={requestSort} />
                             </tr>
                         </thead>
                         <tbody>

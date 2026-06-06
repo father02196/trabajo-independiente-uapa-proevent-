@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
 import './../css/ModuloProveedores.css';
 
 
@@ -176,6 +178,24 @@ function ModuloProveedores({ usuario }) {
         }
     };
 
+    const serviciosList = servicios.filter(s => filtroEstadoRecepcion === 'Todos' || (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor));
+    const { items: sortedServicios, requestSort: requestSortServicios, sortConfig: sortConfigServicios } = useSortableData(serviciosList, { key: 'nombre_evento', direction: 'ascending' });
+
+    const categoriasUnicas = [...new Set(proveedores.map(p => p.categoria))];
+    const proveedoresFiltrados = proveedores.filter(p => {
+        const text = searchTermDirectorio.toLowerCase();
+        const matchesSearch = 
+            p.nombre_empresa.toLowerCase().includes(text) || 
+            p.rnc_cedula.toLowerCase().includes(text) || 
+            p.correo.toLowerCase().includes(text);
+        
+        const matchesCategory = filtroCategoria === "Todas" || p.categoria === filtroCategoria;
+        return matchesSearch && matchesCategory;
+    });
+    const { items: sortedProveedores, requestSort: requestSortProveedores, sortConfig: sortConfigProveedores } = useSortableData(proveedoresFiltrados, { key: 'nombre_empresa', direction: 'ascending' });
+
+    const { items: sortedLicitaciones, requestSort: requestSortLicitaciones, sortConfig: sortConfigLicitaciones } = useSortableData(licitacionesAdjudicadas, { key: 'nombre_evento', direction: 'ascending' });
+
     return (
         <div className="proveedores-container">
             {/* Header */}
@@ -224,14 +244,14 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
-                                    <th>Evento</th>
-                                    <th>Servicio / Detalle</th>
-                                    <th>Estado Envío</th>
+                                    <SortableHeader label="Evento" sortKey="nombre_evento" sortConfig={sortConfigServicios} requestSort={requestSortServicios} />
+                                    <SortableHeader label="Servicio / Detalle" sortKey="tipo_servicio" sortConfig={sortConfigServicios} requestSort={requestSortServicios} />
+                                    <SortableHeader label="Estado Envío" sortKey="fecha_envio_proveedor" sortConfig={sortConfigServicios} requestSort={requestSortServicios} />
                                     <th style={{ textAlign: 'center' }}>Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {servicios.length === 0 ? (
+                                {sortedServicios.length === 0 ? (
                                     <tr>
                                         <td colSpan="4" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
                                             <FiPackage style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
@@ -240,10 +260,7 @@ function ModuloProveedores({ usuario }) {
                                         </td>
                                     </tr>
                                 ) : (
-                                    servicios
-                                        .filter(s => filtroEstadoRecepcion === 'Todos' || 
-                                            (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor))
-                                        .map(s => (
+                                    sortedServicios.map(s => (
                                             <tr key={s.id_servicio_ext}>
                                                 <td>
                                                     <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '2px' }}>{s.nombre_evento}</div>
@@ -286,25 +303,7 @@ function ModuloProveedores({ usuario }) {
             )}
 
             {/* TAB: DIRECTORIO */}
-            {activeTab === 'directorio' && (() => {
-                // --- Módulo: Búsqueda y Filtrado | Función: Filtrado Dinámico de Proveedores ---
-                // Extraemos dinámicamente las categorías únicas presentes en nuestra lista de proveedores
-                const categoriasUnicas = [...new Set(proveedores.map(p => p.categoria))];
-
-                // Filtramos la lista basándonos en el texto de búsqueda y la categoría seleccionada
-                const proveedoresFiltrados = proveedores.filter(p => {
-                    const text = searchTermDirectorio.toLowerCase();
-                    const matchesSearch = 
-                        p.nombre_empresa.toLowerCase().includes(text) || 
-                        p.rnc_cedula.toLowerCase().includes(text) || 
-                        p.correo.toLowerCase().includes(text);
-                    
-                    const matchesCategory = filtroCategoria === "Todas" || p.categoria === filtroCategoria;
-                    
-                    return matchesSearch && matchesCategory;
-                });
-
-                return (
+            {activeTab === 'directorio' && (
                 <>
                     <div className="filtros-proveedores" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
                         <div style={{ display: 'flex', gap: '12px', flex: 1, flexWrap: 'wrap' }}>
@@ -345,16 +344,16 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
-                                    <th>Empresa / RNC</th>
-                                    <th>Categoría</th>
-                                    <th>Persona de Contacto</th>
-                                    <th>Correo</th>
-                                    <th>Estado</th>
+                                    <SortableHeader label="Empresa / RNC" sortKey="nombre_empresa" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
+                                    <SortableHeader label="Categoría" sortKey="categoria" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
+                                    <SortableHeader label="Persona de Contacto" sortKey="persona_contacto" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
+                                    <SortableHeader label="Correo" sortKey="correo" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
+                                    <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
                                     <th style={{ textAlign: 'center' }}>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {proveedoresFiltrados.length === 0 ? (
+                                {sortedProveedores.length === 0 ? (
                                     <tr>
                                         <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
                                             <FiFileText style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
@@ -363,7 +362,7 @@ function ModuloProveedores({ usuario }) {
                                         </td>
                                     </tr>
                                 ) : (
-                                    proveedoresFiltrados.map(p => (
+                                    sortedProveedores.map(p => (
                                         <tr key={p.id_proveedor} style={{ opacity: p.estado === 'Inactivo' ? 0.55 : 1, transition: 'opacity 0.2s' }}>
                                             <td>
                                                 <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '2px' }}>{p.nombre_empresa}</div>
@@ -416,7 +415,7 @@ function ModuloProveedores({ usuario }) {
                         </table>
                     </div>
                 </>
-            )})()}
+            )}
 
             {/* TAB: LICITACIONES IA Y FACTURAS B2B */}
             {activeTab === 'ia' && (
@@ -438,15 +437,15 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
-                                    <th>Evento / Requisitos</th>
-                                    <th>Proveedor Ganador</th>
-                                    <th>Monto Total</th>
-                                    <th>Estado Pago</th>
+                                    <SortableHeader label="Evento / Requisitos" sortKey="nombre_evento" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
+                                    <SortableHeader label="Proveedor Ganador" sortKey="proveedor_nombre" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
+                                    <SortableHeader label="Monto Total" sortKey="monto_total_detectado" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
+                                    <SortableHeader label="Estado Pago" sortKey="estado_pago" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
                                     <th>Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {licitacionesAdjudicadas.length === 0 ? (
+                                {sortedLicitaciones.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" style={{ textAlign: 'center', padding: '60px 24px' }}>
                                             <FiCpu style={{ fontSize: '40px', color: '#CBD5E1', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
@@ -454,7 +453,7 @@ function ModuloProveedores({ usuario }) {
                                             <div style={{ fontSize: '13px', color: '#94A3B8' }}>Las licitaciones procesadas por IA aparecerán aquí</div>
                                         </td>
                                     </tr>
-                                ) : licitacionesAdjudicadas.map(lic => (
+                                ) : sortedLicitaciones.map(lic => (
                                     <tr key={lic.id_analisis}>
                                         <td>
                                             <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '3px' }}>{lic.nombre_evento}</div>

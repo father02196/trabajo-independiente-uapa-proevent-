@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiEdit, FiPower, FiPlusCircle, FiLayers } from 'react-icons/fi';
-import './../css/ModuloProveedores.css';
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
+import './../css/Dashboard.css';
 
 function GestionCategorias({ usuario }) {
     const API = "http://localhost:8080";
@@ -72,96 +74,128 @@ function GestionCategorias({ usuario }) {
         }
     };
 
+    const { items: sortedCategorias, requestSort, sortConfig } = useSortableData(categorias, { key: 'id_tipo_servicio', direction: 'ascending' });
+
     return (
-        <div className="proveedores-container" style={{animation: 'fadeIn 0.5s'}}>
-            <div className="proveedores-header" style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderLeft: '5px solid #1e40af' }}>
-                <h1 className="proveedores-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#1e40af', margin: 0 }}>
-                    <FiLayers /> Gestión de Categorías B2B
-                </h1>
-                <p style={{color: '#64748b', fontSize: '14px', marginTop: '8px', marginBottom: 0}}>
-                    Administra los tipos de servicios que los suplidores pueden ofrecer al registrarse en la plataforma.
-                </p>
+        <div className="space-y-6 animate-fade" style={{ padding: '24px' }}>
+            <div className="dashboard-card" style={{ padding: '24px', borderLeft: '4px solid var(--accent-primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                        <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '24px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
+                            <FiLayers style={{ color: 'var(--accent-primary)' }} /> Gestión de Categorías
+                        </h1>
+                        <p className="text-muted" style={{ fontSize: '14px', marginTop: '4px', marginBottom: 0 }}>
+                            Administra los tipos de servicios que los suplidores pueden ofrecer en la plataforma.
+                        </p>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => openModal('nueva', null)}>
+                        <FiPlusCircle /> Nueva Categoría
+                    </button>
+                </div>
             </div>
 
-            <div style={{marginBottom: '15px', display: 'flex', justifyContent: 'flex-end'}}>
-                <button className="btn-save" onClick={() => openModal('nueva', null)}>
-                    <FiPlusCircle style={{marginRight: '8px'}}/> Nueva Categoría
-                </button>
-            </div>
-
-            <div className="tabla-proveedores-container">
-                <table className="tabla-proveedores">
+            <div className="table-container">
+                <table className="modern-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Nombre de la Categoría</th>
-                            <th>Clasificación</th>
-                            <th>Estado</th>
-                            <th style={{textAlign: 'center'}}>Acciones</th>
+                            <SortableHeader label="ID" sortKey="id_tipo_servicio" sortConfig={sortConfig} requestSort={requestSort} />
+                            <SortableHeader label="Nombre de la Categoría" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
+                            <SortableHeader label="Clasificación" sortKey="clasificacion" sortConfig={sortConfig} requestSort={requestSort} />
+                            <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+                            <th style={{ textAlign: 'center' }}>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {categorias.map(cat => (
-                            <tr key={cat.id_tipo_servicio} style={{ opacity: cat.estado === 'Inactivo' ? 0.6 : 1 }}>
-                                <td>{cat.id_tipo_servicio}</td>
-                                <td><strong>{cat.nombre}</strong></td>
+                        {sortedCategorias.map(cat => (
+                            <tr key={cat.id_tipo_servicio} style={{ opacity: cat.estado === 'Inactivo' ? 0.7 : 1 }}>
+                                <td style={{ fontWeight: '600', color: 'var(--text-muted)' }}>#{cat.id_tipo_servicio}</td>
+                                <td><strong style={{ color: 'var(--text-main)' }}>{cat.nombre}</strong></td>
                                 <td>
-                                    <span className={`badge ${cat.clasificacion === 'Especializado' ? 'pendiente' : 'procesado'}`}>
+                                    <span className={`badge ${cat.clasificacion === 'Especializado' ? 'badge-blue' : 'badge-slate'}`}>
                                         {cat.clasificacion}
                                     </span>
                                 </td>
                                 <td>
-                                    <span className={`badge ${cat.estado === 'Activo' ? 'enviado' : 'con-incidencias'}`}>
+                                    <span className={`status-pill ${cat.estado === 'Activo' ? 'status-approved' : 'status-rejected'}`}>
                                         {cat.estado}
                                     </span>
                                 </td>
-                                <td style={{textAlign: 'center', display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                                    <button 
-                                        onClick={() => openModal('editar', cat)}
-                                        style={{background: 'transparent', color: '#1e40af', border: 'none', cursor: 'pointer', fontSize: '18px'}}
-                                        title="Editar Categoría"
-                                    >
-                                        <FiEdit />
-                                    </button>
-                                    <button 
-                                        onClick={() => handleToggleEstado(cat)}
-                                        style={{background: 'transparent', color: cat.estado === 'Activo' ? '#dc2626' : '#16a34a', border: 'none', cursor: 'pointer', fontSize: '18px'}}
-                                        title={cat.estado === 'Activo' ? "Desactivar Categoría" : "Activar Categoría"}
-                                    >
-                                        <FiPower />
-                                    </button>
+                                <td>
+                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                        <button 
+                                            onClick={() => openModal('editar', cat)}
+                                            className="btn btn-icon btn-ghost"
+                                            style={{ color: 'var(--accent-primary)' }}
+                                            title="Editar Categoría"
+                                        >
+                                            <FiEdit size={18} />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleToggleEstado(cat)}
+                                            className="btn btn-icon btn-ghost"
+                                            style={{ color: cat.estado === 'Activo' ? 'var(--danger)' : 'var(--success)' }}
+                                            title={cat.estado === 'Activo' ? "Desactivar Categoría" : "Activar Categoría"}
+                                        >
+                                            <FiPower size={18} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
+                        {categorias.length === 0 && (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                                    No hay categorías registradas en el sistema.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
 
             {/* Modal CRUD Categoría */}
             {modalConfig.open && (
-                <div className="modal-overlay" style={{backdropFilter: 'blur(4px)'}}>
-                    <div className="modal-content" style={{width: '420px', borderRadius: '12px', padding: '30px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'}}>
-                        <h3 className="modal-title" style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '15px', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '20px' }}>
-                            <FiLayers /> {modalConfig.type === 'editar' ? 'Editar Categoría' : 'Nueva Categoría'}
-                        </h3>
-                        <form onSubmit={handleGuardarCategoria} style={{marginTop: '20px'}}>
-                            <div className="form-group">
-                                <label>Nombre del Servicio / Categoría</label>
-                                <input required value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} placeholder="Ej. Iluminación Profesional"/>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '450px' }}>
+                        <div className="modal-header">
+                            <div>
+                                <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <FiLayers style={{ color: 'var(--accent-primary)' }} /> 
+                                    {modalConfig.type === 'editar' ? 'Editar Categoría' : 'Nueva Categoría'}
+                                </h3>
+                                <p className="modal-subtitle">Completar la información de la categoría.</p>
                             </div>
-                            <div className="form-group">
-                                <label>Clasificación</label>
-                                <select value={formData.clasificacion} onChange={e=>setFormData({...formData, clasificacion: e.target.value})}>
-                                    <option value="Corriente">Corriente</option>
-                                    <option value="Especializado">Especializado</option>
-                                </select>
-                            </div>
-                            
-                            <div className="modal-actions" style={{marginTop: '20px'}}>
-                                <button type="button" className="btn-cancel" onClick={() => setModalConfig({open:false})}>Cancelar</button>
-                                <button type="submit" className="btn-save">Guardar Categoría</button>
-                            </div>
-                        </form>
+                        </div>
+                        <div className="modal-body">
+                            <form id="categoria-form" onSubmit={handleGuardarCategoria} className="space-y-4">
+                                <div className="form-group">
+                                    <label>Nombre del Servicio / Categoría</label>
+                                    <input 
+                                        type="text"
+                                        className="input-base" 
+                                        required 
+                                        value={formData.nombre} 
+                                        onChange={e => setFormData({...formData, nombre: e.target.value})} 
+                                        placeholder="Ej. Iluminación Profesional"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Clasificación</label>
+                                    <select 
+                                        className="input-base" 
+                                        value={formData.clasificacion} 
+                                        onChange={e => setFormData({...formData, clasificacion: e.target.value})}
+                                    >
+                                        <option value="Corriente">Corriente</option>
+                                        <option value="Especializado">Especializado</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-ghost" onClick={() => setModalConfig({open:false})}>Cancelar</button>
+                            <button type="submit" form="categoria-form" className="btn btn-primary">Guardar Categoría</button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiCheck, FiClock, FiUser, FiCalendar, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -85,6 +87,7 @@ function CronogramaLogistico({ evento, usuario }) {
   const isAdminOrCoord = ["Administrador", "Administrador de Evento", "Coordinador de Evento", "Solicitante"].includes(usuario?.rol);
   // Nota: Solicitante también puede ver, pero no puede asignar según la vista antigua.
 
+  const { items: sortedTareas, requestSort, sortConfig } = useSortableData(tareas, { key: 'fecha_cumplimiento', direction: 'ascending' });
   return (
     <div className="cronograma-module modern-section">
       <div className="section-header-row">
@@ -142,15 +145,15 @@ function CronogramaLogistico({ evento, usuario }) {
             <table className="modern-table">
               <thead>
                 <tr>
-                  <th>Actividad Asignada</th>
-                  <th>Responsable</th>
-                  <th>Límite</th>
-                  <th>Estado</th>
+                  <SortableHeader label="Actividad Asignada" sortKey="nombre_actividad" sortConfig={sortConfig} requestSort={requestSort} />
+                  <SortableHeader label="Responsable" sortKey="responsable" sortConfig={sortConfig} requestSort={requestSort} />
+                  <SortableHeader label="Límite" sortKey="fecha_cumplimiento" sortConfig={sortConfig} requestSort={requestSort} />
+                  <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
                   {usuario?.rol !== 'Solicitante' && <th>Acción</th>}
                 </tr>
               </thead>
               <tbody>
-                {tareas.map(t => (
+                {sortedTareas.map(t => (
                   <tr key={t.id_actividad}>
                     <td style={{ fontWeight: 500, color: '#333' }}>{t.nombre_actividad}</td>
                     <td>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FiEye, FiMonitor, FiFileText, FiCheckCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -89,10 +91,13 @@ export default function GestionSolicitudesAV({ usuario }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
 
-  const totalPages = Math.ceil(solicitudesAV.length / itemsPerPage);
+  const { items: sortedSolicitudes, requestSort, sortConfig } = useSortableData(solicitudesAV, { key: 'id_evento', direction: 'ascending' });
+  const { items: sortedEquipos, requestSort: requestSortEquipos, sortConfig: sortConfigEquipos } = useSortableData(selectedRequest?.equipos || [], { key: 'equipo', direction: 'ascending' });
+
+  const totalPages = Math.ceil(sortedSolicitudes.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = solicitudesAV.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = sortedSolicitudes.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="animate-fade">
@@ -107,11 +112,11 @@ export default function GestionSolicitudesAV({ usuario }) {
         <table className="modern-table">
           <thead>
             <tr>
-              <th>ID Evento</th>
-              <th>Evento</th>
-              <th>Solicitante</th>
-              <th>Cant. Equipos</th>
-              <th>Estado</th>
+              <SortableHeader label="ID Evento" sortKey="id_evento" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="Evento" sortKey="nombre_evento" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="Solicitante" sortKey="nombre_usuario" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="Cant. Equipos" sortKey="total_equipos" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="Estado" sortKey="estado_av" sortConfig={sortConfig} requestSort={requestSort} />
               <th style={{ textAlign: 'center' }}>Detalles</th>
             </tr>
           </thead>
@@ -232,14 +237,14 @@ export default function GestionSolicitudesAV({ usuario }) {
                     <table className="modern-table">
                       <thead>
                         <tr>
-                          <th>Equipo Requerido</th>
-                          <th style={{ textAlign: 'center' }}>Cantidad</th>
-                          <th>Ubicación</th>
-                          <th>Observaciones Especiales</th>
+                          <SortableHeader label="Equipo Requerido" sortKey="equipo" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} />
+                          <SortableHeader label="Cantidad" sortKey="cantidad" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} style={{ textAlign: 'center' }} />
+                          <SortableHeader label="Ubicación" sortKey="ubicacion" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} />
+                          <SortableHeader label="Observaciones Especiales" sortKey="observaciones" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} />
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedRequest.equipos && selectedRequest.equipos.map(eq => (
+                        {sortedEquipos.map(eq => (
                           <tr key={eq.id_servicio}>
                             <td style={{ fontWeight: '600', color: '#0F172A' }}>{eq.equipo}</td>
                             <td style={{ textAlign: 'center', fontWeight: '700', color: '#3B82F6' }}>{eq.cantidad}</td>

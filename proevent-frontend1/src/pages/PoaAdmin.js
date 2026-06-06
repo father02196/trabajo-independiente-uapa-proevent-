@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./../css/Dashboard.css";
 import { FiCheckCircle, FiXCircle, FiDollarSign, FiCalendar, FiRefreshCw, FiEye } from "react-icons/fi";
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -116,6 +118,10 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
       m.solicitante?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  const { items: sortedMovimientos, requestSort, sortConfig } = useSortableData(filteredMovimientos, { key: 'fecha_movimiento', direction: 'descending' });
+
+  const totalPages = Math.ceil(sortedMovimientos.length / itemsPerPage);
+
   const totalRechazado = movimientos
     .filter(m => m.estado === 'Rechazado')
     .reduce((sum, m) => sum + Number(m.monto_descontado_dop), 0);
@@ -142,7 +148,7 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
+        <div className="poa-card" style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '16px'}}>Aperturar Año Fiscal POA</h3>
           <form onSubmit={handleCrearPoa} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group">
@@ -161,7 +167,7 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
           </form>
         </div>
 
-        <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column' }}>
+        <div className="poa-card" style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column' }}>
           {poaActual ? (
             <div style={{ textAlign: 'center' }}>
               <FiDollarSign size={40} color="var(--success)" />
@@ -199,17 +205,17 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
         <table className="modern-table" style={{ marginTop: '12px' }}>
           <thead>
             <tr>
-              <th>FECHA</th>
-              <th>EVENTO</th>
-              <th>SOLICITANTE</th>
-              <th>SOLICITUD ORIG.</th>
-              <th>DESCUENTO (DOP)</th>
-              <th>ESTADO</th>
+              <SortableHeader label="FECHA" sortKey="fecha_movimiento" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="EVENTO" sortKey="nombre_evento" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="SOLICITANTE" sortKey="solicitante" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="SOLICITUD ORIG." sortKey="monto_solicitado_original" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="DESCUENTO (DOP)" sortKey="monto_descontado_dop" sortConfig={sortConfig} requestSort={requestSort} />
+              <SortableHeader label="ESTADO" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
               <th style={{textAlign: 'center'}}>ACCIONES</th>
             </tr>
           </thead>
           <tbody>
-            {filteredMovimientos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(mov => (
+            {sortedMovimientos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(mov => (
               <tr key={mov.id_movimiento} style={{ borderBottom: '1px solid var(--color-border)' }}>
                 <td style={{ padding: '12px', fontSize: '13.5px', color: 'var(--text-muted)' }}>{mov.fecha_movimiento.substring(0, 10)}</td>
                 <td style={{ padding: '12px' }}><strong style={{ color: 'var(--color-uapa-navy)', fontSize: '13px' }}>#EVT-{mov.id_evento}</strong><br/><span style={{fontSize: "12px", color: "var(--text-muted)"}}>{mov.nombre_evento}</span></td>

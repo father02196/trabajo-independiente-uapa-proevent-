@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase } from "react-icons/fi";
 import { toast } from "react-hot-toast";
+import { useSortableData } from "../hooks/useSortableData";
+import SortableHeader from "../components/SortableHeader";
 import './../css/Dashboard.css';
 const API = "http://localhost:8080";
 
 function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
-  const [sortOrder, setSortOrder] = useState("desc");
   const [departmentFilter, setDepartmentFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [dateFilter, setDateFilter] = useState("");
@@ -187,22 +188,19 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       const matchStatus = statusFilter === "Todos" || req.estado === statusFilter;
       const matchDate = !dateFilter || (req.fecha_inicio && req.fecha_inicio.startsWith(dateFilter));
       return matchDept && matchStatus && matchDate;
-    })
-    .sort((a, b) => {
-      const dA = new Date(a.fecha_inicio).getTime();
-      const dB = new Date(b.fecha_inicio).getTime();
-      return sortOrder === "asc" ? dA - dB : dB - dA;
     });
 
+  const { items: sortedRequests, requestSort, sortConfig } = useSortableData(filteredRequests, { key: 'fecha_inicio', direction: 'descending' });
+
   // Paginación
-  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = sortedRequests.slice(indexOfFirstItem, indexOfLastItem);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [departmentFilter, statusFilter, dateFilter, sortOrder]);
+  }, [departmentFilter, statusFilter, dateFilter]);
 
   return (
     <div className="admin-page-container fade-in">
@@ -236,7 +234,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
           {usuario?.rol !== "Solicitante" && (
             <div className="filter-item">
-              <label>🏢 Departamento / Dependencia</label>
+              <label><FiBriefcase style={{ display: 'inline', marginRight: '6px' }} /> Departamento / Dependencia</label>
               <select className="input-base" value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
                 {departamentosUnicos.map((d) => (
                   <option key={d} value={d}>{d === "Todos" ? "Todos los Departamentos" : d}</option>
@@ -289,15 +287,15 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <table className="requests-table modern-table">
               <thead>
                 <tr>
-                  <th>EVENTO ID & NOMBRE</th>
-                  {usuario?.rol !== "Solicitante" && <th>SOLICITANTE</th>}
-                  {usuario?.rol !== "Solicitante" && <th>DEPENDENCIA</th>}
-                  <th>FECHA DE INICIO</th>
-                  <th>RECINTO / LUGAR</th>
-                  <th>ESTADO EVENTO</th>
-                  <th>CONTABILIDAD POA</th>
+                  <SortableHeader label="EVENTO ID & NOMBRE" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
+                  {usuario?.rol !== "Solicitante" && <SortableHeader label="SOLICITANTE" sortKey="solicitante" sortConfig={sortConfig} requestSort={requestSort} />}
+                  {usuario?.rol !== "Solicitante" && <SortableHeader label="DEPENDENCIA" sortKey="dependencia" sortConfig={sortConfig} requestSort={requestSort} />}
+                  <SortableHeader label="FECHA DE INICIO" sortKey="fecha_inicio" sortConfig={sortConfig} requestSort={requestSort} />
+                  <SortableHeader label="RECINTO / LUGAR" sortKey="recinto" sortConfig={sortConfig} requestSort={requestSort} />
+                  <SortableHeader label="ESTADO EVENTO" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+                  <SortableHeader label="CONTABILIDAD POA" sortKey="aprobacion_poa" sortConfig={sortConfig} requestSort={requestSort} />
                   <th>MÁS DETALLES</th>
-                  {usuario?.rol !== "Administrador V-A-F" && <th>ACCIONES DE GESTIÓN</th>}
+                  {usuario?.rol !== "Administrador V-A-F" && <th style={{ textAlign: 'center' }}>ACCIONES DE GESTIÓN</th>}
                 </tr>
               </thead>
               <tbody>

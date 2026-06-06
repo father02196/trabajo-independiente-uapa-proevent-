@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useSortableData } from '../hooks/useSortableData';
+import SortableHeader from '../components/SortableHeader';
 import './../css/AjustesUsuarios.css';
 import './../css/Dashboard.css';
 
@@ -178,10 +180,12 @@ function AjustesUsuarios({ usuario }) {
     };
 
     // Lógica de Paginación
-    const totalPages = Math.ceil(filteredUsuarios.length / itemsPerPage);
+    const { items: sortedUsuarios, requestSort, sortConfig } = useSortableData(filteredUsuarios, { key: 'nombre', direction: 'ascending' });
+
+    const totalPages = Math.ceil(sortedUsuarios.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredUsuarios.slice(indexOfFirstItem, indexOfLastItem);
+    const currentItems = sortedUsuarios.slice(indexOfFirstItem, indexOfLastItem);
 
     // Resetear a pág 1 si cambia el término de búsqueda
     useEffect(() => {
@@ -287,10 +291,10 @@ function AjustesUsuarios({ usuario }) {
                     <table className="ajustes-table">
                         <thead>
                             <tr>
-                                <th>USUARIO</th>
-                                <th>CORREO ELECTRÓNICO</th>
-                                <th>ROL</th>
-                                <th>ESTADO</th>
+                                <SortableHeader label="USUARIO" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
+                                <SortableHeader label="CORREO ELECTRÓNICO" sortKey="correo" sortConfig={sortConfig} requestSort={requestSort} />
+                                <SortableHeader label="ROL" sortKey="rol" sortConfig={sortConfig} requestSort={requestSort} />
+                                <SortableHeader label="ESTADO" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
                                 <th style={{textAlign: 'center'}}>ACCIONES</th>
                             </tr>
                         </thead>

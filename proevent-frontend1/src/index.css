@@ -239,8 +239,8 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
 }
 
 /* ─── INPUT SYSTEM ──────────────────────────────────────── */
@@ -688,4 +688,191 @@ code {
   gap: 12px;
   margin-top: 24px;
   flex-shrink: 0;
+}
+
+/* --- GLOBAL AUDIT HOVER EFFECTS --- */
+/* Added to unify hover effects across all cards, panels, forms, and tables */
+.card:hover,
+.info-card:hover,
+.admin-controls-card:hover,
+.admin-table-card:hover,
+.dashboard-card:hover,
+.dashboard-stats-card:hover,
+.table-container:hover,
+.form-container:hover,
+.modal-content:hover,
+.calendar-container:hover,
+.event-card:hover,
+.login-card:hover,
+.portal-card:hover,
+.welcome-card:hover,
+.module-card:hover,
+.bitacora-card:hover,
+.stat-card:hover,
+.saas-card:hover,
+.feature-card:hover,
+.form-section:hover,
+.ticket-card:hover,
+.evaluacion-card:hover,
+.detail-group:hover,
+.file-upload-card:hover,
+.av-question-card:hover,
+.av-success-card:hover,
+.proveedor-card:hover,
+.ajustes-table-card:hover,
+.ajustes-form-card:hover,
+.bitacora-stat-card:hover,
+.bitacora-table-card:hover,
+.soporte-contact-card:hover,
+.faq-item:hover,
+.soporte-tickets-card:hover,
+.proveedores-header:hover,
+.tabla-proveedores-container:hover,
+.poa-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.card,
+.info-card,
+.admin-controls-card,
+.admin-table-card,
+.dashboard-card,
+.dashboard-stats-card,
+.table-container,
+.form-container,
+.modal-content,
+.calendar-container,
+.event-card,
+.login-card,
+.portal-card,
+.welcome-card,
+.module-card,
+.bitacora-card,
+.stat-card,
+.saas-card,
+.feature-card,
+.form-section,
+.ticket-card,
+.evaluacion-card,
+.detail-group,
+.file-upload-card,
+.av-question-card,
+.av-success-card,
+.proveedor-card,
+.ajustes-table-card,
+.ajustes-form-card,
+.bitacora-stat-card,
+.bitacora-table-card,
+.soporte-contact-card,
+.faq-item,
+.soporte-tickets-card,
+.proveedores-header,
+.tabla-proveedores-container,
+.poa-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* ─── FORM STEP UTILITY CLASSES ────────────────────────── */
+/* Lightweight utilities used by the 5 wizard step components */
+
+/* Spacing stacks */
+.space-y-4 > * + * { margin-top: 16px; }
+.space-y-6 > * + * { margin-top: 24px; }
+.space-y-8 > * + * { margin-top: 32px; }
+.space-y-3 > * + * { margin-top: 12px; }
+
+/* Grid layouts */
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+.gap-8 { gap: 32px; }
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .col-span-1 { grid-column: span 1; }
+  .md\:col-span-2 { grid-column: span 2; }
+}
+
+/* Flex utilities */
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+
+/* Display */
+.block { display: block; }
+.hidden { display: none; }
+.w-4 { width: 16px; }
+.h-4 { height: 16px; }
+
+/* Typography */
+.text-xs   { font-size: 12px; line-height: 1.5; }
+.text-sm   { font-size: 13.5px; line-height: 1.5; }
+.text-base { font-size: 15px; line-height: 1.6; }
+.text-xl   { font-size: 18px; line-height: 1.4; }
+.font-bold     { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium   { font-weight: 500; }
+
+/* Color tokens as utility classes */
+.text-text-main      { color: #0F172A; }
+.text-text-secondary { color: #334155; }
+.text-text-muted     { color: #64748B; }
+.text-accent-primary { color: #3B82F6; }
+.text-danger         { color: #EF4444; }
+
+/* Margin/Padding helpers */
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+
+.p-3  { padding: 12px; }
+.p-6  { padding: 24px; }
+.pb-2 { padding-bottom: 8px; }
+
+/* Border helpers */
+.border        { border: 1px solid #E2E8F0; }
+.border-b      { border-bottom: 1px solid #E2E8F0; }
+.border-border-soft   { border-color: #E2E8F0; }
+.border-border-medium { border-color: #CBD5E1; }
+.rounded-xl  { border-radius: 12px; }
+.rounded-lg  { border-radius: 8px; }
+
+/* Background tokens */
+.bg-bg-card    { background: #FFFFFF; }
+.bg-bg-subtle  { background: #F8FAFC; }
+.bg-accent-light { background: rgba(59,130,246,0.10); }
+
+/* Shadow */
+.shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); }
+
+/* Cursor */
+.cursor-pointer { cursor: pointer; }
+
+/* Transitions */
+.transition-all { transition: all 0.2s cubic-bezier(0.4,0,0.2,1); }
+.transition-colors { transition: color 0.2s, background-color 0.2s, border-color 0.2s; }
+
+/* Hover utilities */
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+}
+
+/* Animate fade (used by all steps) */
+.animate-fade {
+  animation: stepFadeIn 0.3s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+@keyframes stepFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

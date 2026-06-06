@@ -14,22 +14,18 @@ export default function ModalidadLugar({ data, setData }) {
   }, []);
 
   const opciones = [
-    { value: "Presencial", label: "Presencial", icon: <FiMapPin className="text-3xl mb-2" /> },
-    { value: "Virtual",    label: "Virtual",    icon: <FiMonitor className="text-3xl mb-2" /> },
-    { value: "Híbrido",    label: "Híbrido",    icon: <FiVideo className="text-3xl mb-2" /> },
+    { value: "Presencial", label: "Presencial", icon: <FiMapPin size={28} />, desc: "En un lugar físico" },
+    { value: "Virtual",    label: "Virtual",    icon: <FiMonitor size={28} />, desc: "En línea / streaming" },
+    { value: "Híbrido",    label: "Híbrido",    icon: <FiVideo size={28} />, desc: "Presencial y virtual" },
   ];
 
   const handleRecinto = (e) => {
     const selected = recintos.find(r => String(r.id_recinto) === e.target.value);
-    setData({
-      ...data,
-      id_recinto: e.target.value,
-      campus: selected ? selected.nombre : ""
-    });
+    setData({ ...data, id_recinto: e.target.value, campus: selected ? selected.nombre : "" });
   };
 
   return (
-    <div className="space-y-8 animate-fade">
+    <div className="space-y-6 animate-fade">
       <div>
         <h3 className="text-xl font-bold text-text-main mb-1">Modalidad y Lugar</h3>
         <p className="text-sm text-text-secondary">Define cómo y dónde se llevará a cabo el evento.</p>
@@ -37,18 +33,16 @@ export default function ModalidadLugar({ data, setData }) {
 
       {/* Selector de modalidad */}
       <div>
-        <label className="block text-sm font-bold text-text-main mb-3">Modalidad del evento <span className="text-danger">*</span></label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <label className="block text-sm font-bold text-text-main mb-3">
+          Modalidad del evento <span className="text-danger">*</span>
+        </label>
+        <div className="modalidad-container">
           {opciones.map((op) => {
             const isActive = data.modalidad === op.value;
             return (
               <label
                 key={op.value}
-                className={`flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all hover-lift ${
-                  isActive 
-                    ? 'border-accent-primary bg-accent-light text-accent-primary shadow-sm' 
-                    : 'border-border-soft bg-bg-card hover:border-border-medium text-text-muted'
-                }`}
+                className={`modalidad-card${isActive ? " active" : ""}`}
               >
                 <input
                   type="radio"
@@ -56,10 +50,12 @@ export default function ModalidadLugar({ data, setData }) {
                   value={op.value}
                   checked={isActive}
                   onChange={(e) => setData({ ...data, modalidad: e.target.value })}
-                  className="hidden"
                 />
-                {op.icon}
-                <span className="font-bold">{op.label}</span>
+                <div style={{ fontSize: "28px", color: isActive ? "#3B82F6" : "#94A3B8", marginBottom: "8px" }}>
+                  {op.icon}
+                </div>
+                <h4>{op.label}</h4>
+                <p>{op.desc}</p>
               </label>
             );
           })}
@@ -69,12 +65,14 @@ export default function ModalidadLugar({ data, setData }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Recinto */}
         <div>
-          <label htmlFor="recinto" className="block text-sm font-bold text-text-main mb-2">Recinto <span className="text-danger">*</span></label>
-          <select 
-            id="recinto" 
+          <label htmlFor="recinto" className="block text-sm font-bold text-text-main mb-2">
+            Recinto <span className="text-danger">*</span>
+          </label>
+          <select
+            id="recinto"
             className="input-base"
-            value={data.id_recinto} 
-            onChange={handleRecinto} 
+            value={data.id_recinto}
+            onChange={handleRecinto}
             required
           >
             <option value="">-- Seleccione un recinto --</option>
@@ -86,7 +84,9 @@ export default function ModalidadLugar({ data, setData }) {
 
         {/* Cantidad de asistentes */}
         <div>
-          <label htmlFor="asistentes" className="block text-sm font-bold text-text-main mb-2">Cantidad estimada de asistentes <span className="text-danger">*</span></label>
+          <label htmlFor="asistentes" className="block text-sm font-bold text-text-main mb-2">
+            Cantidad estimada de asistentes <span className="text-danger">*</span>
+          </label>
           <input
             id="asistentes"
             type="number"
