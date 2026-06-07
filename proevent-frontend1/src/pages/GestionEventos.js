@@ -22,6 +22,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLicitacionModalOpen, setIsLicitacionModalOpen] = useState(false); // Modal para Licitaciones
+  const [isAsignarServicioModalOpen, setIsAsignarServicioModalOpen] = useState(false); // Modal para Asignar Servicio
   const [coordinadores, setCoordinadores] = useState([]);
 
   useEffect(() => {
@@ -47,6 +48,58 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   };
   const closeLicitacionModal = () => {
     setIsLicitacionModalOpen(false);
+  };
+
+  const [tiposServicioExterno, setTiposServicioExterno] = useState([]);
+  const [servicioForm, setServicioForm] = useState({ id_tipo_servicio: "", detalles: "", cantidad: 1 });
+  const [enviandoServicio, setEnviandoServicio] = useState(false);
+
+  const openAsignarServicioModal = async () => {
+    setIsAsignarServicioModalOpen(true);
+    try {
+      const res = await fetch(`${API}/tipos-servicio-externo`);
+      if (res.ok) {
+        setTiposServicioExterno(await res.json());
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const closeAsignarServicioModal = () => {
+    setIsAsignarServicioModalOpen(false);
+    setServicioForm({ id_tipo_servicio: "", detalles: "", cantidad: 1 });
+  };
+
+  const handleSubmitServicio = async (e) => {
+    e.preventDefault();
+    if (!servicioForm.id_tipo_servicio) {
+      toast.error("Seleccione un tipo de servicio");
+      return;
+    }
+    setEnviandoServicio(true);
+    try {
+      const res = await fetch(`${API}/servicios-externos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_evento: selectedRequest.id_evento,
+          id_tipo_servicio: servicioForm.id_tipo_servicio,
+          detalles: servicioForm.detalles,
+          cantidad: servicioForm.cantidad
+        })
+      });
+      if (res.ok) {
+        toast.success("Servicio asignado correctamente a Logística Operativa");
+        closeAsignarServicioModal();
+      } else {
+        toast.error("Error al asignar servicio");
+      }
+    } catch (err) {
+      toast.error("Error de conexión");
+    } finally {
+      setEnviandoServicio(false);
+    }
   };
 
   const [organizadoresAsignados, setOrganizadoresAsignados] = useState([]);
@@ -573,9 +626,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {usuario?.rol !== "Solicitante" && (
-                  <button className="btn btn-primary" onClick={openLicitacionModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FiBriefcase /> Abrir Licitación de Servicio
-                  </button>
+                  <>
+                    <button className="btn btn-primary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F59E0B', borderColor: '#F59E0B' }}>
+                      <FiSend /> Asignar Servicio Externo
+                    </button>
+                    <button className="btn btn-primary" onClick={openLicitacionModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiBriefcase /> Abrir Licitación de Servicio
+                    </button>
+                  </>
                 )}
                 {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
                   <button className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -602,6 +660,66 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             </div>
             <div className="modal-body" style={{ padding: 0 }}>
               <LicitacionesB2B evento={selectedRequest} usuario={usuario} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ASIGNAR SERVICIO EXTERNO */}
+      {isAsignarServicioModalOpen && selectedRequest && (
+        <div className="modal-overlay" onClick={closeAsignarServicioModal} style={{ zIndex: 1060 }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <div>
+                <h3 className="modal-title">Asignar Servicio Externo</h3>
+                <span className="modal-subtitle">Enviar requerimiento a Logística Operativa</span>
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={closeAsignarServicioModal}>X</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleSubmitServicio} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-2">Tipo de Servicio</label>
+                  <select 
+                    className="input-base" 
+                    value={servicioForm.id_tipo_servicio}
+                    onChange={(e) => setServicioForm({...servicioForm, id_tipo_servicio: e.target.value})}
+                    required
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {tiposServicioExterno.map(t => (
+                      <option key={t.id_tipo_servicio} value={t.id_tipo_servicio}>{t.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-2">Detalles / Especificaciones</label>
+                  <textarea 
+                    className="input-base" 
+                    placeholder="Ej: Necesitamos una tarima de 4x4m..."
+                    value={servicioForm.detalles}
+                    onChange={(e) => setServicioForm({...servicioForm, detalles: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-2">Cantidad</label>
+                  <input 
+                    type="number" 
+                    className="input-base" 
+                    min="1" 
+                    value={servicioForm.cantidad}
+                    onChange={(e) => setServicioForm({...servicioForm, cantidad: parseInt(e.target.value) || 1})}
+                    required
+                  />
+                </div>
+                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={closeAsignarServicioModal}>Cancelar</button>
+                  <button type="submit" className="btn btn-success" disabled={enviandoServicio}>
+                    {enviandoServicio ? "Asignando..." : "Asignar Servicio"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

@@ -203,7 +203,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                         <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
                                         Solicitud de Eventos
                                     </li>
-                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos") && (
+                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos" || usuario?.rol === "Administrador de eventos") && (
                                         <>
                                             <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
                                                 <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
