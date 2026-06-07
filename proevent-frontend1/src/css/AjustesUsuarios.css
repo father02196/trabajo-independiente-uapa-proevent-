@@ -494,7 +494,42 @@
 
 .btn-ajustes-secondary:hover { background: #F8FAFC; border-color: #CBD5E1; }
 
-@media (max-width: 768px) {
-  .ajustes-page { padding: 20px 16px; }
-  .ajustes-form-row { grid-template-columns: 1fr; }
+@media (max-width: 1024px) {
+  .ajustes-page { padding: 24px 20px; }
+  .ajustes-form-row { grid-template-columns: 1fr 1fr; }
 }
+
+@media (max-width: 768px) {
+  .ajustes-page { padding: 16px 14px; }
+  .ajustes-form-row { grid-template-columns: 1fr; }
+
+  /* Scroll horizontal en la tabla de usuarios */
+  .ajustes-table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ajustes-table      { min-width: 620px; }
+
+  /* Toolbar apilado */
+  .ajustes-table-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .ajustes-toolbar-right { flex-wrap: wrap; width: 100%; }
+  .ajustes-search        { flex: 1; }
+  .ajustes-search input  { width: 100%; }
+
+  /* Tabs responsivas */
+  .ajustes-tabs { width: 100%; overflow-x: auto; }
+
+  /* Footer buttons */
+  .ajustes-form-footer { flex-direction: column-reverse; gap: 8px; }
+  .btn-ajustes-primary,
+  .btn-ajustes-secondary { width: 100%; text-align: center; justify-content: center; }
+
+  /* Avatar upload — columna en móvil */
+  .ajustes-avatar-upload { flex-direction: column; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .ajustes-page { padding: 12px 10px; }
+  .ajustes-page-header h1 { font-size: 18px; }
+  .ajustes-form-section { padding: 16px 16px; }
+  .ajustes-form-footer  { padding: 12px 16px; }
+  .ajustes-toggle-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+

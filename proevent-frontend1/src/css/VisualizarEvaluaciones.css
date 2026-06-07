@@ -444,3 +444,41 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* ─── Responsive ─── */
+@media (max-width: 1024px) {
+  .veval-container { padding: 24px 20px; }
+  .veval-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+
+@media (max-width: 768px) {
+  .veval-container { padding: 16px 14px; }
+  .veval-stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .veval-stat-card  { padding: 16px; gap: 12px; }
+  .veval-stat-value { font-size: 22px; }
+  .veval-stat-icon  { width: 44px; height: 44px; font-size: 20px; }
+
+  /* Table scroll interno */
+  .veval-table-scroll { -webkit-overflow-scrolling: touch; }
+  .veval-table        { min-width: 700px; }
+
+  /* Expansion wrap en columna */
+  .veval-expansion-content { flex-direction: column; gap: 16px; padding: 16px; }
+  .veval-expansion-info,
+  .veval-expansion-chart  { min-width: 0; width: 100%; }
+
+  /* Footer paginación */
+  .veval-footer { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; }
+
+  /* Header */
+  .veval-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .veval-title  { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+  .veval-container  { padding: 12px 10px; }
+  .veval-stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .veval-stat-card  { padding: 12px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .veval-stat-value { font-size: 20px; }
+}
+

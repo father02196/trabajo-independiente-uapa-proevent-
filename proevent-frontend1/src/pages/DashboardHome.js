@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiEdit2 } from "react-icons/fi";
 import './../css/Dashboard.css';
 
 const API = "http://localhost:8080";
@@ -13,6 +13,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState(null); // Para tooltips interactivos de SVG
+  const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
 
   const openModal = (req) => {
     setSelectedRequest(req);
@@ -137,7 +138,11 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
   // Obtener los próximos 5 eventos activos
   const proximosEventos = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
-    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_inicio);
+      const dateB = new Date(b.fecha_inicio);
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    })
     .slice(0, 5);
 
   return (
@@ -420,12 +425,22 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
         
         {/* PANEL IZQUIERDO: TIMELINE PRÓXIMOS EVENTOS */}
         <div className="saas-panel-card">
-          <div className="panel-header">
-            <FiCalendar className="panel-icon" />
-            <div>
-              <h4>Próximos Eventos en Agenda</h4>
-              <p>Eventos aprobados y pendientes programados próximamente</p>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <FiCalendar className="panel-icon" />
+              <div>
+                <h4>Próximos Eventos en Agenda</h4>
+                <p>Eventos aprobados y pendientes programados próximamente</p>
+              </div>
             </div>
+            <select 
+              value={sortOrder} 
+              onChange={(e) => setSortOrder(e.target.value)}
+              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #E2E8F0', cursor: 'pointer', backgroundColor: '#fff', color: '#475569', outline: 'none' }}
+            >
+              <option value="asc">Más próximos (Asc)</option>
+              <option value="desc">Más lejanos (Desc)</option>
+            </select>
           </div>
           <div className="panel-body">
             {loading ? (
@@ -661,7 +676,14 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
               </div>
             </div>
             
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
+                  <button className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiEdit2 /> Editar Evento
+                  </button>
+                )}
+              </div>
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>

@@ -363,7 +363,34 @@
 
 .btn-eval-secondary:hover { background: #F8FAFC; border-color: #CBD5E1; }
 
-@media (max-width: 768px) {
-  .evaluacion-page { padding: 20px 16px; }
-  .eval-cards-grid { grid-template-columns: 1fr; }
+@media (max-width: 1024px) {
+  .evaluacion-page { padding: 24px 20px; }
+  .eval-cards-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .eval-form-card  { max-width: 100%; }
 }
+
+@media (max-width: 768px) {
+  .evaluacion-page { padding: 16px 14px; }
+  .eval-cards-grid { grid-template-columns: 1fr; gap: 12px; }
+  .eval-form-card  { max-width: 100%; }
+  .eval-form-body  { padding: 18px; }
+  .eval-form-header { padding: 18px 18px; }
+  .eval-form-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 14px 18px;
+  }
+  .btn-eval-primary,
+  .btn-eval-secondary { width: 100%; text-align: center; }
+
+  /* Result banner en columna */
+  .eval-result-banner { flex-direction: column; text-align: center; padding: 18px; gap: 12px; }
+  .eval-result-score  { font-size: 32px; }
+}
+
+@media (max-width: 480px) {
+  .evaluacion-page { padding: 12px 10px; }
+  .eval-page-header h1 { font-size: 18px; }
+  .eval-criterion { padding: 14px; }
+  .eval-criterion-label { flex-direction: column; align-items: flex-start; gap: 6px; }
+}

@@ -320,7 +320,39 @@
 
 .btn-export:hover { background: #F8FAFC; border-color: #CBD5E1; transform: translateY(-1px); }
 
-@media (max-width: 768px) {
-  .bitacora-page { padding: 20px 16px; }
-  .bitacora-toolbar { flex-direction: column; align-items: flex-start; }
+@media (max-width: 1024px) {
+  .bitacora-page { padding: 24px 20px; }
+  .bitacora-stats { grid-template-columns: repeat(2, 1fr); }
 }
+
+@media (max-width: 768px) {
+  .bitacora-page { padding: 16px 14px; }
+
+  /* Toolbar apilado */
+  .bitacora-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .bitacora-toolbar-actions { flex-wrap: wrap; width: 100%; gap: 6px; }
+  .bitacora-search { flex: 1; }
+  .bitacora-search input { width: 100%; }
+  .bitacora-filter-select { width: 100%; }
+
+  /* Tabla con scroll horizontal interno */
+  .bitacora-table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bitacora-table { min-width: 680px; }
+
+  /* Stats */
+  .bitacora-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Header */
+  .bitacora-header { flex-direction: column; align-items: flex-start; }
+
+  /* Botón exportar — ancho completo */
+  .btn-export { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .bitacora-page { padding: 12px 10px; }
+  .bitacora-stats { grid-template-columns: 1fr 1fr; }
+  .bitacora-header h1 { font-size: 18px; }
+  .bitacora-pagination { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+

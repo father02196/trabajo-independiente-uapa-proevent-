@@ -61,6 +61,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
   const [needsAV, setNeedsAV] = useState(null);
+  const [omitirServicios, setOmitirServicios] = useState(false);
 
   const [archivo, setArchivo] = useState(null); // Nuevo estado para Flujo Documental
 
@@ -126,6 +127,15 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       if (!data.modalidad) return "Debes seleccionar una modalidad.";
       if (!data.id_recinto) return "Debes seleccionar un recinto.";
       if (!data.asistentes || Number(data.asistentes) < 1) return "La cantidad de asistentes debe ser al menos 1.";
+    }
+    if (seccion === "Servicios alimenticios y Detalles coorporativos") {
+      const hasItems = data.items && data.items.length > 0;
+      const hasCatering = data.catering && data.catering.length > 0;
+      const hasExternos = data.sugerencias_externas && data.sugerencias_externas.trim() !== "";
+      
+      if (!hasItems && !hasCatering && !hasExternos && !omitirServicios) {
+        return "Debes seleccionar al menos un servicio (Corporativo, Alimentos o Externos) o marcar la casilla para omitir este paso.";
+      }
     }
     if (seccion === "Presupuesto y POA") {
       if (!data.presupuesto || Number(data.presupuesto) <= 0) return "El presupuesto estimado debe ser mayor a 0.";
@@ -460,6 +470,20 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       )}
 
       {/* Botones de navegación */}
+      {activeSection === "Servicios alimenticios y Detalles coorporativos" && (
+        <div style={{ marginBottom: '20px', padding: '14px 16px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <input 
+            type="checkbox" 
+            id="omitirServicios" 
+            checked={omitirServicios} 
+            onChange={(e) => setOmitirServicios(e.target.checked)} 
+            style={{ transform: 'scale(1.15)', cursor: 'pointer' }}
+          />
+          <label htmlFor="omitirServicios" style={{ cursor: 'pointer', color: '#475569', fontWeight: '500', fontSize: '14px', margin: 0 }}>
+            Deseo omitir este paso porque no necesito ningún servicio.
+          </label>
+        </div>
+      )}
       <div className="actions">
         {!esPrimeraSeccion && (
           <button type="button" onClick={handleAnterior} className="btn btn-secondary">

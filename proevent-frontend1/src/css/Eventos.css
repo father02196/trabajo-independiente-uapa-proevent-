@@ -681,10 +681,36 @@
 }
 
 /* ─── Responsive ─── */
+
+/* 1024px: Laptops 768p (1366x768 typical) */
+@media (max-width: 1024px) {
+  .form-container {
+    padding: 28px 28px;
+    max-width: 100%;
+  }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .checklist-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .step-label {
+    font-size: 10px;
+    max-width: 70px;
+  }
+}
+
 @media (max-width: 900px) {
   .form-container {
-    padding: 28px 24px;
+    padding: 24px 20px;
     max-width: 100%;
+  }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -751,6 +777,14 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  .av-question-card {
+    padding: 32px 20px;
+  }
+
+  .av-success-card {
+    padding: 32px 20px;
+  }
+
   /* grid override for md: prefix classes */
   .md\:grid-cols-2 { grid-template-columns: 1fr !important; }
   .md\:col-span-2  { grid-column: span 1 !important; }
@@ -758,4 +792,9 @@
 
 @media (max-width: 480px) {
   .checklist-grid { grid-template-columns: 1fr; }
+  .step-wizard-item:not(:last-child)::after { display: none; }
+  .form-container { border-radius: 12px; padding: 16px 14px; }
+  .av-question-card { padding: 24px 16px; }
+  .av-question-icon { font-size: 38px; }
 }
+

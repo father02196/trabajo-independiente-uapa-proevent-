@@ -327,8 +327,31 @@
   box-shadow: 0 8px 24px rgba(59,130,246,0.35);
 }
 
-@media (max-width: 768px) {
-  .soporte-page { padding: 20px 16px; }
-  .soporte-hero { padding: 32px 20px; }
+@media (max-width: 1024px) {
+  .soporte-page { padding: 24px 20px; }
+  .soporte-hero { padding: 36px 28px; }
   .soporte-contact-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+@media (max-width: 768px) {
+  .soporte-page { padding: 16px 14px; }
+  .soporte-hero { padding: 28px 18px; border-radius: 16px; margin-bottom: 20px; }
+  .soporte-contact-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  /* Tickets */
+  .soporte-tickets-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .soporte-tickets-card { overflow-x: hidden; }
+  .ticket-item { gap: 10px; padding: 12px 16px; }
+
+  /* Overflow en ticket título largo */
+  .ticket-title { max-width: calc(100vw - 160px); }
+}
+
+@media (max-width: 480px) {
+  .soporte-page { padding: 12px 10px; }
+  .soporte-hero { padding: 22px 14px; }
+  .soporte-contact-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .soporte-contact-card { padding: 18px 12px; }
+  .soporte-contact-icon { width: 42px; height: 42px; font-size: 20px; }
+}
+

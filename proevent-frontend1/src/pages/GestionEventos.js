@@ -571,11 +571,18 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               </div>
             </div>
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {usuario?.rol !== "Solicitante" && (
-                <button className="btn btn-primary" onClick={openLicitacionModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FiBriefcase /> Abrir Licitación de Servicio
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {usuario?.rol !== "Solicitante" && (
+                  <button className="btn btn-primary" onClick={openLicitacionModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiBriefcase /> Abrir Licitación de Servicio
+                  </button>
+                )}
+                {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
+                  <button className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiEdit2 /> Editar Evento
+                  </button>
+                )}
+              </div>
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
