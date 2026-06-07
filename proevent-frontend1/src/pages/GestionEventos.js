@@ -3,7 +3,6 @@ import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronL
 import { toast } from "react-hot-toast";
 import { useSortableData } from "../hooks/useSortableData";
 import SortableHeader from "../components/SortableHeader";
-import LicitacionesB2B from "./LicitacionesB2B";
 import './../css/Dashboard.css';
 const API = "http://localhost:8080";
 
@@ -21,7 +20,6 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLicitacionModalOpen, setIsLicitacionModalOpen] = useState(false); // Modal para Licitaciones
   const [isAsignarServicioModalOpen, setIsAsignarServicioModalOpen] = useState(false); // Modal para Asignar Servicio
   const [coordinadores, setCoordinadores] = useState([]);
 
@@ -41,13 +39,6 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     setIsModalOpen(false);
     setSelectedRequest(null);
     setOrganizadoresAsignados([]);
-  };
-
-  const openLicitacionModal = () => {
-    setIsLicitacionModalOpen(true);
-  };
-  const closeLicitacionModal = () => {
-    setIsLicitacionModalOpen(false);
   };
 
   const [tiposServicioExterno, setTiposServicioExterno] = useState([]);
@@ -626,14 +617,9 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {usuario?.rol !== "Solicitante" && (
-                  <>
-                    <button className="btn btn-primary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F59E0B', borderColor: '#F59E0B' }}>
-                      <FiSend /> Asignar Servicio Externo
-                    </button>
-                    <button className="btn btn-primary" onClick={openLicitacionModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FiBriefcase /> Abrir Licitación de Servicio
-                    </button>
-                  </>
+                  <button className="btn btn-primary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F59E0B', borderColor: '#F59E0B' }}>
+                    <FiSend /> Asignar Servicio Externo
+                  </button>
                 )}
                 {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
                   <button className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -642,24 +628,6 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 )}
               </div>
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL LICITACIONES B2B */}
-      {isLicitacionModalOpen && selectedRequest && (
-        <div className="modal-overlay" onClick={closeLicitacionModal} style={{ zIndex: 1050 }}>
-          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
-            <div className="modal-header">
-              <div>
-                <h3 className="modal-title">Gestión de Proveedores B2B</h3>
-                <span className="modal-subtitle">Abrir licitación para #EVT-{selectedRequest.id_evento}</span>
-              </div>
-              <button className="btn btn-secondary btn-sm" onClick={closeLicitacionModal}>X</button>
-            </div>
-            <div className="modal-body" style={{ padding: 0 }}>
-              <LicitacionesB2B evento={selectedRequest} usuario={usuario} />
             </div>
           </div>
         </div>
