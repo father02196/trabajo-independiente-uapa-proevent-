@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSortableData } from "../hooks/useSortableData";
 import SortableHeader from "../components/SortableHeader";
+import LicitacionesB2B from "./LicitacionesB2B";
 import './../css/Dashboard.css';
 const API = "http://localhost:8080";
 
@@ -20,6 +21,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLicitacionModalOpen, setIsLicitacionModalOpen] = useState(false); // Modal para Licitaciones
   const [coordinadores, setCoordinadores] = useState([]);
 
   useEffect(() => {
@@ -38,6 +40,13 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     setIsModalOpen(false);
     setSelectedRequest(null);
     setOrganizadoresAsignados([]);
+  };
+
+  const openLicitacionModal = () => {
+    setIsLicitacionModalOpen(true);
+  };
+  const closeLicitacionModal = () => {
+    setIsLicitacionModalOpen(false);
   };
 
   const [organizadoresAsignados, setOrganizadoresAsignados] = useState([]);
@@ -256,10 +265,10 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           <div className="filter-item">
             <label>⇅ Ordenar por Fecha</label>
             <button 
-              className={`sort-toggle-btn ${sortOrder === "asc" ? "asc" : "desc"}`} 
-              onClick={() => setSortOrder((o) => o === "asc" ? "desc" : "asc")}
+              className={`sort-toggle-btn ${sortConfig?.direction === "ascending" ? "asc" : "desc"}`} 
+              onClick={() => requestSort('fecha_inicio')}
             >
-              {sortOrder === "asc" ? "Más antiguos primero" : "Más recientes primero"}
+              {sortConfig?.direction === "ascending" ? "Más antiguos primero" : "Más recientes primero"}
             </button>
           </div>
         </div>
@@ -538,17 +547,54 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 {selectedRequest.observaciones && (
                   <div className="info-card">
                     <div className="info-card-title">
-                      <FiFileText size={14} /> Observaciones y Notas de Apoyo
+                      <FiFileText size={14} /> Observaciones y Sugerencias
                     </div>
-                    <p style={{ margin: 0, fontSize: '14px', color: '#475569', fontStyle: 'italic', background: '#F1F5F9', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
-                      "{selectedRequest.observaciones}"
-                    </p>
+                    {selectedRequest.observaciones.includes('[SUGERENCIAS EXTERNAS]:') ? (
+                      <>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#475569', fontStyle: 'italic', background: '#F1F5F9', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
+                          "{selectedRequest.observaciones.split('\n\n[SUGERENCIAS EXTERNAS]:')[0]}"
+                        </p>
+                        <div style={{ padding: '16px', background: '#FFFBEB', borderRadius: '8px', borderLeft: '4px solid #F59E0B' }}>
+                          <h4 style={{ color: '#D97706', fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}><FiBriefcase /> Sugerencia de Servicios Externos (Por Solicitante)</h4>
+                          <p style={{ margin: 0, fontSize: '14px', color: '#92400E' }}>
+                            {selectedRequest.observaciones.split('\n\n[SUGERENCIAS EXTERNAS]:')[1]}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <p style={{ margin: 0, fontSize: '14px', color: '#475569', fontStyle: 'italic', background: '#F1F5F9', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
+                        "{selectedRequest.observaciones}"
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {usuario?.rol !== "Solicitante" && (
+                <button className="btn btn-primary" onClick={openLicitacionModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FiBriefcase /> Abrir Licitación de Servicio
+                </button>
+              )}
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL LICITACIONES B2B */}
+      {isLicitacionModalOpen && selectedRequest && (
+        <div className="modal-overlay" onClick={closeLicitacionModal} style={{ zIndex: 1050 }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <div>
+                <h3 className="modal-title">Gestión de Proveedores B2B</h3>
+                <span className="modal-subtitle">Abrir licitación para #EVT-{selectedRequest.id_evento}</span>
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={closeLicitacionModal}>X</button>
+            </div>
+            <div className="modal-body" style={{ padding: 0 }}>
+              <LicitacionesB2B evento={selectedRequest} usuario={usuario} />
             </div>
           </div>
         </div>

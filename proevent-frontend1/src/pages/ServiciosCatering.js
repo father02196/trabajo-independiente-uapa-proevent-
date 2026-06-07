@@ -115,6 +115,26 @@ export default function ServiciosyDetalles({ data, setData }) {
             )}
           </div>
         </div>
+
+        {/* Sugerencias de Proveedores Externos (Flujo Colaborativo) */}
+        <div>
+          <label className="block text-sm font-bold text-text-main mb-3">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FiBriefcase size={15} style={{ color: '#F59E0B' }} />
+              Sugerencias de Servicios Externos (Opcional)
+            </span>
+          </label>
+          <p className="text-sm text-text-secondary mb-3">
+            ¿Necesitas contratar servicios de terceros (Transporte, Decoración Especial, Seguridad Extra)? Indícalo aquí para que el Administrador evalúe abrir una licitación.
+          </p>
+          <textarea
+            className="input-base"
+            style={{ width: '100%', minHeight: '80px', padding: '12px', resize: 'vertical' }}
+            placeholder="Ej: Necesitamos transporte para 50 invitados y decoración temática..."
+            value={data.sugerencias_externas || ""}
+            onChange={(e) => setData({ ...data, sugerencias_externas: e.target.value })}
+          />
+        </div>
       </div>
     </div>
   );

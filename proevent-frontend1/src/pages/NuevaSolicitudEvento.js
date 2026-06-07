@@ -28,7 +28,8 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     catering: [],
     presupuesto: "",
     moneda: "DOP",
-    observaciones: ""
+    observaciones: "",
+    sugerencias_externas: ""
   });
 
   useEffect(() => {
@@ -50,7 +51,8 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         catering: editingEvent.alimentos ? editingEvent.alimentos.split(', ') : [],
         presupuesto: editingEvent.monto_poa || "",
         moneda: editingEvent.moneda || "DOP",
-        observaciones: editingEvent.observaciones || ""
+        observaciones: editingEvent.observaciones || "",
+        sugerencias_externas: "" // No se mapea porque se guarda dentro de observaciones
       });
     }
   }, [editingEvent]);
@@ -208,6 +210,12 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const ejecutarEnvioFinal = async () => {
     setLoading(true);
     try {
+      // Preparar observaciones combinadas con sugerencias externas
+      let finalObservaciones = data.observaciones;
+      if (data.sugerencias_externas && data.sugerencias_externas.trim() !== "") {
+        finalObservaciones += `\n\n[SUGERENCIAS EXTERNAS]: ${data.sugerencias_externas}`;
+      }
+
       const payload = {
         nombre: data.titulo,
         modalidad: data.modalidad,
@@ -224,7 +232,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         id_recinto: data.id_recinto || null,
         detalles_corporativos: data.items,
         alimentos: data.catering,
-        observaciones: data.observaciones
+        observaciones: finalObservaciones.trim()
       };
 
       const method = data.id_evento ? "PUT" : "POST";
@@ -303,7 +311,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
           titulo: "", departamento: "", id_dependencia: "", tipo: "", otroTipo: "",
           inicio: "", fin: "", horaInicio: "", horaFin: "",
           modalidad: "Presencial", campus: "", id_recinto: "", asistentes: "",
-          items: [], catering: [], presupuesto: "", moneda: "DOP", observaciones: ""
+          items: [], catering: [], presupuesto: "", moneda: "DOP", observaciones: "", sugerencias_externas: ""
         });
         setNeedsAV(null);
         setAvData({ equipos: [], observaciones: "" });
