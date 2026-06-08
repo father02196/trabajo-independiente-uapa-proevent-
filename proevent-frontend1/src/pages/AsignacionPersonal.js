@@ -10,6 +10,7 @@ function AsignacionPersonal({ usuario }) {
   const [coordinadores, setCoordinadores] = useState([]);
   const [organizadoresAsignados, setOrganizadoresAsignados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rolSeleccionado, setRolSeleccionado] = useState('Coordinador');
 
   useEffect(() => {
     cargarEventos();
@@ -110,7 +111,7 @@ function AsignacionPersonal({ usuario }) {
             <FiUsers className="header-icon" />
             <div>
               <h3>Asignación de Personal Operativo</h3>
-              <p className="subtitle">Selecciona un evento para asignarle un Coordinador</p>
+              <p className="subtitle">Selecciona un evento para asignarle el equipo (Responsable, Coordinador o Apoyo)</p>
             </div>
           </div>
         </div>
@@ -146,14 +147,27 @@ function AsignacionPersonal({ usuario }) {
               </h4>
               
               <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Asignar Coordinador del Evento:</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Asignar Miembro del Equipo:</label>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <select 
                     className="table-select-premium" 
-                    style={{ flex: 1, padding: '10px', borderRadius: '6px' }}
-                    onChange={(e) => asignarRol(eventoSeleccionado.id_evento, e.target.value, 'Coordinador')}
+                    style={{ width: '150px', padding: '10px', borderRadius: '6px' }}
+                    value={rolSeleccionado}
+                    onChange={(e) => setRolSeleccionado(e.target.value)}
                   >
-                    <option value="">-- Asignar nuevo coordinador --</option>
+                    <option value="Responsable">Responsable</option>
+                    <option value="Coordinador">Coordinador</option>
+                    <option value="Apoyo">Apoyo</option>
+                  </select>
+                  <select 
+                    className="table-select-premium" 
+                    style={{ flex: 1, padding: '10px', borderRadius: '6px' }}
+                    onChange={(e) => {
+                      asignarRol(eventoSeleccionado.id_evento, e.target.value, rolSeleccionado);
+                      e.target.value = ""; // Reset after assign
+                    }}
+                  >
+                    <option value="">-- Seleccionar personal --</option>
                     {coordinadores.map(c => <option key={c.id_usuario} value={c.id_usuario}>{c.nombre}</option>)}
                   </select>
                 </div>

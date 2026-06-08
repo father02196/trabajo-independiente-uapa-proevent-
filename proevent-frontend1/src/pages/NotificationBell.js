@@ -99,6 +99,30 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
         })
         .catch(() => {});
     }
+
+    if (rol === 'Administrador' || rol === 'Compras' || rol === 'Direccion') {
+      fetch(`${API}/api/notificaciones/cotizaciones-vencidas`)
+        .then(r => r.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const cNotifs = data.map(c => {
+              const diffDays = Math.ceil((new Date(c.fecha_vigencia) - new Date()) / (1000 * 60 * 60 * 24));
+              const estado = diffDays < 0 ? 'VENCIDA' : 'próxima a vencer';
+              return {
+                id: `cot-${c.id_cotizacion}`,
+                titulo: diffDays < 0 ? '🚨 Cotización Vencida' : '⚠️ Cotización por Vencer',
+                cuerpo: `La cotización de ${c.proveedor_nombre} para el evento #EVT-${c.id_evento} está ${estado}.`,
+              };
+            });
+            setNotifications(prev => {
+              const existingIds = new Set(prev.map(p => p.id));
+              const additions = cNotifs.filter(n => !existingIds.has(n.id));
+              return [...prev, ...additions];
+            });
+          }
+        })
+        .catch(() => {});
+    }
   }, [rol, usuario?.id_usuario]);
 
   const unread = notifications.filter(n => !seenIds.includes(n.id));

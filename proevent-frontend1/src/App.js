@@ -6,6 +6,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PortalProveedoresLogin from "./pages/PortalProveedoresLogin";
 import PortalProveedoresDashboard from "./pages/PortalProveedoresDashboard";
+import LicitacionesB2B from "./pages/LicitacionesB2B";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -117,6 +118,11 @@ function App() {
           }}
           onDashboardClick={() => setPage("dashboard")}
           onPortalProveedores={() => setPage("proveedores-login")}
+          onLicitacionesClick={() => setPage("licitaciones-publicas")}
+        />
+      ) : page === "licitaciones-publicas" ? (
+        <LicitacionesB2B 
+          onGoToLogin={() => setPage("proveedores-login")} 
         />
       ) : page === "proveedores-login" ? (
         <PortalProveedoresLogin 

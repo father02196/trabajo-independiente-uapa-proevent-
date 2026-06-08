@@ -27,6 +27,7 @@ import GestionCategorias from "./GestionCategorias";
 import GestionEventos from "./GestionEventos";
 import CronogramaGlobal from "./CronogramaGlobal";
 import AsignacionPersonal from "./AsignacionPersonal";
+import FlujoAdministrativo from "./FlujoAdministrativo";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
@@ -79,6 +80,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                     usuario={usuario}
                     onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }}
                 />;
+            case "FlujoAdministrativo":
+                return <FlujoAdministrativo usuario={usuario} />;
             case "Eventos":
                 return <Eventos 
                     usuario={usuario} 
@@ -161,7 +164,10 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "CronogramaGlobal":
                 return "Cronograma Logístico";
             case "VisualizarEvaluaciones":
+            case "VisualizarEvaluaciones":
                 return "Historial de Evaluaciones";
+            case "FlujoAdministrativo":
+                return "Flujo Administrativo (Legal, Compras, Presupuesto)";
             default:
                 return activeTab;
         }
@@ -190,6 +196,13 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                             Calendario
                         </li>
+
+                        {['Administrador', 'Compras', 'Legal', 'Contabilidad', 'Direccion'].includes(usuario?.rol) && (
+                            <li className={activeTab === "FlujoAdministrativo" ? "active" : ""} onClick={() => setActiveTab("FlujoAdministrativo")}>
+                                <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                Flujo Administrativo
+                            </li>
+                        )}
 
                         {/* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual */}
                         {(usuario?.rol !== "Responsable de área audiovisual") && (

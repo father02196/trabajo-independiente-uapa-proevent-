@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSortableData } from "../hooks/useSortableData";
+import FichaTecnicaPDF from "./FichaTecnicaPDF";
 import SortableHeader from "../components/SortableHeader";
 import './../css/Dashboard.css';
 const API = "http://localhost:8080";
@@ -30,19 +31,46 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       .catch(err => console.error("Error al cargar coordinadores:", err));
   }, []);
 
-  const openModal = (req) => {
+  const handleVerDetalles = async (req) => {
     setSelectedRequest(req);
     setIsModalOpen(true);
+    
+    // Preparar datos para el PDF en background
+    try {
+      const resAdmin = await fetch(`${API}/api/admin_evento/${req.id_evento}`);
+      const dataAdmin = await resAdmin.json();
+      
+      const resServ = await fetch(`${API}/servicios-externos-all`);
+      const dataServ = await resServ.json();
+      const servicios = Array.isArray(dataServ) ? dataServ.filter(s => s.id_evento === req.id_evento) : [];
+
+      const resOrg = await fetch(`${API}/eventos/${req.id_evento}/personal`);
+      const dataOrg = await resOrg.json();
+
+      setPdfData({
+        presupuesto: dataAdmin.presupuesto,
+        legal: dataAdmin.legal,
+        servicios,
+        organizadores: Array.isArray(dataOrg) ? dataOrg : []
+      });
+    } catch (e) {
+      console.error("Error pre-cargando datos del PDF", e);
+    }
     cargarOrganizadoresAsignados(req.id_evento);
   };
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedRequest(null);
     setOrganizadoresAsignados([]);
+    setShowFichaPDF(false);
   };
 
   const [tiposServicioExterno, setTiposServicioExterno] = useState([]);
   const [servicioForm, setServicioForm] = useState({ id_tipo_servicio: "", detalles: "", cantidad: 1 });
+  
+  // Datos extra para la Ficha PDF
+  const [showFichaPDF, setShowFichaPDF] = useState(false);
+  const [pdfData, setPdfData] = useState({ presupuesto: null, legal: null, servicios: [], organizadores: [] });
   const [enviandoServicio, setEnviandoServicio] = useState(false);
 
   const openAsignarServicioModal = async () => {
@@ -391,7 +419,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       </span>
                     </td>
                     <td>
-                      <button className="details-btn" onClick={() => openModal(req)}>
+                      <button className="details-btn" onClick={() => handleVerDetalles(req)}>
                         <FiEye /> Ver detalles
                       </button>
                     </td>
@@ -626,11 +654,28 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     <FiEdit2 /> Editar Evento
                   </button>
                 )}
+                {usuario?.rol !== "Solicitante" && (
+                  <button className="btn btn-primary" onClick={() => setShowFichaPDF(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}>
+                    <FiFileText /> Generar PDF (Imprimir)
+                  </button>
+                )}
               </div>
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* RENDER FICHA PDF OCULTO/MODAL */}
+      {showFichaPDF && selectedRequest && (
+        <FichaTecnicaPDF 
+          evento={selectedRequest} 
+          presupuesto={pdfData.presupuesto}
+          legal={pdfData.legal}
+          servicios={pdfData.servicios}
+          organizadores={pdfData.organizadores}
+          onClose={() => setShowFichaPDF(false)}
+        />
       )}
 
       {/* MODAL ASIGNAR SERVICIO EXTERNO */}

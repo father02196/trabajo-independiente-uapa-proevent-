@@ -267,16 +267,28 @@ function ModuloProveedores({ usuario }) {
                                                     <div style={{ fontSize: '12px', color: '#94A3B8' }}>ID: {s.id_servicio_ext}</div>
                                                 </td>
                                                 <td>
-                                                    <span style={{ 
-                                                        background: '#EFF6FF', 
-                                                        color: '#1D4ED8', 
-                                                        padding: '4px 10px', 
-                                                        borderRadius: '8px', 
-                                                        fontSize: '12.5px', 
-                                                        fontWeight: '600' 
-                                                    }}>
-                                                        {s.tipo_servicio}
-                                                    </span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                                                        <span style={{ 
+                                                            background: '#EFF6FF', 
+                                                            color: '#1D4ED8', 
+                                                            padding: '4px 10px', 
+                                                            borderRadius: '8px', 
+                                                            fontSize: '12.5px', 
+                                                            fontWeight: '600' 
+                                                        }}>
+                                                            {s.tipo_servicio}
+                                                        </span>
+                                                        <span style={{
+                                                            fontSize: '11px',
+                                                            color: s.clasificacion === 'Especializado' ? '#9d174d' : '#047857',
+                                                            background: s.clasificacion === 'Especializado' ? '#fce7f3' : '#d1fae5',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            {s.clasificacion}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span className={`badge ${s.fecha_envio_proveedor ? 'enviado' : 'pendiente'}`}>

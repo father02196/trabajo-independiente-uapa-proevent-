@@ -100,7 +100,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, onPortalProveedores }) {
+function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, onPortalProveedores, onLicitacionesClick }) {
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [scrolled, setScrolled]         = useState(false);
@@ -161,6 +161,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, on
           <a href="#stats"     className="nav-link">Estadísticas</a>
           <a href="#policies"  className="nav-link">Políticas</a>
           <a href="#portal" onClick={(e) => { e.preventDefault(); onPortalProveedores && onPortalProveedores(); }} className="nav-link">Portal Proveedores</a>
+          <a href="#licitaciones" onClick={(e) => { e.preventDefault(); onLicitacionesClick && onLicitacionesClick(); }} className="nav-link" style={{ color: '#10b981', fontWeight: 'bold' }}>Licitaciones Públicas</a>
           <a href="#contact"   className="nav-link">Contacto</a>
           {isLoggedIn ? (
             <button className="nav-cta-btn" onClick={onLogoutClick}>Cerrar Sesión</button>
@@ -243,7 +244,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, on
                 </svg>
               </button>
             )}
-            <a href="#features" className="hero-btn secondary">Conocer más</a>
+            <button className="hero-btn secondary" onClick={onLicitacionesClick} style={{ borderColor: '#10b981', color: '#10b981' }}>Licitaciones Abiertas</button>
           </div>
 
           {/* Trust indicators */}
