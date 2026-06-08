@@ -1,42 +1,14 @@
 const mysql = require('mysql2');
+const db = mysql.createConnection({host:'localhost', user:'root', password:'', database:'uapa_proevent'});
 
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'uapa_proevent',
-  port: 3307
-});
-
-db.connect(err => {
-  if (err) { console.error(err); return; }
-  
-  const queries = [
-    "ALTER TABLE servicio_audiovisual ADD COLUMN cantidad INT DEFAULT 1;",
-    "ALTER TABLE servicio_audiovisual ADD COLUMN ubicacion VARCHAR(255) DEFAULT '';",
-    "ALTER TABLE servicio_audiovisual ADD COLUMN observaciones TEXT;"
-  ];
-
-  let completed = 0;
-  
-  // We'll run them sequentially to avoid issues
-  db.query(queries[0], (err) => {
-    if (err && err.code !== 'ER_DUP_FIELDNAME') console.error("Error Q1:", err.message);
-    else console.log("Added cantidad");
-    
-    db.query(queries[1], (err) => {
-      if (err && err.code !== 'ER_DUP_FIELDNAME') console.error("Error Q2:", err.message);
-      else console.log("Added ubicacion");
-      
-      db.query(queries[2], (err) => {
-        if (err && err.code !== 'ER_DUP_FIELDNAME') console.error("Error Q3:", err.message);
-        else console.log("Added observaciones");
-        
-        db.query("DESCRIBE servicio_audiovisual", (err, results) => {
-           console.table(results);
-           db.end();
-        });
-      });
+db.query("ALTER TABLE servicio_externo ADD COLUMN numero_orden_compra VARCHAR(50) DEFAULT NULL", (err) => {
+  if (err && err.code !== 'ER_DUP_FIELDNAME') console.error(err);
+  db.query("ALTER TABLE servicio_externo ADD COLUMN requiere_contrato BOOLEAN DEFAULT FALSE", (err2) => {
+    if (err2 && err2.code !== 'ER_DUP_FIELDNAME') console.error(err2);
+    db.query("ALTER TABLE presupuesto MODIFY COLUMN estado ENUM('Pendiente','Asignado','Aprobado','Rechazado') DEFAULT 'Pendiente'", (err3) => {
+       if (err3) console.error(err3);
+       console.log("DB altered");
+       process.exit();
     });
   });
 });

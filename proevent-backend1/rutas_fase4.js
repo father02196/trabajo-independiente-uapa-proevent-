@@ -97,7 +97,7 @@ module.exports = (db, transporter) => {
   });
 
 
-  // 2.1 Crear Solicitud de Cotización (Activa la Mejora 3 - Notificación Interna)
+  // 2.1 Crear Solicitud de Cotización (RF-22: Envío automatizado a Proveedores)
   router.post('/admin/solicitud-cotizacion', (req, res) => {
     const { id_evento, id_tipo_servicio, descripcion_requerimientos, fecha_limite } = req.body;
     db.query(
@@ -106,28 +106,53 @@ module.exports = (db, transporter) => {
       (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        // --- TRIGGER MEJORA 3: NOTIFICACIÓN INTERNA AL ADMINISTRADOR ---
+        // --- TRIGGER RF-22: NOTIFICACIÓN A PROVEEDORES DEL MISMO TIPO ---
         db.query('SELECT nombre FROM evento WHERE id_evento = ?', [id_evento], (errEv, evRes) => {
-          db.query('SELECT nombre FROM tipo_servicio_externo WHERE id_tipo_servicio = ?', [id_tipo_servicio], (errTs, tsRes) => {
-            if (!errEv && !errTs && evRes.length > 0 && tsRes.length > 0) {
+          db.query('SELECT correo, nombre_empresa FROM proveedor_externo WHERE id_tipo_servicio = ? AND estado = "Activo"', [id_tipo_servicio], (errProv, provRes) => {
+            if (!errEv && !errProv && evRes.length > 0 && provRes.length > 0) {
               const eventoNombre = evRes[0].nombre;
-              const categoria = tsRes[0].nombre;
               
-              if (transporter) {
-                transporter.sendMail({
-                  from: process.env.EMAIL_USER,
-                  to: process.env.ADMIN_EMAIL || 'admin@uapa.edu.do', // Correo del administrador u organizador
-                  subject: `ALERTA: Solicitud de Proveedores (${categoria})`,
-                  text: `Se requieren servicios de categoría [${categoria}] para el evento [${eventoNombre}].\n\nPor favor, contacte a los proveedores registrados en esta categoría para invitarles a subir sus cotizaciones al portal.`
-                }).catch(console.error);
-              }
+              provRes.forEach(proveedor => {
+                if (transporter && proveedor.correo) {
+                  transporter.sendMail({
+                    from: 'uapaproeventstmdeevento@gmail.com', // Usar la misma cuenta
+                    to: proveedor.correo,
+                    subject: `Nueva Oportunidad de Negocio - UAPA ProEvent`,
+                    html: `
+                      <h3>Hola ${proveedor.nombre_empresa},</h3>
+                      <p>Se ha abierto una nueva licitación que coincide con tu categoría de servicio para el evento <strong>${eventoNombre}</strong>.</p>
+                      <p><strong>Detalles requeridos:</strong> ${descripcion_requerimientos}</p>
+                      <p><strong>Fecha Límite:</strong> ${new Date(fecha_limite).toLocaleDateString()}</p>
+                      <br>
+                      <p>Puedes enviar tu cotización a través de nuestro <a href="http://localhost:3000/licitaciones">Portal de Proveedores B2B</a>.</p>
+                      <br><p>Atentamente,<br>Departamento de Compras UAPA</p>
+                    `
+                  }).catch(console.error);
+                }
+              });
             }
           });
         });
 
-        res.json({ message: 'Solicitud creada y notificación interna enviada.', id: results.insertId });
+        res.json({ message: 'Solicitud abierta y notificaciones enviadas a proveedores.', id: results.insertId });
       }
     );
+  });
+
+  // --- RUTAS PÚBLICAS B2B ---
+  
+  router.get('/licitaciones-abiertas', (req, res) => {
+    db.query(`
+      SELECT s.*, e.nombre as nombre_evento, t.nombre as categoria_servicio
+      FROM solicitud_cotizacion s
+      JOIN evento e ON s.id_evento = e.id_evento
+      JOIN tipo_servicio_externo t ON s.id_tipo_servicio = t.id_tipo_servicio
+      WHERE s.estado = 'Abierta' AND s.fecha_limite >= CURDATE()
+      ORDER BY s.fecha_creacion DESC
+    `, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
   });
 
   // --- RUTAS DEL PROVEEDOR ---

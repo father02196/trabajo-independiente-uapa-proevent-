@@ -28,6 +28,66 @@ app.use((err, req, res, next) => {
   next(); // Si no es un error JSON, pasa al siguiente middleware
 });
 
+// --- CONFIGURACIÓN DE MULTER Y GESTIÓN DOCUMENTAL (FASE 2) ---
+const fs = require('fs');
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    // Sanitizar el nombre del archivo para evitar problemas en URLs
+    const sanitizedName = file.originalname.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, '');
+    cb(null, Date.now() + '-' + sanitizedName);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 }, // Límite de 15MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf' || file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato no permitido. Solo se aceptan PDFs o Imágenes (JPG/PNG).'));
+    }
+  }
+});
+
+// Exponer la carpeta de uploads para acceso estático
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Endpoint genérico para subir documentos
+app.post('/api/documentos/upload', upload.single('archivo'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
+  const { id_evento, tipo_documento, id_usuario_subio } = req.body;
+  if (!id_evento || !tipo_documento) return res.status(400).json({ error: 'Faltan datos obligatorios' });
+
+  const ruta_archivo = `/uploads/${req.file.filename}`;
+
+  db.query('INSERT INTO documento_evento (id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?)',
+    [id_evento, tipo_documento, req.file.originalname, ruta_archivo, id_usuario_subio || null], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: 'Documento subido con éxito', id_documento: result.insertId, ruta_archivo });
+  });
+});
+
+// Endpoint para listar documentos de un evento
+app.get('/api/documentos/:id_evento', (req, res) => {
+  db.query('SELECT d.*, u.nombre as usuario_nombre FROM documento_evento d LEFT JOIN usuario u ON d.id_usuario_subio = u.id_usuario WHERE d.id_evento = ? AND d.estado = "Activo" ORDER BY d.fecha_subida DESC', [req.params.id_evento], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+app.delete('/api/documentos/:id_documento', (req, res) => {
+  // En lugar de borrar físicamente (por auditoría), marcamos como Archivado
+  db.query('UPDATE documento_evento SET estado = "Archivado" WHERE id_documento = ?', [req.params.id_documento], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ mensaje: 'Documento archivado' });
+  });
+});
+
 // --- CONFIGURACIÓN DE LA BASE DE DATOS MÚLTIPLES-CONEXIONES (POOL) ---
 const db = mysql.createPool({ // El Pool mantiene las conexiones vivas y las reutiliza en lugar de crear nuevas cada vez
   host: 'localhost', // Dirección local de la base de datos
@@ -1352,16 +1412,7 @@ app.delete('/alimentos/:id', (req, res) => { // Remueve Item fisico de sistema g
 });
 
 // ── FASE: FLUJO DOCUMENTAL (SUBIDA DE ARCHIVOS) ──
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    // Generar un nombre único basado en timestamp
-    cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_'));
-  }
-});
-const upload = multer({ storage });
+// (La configuración de multer 'storage' y 'upload' ya está definida en la parte superior del archivo)
 
 // Endpoint para subir documentos asociados a un evento
 app.post('/api/eventos/:id/documentos', upload.single('archivo'), (req, res) => {
@@ -1552,16 +1603,11 @@ app.delete('/cronograma/:id_actividad', (req, res) => {
 
 // ── FASE 2: MOTOR DE GESTIÓN DOCUMENTAL Y CONTRACTUAL ──
 
-const fs = require('fs');
+// fs ya está requerido arriba
 
 // const multer = require('multer');
 
-// Configuración de Multer para almacenar archivos localmente
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
+// (Configuración de multer y creación de directorio removida por estar duplicada)
 /*
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -1724,11 +1770,100 @@ app.get('/servicios-externos-all', (req, res) => {
   });
 });
 
+// --- ENDPOINTS ADMINISTRATIVOS FASE 2 ---
+app.put('/api/servicio_externo/:id/admin', (req, res) => {
+  const { numero_orden_compra, requiere_contrato } = req.body;
+  const id_usuario = req.headers['x-usuario-id'];
+  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ? WHERE id_servicio_ext = ?', 
+    [numero_orden_compra, requiere_contrato, req.params.id], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
+      res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
+  });
+});
+
+app.put('/api/presupuesto/:id_evento', (req, res) => {
+  const { estado } = req.body;
+  const id_usuario = req.headers['x-usuario-id'];
+  db.query('SELECT id_presupuesto FROM presupuesto WHERE id_evento = ?', [req.params.id_evento], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) {
+      db.query('INSERT INTO presupuesto (id_evento, total, estado) VALUES (?, 0, ?)', [req.params.id_evento, estado], (err2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+        if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'CREAR_PRESUPUESTO', `Presupuesto creado con estado ${estado} para evento ${req.params.id_evento}`]);
+        res.json({ mensaje: 'Presupuesto creado y estado actualizado' });
+      });
+    } else {
+      db.query('UPDATE presupuesto SET estado = ? WHERE id_evento = ?', [estado, req.params.id_evento], (err2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+        if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_PRESUPUESTO', `Presupuesto actualizado a ${estado} para evento ${req.params.id_evento}`]);
+        res.json({ mensaje: 'Estado del presupuesto actualizado' });
+      });
+    }
+  });
+});
+
+app.put('/api/flujo_legal/:id_evento', (req, res) => {
+  const { estado_legal, observacion_legal, id_usuario_revisor } = req.body;
+  const id_usuario = req.headers['x-usuario-id'] || id_usuario_revisor;
+  db.query('SELECT id_flujo_legal FROM flujo_aprobacion_legal WHERE id_evento = ?', [req.params.id_evento], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) {
+      db.query('INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal, observacion_legal, id_usuario_revisor) VALUES (?, ?, ?, ?)', 
+        [req.params.id_evento, estado_legal, observacion_legal, id_usuario_revisor], (err2) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL', `Dictamen Legal: ${estado_legal} para evento ${req.params.id_evento}`]);
+          res.json({ mensaje: 'Flujo legal creado y actualizado' });
+      });
+    } else {
+      db.query('UPDATE flujo_aprobacion_legal SET estado_legal = ?, observacion_legal = ?, id_usuario_revisor = ? WHERE id_evento = ?', 
+        [estado_legal, observacion_legal, id_usuario_revisor, req.params.id_evento], (err2) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL_ACTUALIZADO', `Dictamen actualizado a ${estado_legal} para evento ${req.params.id_evento}`]);
+          res.json({ mensaje: 'Flujo legal actualizado' });
+      });
+    }
+  });
+});
+
+app.get('/api/admin_evento/:id_evento', (req, res) => {
+  const id_evento = req.params.id_evento;
+  db.query('SELECT * FROM presupuesto WHERE id_evento = ?', [id_evento], (e1, r1) => {
+    db.query('SELECT * FROM flujo_aprobacion_legal WHERE id_evento = ?', [id_evento], (e2, r2) => {
+      db.query(`
+        SELECT cr.*, sc.id_evento, pe.nombre as proveedor_nombre 
+        FROM cotizacion_recibida cr
+        JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
+        JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
+        WHERE sc.id_evento = ?`, [id_evento], (e3, r3) => {
+          res.json({
+            presupuesto: r1[0] || { estado: 'Pendiente' },
+            legal: r2[0] || { estado_legal: 'Pendiente', observacion_legal: '' },
+            cotizaciones: r3 || []
+          });
+      });
+    });
+  });
+});
+
+app.get('/api/notificaciones/cotizaciones-vencidas', (req, res) => {
+  db.query(`
+    SELECT cr.id_cotizacion, pe.nombre as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
+    FROM cotizacion_recibida cr
+    JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
+    JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
+    WHERE cr.fecha_vigencia < DATE_ADD(NOW(), INTERVAL 5 DAY)
+  `, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
 // --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
-// Transportador básico para uso de prueba (debe configurarse con datos reales en prod)
+// Transportador configurado con GMail App Password
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  auth: { user: process.env.EMAIL_USER || 'test@gmail.com', pass: process.env.EMAIL_PASS || 'password' }
+  auth: { user: 'uapaproeventstmdeevento@gmail.com', pass: 'zhusbixlqltrkfoh' }
 });
 const rutasFase4 = require('./rutas_fase4')(db, transporter);
 app.use('/api', rutasFase4);
