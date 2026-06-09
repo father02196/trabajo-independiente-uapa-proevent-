@@ -35,120 +35,77 @@ export default function DashboardVAF({ usuario }) {
 
   return (
     <div className="animate-fade">
-      <div style={{ marginBottom: "30px" }}>
-        <h2 style={{ fontSize: "28px", fontWeight: "800", color: "var(--text-main)", letterSpacing: "-0.5px" }}>
+      <div style={{ marginBottom: "24px" }}>
+        <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#1e293b", margin: 0 }}>
           Panel Financiero (V-A-F)
         </h2>
-        <p style={{ color: "var(--text-muted)", fontSize: "15px", marginTop: "5px" }}>
+        <p style={{ color: "#64748b", fontSize: "14px", marginTop: "4px", margin: 0 }}>
           Monitoreo global de presupuesto, métricas del Plan Operativo Anual y asignaciones a eventos.
         </p>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '20px',
-        marginBottom: '30px'
-      }}>
-        {/* KPI: Presupuesto Anual Total */}
-        <div style={{
-          background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
-          borderRadius: "16px",
-          padding: "24px",
-          color: "white",
-          boxShadow: "0 10px 25px -5px rgba(30, 58, 138, 0.4)",
-          position: "relative",
-          overflow: "hidden"
-        }}>
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
-              <div style={{ background: "rgba(255,255,255,0.2)", padding: "10px", borderRadius: "12px" }}>
-                <FiPieChart size={24} />
-              </div>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "1px", opacity: 0.9 }}>
-                Presupuesto POA Anual
-              </h3>
-            </div>
-            <div style={{ fontSize: "32px", fontWeight: "800" }}>
-              RD$ {poaSummary.monto_total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+      {/* 4 CARDS DE ESTADÍSTICAS PREMIUM - ROL V-A-F */}
+      <div className="stats-cards-grid">
+        <div className="saas-stat-card primary-glow">
+          <div className="card-top">
+            <span className="card-label">Presupuesto POA Anual</span>
+            <div className="card-icon-container bg-primary-light">
+              <FiPieChart className="card-icon text-primary" />
             </div>
           </div>
-          <div style={{ position: "absolute", right: "-10%", bottom: "-20%", opacity: 0.1 }}>
-            <FiDollarSign size={150} />
+          <div className="card-bottom">
+            <h3>RD$ {poaSummary.monto_total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</h3>
+            <span className="card-trend text-blue">
+              Presupuesto consolidado UAPA
+            </span>
           </div>
         </div>
 
-        {/* KPI: Fondo Disponible */}
-        <div style={{
-          background: "white",
-          borderRadius: "16px",
-          padding: "24px",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
-            <div style={{ background: "#dcfce7", color: "#166534", padding: "10px", borderRadius: "12px" }}>
-              <FiActivity size={24} />
+        <div className="saas-stat-card success-glow">
+          <div className="card-top">
+            <span className="card-label">Fondo Disponible</span>
+            <div className="card-icon-container bg-success-light">
+              <FiDollarSign className="card-icon text-success" />
             </div>
-            <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Fondo Disponible
-            </h3>
           </div>
-          <div style={{ fontSize: "28px", fontWeight: "800", color: "#166534" }}>
-            RD$ {poaSummary.monto_disponible.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: "13px", color: "#64748b", marginTop: "8px", fontWeight: "500" }}>
-            Balance remanente actual
+          <div className="card-bottom">
+            <h3>RD$ {poaSummary.monto_disponible.toLocaleString("en-US", { minimumFractionDigits: 2 })}</h3>
+            <span className="card-trend text-green">
+              Balance remanente actual
+            </span>
           </div>
         </div>
 
-        {/* KPI: Pendientes de Evaluación */}
-        <div style={{
-          background: "white",
-          borderRadius: "16px",
-          padding: "24px",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
-            <div style={{ background: "#fef3c7", color: "#b45309", padding: "10px", borderRadius: "12px" }}>
-              <FiClock size={24} />
+        <div className="saas-stat-card warning-glow">
+          <div className="card-top">
+            <span className="card-label">Pendientes de Evaluación</span>
+            <div className="card-icon-container bg-warning-light">
+              <FiClock className="card-icon text-warning" />
             </div>
-            <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Pendientes de Evaluación
-            </h3>
           </div>
-          <div style={{ fontSize: "28px", fontWeight: "800", color: "#b45309" }}>
-            {poaSummary.eventos_pendientes}
-          </div>
-          <div style={{ fontSize: "13px", color: "#64748b", marginTop: "8px", fontWeight: "500" }}>
-            Solicitudes de eventos esperando revisión
+          <div className="card-bottom">
+            <h3>{poaSummary.eventos_pendientes}</h3>
+            <span className="card-trend text-orange">
+              Solicitudes esperando revisión
+            </span>
           </div>
         </div>
 
-        {/* KPI: Rechazados */}
-        <div style={{
-          background: "white",
-          borderRadius: "16px",
-          padding: "24px",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
-            <div style={{ background: "#fee2e2", color: "#b91c1c", padding: "10px", borderRadius: "12px" }}>
-              <FiTrendingDown size={24} />
+        <div className="saas-stat-card danger-glow">
+          <div className="card-top">
+            <span className="card-label">Monto Rechazado</span>
+            <div className="card-icon-container" style={{ background: '#fee2e2' }}>
+              <FiTrendingDown className="card-icon text-danger" style={{ color: '#b91c1c' }} />
             </div>
-            <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Monto Rechazado
-            </h3>
           </div>
-          <div style={{ fontSize: "28px", fontWeight: "800", color: "#b91c1c" }}>
-            RD$ {poaSummary.monto_rechazado.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: "13px", color: "#64748b", marginTop: "8px", fontWeight: "500" }}>
-            Retornado al balance POA
+          <div className="card-bottom">
+            <h3>RD$ {poaSummary.monto_rechazado.toLocaleString("en-US", { minimumFractionDigits: 2 })}</h3>
+            <span className="card-trend text-danger" style={{ color: '#b91c1c' }}>
+              Retornado al balance POA
+            </span>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Accesos Directos Opcionales */}
