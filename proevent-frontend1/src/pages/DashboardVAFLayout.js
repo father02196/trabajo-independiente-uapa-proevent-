@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiChevronDown, FiChevronRight, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
-import uapaLogo from "./../img/Logo-Uapa-Azul.png";
+import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 
 // Importar los componentes que usará el VAF
 import DashboardVAF from "./DashboardVAF";
 import FlujoAdministrativo from "./FlujoAdministrativo";
 import PoaAdmin from "./PoaAdmin";
-import EventCalendar from "../components/EventCalendar";
+import EventCalendar from "./Calendario";
 import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
 
