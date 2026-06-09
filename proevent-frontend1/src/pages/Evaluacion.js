@@ -27,11 +27,16 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
   }, [eventoEvalId, onEvalConsumed]);
 
   useEffect(() => {
-    fetch(`${API}/eventos`)
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setEventos(data.filter(e => e.estado === 'Finalizado'));
+    Promise.all([
+      fetch(`${API}/eventos`).then(r => r.json()),
+      fetch(`${API}/evaluaciones`).then(r => r.json())
+    ])
+      .then(([eventosData, evaluacionesData]) => {
+        if (Array.isArray(eventosData)) {
+          const evaluacionesIds = Array.isArray(evaluacionesData) 
+            ? evaluacionesData.map(ev => ev.id_evento) 
+            : [];
+          setEventos(eventosData.filter(e => e.estado === 'Finalizado' && !evaluacionesIds.includes(e.id_evento)));
         } else {
           setEventos([]);
         }
