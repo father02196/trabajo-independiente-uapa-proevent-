@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import Login from "./pages/Login";
 import Welcome from "./pages/Welcome";
 import Dashboard from "./pages/Dashboard";
+import DashboardComprasLayout from "./pages/DashboardComprasLayout";
+import DashboardLegalLayout from "./pages/DashboardLegalLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PortalProveedoresLogin from "./pages/PortalProveedoresLogin";
@@ -146,14 +148,34 @@ function App() {
           }}
         />
       ) : (
-        <Dashboard
-          usuario={usuario}
-          onLogoutClick={() => {
-            setIsLoggedIn(false);
-            setUsuario(null);
-            setPage("welcome");
-          }}
-        />
+        (usuario?.rol === "Compras" || usuario?.rol === "Administrador de Compras") ? (
+          <DashboardComprasLayout
+            usuario={usuario}
+            onLogoutClick={() => {
+              setIsLoggedIn(false);
+              setUsuario(null);
+              setPage("welcome");
+            }}
+          />
+        ) : (usuario?.rol === "Legal" || usuario?.rol === "Administrador de Legal" || usuario?.rol === "Administrador Legal") ? (
+          <DashboardLegalLayout
+            usuario={usuario}
+            onLogoutClick={() => {
+              setIsLoggedIn(false);
+              setUsuario(null);
+              setPage("welcome");
+            }}
+          />
+        ) : (
+          <Dashboard
+            usuario={usuario}
+            onLogoutClick={() => {
+              setIsLoggedIn(false);
+              setUsuario(null);
+              setPage("welcome");
+            }}
+          />
+        )
       )}
     </div>
   );
