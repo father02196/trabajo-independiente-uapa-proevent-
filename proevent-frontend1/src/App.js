@@ -4,6 +4,7 @@ import Welcome from "./pages/Welcome";
 import Dashboard from "./pages/Dashboard";
 import DashboardComprasLayout from "./pages/DashboardComprasLayout";
 import DashboardLegalLayout from "./pages/DashboardLegalLayout";
+import DashboardVAFLayout from "./pages/DashboardVAFLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PortalProveedoresLogin from "./pages/PortalProveedoresLogin";
@@ -161,6 +162,15 @@ function App() {
           <DashboardLegalLayout
             usuario={usuario}
             onLogoutClick={() => {
+              setIsLoggedIn(false);
+              setUsuario(null);
+              setPage("welcome");
+            }}
+          />
+        ) : (usuario?.rol === "Administrador V-A-F") ? (
+          <DashboardVAFLayout
+            usuario={usuario}
+            onLogout={() => {
               setIsLoggedIn(false);
               setUsuario(null);
               setPage("welcome");
