@@ -361,7 +361,9 @@ function ModuloProveedores({ usuario }) {
                                     <SortableHeader label="Persona de Contacto" sortKey="persona_contacto" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
                                     <SortableHeader label="Correo" sortKey="correo" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
                                     <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
-                                    <th style={{ textAlign: 'center' }}>Acciones</th>
+                                    {['Administrador', 'Compras', 'Administrador de Compras'].includes(usuario?.rol) && (
+                                        <th style={{ textAlign: 'center' }}>Acciones</th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
@@ -402,24 +404,26 @@ function ModuloProveedores({ usuario }) {
                                                     {p.estado}
                                                 </span>
                                             </td>
-                                            <td>
-                                                <div className="acciones-celda">
-                                                    <button 
-                                                        onClick={() => openModal('editar_proveedor', p)}
-                                                        className="btn-icon-action"
-                                                        title="Editar Suplidor"
-                                                    >
-                                                        <FiEdit />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleToggleEstado(p)}
-                                                        className={`btn-icon-action ${p.estado === 'Activo' ? 'danger' : ''}`}
-                                                        title={p.estado === 'Activo' ? "Desactivar Suplidor" : "Activar Suplidor"}
-                                                    >
-                                                        <FiPower />
-                                                    </button>
-                                                </div>
-                                            </td>
+                                            {['Administrador', 'Compras', 'Administrador de Compras'].includes(usuario?.rol) && (
+                                                <td>
+                                                    <div className="acciones-celda">
+                                                        <button 
+                                                            onClick={() => openModal('editar_proveedor', p)}
+                                                            className="btn-icon-action"
+                                                            title="Editar Suplidor"
+                                                        >
+                                                            <FiEdit />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleToggleEstado(p)}
+                                                            className={`btn-icon-action ${p.estado === 'Activo' ? 'danger' : ''}`}
+                                                            title={p.estado === 'Activo' ? "Desactivar Suplidor" : "Activar Suplidor"}
+                                                        >
+                                                            <FiPower />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))
                                 )}

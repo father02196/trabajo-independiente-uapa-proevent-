@@ -109,9 +109,9 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Calendario":
                 return <Calendario usuario={usuario} />;
             case "Proveedores":
-                return usuario?.rol === "Administrador" ? <ModuloProveedores usuario={usuario} /> : <DashboardHome usuario={usuario} />;
+                return (usuario?.rol === "Administrador" || usuario?.rol === "Compras" || usuario?.rol === "Administrador de Compras") ? <ModuloProveedores usuario={usuario} /> : <DashboardHome usuario={usuario} />;
             case "GestionCategorias":
-                return usuario?.rol === "Administrador" ? <GestionCategorias usuario={usuario} /> : <DashboardHome usuario={usuario} />;
+                return (usuario?.rol === "Administrador" || usuario?.rol === "Compras" || usuario?.rol === "Administrador de Compras") ? <GestionCategorias usuario={usuario} /> : <DashboardHome usuario={usuario} />;
             case "GestionSolicitudes":
                 return <GestionSolicitudesAV usuario={usuario} />;
             case "PoaAdmin":
@@ -192,26 +192,26 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
                             Dashboard
                         </li>
-                        <li className={activeTab === "Calendario" ? "active" : ""} onClick={() => setActiveTab("Calendario")}>
-                            <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                            Calendario
-                        </li>
-
-                        {['Administrador', 'Compras', 'Legal', 'Contabilidad', 'Direccion'].includes(usuario?.rol) && (
-                            <li className={activeTab === "FlujoAdministrativo" ? "active" : ""} onClick={() => setActiveTab("FlujoAdministrativo")}>
-                                <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                Flujo Administrativo
-                            </li>
-                        )}
-
-                        {/* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual */}
-                        {(usuario?.rol !== "Responsable de área audiovisual") && (
-                            <>
-                                <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>
-                                    <span>Módulo Eventos</span>
-                                    {openMenus.eventos ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
+                                <li className={activeTab === "Calendario" ? "active" : ""} onClick={() => setActiveTab("Calendario")}>
+                                    <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                    Calendario
                                 </li>
-                                <ul className={`nav-submenu ${openMenus.eventos ? 'open' : ''}`}>
+
+                                {['Administrador', 'Legal', 'Contabilidad', 'Direccion'].includes(usuario?.rol) && (
+                                    <li className={activeTab === "FlujoAdministrativo" ? "active" : ""} onClick={() => setActiveTab("FlujoAdministrativo")}>
+                                        <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                        Flujo Administrativo
+                                    </li>
+                                )}
+
+                                {/* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual */}
+                                {(usuario?.rol !== "Responsable de área audiovisual") && (
+                                    <>
+                                        <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>
+                                            <span>Módulo Eventos</span>
+                                            {openMenus.eventos ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
+                                        </li>
+                                        <ul className={`nav-submenu ${openMenus.eventos ? 'open' : ''}`}>
                                     <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
                                         <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
                                         Solicitud de Eventos

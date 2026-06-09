@@ -15,7 +15,17 @@ export default function FlujoAdministrativo({ usuario }) {
   const [documentos, setDocumentos] = useState([]);
   const [analisisIA, setAnalisisIA] = useState(null);
   
-  const [tab, setTab] = useState('compras'); // compras, presupuesto, legal, documentos
+  const isComprasRole = usuario?.rol === "Administrador de Compras" || usuario?.rol === "Compras";
+  const isLegalRole = usuario?.rol === "Administrador de Legal" || usuario?.rol === "Administrador Legal" || usuario?.rol === "Legal";
+  const isVAFRole = usuario?.rol === "Administrador V-A-F" || usuario?.rol === "VAF" || usuario?.rol === "Contabilidad";
+  const isGeneralRole = !isComprasRole && !isLegalRole && !isVAFRole;
+
+  const [tab, setTab] = useState(() => {
+    if (isComprasRole) return 'compras';
+    if (isLegalRole) return 'legal';
+    if (isVAFRole) return 'presupuesto';
+    return 'compras';
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -488,24 +498,30 @@ export default function FlujoAdministrativo({ usuario }) {
           <div style={{ marginTop: '30px' }}>
             {/* Tabs de Navegación */}
             <div style={{ display: 'flex', gap: '10px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginBottom: '20px' }}>
-              <button 
-                onClick={() => setTab('compras')} 
-                style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'compras' ? '#2563eb' : '#64748b', borderBottom: tab === 'compras' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
-              >
-                Compras y Cotizaciones
-              </button>
-              <button 
-                onClick={() => setTab('presupuesto')} 
-                style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'presupuesto' ? '#2563eb' : '#64748b', borderBottom: tab === 'presupuesto' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
-              >
-                Presupuesto (VAF)
-              </button>
-              <button 
-                onClick={() => setTab('legal')} 
-                style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'legal' ? '#2563eb' : '#64748b', borderBottom: tab === 'legal' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
-              >
-                Legal y Contratos
-              </button>
+              {(isComprasRole || isGeneralRole) && (
+                <button 
+                  onClick={() => setTab('compras')} 
+                  style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'compras' ? '#2563eb' : '#64748b', borderBottom: tab === 'compras' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
+                >
+                  Compras y Cotizaciones
+                </button>
+              )}
+              {(isVAFRole || isGeneralRole) && (
+                <button 
+                  onClick={() => setTab('presupuesto')} 
+                  style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'presupuesto' ? '#2563eb' : '#64748b', borderBottom: tab === 'presupuesto' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
+                >
+                  Presupuesto (VAF)
+                </button>
+              )}
+              {(isLegalRole || isGeneralRole) && (
+                <button 
+                  onClick={() => setTab('legal')} 
+                  style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'legal' ? '#2563eb' : '#64748b', borderBottom: tab === 'legal' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
+                >
+                  Legal y Contratos
+                </button>
+              )}
               <button 
                 onClick={() => setTab('documentos')} 
                 style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'documentos' ? '#2563eb' : '#64748b', borderBottom: tab === 'documentos' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px', marginLeft: 'auto' }}
