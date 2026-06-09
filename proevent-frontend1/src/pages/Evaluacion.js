@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiStar, FiCheckCircle, FiAlertTriangle, FiRefreshCw, FiBarChart2, FiClipboard, FiMapPin } from 'react-icons/fi';
-import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
+import { FiStar, FiCheckCircle, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
 
 const API = 'http://localhost:8080';
 
@@ -21,8 +19,7 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
   const [mensaje, setMensaje] = useState(null);
   const [enviado, setEnviado] = useState(false);
 
-  const [evaluaciones, setEvaluaciones] = useState([]);
-  const isAdmin = Boolean(usuario?.rol && (usuario.rol.includes('Administrador') || usuario.rol.includes('admin') || (typeof usuario.rol === 'string' && usuario.rol.toLowerCase().includes('admin'))));
+  const [enviado, setEnviado] = useState(false);
 
   useEffect(() => {
     if (eventoEvalId) {
@@ -42,24 +39,7 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
         }
       })
       .catch(() => setEventos([]));
-
-    if (isAdmin) cargarEvaluaciones();
-  }, [isAdmin]);
-
-  const cargarEvaluaciones = () => {
-    fetch(`${API}/evaluaciones`)
-      .then(r => r.json())
-      .then(data => {
-        const normalized = Array.isArray(data)
-          ? data.map(ev => ({
-              ...ev,
-              fecha_evento: ev.fecha_evento || ev.fecha || '',
-            }))
-          : [];
-        setEvaluaciones(normalized);
-      })
-      .catch(() => setEvaluaciones([]));
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -90,7 +70,6 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
         setMensaje({ tipo: 'error', texto: body.mensaje || 'Error al enviar la evaluación.' });
       } else {
         setEnviado(true);
-        if (isAdmin) cargarEvaluaciones();
       }
     } catch {
       setMensaje({ tipo: 'error', texto: 'No se pudo conectar al servidor.' });
@@ -110,25 +89,6 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
     setEnviado(false);
   };
 
-  const bestRecinto = React.useMemo(() => {
-    if (!evaluaciones.length) return '-';
-    const counts = {};
-    evaluaciones.forEach(ev => {
-      const r = ev.recinto;
-      if (r) counts[r] = (counts[r] || 0) + 1;
-    });
-    const entry = Object.entries(counts).reduce((a, b) => (b[1] > a[1] ? b : a), ['', 0]);
-    return entry[0] || '-';
-  }, [evaluaciones]);
-
-  const stats = React.useMemo(() => {
-    if (!evaluaciones.length) return null;
-    const total = evaluaciones.length;
-    const promSat = Math.round(evaluaciones.reduce((sum, ev) => sum + (ev.satisfaccion || 0), 0) / total);
-    return { total, promSat, bestRecinto };
-  }, [evaluaciones, bestRecinto]);
-
-  const { items: sortedEvaluaciones, requestSort: requestSortEval, sortConfig: sortConfigEval } = useSortableData(evaluaciones, { key: 'id_evaluacion', direction: 'descending' });
 
   if (enviado) {
     return (
@@ -272,89 +232,6 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
             </button>
           </div>
         </form>
-
-        {isAdmin && (
-          <div style={{ marginTop: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <FiBarChart2 size={24} color="#3B82F6" />
-                <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', margin: 0 }}>Historial de Evaluaciones</h2>
-              </div>
-              <button className="btn btn-secondary btn-sm" onClick={cargarEvaluaciones}>
-                <FiRefreshCw /> Actualizar Datos
-              </button>
-            </div>
-
-            {stats && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiStar size={24} /></div>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Promedio</div>
-                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A' }}>{stats.promSat} / 5</div>
-                  </div>
-                </div>
-                <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#DBEAFE', color: '#2563EB', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiClipboard size={24} /></div>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Total Eval.</div>
-                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A' }}>{stats.total}</div>
-                  </div>
-                </div>
-                <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#D1FAE5', color: '#059669', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><FiMapPin size={24} /></div>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Mejor Recinto</div>
-                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>{bestRecinto}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-              <div className="table-container" style={{ margin: 0, boxShadow: 'none' }}>
-                <table className="modern-table">
-                  <thead>
-                    <tr>
-                      <SortableHeader label="ID" sortKey="id_evaluacion" sortConfig={sortConfigEval} requestSort={requestSortEval} />
-                      <SortableHeader label="Evento" sortKey="nombre_evento" sortConfig={sortConfigEval} requestSort={requestSortEval} />
-                      <SortableHeader label="Recinto" sortKey="recinto" sortConfig={sortConfigEval} requestSort={requestSortEval} />
-                      <SortableHeader label="Valoración Resp." sortKey="valoracion_respuesta" sortConfig={sortConfigEval} requestSort={requestSortEval} />
-                      <SortableHeader label="Satisfacción" sortKey="satisfaccion" sortConfig={sortConfigEval} requestSort={requestSortEval} style={{ textAlign: 'center' }} />
-                      <SortableHeader label="Fecha" sortKey="fecha_evento" sortConfig={sortConfigEval} requestSort={requestSortEval} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {evaluaciones.length === 0 ? (
-                      <tr><td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>No hay evaluaciones registradas.</td></tr>
-                    ) : (
-                      sortedEvaluaciones.map(ev => (
-                        <tr key={ev.id_evaluacion}>
-                          <td style={{ fontWeight: '600', color: '#64748B' }}>#{ev.id_evaluacion}</td>
-                          <td style={{ fontWeight: '600', color: '#0F172A' }}>{ev.nombre_evento || `Evento #${ev.id_evento}`}</td>
-                          <td>{ev.recinto}</td>
-                          <td>
-                            <span className={`status-pill ${ev.valoracion_respuesta === 'Deficiente' ? 'status-rejected' : ev.valoracion_respuesta === 'Muy eficiente' || ev.valoracion_respuesta === 'Excelente' ? 'status-approved' : 'status-pending'}`} style={{ padding: '4px 10px', fontSize: '12px' }}>
-                              {ev.valoracion_respuesta}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-                              {[1,2,3,4,5].map(n => (
-                                <FiStar key={n} color={n <= ev.satisfaccion ? '#F59E0B' : '#E2E8F0'} fill={n <= ev.satisfaccion ? '#F59E0B' : 'transparent'} />
-                              ))}
-                            </div>
-                          </td>
-                          <td style={{ color: '#64748B', fontSize: '13px' }}>{ev.fecha_evento ? String(ev.fecha_evento).substring(0, 10) : ''}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
