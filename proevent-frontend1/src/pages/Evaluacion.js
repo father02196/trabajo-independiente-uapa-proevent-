@@ -19,8 +19,6 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
   const [mensaje, setMensaje] = useState(null);
   const [enviado, setEnviado] = useState(false);
 
-  const [enviado, setEnviado] = useState(false);
-
   useEffect(() => {
     if (eventoEvalId) {
       setEventoId(String(eventoEvalId));
