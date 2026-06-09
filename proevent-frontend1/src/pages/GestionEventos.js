@@ -447,16 +447,31 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                               </button>
                             </div>
                           ) : (
-                            <select
-                              value={req.estado || "Pendiente"}
-                              onChange={(e) => handleCambiarEstado(req.id_evento, e.target.value)}
-                              className="table-select-premium"
-                            >
-                              <option value="Pendiente">Pendiente</option>
-                              <option value="Aprobado">Aprobado</option>
-                              <option value="Rechazado">Rechazado</option>
-                              <option value="Finalizado">Finalizado</option>
-                            </select>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {(!req.estado || req.estado === "Pendiente") && (
+                                <>
+                                  <button className="btn btn-primary btn-sm" onClick={() => handleCambiarEstado(req.id_evento, "Aprobado")} style={{ padding: '6px 12px', width: '100%' }}>
+                                    Aprobar
+                                  </button>
+                                  <button className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', width: '100%', color: '#ef4444', borderColor: '#fca5a5', backgroundColor: '#fef2f2' }} onClick={() => handleCambiarEstado(req.id_evento, "Rechazado")}>
+                                    Rechazar
+                                  </button>
+                                </>
+                              )}
+                              {req.estado === "Aprobado" && (
+                                <button className="btn btn-primary btn-sm" style={{ backgroundColor: '#0ea5e9', border: 'none', padding: '6px 12px', width: '100%' }} onClick={() => handleCambiarEstado(req.id_evento, "En Progreso")}>
+                                  Iniciar Evento
+                                </button>
+                              )}
+                              {req.estado === "En Progreso" && (
+                                <button className="btn btn-primary btn-sm" style={{ backgroundColor: '#10b981', border: 'none', padding: '6px 12px', width: '100%' }} onClick={() => handleCambiarEstado(req.id_evento, "Finalizado")}>
+                                  Finalizar
+                                </button>
+                              )}
+                              {["Finalizado", "Rechazado", "Cancelado"].includes(req.estado) && (
+                                <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: '600', textAlign: 'center', display: 'block' }}>Sin acciones</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>

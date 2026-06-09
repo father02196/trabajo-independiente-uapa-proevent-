@@ -36,7 +36,12 @@ export default function Audiovisual({ usuario }) {
   useEffect(() => {
     fetch(`${API}/eventos`)
       .then((res) => res.json())
-      .then((data) => setEventos(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const eventosPermitidos = Array.isArray(data) 
+          ? data.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") 
+          : [];
+        setEventos(eventosPermitidos);
+      })
       .catch((err) => console.error("Error cargando eventos:", err));
 
     fetch(`${API}/equipos-audiovisuales`)
