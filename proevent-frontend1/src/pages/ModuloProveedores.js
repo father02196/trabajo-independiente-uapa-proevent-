@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
@@ -30,6 +31,12 @@ function ModuloProveedores({ usuario }) {
     // Estados para Modales
     const [modalConfig, setModalConfig] = useState({ open: false, type: null, data: null });
     const [formData, setFormData] = useState({});
+
+    // --- Módulo: Logística | Estado del Modal de Envío al Proveedor ---
+    const [modalEnvio, setModalEnvio] = useState({ open: false, servicio: null });
+    const [proveedoresFiltradosTipo, setProveedoresFiltradosTipo] = useState([]);
+    const [envioForm, setEnvioForm] = useState({ id_proveedor: '', descripcion_requerimientos: '', fecha_limite: '' });
+    const [enviando, setEnviando] = useState(false);
 
     useEffect(() => {
         if (activeTab === 'logistica') fetchServicios();
@@ -75,17 +82,59 @@ function ModuloProveedores({ usuario }) {
         } catch (error) { console.error('Error fetching proveedores:', error); }
     };
 
-    // --- LOGÍSTICA ---
-    const handleEnvio = async (idServicio) => {
-        if (!window.confirm("¿Confirmar que la orden fue enviada al proveedor?")) return;
+    // --- LOGÍSTICA: Abrir modal de envío (busca proveedores del mismo tipo de servicio) ---
+    const openModalEnvio = async (servicio) => {
         try {
-            const res = await fetch(`http://localhost:8080/servicios-externos/${idServicio}/proveedor`, {
+            // Cargar proveedores activos del mismo tipo de servicio que el servicio externo
+            const res = await fetch(`${API}/api/admin/proveedores`);
+            const todos = await res.json();
+            const filtrados = Array.isArray(todos)
+                ? todos.filter(p => p.estado === 'Activo' && p.id_tipo_servicio === servicio.id_tipo_servicio)
+                : [];
+            setProveedoresFiltradosTipo(filtrados);
+        } catch(e) {
+            console.error('Error al cargar proveedores:', e);
+            setProveedoresFiltradosTipo([]);
+        }
+        // Calcular fecha límite sugerida (7 días desde hoy)
+        const fechaSugerida = new Date();
+        fechaSugerida.setDate(fechaSugerida.getDate() + 7);
+        const fechaStr = fechaSugerida.toISOString().split('T')[0];
+        setEnvioForm({ id_proveedor: '', descripcion_requerimientos: servicio.descripcion || '', fecha_limite: fechaStr });
+        setModalEnvio({ open: true, servicio });
+    };
+
+    // --- LOGÍSTICA: Confirmar envío → actualiza servicio_externo Y crea solicitud_cotizacion ---
+    const handleConfirmarEnvio = async (e) => {
+        e.preventDefault();
+        const { servicio } = modalEnvio;
+        if (!envioForm.id_proveedor) return alert('Selecciona un proveedor para envíarsela.');
+        if (!envioForm.fecha_limite) return alert('Indica la fecha límite para cotizar.');
+        setEnviando(true);
+        try {
+            const res = await fetch(`${API}/servicios-externos/${servicio.id_servicio_ext}/proveedor`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fecha_envio: new Date().toISOString() })
+                headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
+                body: JSON.stringify({
+                    fecha_envio: new Date().toISOString(),
+                    id_proveedor_destino: envioForm.id_proveedor,
+                    descripcion_requerimientos: envioForm.descripcion_requerimientos,
+                    fecha_limite: envioForm.fecha_limite
+                })
             });
-            if (res.ok) fetchServicios();
-        } catch (error) { console.error('Error:', error); }
+            if (res.ok) {
+                alert('✅ Orden enviada con éxito. El proveedor ya puede verla en su portal.');
+                setModalEnvio({ open: false, servicio: null });
+                fetchServicios();
+            } else {
+                const err = await res.json();
+                alert('Error: ' + (err.error || err.mensaje || 'No se pudo enviar'));
+            }
+        } catch(error) {
+            alert('Error de conexión con el servidor.');
+        } finally {
+            setEnviando(false);
+        }
     };
 
     // --- Módulo: Directorio de Suplidores | Función: Guardar Proveedor (Crear/Editar) ---
@@ -299,7 +348,7 @@ function ModuloProveedores({ usuario }) {
                                                     {!s.fecha_envio_proveedor && (
                                                         <button 
                                                             className="btn btn-primary btn-sm" 
-                                                            onClick={() => handleEnvio(s.id_servicio_ext)}
+                                                            onClick={() => openModalEnvio(s)}
                                                         >
                                                             <FiSend size={13} /> Enviar Orden
                                                         </button>
@@ -572,8 +621,73 @@ function ModuloProveedores({ usuario }) {
                 </div>
             )}
 
+            {/* MODAL ENVIAR ORDEN AL PROVEEDOR */}
+            {modalEnvio.open && createPortal(
+                <div className="modal-overlay" onClick={() => setModalEnvio({ open: false, servicio: null })}>
+                    <div className="modal-content modal-premium" style={{ maxWidth: '580px' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <div>
+                                <h3 className="modal-title"><FiSend style={{ marginRight: 8 }} />Enviar Orden al Proveedor</h3>
+                                <p className="modal-subtitle">Servicio: <strong>{modalEnvio.servicio?.tipo_servicio}</strong> &nbsp;|&nbsp; Evento: <strong>{modalEnvio.servicio?.nombre_evento}</strong></p>
+                            </div>
+                        </div>
+                        <form onSubmit={handleConfirmarEnvio} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            <div className="form-group">
+                                <label className="form-label">Proveedor Destinatario <span style={{ color: 'red' }}>*</span></label>
+                                {proveedoresFiltradosTipo.length === 0 ? (
+                                    <div style={{ padding: '10px 14px', background: '#fef3c7', borderRadius: '8px', color: '#92400e', fontSize: '0.875rem' }}>
+                                        ⚠️ No hay proveedores activos registrados para este tipo de servicio. Registra uno en la pestaña “Directorio” primero.
+                                    </div>
+                                ) : (
+                                    <select
+                                        className="input-base"
+                                        value={envioForm.id_proveedor}
+                                        onChange={e => setEnvioForm(prev => ({ ...prev, id_proveedor: e.target.value }))}
+                                        required
+                                    >
+                                        <option value="">-- Selecciona un proveedor --</option>
+                                        {proveedoresFiltradosTipo.map(p => (
+                                            <option key={p.id_proveedor} value={p.id_proveedor}>{p.nombre_empresa} ({p.persona_contacto})</option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Descripción de Requerimientos</label>
+                                <textarea
+                                    className="input-base"
+                                    rows={3}
+                                    placeholder="Detalla los requerimientos específicos del servicio..."
+                                    value={envioForm.descripcion_requerimientos}
+                                    onChange={e => setEnvioForm(prev => ({ ...prev, descripcion_requerimientos: e.target.value }))}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Fecha Límite para Cotizar <span style={{ color: 'red' }}>*</span></label>
+                                <input
+                                    type="date"
+                                    className="input-base"
+                                    value={envioForm.fecha_limite}
+                                    onChange={e => setEnvioForm(prev => ({ ...prev, fecha_limite: e.target.value }))}
+                                    required
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalEnvio({ open: false, servicio: null })}>
+                                    Cancelar
+                                </button>
+                                <button type="submit" className="btn btn-primary" disabled={enviando || proveedoresFiltradosTipo.length === 0}>
+                                    {enviando ? 'Enviando...' : <><FiSend size={14} style={{ marginRight: 6 }} />Confirmar Envío</>}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
+
             {/* MODALES CRUD PROVEEDOR */}
-            {modalConfig.open && (modalConfig.type === 'nuevo_proveedor' || modalConfig.type === 'editar_proveedor') && (
+            {modalConfig.open && (modalConfig.type === 'nuevo_proveedor' || modalConfig.type === 'editar_proveedor') && createPortal(
                 <div className="modal-overlay" onClick={() => setModalConfig({ open: false })}>
                     <div className="modal-content modal-premium" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
@@ -695,7 +809,8 @@ function ModuloProveedores({ usuario }) {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

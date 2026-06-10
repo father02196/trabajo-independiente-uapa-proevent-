@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiAlertTriangle, FiCheckCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw, FiEye, FiFileText, FiList } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
@@ -400,7 +401,7 @@ export default function Audiovisual({ usuario }) {
       )}
 
       {/* Modal Premium */}
-      {isModalOpen && selectedRequest && (
+      {isModalOpen && selectedRequest && createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -489,7 +490,8 @@ export default function Audiovisual({ usuario }) {
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

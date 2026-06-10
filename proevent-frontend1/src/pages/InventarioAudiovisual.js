@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiBox, FiSearch, FiInfo, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
@@ -189,7 +190,7 @@ function InventarioAudiovisual({ usuario }) {
         )}
       </div>
 
-      {isModalOpen && selectedEquipo && (
+      {isModalOpen && selectedEquipo && createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -266,7 +267,8 @@ function InventarioAudiovisual({ usuario }) {
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Detalles</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

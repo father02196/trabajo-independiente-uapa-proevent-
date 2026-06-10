@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSortableData } from "../hooks/useSortableData";
@@ -513,7 +514,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       </div>
 
       {/* MODAL DETALLES */}
-      {isModalOpen && selectedRequest && (
+      {isModalOpen && selectedRequest && createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -709,7 +710,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* RENDER FICHA PDF OCULTO/MODAL */}
@@ -725,7 +727,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       )}
 
       {/* MODAL ASIGNAR SERVICIO EXTERNO */}
-      {isAsignarServicioModalOpen && selectedRequest && (
+      {isAsignarServicioModalOpen && selectedRequest && createPortal(
         <div className="modal-overlay" onClick={closeAsignarServicioModal} style={{ zIndex: 1060 }}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
@@ -781,7 +783,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

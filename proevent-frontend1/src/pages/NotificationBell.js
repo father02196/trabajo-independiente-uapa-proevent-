@@ -1,34 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FiBell } from 'react-icons/fi';
 import './../css/NotificationBell.css';
 
 const API = 'http://localhost:8080';
-const LS_KEY = 'proevent_seen_notifications';
 
 /**
- * NotificationBell
- * 
+ * NotificationBell — Sistema real de notificaciones (Fase 3)
+ * Consume el endpoint /api/notificaciones del backend para mostrar
+ * alertas personalizadas por usuario y por rol, en tiempo real.
+ *
  * Props:
  *  - usuario: { id_usuario, rol }
- *  - onGoToEvaluacion: (eventoId?) => void   -> Solicitante: navega al form de evaluación
- *  - onGoToVisualizarEvaluaciones: () => void -> Admin: navega al historial
- *  - onGoToPoaAdmin: () => void -> Admin: navega a presupuesto POA
+ *  - onGoToEvaluacion: (eventoId?) => void
+ *  - onGoToVisualizarEvaluaciones: () => void
+ *  - onGoToPoaAdmin: () => void
  */
 export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones, onGoToPoaAdmin }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [seenIds, setSeenIds] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-    } catch { return []; }
-  });
+  const [loading, setLoading] = useState(false);
   const ref = useRef(null);
+  const pollingRef = useRef(null);
 
   const rol = usuario?.rol;
-  const isAdmin = rol && rol !== 'Solicitante';
-  const isSolicitante = rol === 'Solicitante';
+  const id_usuario = usuario?.id_usuario;
 
-  // Close on outside click
+  // Cerrar al hacer clic fuera
   useEffect(() => {
     const handleClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -37,198 +34,83 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Load notifications
+  // Función para cargar notificaciones desde el backend real
+  const fetchNotifications = useCallback(() => {
+    if (!id_usuario && !rol) return;
+    setLoading(true);
+    fetch(`${API}/api/notificaciones?id_usuario=${id_usuario || ''}&rol=${encodeURIComponent(rol || '')}`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setNotifications(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [id_usuario, rol]);
+
+  // Carga inicial y polling cada 60 segundos
   useEffect(() => {
     if (!rol) return;
+    fetchNotifications();
+    pollingRef.current = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(pollingRef.current);
+  }, [fetchNotifications, rol]);
 
-    if (isSolicitante) {
-      fetch(`${API}/eventos?usuario_id=${usuario.id_usuario}`)
-        .then(r => r.json())
-        .then(data => {
-          const eventNotifs = [];
-          if (Array.isArray(data)) {
-            data.forEach(e => {
-              if (e.estado === 'Aprobado') {
-                eventNotifs.push({ id: `evt-apr-${e.id_evento}`, id_evento: e.id_evento, titulo: '✅ Evento Aprobado', cuerpo: `Tu evento "${e.nombre}" (#EVT-${e.id_evento}) ha sido aprobado.` });
-              } else if (e.estado === 'Rechazado') {
-                eventNotifs.push({ id: `evt-rej-${e.id_evento}`, id_evento: e.id_evento, titulo: '❌ Evento Rechazado', cuerpo: `Tu evento "${e.nombre}" (#EVT-${e.id_evento}) ha sido rechazado.` });
-              } else if (e.estado === 'En Progreso') {
-                eventNotifs.push({ id: `evt-prog-${e.id_evento}`, id_evento: e.id_evento, titulo: '🚀 Evento en Progreso', cuerpo: `Tu evento "${e.nombre}" (#EVT-${e.id_evento}) está actualmente en progreso.` });
-              } else if (e.estado === 'Finalizado') {
-                eventNotifs.push({ id: `evt-fin-${e.id_evento}`, id_evento: e.id_evento, titulo: '🎉 Evento finalizado', cuerpo: `Tu evento "${e.nombre}" (#EVT-${e.id_evento}) ha concluido. ¡Evalúa el servicio!` });
-              }
-            });
-          }
-          setNotifications(prev => {
-             const existingIds = new Set(prev.map(p => p.id));
-             const additions = eventNotifs.filter(n => !existingIds.has(n.id));
-             return [...prev, ...additions];
-          });
-        })
-        .catch(() => {});
-    }
-
-    if (isAdmin) {
-      // Fetch recent evaluations as notifications
-      fetch(`${API}/evaluaciones`)
-        .then(r => r.json())
-        .then(data => {
-          const evals = Array.isArray(data) ? data : [];
-          setNotifications(prev => {
-             const existingIds = new Set(prev.map(p => p.id));
-             const eNotifs = evals.slice(0, 20).map(e => ({
-                id: `eval-${e.id_evaluacion}`,
-                id_evaluacion: e.id_evaluacion,
-                titulo: '📋 Nueva evaluación recibida',
-                cuerpo: `Evento "${e.nombre_evento || `#${e.id_evento}`}" fue evaluado con ${e.satisfaccion}/5 estrellas.`,
-             })).filter(n => !existingIds.has(n.id));
-             return [...prev, ...eNotifs];
-          });
-        })
-        .catch(() => {});
-    }
-
-    if (rol === 'Administrador') {
-      fetch(`${API}/eventos`)
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            const pendientes = data.filter(e => e.estado === 'Pendiente');
-            const pNotifs = pendientes.map(e => ({
-              id: `evt-pend-${e.id_evento}`,
-              id_evento: e.id_evento,
-              titulo: '⏳ Nueva Solicitud de Evento',
-              cuerpo: `El evento "${e.nombre}" (#EVT-${e.id_evento}) requiere tu revisión y aprobación.`
-            }));
-            setNotifications(prev => {
-              const existingIds = new Set(prev.map(p => p.id));
-              const additions = pNotifs.filter(n => !existingIds.has(n.id));
-              return [...prev, ...additions];
-            });
-          }
-        })
-        .catch(() => {});
-    }
-
-    if (rol === 'Administrador' || rol === 'Administrador V-A-F') {
-      fetch(`${API}/poa`)
-        .then(r => r.json())
-        .then(data => {
-          if (data && data.movimientos) {
-            const pendientes = data.movimientos.filter(m => m.estado === 'Pendiente');
-            const pNotifs = pendientes.map(m => ({
-              id: `poa-${m.id_movimiento}`,
-              titulo: '💰 Aprobación POA Pendiente',
-              cuerpo: `El evento "#EVT-${m.id_evento}" actualizó su presupuesto por ${m.monto_solicitado_original} ${m.moneda_original || 'DOP'}.`,
-            }));
-            setNotifications(prev => {
-              const existingIds = new Set(prev.map(p => p.id));
-              const additions = pNotifs.filter(n => !existingIds.has(n.id));
-              return [...prev, ...additions];
-            });
-          }
-        })
-        .catch(() => {});
-    }
-
-    if (rol === 'Administrador de Audiovisual' || rol === 'Audiovisual') {
-      Promise.all([
-        fetch(`${API}/eventos`).then(r => r.json()),
-        fetch(`${API}/audiovisual`).then(r => r.json())
-      ])
-      .then(([eventosData, avData]) => {
-         if (Array.isArray(eventosData) && Array.isArray(avData)) {
-            const avPendientes = avData.filter(av => av.estado_av === 'Pendiente');
-            const approvedEventsIds = new Set(eventosData.filter(e => e.estado === 'Aprobado').map(e => e.id_evento));
-            const validAv = avPendientes.filter(av => approvedEventsIds.has(av.id_evento));
-            const uniqueAvEvents = [...new Set(validAv.map(av => av.id_evento))];
-
-            const avNotifs = uniqueAvEvents.map(id_evento => ({
-               id: `evt-av-${id_evento}`,
-               id_evento: id_evento,
-               titulo: '📹 Requerimiento Audiovisual',
-               cuerpo: `El evento Aprobado #EVT-${id_evento} tiene equipos audiovisuales pendientes de asignación.`
-            }));
-
-            setNotifications(prev => {
-              const existingIds = new Set(prev.map(p => p.id));
-              const additions = avNotifs.filter(n => !existingIds.has(n.id));
-              return [...prev, ...additions];
-            });
-         }
-      })
+  // Marcar una notificación como leída en el backend y en el estado local
+  const markRead = (notif) => {
+    fetch(`${API}/api/notificaciones/${notif.id_notificacion}/leer`, { method: 'PUT' })
       .catch(() => {});
-    }
-
-    if (rol === 'Administrador' || rol === 'Compras' || rol === 'Direccion') {
-      fetch(`${API}/api/notificaciones/cotizaciones-vencidas`)
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            const cNotifs = data.map(c => {
-              const diffDays = Math.ceil((new Date(c.fecha_vigencia) - new Date()) / (1000 * 60 * 60 * 24));
-              const estado = diffDays < 0 ? 'VENCIDA' : 'próxima a vencer';
-              return {
-                id: `cot-${c.id_cotizacion}`,
-                titulo: diffDays < 0 ? '🚨 Cotización Vencida' : '⚠️ Cotización por Vencer',
-                cuerpo: `La cotización de ${c.proveedor_nombre} para el evento #EVT-${c.id_evento} está ${estado}.`,
-              };
-            });
-            setNotifications(prev => {
-              const existingIds = new Set(prev.map(p => p.id));
-              const additions = cNotifs.filter(n => !existingIds.has(n.id));
-              return [...prev, ...additions];
-            });
-          }
-        })
-        .catch(() => {});
-    }
-  }, [rol, usuario?.id_usuario]);
-
-  const unread = notifications.filter(n => !seenIds.includes(n.id));
-
-  const markSeen = (id) => {
-    setSeenIds(prev => {
-      const next = [...new Set([...prev, id])];
-      localStorage.setItem(LS_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const markAllSeen = () => {
-    const allIds = notifications.map(n => n.id);
-    setSeenIds(prev => {
-      const next = [...new Set([...prev, ...allIds])];
-      localStorage.setItem(LS_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const handleNotifClick = (notif) => {
-    markSeen(notif.id);
+    setNotifications(prev => prev.filter(n => n.id_notificacion !== notif.id_notificacion));
     setOpen(false);
-    
-    if (notif.id.startsWith('evt-')) {
+
+    // Navegar a la sección correspondiente
+    const accion = notif.enlace_accion;
+    if (accion === 'evaluacion') {
       onGoToEvaluacion && onGoToEvaluacion(notif.id_evento);
-    } else if (notif.id.startsWith('eval-')) {
-      onGoToVisualizarEvaluaciones && onGoToVisualizarEvaluaciones();
-    } else if (notif.id.startsWith('poa-')) {
+    } else if (accion === 'poa-admin') {
       onGoToPoaAdmin && onGoToPoaAdmin();
+    } else if (accion === 'mis-evaluaciones') {
+      onGoToVisualizarEvaluaciones && onGoToVisualizarEvaluaciones();
     }
+  };
+
+  // Marcar todas como leídas
+  const markAllRead = () => {
+    fetch(`${API}/api/notificaciones/marcar-todas-leidas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_usuario, rol })
+    }).catch(() => {});
+    setNotifications([]);
+  };
+
+  // Formatear la fecha de la notificación
+  const formatFecha = (fecha) => {
+    if (!fecha) return '';
+    try {
+      const d = new Date(fecha);
+      return d.toLocaleString('es-DO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    } catch { return ''; }
   };
 
   if (!rol) return null;
+
+  const unreadCount = notifications.length;
 
   return (
     <div className="nbell-wrapper" ref={ref}>
       <button
         className="nbell-btn"
-        onClick={() => { setOpen(o => !o); }}
+        onClick={() => {
+          setOpen(o => !o);
+          if (!open) fetchNotifications(); // Refresca al abrir
+        }}
         title="Notificaciones"
       >
         <FiBell />
-        {unread.length > 0 && (
-          <span className="nbell-badge">{unread.length > 9 ? '9+' : unread.length}</span>
+        {unreadCount > 0 && (
+          <span className="nbell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
         )}
       </button>
 
@@ -236,25 +118,28 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
         <div className="nbell-dropdown">
           <div className="nbell-drop-header">
             <span className="nbell-drop-title">Notificaciones</span>
-            {unread.length > 0 && (
-              <button className="nbell-mark-all" onClick={markAllSeen}>
+            {unreadCount > 0 && (
+              <button className="nbell-mark-all" onClick={markAllRead}>
                 Marcar todas
               </button>
             )}
           </div>
 
           <div className="nbell-list">
-            {notifications.length === 0 ? (
-              <div className="nbell-empty">No tienes notificaciones</div>
+            {loading && notifications.length === 0 ? (
+              <div className="nbell-empty">Cargando...</div>
+            ) : notifications.length === 0 ? (
+              <div className="nbell-empty">No tienes notificaciones nuevas</div>
             ) : (
               notifications.map(n => (
                 <div
-                  key={n.id}
-                  className={`nbell-item ${seenIds.includes(n.id) ? 'seen' : 'unread'}`}
-                  onClick={() => handleNotifClick(n)}
+                  key={n.id_notificacion}
+                  className="nbell-item unread"
+                  onClick={() => markRead(n)}
                 >
                   <div className="nbell-item-title">{n.titulo}</div>
                   <div className="nbell-item-body">{n.cuerpo}</div>
+                  <div className="nbell-item-date">{formatFecha(n.fecha)}</div>
                 </div>
               ))
             )}

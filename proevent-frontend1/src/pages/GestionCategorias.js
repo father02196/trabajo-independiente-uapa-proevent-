@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiEdit, FiPower, FiPlusCircle, FiLayers } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
@@ -154,7 +155,7 @@ function GestionCategorias({ usuario }) {
             </div>
 
             {/* Modal CRUD Categoría */}
-            {modalConfig.open && (
+            {modalConfig.open && createPortal(
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ maxWidth: '450px' }}>
                         <div className="modal-header">
@@ -197,7 +198,8 @@ function GestionCategorias({ usuario }) {
                             <button type="submit" form="categoria-form" className="btn btn-primary">Guardar Categoría</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

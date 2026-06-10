@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiEye, FiMonitor, FiFileText, FiCheckCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSortableData } from '../hooks/useSortableData';
@@ -181,7 +182,7 @@ export default function GestionSolicitudesAV({ usuario }) {
       )}
 
       {/* MODAL DETALLES AUDIOVISUAL */}
-      {isModalOpen && selectedRequest && (
+      {isModalOpen && selectedRequest && createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -270,7 +271,8 @@ export default function GestionSolicitudesAV({ usuario }) {
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
