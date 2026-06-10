@@ -216,7 +216,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                         <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
                                         Solicitud de Eventos
                                     </li>
-                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos" || usuario?.rol === "Administrador de eventos") && (
+                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
                                         <>
                                             <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
                                                 <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
@@ -299,8 +299,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             {openMenus.admin ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
                         </li>
                         <ul className={`nav-submenu ${openMenus.admin ? 'open' : ''}`}>
-                            {/* Evaluación: Solicitante y Administrador */}
-                            {(usuario?.rol === "Solicitante" || usuario?.rol === "Administrador") && (
+                            {/* Evaluación: Solicitante, Administrador y Administrador de Eventos */}
+                            {(usuario?.rol === "Solicitante" || usuario?.rol === "Administrador" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
                                 <li className={activeTab === "Evaluacion" ? "active" : ""} onClick={() => setActiveTab("Evaluacion")}>
                                     <FiStar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                     Evaluación

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSortableData } from "../hooks/useSortableData";
 import FichaTecnicaPDF from "./FichaTecnicaPDF";
@@ -597,6 +597,37 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
                       {selectedRequest.estado || "Pendiente"}
                     </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tracking Administrativo a Ancho Completo */}
+              <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiActivity size={14} /> Tracking Administrativo (Lectura)
+                  </div>
+                  <div className="modal-grid-3">
+                    <div className="info-row">
+                      <span className="info-label">Presupuesto POA</span>
+                      <span className={`badge ${pdfData.presupuesto?.estado_poa === 'Aprobado' ? 'badge-green' : pdfData.presupuesto?.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                        {pdfData.presupuesto?.estado_poa || "Pendiente"}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label">Revisión Legal</span>
+                      <span className={`badge ${pdfData.legal?.estado_contrato === 'Vigente' ? 'badge-green' : pdfData.legal?.estado_contrato === 'Vencido' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                        {pdfData.legal?.estado_contrato || "Pendiente"}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label">Compras y Logística (B2B)</span>
+                      <span className="info-value" style={{ fontSize: '13.5px', color: '#475569', marginTop: '4px', fontWeight: 'bold' }}>
+                        {pdfData.servicios?.length > 0 
+                          ? `${pdfData.servicios.length} servicio(s) gestionado(s)` 
+                          : "Ninguno en proceso"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
