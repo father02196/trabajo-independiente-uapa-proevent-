@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════════════
    SoporteHome.css — ProEvent UAPA Premium
    ═══════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import './typography.css';
 
 .soporte-page {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-family-base);
   background: #F8FAFC;
   min-height: 100vh;
   padding: 32px;
@@ -47,17 +47,17 @@
 }
 
 .soporte-hero h1 {
-  font-size: clamp(22px, 3.5vw, 32px);
-  font-weight: 800;
+  font-size: clamp(var(--text-3xl), 3.5vw, var(--text-4xl));
+  font-weight: var(--font-extrabold);
   color: #fff;
-  letter-spacing: -0.6px;
+  letter-spacing: var(--tracking-tight);
   margin-bottom: 10px;
 }
 
 .soporte-hero p {
-  font-size: 15px;
+  font-size: var(--text-base);
   color: rgba(255,255,255,0.55);
-  line-height: 1.7;
+  line-height: var(--leading-relaxed);
   margin-bottom: 24px;
 }
 
@@ -86,8 +86,8 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: 14.5px;
-  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-family: var(--font-family-base);
   color: #fff;
 }
 
@@ -138,16 +138,16 @@
 .soporte-contact-icon.orange { background: rgba(245,158,11,0.10); }
 
 .soporte-contact-card h3 {
-  font-size: 14.5px;
-  font-weight: 700;
-  color: #0F172A;
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
   margin-bottom: 5px;
 }
 
 .soporte-contact-card p {
-  font-size: 12.5px;
-  color: #64748B;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-normal);
 }
 
 /* ─── FAQ Section ─── */
@@ -156,9 +156,9 @@
 }
 
 .soporte-faq-section h2 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0F172A;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -187,9 +187,9 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1E293B;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
   user-select: none;
   transition: background 0.2s;
 }
@@ -215,9 +215,9 @@
 
 .faq-answer-inner {
   padding: 0 20px 18px;
-  font-size: 13.5px;
-  color: #64748B;
-  line-height: 1.7;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
   border-top: 1px solid #F1F5F9;
   padding-top: 14px;
 }
@@ -240,9 +240,9 @@
 }
 
 .soporte-tickets-header h2 {
-  font-size: 15px;
-  font-weight: 700;
-  color: #0F172A;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
 }
 
 .ticket-item {
@@ -273,9 +273,9 @@
 .ticket-info { flex: 1; min-width: 0; }
 
 .ticket-title {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #1E293B;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -283,8 +283,8 @@
 }
 
 .ticket-meta {
-  font-size: 12px;
-  color: #94A3B8;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 
 .ticket-status {
@@ -293,8 +293,8 @@
   gap: 4px;
   padding: 4px 10px;
   border-radius: 99px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -310,10 +310,10 @@
   color: #fff;
   border: none;
   border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family-base);
   transition: all 0.2s;
   box-shadow: 0 4px 16px rgba(59,130,246,0.25);
   display: inline-flex;

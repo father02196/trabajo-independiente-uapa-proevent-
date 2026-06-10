@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════════════
    Audiovisual.css — ProEvent UAPA Premium
    ═══════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import './typography.css';
 
 .audiovisual-page {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-family-base);
   color: #0F172A;
   background: #F8FAFC;
   min-height: 100vh;
@@ -28,15 +28,15 @@
 }
 
 .av-page-header h1 {
-  font-size: 22px;
-  font-weight: 800;
-  color: #0F172A;
-  letter-spacing: -0.4px;
+  font-size: var(--text-4xl);
+  font-weight: var(--font-extrabold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
 }
 
 .av-page-header p {
-  font-size: 13.5px;
-  color: #64748B;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
   margin-top: 4px;
 }
 
@@ -91,16 +91,16 @@
 }
 
 .av-equipment-card h3 {
-  font-size: 15px;
-  font-weight: 700;
-  color: #0F172A;
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
   margin-bottom: 5px;
 }
 
 .av-equipment-card p {
-  font-size: 13px;
-  color: #64748B;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-normal);
   margin-bottom: 14px;
 }
 
@@ -108,8 +108,8 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   padding: 4px 10px;
   border-radius: 99px;
 }
@@ -152,9 +152,9 @@
 }
 
 .av-form-header h2 {
-  font-size: 15px;
-  font-weight: 700;
-  color: #0F172A;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
 }
 
 .av-form-body {
@@ -175,18 +175,18 @@
 }
 
 .av-form-group label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #334155;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
 }
 
 .av-form-group input,
 .av-form-group select,
 .av-form-group textarea {
   padding: 10px 14px;
-  font-size: 14px;
-  font-family: 'Inter', sans-serif;
-  color: #0F172A;
+  font-size: var(--text-base);
+  font-family: var(--font-family-base);
+  color: var(--color-text-primary);
   background: #F8FAFC;
   border: 1.5px solid #E2E8F0;
   border-radius: 10px;
@@ -236,20 +236,20 @@
 .av-table th {
   padding: 11px 18px;
   text-align: left;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #94A3B8;
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  color: var(--color-text-placeholder);
   background: #F8FAFC;
   border-bottom: 1px solid #E2E8F0;
   text-transform: uppercase;
-  letter-spacing: 0.7px;
+  letter-spacing: var(--tracking-widest);
 }
 
 .av-table td {
   padding: 13px 18px;
   border-bottom: 1px solid #F1F5F9;
-  font-size: 13.5px;
-  color: #334155;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
 }
 
 .av-table tbody tr:last-child td { border-bottom: none; }
@@ -262,10 +262,10 @@
   color: #fff;
   border: none;
   border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family-base);
   transition: all 0.2s;
   box-shadow: 0 4px 16px rgba(59,130,246,0.25);
 }
@@ -282,10 +282,10 @@
   color: #334155;
   border: 1.5px solid #E2E8F0;
   border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family-base);
   transition: all 0.2s;
 }
 
