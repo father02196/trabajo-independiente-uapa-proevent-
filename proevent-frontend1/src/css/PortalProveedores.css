@@ -2,12 +2,14 @@
    PortalProveedores.css — ProEvent UAPA | 60-30-10 Premium Design
    =========================================================== */
 
+@import './typography.css';
+
 .portal-container {
   min-height: 100vh;
   background-color: var(--bg-main);
   display: flex;
   flex-direction: column;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family-base);
 }
 
 .portal-header {
@@ -22,12 +24,12 @@
 
 .portal-header h2 {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
   display: flex;
   align-items: center;
   gap: 10px;
-  letter-spacing: -0.3px;
+  letter-spacing: var(--tracking-normal);
 }
 
 .btn-logout {
@@ -37,9 +39,9 @@
   padding: 8px 18px;
   border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: 600;
-  font-size: 13.5px;
-  font-family: 'Inter', sans-serif;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+  font-family: var(--font-family-base);
   transition: var(--transition-smooth);
 }
 .btn-logout:hover {
@@ -72,9 +74,9 @@
   text-align: center;
   margin-bottom: 1.5rem;
   color: var(--color-uapa-navy);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
+  font-size: var(--text-4xl);
+  font-weight: var(--font-extrabold);
+  letter-spacing: var(--tracking-tight);
 }
 
 .form-group {
@@ -84,8 +86,8 @@
 .form-group label {
   display: block;
   margin-bottom: 6px;
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
   color: var(--text-light);
 }
 
@@ -97,8 +99,8 @@
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
   box-sizing: border-box;
-  font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-family: var(--font-family-base);
   color: var(--text-main);
   background: var(--bg-main);
   outline: none;
@@ -146,8 +148,8 @@
 .solicitud-card h3 {
   margin-top: 0;
   color: var(--color-uapa-navy);
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
   margin-bottom: 12px;
 }
 
@@ -157,8 +159,8 @@
   background-color: var(--bg-main);
   color: var(--text-muted);
   border-radius: var(--radius-full);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   margin-bottom: 10px;
   border: 1px solid var(--color-border);
 }

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity, FiPlay, FiLock, FiAlertCircle, FiXCircle, FiInfo } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSortableData } from "../hooks/useSortableData";
 import FichaTecnicaPDF from "./FichaTecnicaPDF";
@@ -24,6 +24,11 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAsignarServicioModalOpen, setIsAsignarServicioModalOpen] = useState(false); // Modal para Asignar Servicio
   const [coordinadores, setCoordinadores] = useState([]);
+
+  // === LÓGICA DE APROBACIONES ===
+  const [aprobacionesMap, setAprobacionesMap] = useState({}); // { [id_evento]: { puede_iniciar, aprobaciones, ... } }
+  const [modalAprobaciones, setModalAprobaciones] = useState(null); // Evento seleccionado para ver aprobaciones
+  const [loadingAprobaciones, setLoadingAprobaciones] = useState({});
 
   useEffect(() => {
     fetch(`${API}/usuarios-coordinadores`)
@@ -112,6 +117,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       if (res.ok) {
         toast.success("Servicio asignado correctamente a Logística Operativa");
         closeAsignarServicioModal();
+        handleVerDetalles(selectedRequest); // <-- Actualiza los datos del modal PDF
       } else {
         toast.error("Error al asignar servicio");
       }
@@ -154,6 +160,21 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     }
   };
 
+  const cargarAprobacionesEvento = async (id_evento) => {
+    setLoadingAprobaciones(prev => ({ ...prev, [id_evento]: true }));
+    try {
+      const res = await fetch(`${API}/api/aprobaciones-evento/${id_evento}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAprobacionesMap(prev => ({ ...prev, [id_evento]: data }));
+      }
+    } catch (e) {
+      console.error('Error cargando aprobaciones:', e);
+    } finally {
+      setLoadingAprobaciones(prev => ({ ...prev, [id_evento]: false }));
+    }
+  };
+
   useEffect(() => {
     cargarEventos();
     setCurrentPage(1);
@@ -170,6 +191,9 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       const data = await res.json();
       if (Array.isArray(data)) {
         setEventRequests(data);
+        // Cargar aprobaciones para todos los eventos que estén en estado Aprobado (candidatos a Iniciar)
+        const aprobados = data.filter(e => e.estado === 'Aprobado');
+        aprobados.forEach(e => cargarAprobacionesEvento(e.id_evento));
       } else {
         setError("Error al cargar eventos.");
         toast.error("Error al cargar eventos.");
@@ -183,6 +207,20 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   };
 
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
+    // Validación especial para Iniciar Evento
+    if (nuevoEstado === 'En Progreso') {
+      const aprobInfo = aprobacionesMap[id_evento];
+      if (!aprobInfo) {
+        // Intentar cargar y bloquear por ahora
+        toast.error('Verificando aprobaciones... Por favor intenta de nuevo.');
+        cargarAprobacionesEvento(id_evento);
+        return;
+      }
+      if (!aprobInfo.puede_iniciar) {
+        setModalAprobaciones({ id_evento, ...aprobInfo });
+        return;
+      }
+    }
     try {
       const res = await fetch(`${API}/eventos/${id_evento}/estado`, {
         method: "PUT",
@@ -430,21 +468,20 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                           {usuario?.rol === "Solicitante" ? (
                             <div style={{ display: 'flex', gap: '8px' }}>
                               <button 
-                                className="edit-action-btn" 
+                                className="action-icon-btn edit" 
                                 onClick={() => onEditEvent(req)}
                                 disabled={req.estado !== "Pendiente"}
                                 title={req.estado !== "Pendiente" ? "Solo puedes editar solicitudes pendientes" : "Editar solicitud"}
                               >
-                                <FiEdit2 /> Editar
+                                <FiEdit2 />
                               </button>
                               <button 
-                                className="edit-action-btn" 
-                                style={{ color: req.estado !== "Pendiente" ? '#94a3b8' : '#ef4444', borderColor: req.estado !== "Pendiente" ? '#e2e8f0' : '#fca5a5', backgroundColor: req.estado !== "Pendiente" ? '#f8fafc' : '#fef2f2' }}
+                                className="action-icon-btn delete" 
                                 onClick={() => handleEliminarEvento(req.id_evento)}
                                 disabled={req.estado !== "Pendiente"}
                                 title={req.estado !== "Pendiente" ? "Solo puedes eliminar solicitudes pendientes" : "Eliminar solicitud"}
                               >
-                                <FiTrash2 /> Eliminar
+                                <FiTrash2 />
                               </button>
                             </div>
                           ) : (
@@ -452,18 +489,57 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                               {(!req.estado || req.estado === "Pendiente") && (
                                 <>
                                   <button className="btn btn-primary btn-sm" onClick={() => handleCambiarEstado(req.id_evento, "Aprobado")} style={{ padding: '6px 12px', width: '100%' }}>
-                                    Aprobar
+                                    <FiCheckCircle /> Aprobar
                                   </button>
                                   <button className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', width: '100%', color: '#ef4444', borderColor: '#fca5a5', backgroundColor: '#fef2f2' }} onClick={() => handleCambiarEstado(req.id_evento, "Rechazado")}>
-                                    Rechazar
+                                    <FiXCircle /> Rechazar
                                   </button>
                                 </>
                               )}
-                              {req.estado === "Aprobado" && (
-                                <button className="btn btn-primary btn-sm" style={{ backgroundColor: '#0ea5e9', border: 'none', padding: '6px 12px', width: '100%' }} onClick={() => handleCambiarEstado(req.id_evento, "En Progreso")}>
-                                  Iniciar Evento
-                                </button>
-                              )}
+                              {req.estado === "Aprobado" && (() => {
+                                const aprobInfo = aprobacionesMap[req.id_evento];
+                                const isLoading = loadingAprobaciones[req.id_evento];
+                                const puedeIniciar = aprobInfo?.puede_iniciar;
+                                const hayRechazos = aprobInfo?.hay_rechazos;
+                                return (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <button 
+                                      className={`btn btn-sm ${ puedeIniciar ? '' : 'btn-secondary'}`}
+                                      style={{
+                                        padding: '6px 12px', width: '100%',
+                                        backgroundColor: puedeIniciar ? '#0ea5e9' : hayRechazos ? '#fef2f2' : '#f1f5f9',
+                                        color: puedeIniciar ? '#fff' : hayRechazos ? '#ef4444' : '#64748b',
+                                        border: puedeIniciar ? 'none' : `1px solid ${hayRechazos ? '#fca5a5' : '#e2e8f0'}`,
+                                        cursor: puedeIniciar ? 'pointer' : 'not-allowed',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                        fontWeight: '600', borderRadius: '8px', fontSize: '12.5px',
+                                        transition: 'all 0.2s'
+                                      }}
+                                      onClick={() => {
+                                        if (puedeIniciar) {
+                                          handleCambiarEstado(req.id_evento, 'En Progreso');
+                                        } else {
+                                          if (aprobInfo) setModalAprobaciones({ id_evento: req.id_evento, ...aprobInfo });
+                                          else { cargarAprobacionesEvento(req.id_evento); toast('Cargando estado de aprobaciones...'); }
+                                        }
+                                      }}
+                                      title={puedeIniciar ? 'Iniciar evento' : hayRechazos ? 'Evento rechazado por un área' : 'Aprobaciones pendientes'}
+                                    >
+                                      {isLoading ? <FiClock size={13} /> : puedeIniciar ? <FiPlay size={13} /> : <FiLock size={13} />}
+                                      {isLoading ? 'Verificando...' : puedeIniciar ? 'Iniciar Evento' : hayRechazos ? 'Rechazado' : 'Pendiente'}
+                                    </button>
+                                    {/* Mini badge de estado de aprobaciones */}
+                                    {aprobInfo && !puedeIniciar && (
+                                      <button
+                                        onClick={() => setModalAprobaciones({ id_evento: req.id_evento, ...aprobInfo })}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'center', padding: '2px', textDecoration: 'underline' }}
+                                      >
+                                        <FiInfo size={11} /> Ver aprobaciones
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               {req.estado === "En Progreso" && (
                                 <button className="btn btn-primary btn-sm" style={{ backgroundColor: '#10b981', border: 'none', padding: '6px 12px', width: '100%' }} onClick={() => handleCambiarEstado(req.id_evento, "Finalizado")}>
                                   Finalizar
@@ -785,6 +861,87 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* MODAL ESTADO DE APROBACIONES */}
+      {modalAprobaciones && (
+        <div className="modal-overlay" onClick={() => setModalAprobaciones(null)} style={{ zIndex: 1060 }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="modal-icon-circle" style={{ backgroundColor: modalAprobaciones.hay_rechazos ? '#fee2e2' : modalAprobaciones.puede_iniciar ? '#dcfce7' : '#e0e7ff', color: modalAprobaciones.hay_rechazos ? '#ef4444' : modalAprobaciones.puede_iniciar ? '#10b981' : '#6366f1' }}>
+                  {modalAprobaciones.hay_rechazos ? <FiXCircle size={20} /> : modalAprobaciones.puede_iniciar ? <FiCheckCircle size={20} /> : <FiClock size={20} />}
+                </div>
+                <div>
+                  <h3 className="modal-title">Estado de Aprobaciones</h3>
+                  <span className="modal-subtitle">
+                    {modalAprobaciones.hay_rechazos 
+                      ? 'El evento ha sido rechazado por una o más áreas.'
+                      : modalAprobaciones.puede_iniciar 
+                        ? 'Todas las áreas han aprobado. Listo para iniciar.'
+                        : 'Aún hay áreas pendientes de revisión.'}
+                  </span>
+                </div>
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={() => setModalAprobaciones(null)}>X</button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {modalAprobaciones.aprobaciones.map((aprob, index) => (
+                  <div key={index} style={{ 
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                    padding: '12px 16px', 
+                    backgroundColor: '#f8fafc', 
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    opacity: aprob.requerido ? 1 : 0.6
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontWeight: '600', color: '#334155', fontSize: '14px' }}>{aprob.area}</span>
+                      {!aprob.requerido && <span style={{ fontSize: '11px', color: '#94a3b8', backgroundColor: '#e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>No requerido</span>}
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {aprob.estado === 'Aprobado' && <><FiCheckCircle color="#10b981" /><span style={{ color: '#10b981', fontWeight: '600', fontSize: '13px' }}>Aprobado</span></>}
+                      {aprob.estado === 'Rechazado' && <><FiXCircle color="#ef4444" /><span style={{ color: '#ef4444', fontWeight: '600', fontSize: '13px' }}>Rechazado</span></>}
+                      {aprob.estado === 'Pendiente' && <><FiClock color="#f59e0b" /><span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '13px' }}>Pendiente</span></>}
+                      {aprob.estado === 'No aplica' && <><span style={{ color: '#94a3b8', fontWeight: '500', fontSize: '13px' }}>No aplica</span></>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {!modalAprobaciones.puede_iniciar && !modalAprobaciones.hay_rechazos && modalAprobaciones.pendientes.length > 0 && (
+                <div style={{ marginTop: '20px', padding: '12px 16px', backgroundColor: '#fffbeb', borderLeft: '4px solid #f59e0b', borderRadius: '4px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <FiAlertCircle color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <p style={{ fontSize: '13px', color: '#b45309', margin: 0, lineHeight: 1.5 }}>
+                      <strong>Acción bloqueada:</strong> No puedes iniciar este evento hasta que las áreas pendientes emitan su dictamen final.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+              {modalAprobaciones.puede_iniciar ? (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => {
+                    handleCambiarEstado(modalAprobaciones.id_evento, 'En Progreso');
+                    setModalAprobaciones(null);
+                  }}
+                  style={{ backgroundColor: '#0ea5e9', border: 'none' }}
+                >
+                  <FiPlay /> Iniciar Evento Ahora
+                </button>
+              ) : (
+                <button className="btn btn-secondary" onClick={() => setModalAprobaciones(null)}>Entendido</button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -2,7 +2,7 @@
    Dashboard.css — ProEvent UAPA Premium
    Clases exactas del Dashboard.js + DashboardHome.js
    ═══════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import './typography.css';
 
 /* ─── LAYOUT RAÍZ ───────────────────────────────────────── */
 .dashboard-layout {
@@ -10,7 +10,8 @@
   height: 100vh;
   width: 100vw;
   background: #F8FAFC;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-family-base);
+  font-size: var(--text-base);
   overflow: hidden;
 }
 
@@ -99,22 +100,22 @@
 }
 
 .brand-text h2 {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--text-lg);
+  font-weight: var(--font-extrabold);
   color: #0F172A;
   letter-spacing: 1px;
-  line-height: 1;
+  line-height: var(--leading-none);
   white-space: nowrap;
 }
 
 .brand-text p {
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: #64748B;
   letter-spacing: 0.5px;
   margin-top: 6px;
   white-space: nowrap;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 
 .sidebar-toggle-btn {
@@ -176,8 +177,8 @@
       padding: 10px 14px;
       border-radius: 10px;
       cursor: pointer;
-      font-size: 13.5px;
-      font-weight: 500;
+      font-size: var(--text-base);
+      font-weight: var(--font-medium);
       color: #64748B;
       display: flex;
       align-items: center;
@@ -187,6 +188,7 @@
       position: relative;
       white-space: nowrap;
       overflow: hidden;
+      font-family: var(--font-family-base);
     }
 
 .sidebar-nav li:hover {
@@ -197,7 +199,7 @@
 .sidebar-nav li.active {
   background: #EFF6FF;
   color: #2563EB;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 
 .sidebar-nav li.active::before {
@@ -241,14 +243,15 @@
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
   color: #94A3B8;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: var(--tracking-widest);
   margin-top: 14px;
   background: transparent;
   transition: all 0.2s;
+  font-family: var(--font-family-base);
 }
 
 .nav-group-header:hover {
@@ -284,7 +287,7 @@
 
 .nav-submenu li {
   padding-left: 30px !important;
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 /* ── Sección usuario ── */
@@ -334,17 +337,17 @@
 }
 
 .user-info h4 {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   color: #0F172A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
+  line-height: var(--leading-snug);
 }
 
 .user-info span {
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   color: #64748B;
   display: block;
   white-space: nowrap;
@@ -392,8 +395,8 @@
   border: none;
   background: transparent;
   color: #EF4444;
-  font-weight: 600;
-  font-size: 13.5px;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
   text-align: left;
   cursor: pointer;
   display: flex;
@@ -401,7 +404,7 @@
   gap: 10px;
   border-radius: 10px;
   transition: background 0.2s;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family-base);
 }
 
 .logout-button:hover { background: #FEF2F2; }
@@ -487,10 +490,10 @@
 }
 
 .dashboard-header h1 {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
   color: #0F172A;
-  letter-spacing: -0.3px;
+  letter-spacing: var(--tracking-normal);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -533,8 +536,8 @@
   border: none;
   background: transparent;
   outline: none;
-  font-size: 13.5px;
-  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-family: var(--font-family-base);
   color: #0F172A;
   flex: 1;
   min-width: 0;
@@ -564,7 +567,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-family-base);
 }
 
 .fade-in {
@@ -601,6 +604,53 @@
   border-color: #cbd5e1;
 }
 
+/* Variantes de glow para cards legales */
+.danger-glow:hover { box-shadow: 0 12px 32px rgba(239,68,68,0.10); }
+.bg-danger-light   { background: #fef2f2; }
+.text-danger       { color: #ef4444 !important; }
+.text-red          { color: #dc2626; }
+.text-blue         { color: #2563eb; }
+
+/* ── Flujo Administrativo Tabs ── */
+.flujo-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 22px;
+  border-bottom: 2px solid #e2e8f0;
+  background: #fafbfc;
+}
+
+.flujo-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: #64748b;
+  cursor: pointer;
+  font-family: var(--font-family-base);
+  transition: all 0.2s;
+  white-space: nowrap;
+  border-radius: 0;
+}
+
+.flujo-tab-btn:hover {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.flujo-tab-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background: transparent;
+}
+
 .card-top {
   display: flex;
   align-items: center;
@@ -609,10 +659,10 @@
 }
 
 .card-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: #64748b;
-  letter-spacing: -0.1px;
+  letter-spacing: var(--tracking-normal);
 }
 
 .card-icon-container {
@@ -640,17 +690,17 @@
 .text-info     { color: #6366f1 !important; }
 
 .card-bottom h3 {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
   color: #0f172a;
-  letter-spacing: -1px;
-  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
   margin-bottom: 8px;
 }
 
 .card-trend {
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -691,16 +741,17 @@
 }
 
 .chart-header h4 {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: #0F172A;
-  letter-spacing: -0.2px;
+  letter-spacing: var(--tracking-normal);
   margin-bottom: 3px;
 }
 
 .chart-header p {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: #94A3B8;
+  font-weight: var(--font-regular);
 }
 
 .reload-data-btn {
@@ -742,17 +793,17 @@
 }
 
 .budget-total-indicator span {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: #64748b;
-  font-weight: 500;
+  font-weight: var(--font-medium);
   display: block;
   margin-bottom: 4px;
 }
 
 .budget-total-indicator h3 {
-  font-size: 24px;
+  font-size: var(--text-3xl);
   color: #0f172a;
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 
 .budget-venues-list {
@@ -781,8 +832,8 @@
 }
 
 .venue-name {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
   color: #334155;
   white-space: nowrap;
   overflow: hidden;
@@ -790,8 +841,8 @@
 }
 
 .venue-amount {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: #94a3b8;
 }
 
@@ -830,6 +881,13 @@
   border: 1px solid #E2E8F0;
   box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
   overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.saas-panel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  border-color: #cbd5e1;
 }
 
 .panel-header {
@@ -848,16 +906,17 @@
 }
 
 .panel-header h4 {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: #0F172A;
-  letter-spacing: -0.2px;
+  letter-spacing: var(--tracking-normal);
   margin-bottom: 2px;
 }
 
 .panel-header p {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: #94A3B8;
+  font-weight: var(--font-regular);
 }
 
 .panel-body {
@@ -909,8 +968,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   color: #3b82f6;
   background: #eff6ff;
   padding: 6px 12px;
@@ -927,11 +986,11 @@
 }
 
 .modern-status-badge {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   padding: 4px 10px;
   border-radius: 20px;
-  letter-spacing: 0.3px;
+  letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
 }
 
@@ -960,11 +1019,11 @@
 }
 
 .modern-event-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--text-md);
+  font-weight: var(--font-bold);
   color: #0f172a;
   margin: 0;
-  line-height: 1.3;
+  line-height: var(--leading-snug);
 }
 
 .modern-event-meta-info {
@@ -978,9 +1037,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   color: #64748b;
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
 .modern-meta-icon {
@@ -1041,9 +1100,9 @@
 }
 
 .empty-panel-state p {
-  font-size: 13.5px;
+  font-size: var(--text-base);
   color: #94A3B8;
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
 /* ── Quick actions ── */
@@ -1067,8 +1126,9 @@
 }
 
 .quick-action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  border-color: #cbd5e1;
 }
 
 .quick-action-btn .icon-wrapper {
@@ -1089,28 +1149,28 @@
 }
 
 .quick-action-btn .btn-text strong {
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   color: #0f172a;
 }
 
 .quick-action-btn .btn-text span {
-  font-size: 11.5px;
+  font-size: var(--text-sm);
   color: #64748b;
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
-.premium-btn-blue:hover { border-color: #93c5fd; }
-.premium-btn-blue .icon-wrapper { background: #eff6ff; color: #3b82f6; }
+.premium-btn-blue:hover  { border-color: #93c5fd;  box-shadow: 0 8px 20px rgba(59,130,246,0.12);  transform: translateY(-3px); }
+.premium-btn-blue .icon-wrapper  { background: #eff6ff; color: #3b82f6; }
 
-.premium-btn-purple:hover { border-color: #c4b5fd; }
+.premium-btn-purple:hover { border-color: #c4b5fd; box-shadow: 0 8px 20px rgba(139,92,246,0.12); transform: translateY(-3px); }
 .premium-btn-purple .icon-wrapper { background: #f5f3ff; color: #8b5cf6; }
 
-.premium-btn-orange:hover { border-color: #fcd34d; }
+.premium-btn-orange:hover { border-color: #fcd34d; box-shadow: 0 8px 20px rgba(245,158,11,0.12); transform: translateY(-3px); }
 .premium-btn-orange .icon-wrapper { background: #fffbeb; color: #f59e0b; }
 
-.premium-btn-green:hover { border-color: #6ee7b7; }
-.premium-btn-green .icon-wrapper { background: #ecfdf5; color: #10b981; }
+.premium-btn-green:hover  { border-color: #6ee7b7;  box-shadow: 0 8px 20px rgba(16,185,129,0.12);  transform: translateY(-3px); }
+.premium-btn-green .icon-wrapper  { background: #ecfdf5; color: #10b981; }
 
 /* ── POA Summary ── */
 .poa-summary-box {
@@ -1125,8 +1185,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: #475569;
 }
 
@@ -1198,10 +1258,10 @@
 }
 
 .modal-header h3 {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: #0F172A;
-  letter-spacing: -0.3px;
+  letter-spacing: var(--tracking-normal);
 }
 
 .modal-event-id {
@@ -1233,18 +1293,18 @@
 .detail-group.full-width { grid-column: 1 / -1; }
 
 .detail-group label {
-  font-size: 10.5px;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
   color: #94A3B8;
   text-transform: uppercase;
-  letter-spacing: 0.7px;
+  letter-spacing: var(--tracking-wider);
 }
 
 .detail-group p {
-  font-size: 14px;
+  font-size: var(--text-base);
   color: #1E293B;
-  font-weight: 500;
-  line-height: 1.5;
+  font-weight: var(--font-medium);
+  line-height: var(--leading-normal);
 }
 
 .main-event-title {
@@ -1271,8 +1331,8 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   padding: 5px 12px;
   border-radius: 99px;
 }
@@ -1303,10 +1363,10 @@
   color: #334155;
   border: 1.5px solid #E2E8F0;
   border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family-base);
   transition: all 0.2s;
 }
 
@@ -1473,11 +1533,12 @@
    GESTIÓN EVENTOS / ADMIN PAGES — Clases usadas en GestionEventos.js
    ═══════════════════════════════════════════════════════════ */
 .admin-page-container {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-family-base);
   display: flex;
   flex-direction: column;
   gap: 20px;
   color: #0F172A;
+  font-size: var(--text-base);
 }
 
 .admin-controls-card {
@@ -1486,6 +1547,12 @@
   border-radius: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-controls-card:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  border-color: #cbd5e1;
 }
 
 .controls-header {
@@ -1511,15 +1578,16 @@
 }
 
 .title-section h3 {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: #0F172A;
   margin-bottom: 2px;
 }
 
 .subtitle {
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   color: #64748B;
+  font-weight: var(--font-regular);
 }
 
 .header-actions-group {

@@ -4,7 +4,7 @@
    Inspirado en Stripe, Linear, Vercel, Notion
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
+@import './typography.css';
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: center;
   padding: 32px 20px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-family-base);
 
   /* Fondo claro tipo Vercel / Linear */
   background-color: #f5f5f7;
@@ -130,18 +130,18 @@
 }
 
 .lc-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
   color: #0f172a;
-  letter-spacing: -0.5px;
+  letter-spacing: var(--tracking-tight);
   margin-bottom: 6px;
 }
 
 .lc-subtitle {
-  font-size: 14px;
+  font-size: var(--text-base);
   color: #6b7280;
-  font-weight: 400;
-  line-height: 1.5;
+  font-weight: var(--font-regular);
+  line-height: var(--leading-normal);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -167,8 +167,8 @@
 }
 
 .lc-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
   color: #374151;
   letter-spacing: -0.01em;
   cursor: pointer;
@@ -184,8 +184,8 @@
 .lc-input {
   width: 100%;
   padding: 11px 14px 11px 40px;
-  font-size: 14px;
-  font-family: inherit;
+  font-size: var(--text-base);
+  font-family: var(--font-family-base);
   color: #111827;
   background: #f9fafb;
   border: 1.5px solid #e5e7eb;
@@ -315,10 +315,10 @@
   color: #ffffff;
   border: none;
   border-radius: 10px;
-  font-size: 14.5px;
-  font-weight: 600;
-  font-family: inherit;
-  letter-spacing: -0.01em;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  font-family: var(--font-family-base);
+  letter-spacing: var(--tracking-normal);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -448,9 +448,7 @@
     max-width: 100%;
   }
 
-
-
-  .lc-title { font-size: 20px; }
+  .lc-title { font-size: var(--text-2xl); }
 }
 
 @media (max-width: 360px) {

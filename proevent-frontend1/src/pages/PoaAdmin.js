@@ -237,7 +237,7 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
                 <td style={{ padding: '12px', textAlign: 'center' }}>
                   <div className="saas-action-group">
                     <button 
-                      className="saas-action-btn saas-btn-view" 
+                      className="action-icon-btn view" 
                       onClick={() => openModalDetalles(mov)}
                       title="Ver Detalles"
                     >
@@ -245,14 +245,14 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
                     </button>
                     <button 
                       onClick={() => handleCambiarEstado(mov.id_movimiento, 'Aprobado')} 
-                      className={`saas-action-btn saas-btn-approve ${mov.estado === 'Aprobado' ? 'is-active' : ''}`}
+                      className={`action-icon-btn approve ${mov.estado === 'Aprobado' ? 'is-active' : ''}`}
                       title="Aprobar Presupuesto"
                     >
                       <FiCheckCircle size={15} />
                     </button>
                     <button 
                       onClick={() => {setMovRechazoId(mov.id_movimiento); setModalRechazo(true);}} 
-                      className={`saas-action-btn saas-btn-reject ${mov.estado === 'Rechazado' ? 'is-active' : ''}`}
+                      className={`action-icon-btn reject ${mov.estado === 'Rechazado' ? 'is-active' : ''}`}
                       title="Rechazar Presupuesto"
                     >
                       <FiXCircle size={15} />

@@ -130,28 +130,44 @@ export default function AdminEvento({ usuario }) {
         <button className={activeTab === "alimentos" ? "active" : ""} onClick={() => setActiveTab("alimentos")}>Opciones de Alimentos</button>
       </div>
 
-      <div style={{ marginBottom: '24px', padding: '20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
-        <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px'}}>{isEditing ? `Editar opción de ${title}` : `Nueva opción para ${title}`}</h3>
-        <form onSubmit={handleGuardar} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginTop: '16px' }}>
-          <div className="form-group" style={{ flex: 1 }}>
-            <label>Nombre de la Opción</label>
+      <div className="saas-panel-card" style={{ marginBottom: '24px', padding: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ padding: '8px', background: '#e0e7ff', borderRadius: '8px', color: '#4f46e5' }}>
+            <FiEdit2 size={20} />
+          </div>
+          <div>
+            <h3 style={{fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: 0}}>
+              {isEditing ? `Editar opción de ${title}` : `Nueva opción para ${title}`}
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, marginTop: '2px' }}>
+              {isEditing ? 'Modifique el nombre de esta opción en el catálogo' : 'Agregue un nuevo registro al catálogo de opciones del sistema'}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleGuardar} style={{ display: 'flex', gap: '16px', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flex: 1, backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '0 12px', transition: 'border-color 0.2s, box-shadow 0.2s' }} className="focus-within-ring">
+            <FiEdit2 style={{ color: '#94a3b8', fontSize: '18px' }} />
             <input 
               type="text" 
               required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="input-base"
-              placeholder="Escriba aquí..."
+              style={{ border: 'none', outline: 'none', padding: '12px', width: '100%', fontSize: '14.5px', color: '#334155', backgroundColor: 'transparent' }}
+              placeholder={`Ej: ${activeTab === 'tipos' ? 'Conferencia Magistral' : activeTab === 'corporativo' ? 'Banner Institucional' : 'Coffee Break'}`}
             />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {isEditing ? "Guardar" : <><FiPlus /> Agregar</>}
-          </button>
-          {isEditing && (
-            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} className="btn btn-secondary">
-              Cancelar
+          
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {isEditing && (
+              <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', fontWeight: 600 }}>
+                Cancelar
+              </button>
+            )}
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', fontWeight: 600, backgroundColor: '#3b82f6', borderColor: '#3b82f6', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)' }}>
+              {isEditing ? <><FiEdit2 /> Guardar Cambios</> : <><FiPlus /> Agregar al Catálogo</>}
             </button>
-          )}
+          </div>
         </form>
       </div>
 
@@ -171,8 +187,8 @@ export default function AdminEvento({ usuario }) {
                 <td><strong>{item.nombre}</strong></td>
                 <td style={{textAlign: 'right'}}>
                   <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleEditar(item)} title="Editar"><FiEdit2 /></button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleEliminar(item[idField])} title="Eliminar"><FiTrash2 /></button>
+                    <button className="action-icon-btn edit" onClick={() => handleEditar(item)} title="Editar"><FiEdit2 /></button>
+                    <button className="action-icon-btn delete" onClick={() => handleEliminar(item[idField])} title="Eliminar"><FiTrash2 /></button>
                   </div>
                 </td>
               </tr>
