@@ -125,19 +125,17 @@ function GestionCategorias({ usuario }) {
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                         <button 
                                             onClick={() => openModal('editar', cat)}
-                                            className="btn btn-icon btn-ghost"
-                                            style={{ color: 'var(--accent-primary)' }}
+                                            className="action-icon-btn edit"
                                             title="Editar Categoría"
                                         >
-                                            <FiEdit size={18} />
+                                            <FiEdit />
                                         </button>
                                         <button 
                                             onClick={() => handleToggleEstado(cat)}
-                                            className="btn btn-icon btn-ghost"
-                                            style={{ color: cat.estado === 'Activo' ? 'var(--danger)' : 'var(--success)' }}
+                                            className={`action-icon-btn ${cat.estado === 'Activo' ? 'reject' : 'approve'}`}
                                             title={cat.estado === 'Activo' ? "Desactivar Categoría" : "Activar Categoría"}
                                         >
-                                            <FiPower size={18} />
+                                            <FiPower />
                                         </button>
                                     </div>
                                 </td>

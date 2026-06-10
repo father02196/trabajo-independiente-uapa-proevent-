@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle } from "react-icons/fi";
+import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck } from "react-icons/fi";
 import './../css/Dashboard.css';
 
 const API = "http://localhost:8080";
@@ -18,8 +18,6 @@ function DashboardLegal({ usuario, setActiveTab }) {
     if (!silent) setLoading(true);
     setError("");
     try {
-      // Cargamos el listado completo de eventos para calcular los KPIs legales.
-      // (Suponiendo que el backend devuelva la info admin, o podemos usar el endpoint genérico /eventos si este rol tiene acceso)
       const resEvents = await fetch(`${API}/eventos`).then(r => r.json());
       if (Array.isArray(resEvents)) {
         setEventRequests(resEvents);
@@ -39,12 +37,9 @@ function DashboardLegal({ usuario, setActiveTab }) {
   };
 
   // KPIs Legales
-  // Para simplificar, nos basamos en los eventos que ya están aprobados operativamente (Aprobado, Finalizado)
-  // que son los que requerirían un dictamen legal.
   const eventosAprobados = eventRequests.filter((e) => e.estado === "Aprobado" || e.estado === "Finalizado").length;
   
-  // Simularemos algunos KPIs si no tenemos acceso al objeto "legal" en este endpoint básico
-  // O podemos deducirlo. En una app real, el endpoint devolvería los status legales.
+  // Simularemos algunos KPIs. En una app real, el endpoint devolvería los status legales.
   const contratosPendientes = eventRequests.filter((e) => e.estado === "Aprobado").length;
   const dictamenesEmitidos = eventRequests.filter((e) => e.estado === "Finalizado").length;
   const eventosObservados = 0; // Idealmente filtramos por e.legal?.estado_legal === 'Observado'
@@ -120,7 +115,7 @@ function DashboardLegal({ usuario, setActiveTab }) {
       </div>
 
       {/* TIMELINE Y ACCESOS */}
-      <div className="dashboard-double-panel" style={{ marginTop: '24px' }}>
+      <div className="dashboard-double-panel">
         
         {/* PANEL IZQUIERDO: EVENTOS PENDIENTES DE DICTAMEN */}
         <div className="saas-panel-card">
@@ -132,7 +127,17 @@ function DashboardLegal({ usuario, setActiveTab }) {
                 <p>Eventos próximos que necesitan validación de contratos</p>
               </div>
             </div>
+            <select 
+              value={sortOrder} 
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="dashboard-select"
+              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #E2E8F0', cursor: 'pointer', backgroundColor: '#fff', color: '#475569', outline: 'none' }}
+            >
+              <option value="asc">Más próximos (Asc)</option>
+              <option value="desc">Más lejanos (Desc)</option>
+            </select>
           </div>
+          
           <div className="panel-body">
             {loading ? (
               <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '150px' }}>
@@ -147,11 +152,18 @@ function DashboardLegal({ usuario, setActiveTab }) {
             ) : (
               <div className="modern-upcoming-events-list">
                 {eventosEnProceso.map((evt) => (
-                  <div key={evt.id_evento} className="modern-event-card" onClick={() => setActiveTab("FlujoAdministrativo")}>
+                  <div key={evt.id_evento} className="modern-event-card" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
                     <div className="modern-event-header">
                       <div className="modern-event-date">
-                        <FiClock className="modern-date-icon" />
-                        <span>Evento: {formatFechaLarga(evt.fecha_inicio)}</span>
+                        <FiCalendar className="modern-date-icon" />
+                        <span>{formatFechaLarga(evt.fecha_inicio)}</span>
+                        {evt.hora_inicio && (
+                          <>
+                            <span className="modern-date-separator">•</span>
+                            <FiClock className="modern-date-icon" />
+                            <span>{evt.hora_inicio}</span>
+                          </>
+                        )}
                       </div>
                       <span className="modern-status-badge modern-status-pendiente">
                         Sin Dictamen
@@ -160,17 +172,21 @@ function DashboardLegal({ usuario, setActiveTab }) {
                     
                     <div className="modern-event-body">
                       <h5 className="modern-event-title">{evt.nombre}</h5>
-                      <div className="modern-event-meta-info" style={{ marginTop: '8px' }}>
+                      <div className="modern-event-meta-info" style={{ marginTop: '10px' }}>
                         <div className="modern-meta-item">
                           <FiShield className="modern-meta-icon" />
                           <span>Requiere aval jurídico</span>
+                        </div>
+                        <div className="modern-meta-item">
+                          <FiBriefcase className="modern-meta-icon" />
+                          <span>Contrato B2B Pendiente</span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="modern-event-footer">
                       <button className="modern-view-btn" title="Ir al Expediente">
-                        <span>Revisar Expediente</span>
+                        <span>Revisar Expediente y Dictaminar</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>
                     </div>
@@ -187,14 +203,14 @@ function DashboardLegal({ usuario, setActiveTab }) {
             <FiShield className="panel-icon" />
             <div>
               <h4>Accesos Rápidos Jurídicos</h4>
-              <p>Módulos de evaluación y contratos</p>
+              <p>Módulos de evaluación, revisión y carga de contratos</p>
             </div>
           </div>
           <div className="panel-body flex-column-body">
             
-            <div className="quick-actions-list">
+            <div className="quick-actions-list" style={{ marginBottom: '24px' }}>
               <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
-                <div className="icon-wrapper"><FiShield /></div>
+                <div className="icon-wrapper"><FiCheck /></div>
                 <div className="btn-text">
                   <strong>Evaluación Legal</strong>
                   <span>Ir al Flujo Administrativo</span>
@@ -207,15 +223,30 @@ function DashboardLegal({ usuario, setActiveTab }) {
                   <span>Subir Contratos Firmados</span>
                 </div>
               </div>
+              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
+                <div className="icon-wrapper"><FiCalendar /></div>
+                <div className="btn-text">
+                  <strong>Calendario Institucional</strong>
+                  <span>Revisar Fechas Aprobadas</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
+                <div className="icon-wrapper"><FiFilter /></div>
+                <div className="btn-text">
+                  <strong>Filtro de Expedientes</strong>
+                  <span>Auditar Casos Observados</span>
+                </div>
+              </div>
             </div>
 
-            <div className="poa-summary-box" style={{ marginTop: '24px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <FiAlertTriangle style={{ color: '#f59e0b', fontSize: '20px' }} />
-                <h5 style={{ margin: 0, color: '#334155' }}>Protocolo Legal Activo</h5>
+            <div className="poa-summary-box warning-poa-box" style={{ marginTop: 'auto', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px' }}>
+              <div className="poa-progress-header" style={{ marginBottom: '8px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b45309', fontWeight: '700', fontSize: '13.5px' }}>
+                  <FiAlertTriangle size={16} /> Protocolo Legal y Cumplimiento
+                </span>
               </div>
-              <p className="poa-footer-text" style={{ color: '#475569' }}>
-                Recuerde que ningún suplidor B2B externo puede operar en los recintos de la UAPA sin que previamente usted haya cargado el "Contrato Firmado" a la bóveda digital y emitido el dictamen "Aprobado".
+              <p className="poa-footer-text" style={{ color: '#92400e', fontSize: '12.5px', lineHeight: '1.5', margin: 0 }}>
+                Recuerde que ningún suplidor B2B externo puede operar en los recintos de la UAPA sin que previamente la oficina jurídica haya cargado el <strong>"Contrato Firmado"</strong> a la bóveda digital y emitido el dictamen legal <strong>"Aprobado"</strong>. Las auditorías son en tiempo real.
               </p>
             </div>
             
