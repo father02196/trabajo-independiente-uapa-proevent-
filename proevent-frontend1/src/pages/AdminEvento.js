@@ -108,7 +108,11 @@ export default function AdminEvento({ usuario }) {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedDataList.slice(indexOfFirstItem, indexOfLastItem);
 
-  if (usuario?.rol !== "Administrador de Evento" && usuario?.rol !== "Administrador" && usuario?.rol !== "Especialista de eventos") {
+  const isPermitted = (usuario?.rol || "").toLowerCase().includes("administrador de evento") || 
+                      usuario?.rol === "Administrador" || 
+                      usuario?.rol === "Especialista de eventos";
+
+  if (!isPermitted) {
     return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a esta sección.</div>;
   }
 
