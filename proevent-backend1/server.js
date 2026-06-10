@@ -1859,6 +1859,91 @@ app.get('/api/notificaciones/cotizaciones-vencidas', (req, res) => {
   });
 });
 
+// ── APROBACIONES COMPLETAS POR EVENTO (Para lógica "Iniciar Evento") ──────────────────
+app.get('/api/aprobaciones-evento/:id_evento', (req, res) => {
+  const id_evento = req.params.id_evento;
+  // Consulta paralela: estado del evento principal + estado POA + estado legal + estado audiovisual
+  const sqlEvento = `
+    SELECT e.estado, e.nombre,
+      pm.estado AS estado_poa
+    FROM evento e
+    LEFT JOIN poa_movimiento pm ON e.id_evento = pm.id_evento
+    WHERE e.id_evento = ?`;
+  const sqlLegal = `SELECT estado_legal FROM flujo_aprobacion_legal WHERE id_evento = ?`;
+  const sqlAudiovisual = `
+    SELECT COUNT(*) as total,
+      SUM(CASE WHEN estado = 'Aprobado' OR estado = 'Completado' THEN 1 ELSE 0 END) as aprobados,
+      SUM(CASE WHEN estado = 'Rechazado' THEN 1 ELSE 0 END) as rechazados
+    FROM servicio_audiovisual WHERE id_evento = ?`;
+
+  db.query(sqlEvento, [id_evento], (e1, rEvento) => {
+    if (e1 || !rEvento[0]) return res.status(500).json({ error: 'Error al consultar evento' });
+    const evento = rEvento[0];
+
+    db.query(sqlLegal, [id_evento], (e2, rLegal) => {
+      const legal = rLegal && rLegal[0] ? rLegal[0].estado_legal : 'Pendiente';
+
+      db.query(sqlAudiovisual, [id_evento], (e3, rAV) => {
+        const av = rAV && rAV[0] ? rAV[0] : { total: 0, aprobados: 0, rechazados: 0 };
+
+        // Construir resumen de aprobaciones por área
+        const aprobaciones = [
+          {
+            area: 'Coordinación / Protocolo',
+            estado: evento.estado === 'Aprobado' || evento.estado === 'En Progreso' || evento.estado === 'Finalizado'
+              ? 'Aprobado'
+              : evento.estado === 'Rechazado' ? 'Rechazado' : 'Pendiente',
+            requerido: true
+          },
+          {
+            area: 'Contabilidad / POA',
+            estado: evento.estado_poa === 'Aprobado' ? 'Aprobado'
+              : evento.estado_poa === 'Rechazado' ? 'Rechazado'
+              : evento.estado_poa || 'Pendiente',
+            requerido: true
+          },
+          {
+            area: 'Legal',
+            estado: legal === 'Aprobado' ? 'Aprobado'
+              : legal === 'Rechazado' ? 'Rechazado'
+              : 'Pendiente',
+            requerido: legal !== 'Pendiente' // Solo requerido si hay flujo legal iniciado
+          },
+          {
+            area: 'Audiovisual',
+            estado: av.total === 0 ? 'No aplica'
+              : av.rechazados > 0 ? 'Rechazado'
+              : av.aprobados === av.total ? 'Aprobado'
+              : 'Pendiente',
+            requerido: av.total > 0
+          }
+        ];
+
+        const todasAprobadas = aprobaciones
+          .filter(a => a.requerido)
+          .every(a => a.estado === 'Aprobado');
+
+        const hayRechazos = aprobaciones
+          .filter(a => a.requerido)
+          .some(a => a.estado === 'Rechazado');
+
+        const pendientes = aprobaciones
+          .filter(a => a.requerido && a.estado === 'Pendiente')
+          .map(a => a.area);
+
+        res.json({
+          id_evento,
+          estado_evento: evento.estado,
+          puede_iniciar: todasAprobadas && !hayRechazos,
+          hay_rechazos: hayRechazos,
+          pendientes,
+          aprobaciones
+        });
+      });
+    });
+  });
+});
+
 // --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
 // Transportador configurado con GMail App Password
 const transporter = nodemailer.createTransport({

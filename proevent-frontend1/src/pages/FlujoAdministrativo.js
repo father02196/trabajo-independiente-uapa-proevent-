@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 const API = "http://localhost:8080";
@@ -229,144 +229,199 @@ export default function FlujoAdministrativo({ usuario }) {
   const renderCompras = () => {
     const cotizacionesAgrupadas = agruparCotizacionesPorSolicitud();
     return (
-    <div className="fade-in">
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      
+      {/* ── PANEL DE COTIZACIONES B2B ── */}
       {Object.keys(cotizacionesAgrupadas).length > 0 && (
-        <div style={{ marginBottom: '25px', padding: '15px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <h4 style={{ color: '#0f172a', marginBottom: '15px', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Cotizaciones Recibidas B2B</span>
-          </h4>
+        <div className="saas-panel-card">
+          <div className="panel-header">
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <FiBriefcase className="panel-icon" style={{ fontSize: '24px', color: '#8b5cf6' }} />
+              <div>
+                <h4 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Cotizaciones Recibidas B2B</h4>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Revisión y análisis de ofertas de proveedores</p>
+              </div>
+            </div>
+          </div>
           
-          {Object.entries(cotizacionesAgrupadas).map(([id_solicitud, cotList]) => (
-            <div key={id_solicitud} style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <strong style={{ color: '#334155' }}>Solicitud de Cotización #{id_solicitud}</strong>
-                {cotList.length >= 2 && (
-                  <button onClick={() => evaluarCotizacionesIA(id_solicitud)} className="btn btn-primary btn-sm" style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    ✨ Análisis Comparativo con IA
-                  </button>
+          <div className="panel-body">
+            {Object.entries(cotizacionesAgrupadas).map(([id_solicitud, cotList]) => (
+              <div key={id_solicitud} style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <strong style={{ color: '#1e293b', fontSize: '14.5px' }}>Solicitud de Cotización #{id_solicitud}</strong>
+                  {cotList.length >= 2 && (
+                    <button onClick={() => evaluarCotizacionesIA(id_solicitud)} className="btn btn-primary btn-sm" style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      ✨ Análisis Comparativo con IA
+                    </button>
+                  )}
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {cotList.map(c => {
+                    const alerta = calcularAlertaVencimiento(c.fecha_vigencia);
+                    const isRecomendada = analisisIA?.proveedor_recomendado_id === c.id_proveedor;
+                    return (
+                      <div key={c.id_cotizacion} className={isRecomendada ? '' : 'modern-event-card'} style={isRecomendada ? { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f0fdf4', borderRadius: '12px', borderLeft: `4px solid #22c55e`, border: '1px solid #bbf7d0', boxShadow: '0 4px 12px rgba(34,197,94,0.1)' } : { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', flexDirection: 'row' }}>
+                        <div>
+                          <strong style={{ color: isRecomendada ? '#166534' : '#0f172a', fontSize: '14px' }}>
+                            {c.proveedor_nombre} {isRecomendada && '⭐ (Recomendación IA)'}
+                          </strong>
+                          <div style={{ fontSize: '12.5px', color: '#64748b', marginTop: '6px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <span><strong>Monto:</strong> {c.moneda} {c.monto_total_detectado || 'N/A'}</span>
+                            <span style={{ color: '#cbd5e1' }}>|</span>
+                            <span><strong>Válida hasta:</strong> {new Date(c.fecha_vigencia).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <span style={{ fontSize: '11.5px', fontWeight: '600', color: alerta.color, background: alerta.bg, padding: '6px 12px', borderRadius: '99px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {alerta.texto !== 'Vigente' && <FiAlertCircle />} {alerta.texto}
+                          </span>
+                          <a href={`${API}/${c.ruta_documento_pdf}`} target="_blank" rel="noreferrer" className="details-btn">
+                            <FiDownload /> Ver Oferta
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {analisisIA && cotList.some(c => c.id_proveedor === analisisIA.proveedor_recomendado_id) && (
+                  <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#fdf4ff', border: '1px solid #f5d0fe', borderRadius: '12px' }}>
+                    <h5 style={{ color: '#86198f', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>✨ Veredicto de la IA</h5>
+                    <p style={{ fontSize: '13.5px', color: '#4a044e', marginBottom: '16px', lineHeight: '1.6' }}>{analisisIA.justificacion}</p>
+                    <table className="modern-table" style={{ width: '100%', fontSize: '13px', textAlign: 'left', borderCollapse: 'collapse', backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+                      <thead style={{ background: '#fae8ff' }}>
+                        <tr>
+                          <th style={{ padding: '12px 16px', color: '#701a75' }}>Proveedor</th>
+                          <th style={{ padding: '12px 16px', color: '#701a75' }}>Costo (DOP)</th>
+                          <th style={{ padding: '12px 16px', color: '#701a75' }}>Ventajas Detectadas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analisisIA.matriz_comparativa?.map((mat, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #fae8ff' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#86198f' }}>{mat.proveedor}</td>
+                            <td style={{ padding: '12px 16px', color: '#4a044e' }}>RD$ {mat.costo_normalizado_dop}</td>
+                            <td style={{ padding: '12px 16px', color: '#4a044e' }}>{mat.ventajas?.join(', ')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {cotList.map(c => {
-                  const alerta = calcularAlertaVencimiento(c.fecha_vigencia);
-                  const isRecomendada = analisisIA?.proveedor_recomendado_id === c.id_proveedor;
-                  return (
-                    <div key={c.id_cotizacion} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: isRecomendada ? '#f0fdf4' : '#fff', borderRadius: '6px', borderLeft: `4px solid ${isRecomendada ? '#22c55e' : alerta.color}`, border: isRecomendada ? '1px solid #bbf7d0' : '1px solid #e2e8f0' }}>
-                      <div>
-                        <strong style={{ color: isRecomendada ? '#166534' : 'inherit' }}>
-                          {c.proveedor_nombre} {isRecomendada && '⭐ (Recomendación IA)'}
-                        </strong>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Monto Detectado: {c.moneda} {c.monto_total_detectado || 'N/A'} | Válida hasta: {new Date(c.fecha_vigencia).toLocaleDateString()}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: alerta.color, background: alerta.bg, padding: '4px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          {alerta.texto !== 'Vigente' && <FiAlertCircle />} {alerta.texto}
-                        </span>
-                        <a href={`${API}/${c.ruta_documento_pdf}`} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm"><FiDownload /> Ver Oferta</a>
-                      </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── PANEL DE ÓRDENES DE COMPRA ── */}
+      <div className="saas-panel-card">
+        <div className="panel-header">
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <FiDollarSign className="panel-icon" style={{ fontSize: '24px', color: '#10b981' }} />
+            <div>
+              <h4 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Órdenes de Compra</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Gestión de OC por cada servicio externo aprobado</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="panel-body">
+          {servicios.length === 0 ? (
+            <div className="empty-panel-state">
+              <FiBriefcase className="empty-icon" style={{ fontSize: '32px', color: '#cbd5e1', marginBottom: '12px' }} />
+              <p>No hay servicios externos solicitados para este evento.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {servicios.map(s => (
+                <div key={s.id_servicio_ext} style={{ border: '1px solid #e2e8f0', padding: '20px', borderRadius: '12px', background: '#f8fafc', transition: 'all 0.2s' }} className="hover:shadow-md">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <strong style={{ fontSize: '15px', color: '#1e293b' }}>{s.tipo_servicio} <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 'normal' }}>(ID: {s.id_servicio_ext})</span></strong>
+                    <span style={{ fontSize: '12px', fontWeight: '600', background: s.estado === 'Aprobado' ? '#d1fae5' : '#e0f2fe', color: s.estado === 'Aprobado' ? '#047857' : '#0369a1', padding: '4px 10px', borderRadius: '99px' }}>
+                      {s.estado}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '250px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Número de Orden de Compra (OC):</label>
+                      <input 
+                        type="text" 
+                        className="form-control-premium" 
+                        defaultValue={s.numero_orden_compra || ''}
+                        onBlur={(e) => guardarCambiosServicio(s.id_servicio_ext, e.target.value, s.requiere_contrato)}
+                        placeholder="Ej: OC-2026-001"
+                      />
                     </div>
-                  );
-                })}
-              </div>
-
-              {analisisIA && cotList.some(c => c.id_proveedor === analisisIA.proveedor_recomendado_id) && (
-                <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#fdf4ff', border: '1px solid #f5d0fe', borderRadius: '8px' }}>
-                  <h5 style={{ color: '#86198f', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>✨ Veredicto de la IA</h5>
-                  <p style={{ fontSize: '13px', color: '#4a044e', marginBottom: '12px' }}>{analisisIA.justificacion}</p>
-                  <table style={{ width: '100%', fontSize: '12px', textAlign: 'left', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #f0abfc' }}>
-                        <th style={{ padding: '6px 0' }}>Proveedor</th>
-                        <th>Costo (DOP)</th>
-                        <th>Ventajas</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analisisIA.matriz_comparativa?.map((mat, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #fae8ff' }}>
-                          <td style={{ padding: '6px 0', fontWeight: 'bold', color: '#701a75' }}>{mat.proveedor}</td>
-                          <td>RD$ {mat.costo_normalizado_dop}</td>
-                          <td>{mat.ventajas?.join(', ')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <label className="btn btn-secondary" style={{ margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FiUpload /> Cotización
+                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Cotizacion')} />
+                      </label>
+                      <label className="btn btn-primary" style={{ margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#10b981', borderColor: '#10b981' }}>
+                        <FiUpload /> OC Firmada
+                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Orden de Compra')} />
+                      </label>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
-
-      <h4 style={{ marginBottom: '15px' }}>Gestión de Órdenes de Compra por Servicio</h4>
-      {servicios.length === 0 ? <p>No hay servicios externos solicitados para este evento.</p> : (
-        <div style={{ display: 'grid', gap: '15px' }}>
-          {servicios.map(s => (
-            <div key={s.id_servicio_ext} style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '8px', background: '#f8fafc' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <strong>{s.tipo_servicio} (ID: {s.id_servicio_ext})</strong>
-                <span style={{ fontSize: '12px', background: s.estado === 'Aprobado' ? '#d1fae5' : '#e0f2fe', color: s.estado === 'Aprobado' ? '#047857' : '#0369a1', padding: '2px 8px', borderRadius: '12px' }}>
-                  {s.estado}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <label style={{ fontSize: '12px', color: '#64748b' }}>Número de Orden de Compra (OC):</label>
-                  <input 
-                    type="text" 
-                    className="form-control-premium" 
-                    defaultValue={s.numero_orden_compra || ''}
-                    onBlur={(e) => guardarCambiosServicio(s.id_servicio_ext, e.target.value, s.requiere_contrato)}
-                  />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '15px' }}>
-                  <label className="btn btn-secondary btn-sm" style={{ margin: 0, cursor: 'pointer' }}>
-                    <FiUpload /> Subir Cotización Manual
-                    <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Cotizacion')} />
-                  </label>
-                  <label className="btn btn-primary btn-sm" style={{ margin: 0, cursor: 'pointer' }}>
-                    <FiUpload /> Subir OC Firmada
-                    <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Orden de Compra')} />
-                  </label>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
   };
 
   const renderPresupuesto = () => (
     <div className="fade-in">
-      <h4 style={{ marginBottom: '15px' }}>Flujo de Presupuesto / VAF</h4>
-      <div style={{ background: '#f0fdfa', padding: '20px', borderRadius: '8px', border: '1px solid #ccfbf1', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <div>
-          <label style={{ fontWeight: 'bold' }}>Estado de Asignación Presupuestaria:</label>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-            <select 
-              className="table-select-premium" 
-              value={presupuesto.estado} 
-              onChange={(e) => setPresupuesto({ ...presupuesto, estado: e.target.value })}
-              style={{ width: '250px' }}
-            >
-              <option value="Pendiente">Pendiente</option>
-              <option value="Asignado">Asignado (Fondos Reservados)</option>
-              <option value="Aprobado">Aprobado (Definitivo)</option>
-              <option value="Rechazado">Rechazado (Sin Fondos)</option>
-            </select>
-            <button className="btn btn-primary" onClick={guardarPresupuesto}>Guardar Estado</button>
+      <div className="saas-panel-card">
+        <div className="panel-header">
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <FiDollarSign className="panel-icon" style={{ fontSize: '24px', color: '#f59e0b' }} />
+            <div>
+              <h4 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Flujo de Presupuesto (VAF)</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Asignación y certificación de fondos del evento</p>
+            </div>
           </div>
         </div>
 
-        <div style={{ marginTop: '10px' }}>
-          <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-            <FiUpload /> Cargar Certificación de Fondos
-            <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Certificacion de Fondos')} />
-          </label>
-          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Suba el PDF de la certificación firmada por Contabilidad/VAF.</p>
+        <div className="panel-body" style={{ padding: '30px' }}>
+          <div style={{ background: '#fffbeb', padding: '24px', borderRadius: '12px', border: '1px solid #fef3c7', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div>
+              <label style={{ fontWeight: '600', fontSize: '14px', color: '#92400e', display: 'block', marginBottom: '12px' }}>
+                Estado de Asignación Presupuestaria:
+              </label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <select 
+                  className="table-select-premium" 
+                  value={presupuesto.estado} 
+                  onChange={(e) => setPresupuesto({ ...presupuesto, estado: e.target.value })}
+                  style={{ width: '100%', maxWidth: '300px', padding: '12px', fontSize: '14px' }}
+                >
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Asignado">Asignado (Fondos Reservados)</option>
+                  <option value="Aprobado">Aprobado (Definitivo)</option>
+                  <option value="Rechazado">Rechazado (Sin Fondos)</option>
+                </select>
+                <button className="btn btn-primary" onClick={guardarPresupuesto} style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '12px 20px', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
+                  <FiCheckCircle /> Guardar Estado
+                </button>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px dashed #fde68a', paddingTop: '20px' }}>
+              <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 20px', margin: 0, background: '#fff', borderColor: '#fcd34d', color: '#b45309' }}>
+                <FiUpload /> Cargar Certificación de Fondos
+                <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Certificacion de Fondos')} />
+              </label>
+              <p style={{ fontSize: '13px', color: '#b45309', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FiFileText /> Suba el PDF de la certificación firmada por Contabilidad o la VAF.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -374,16 +429,28 @@ export default function FlujoAdministrativo({ usuario }) {
 
   const renderLegal = () => (
     <div className="fade-in">
-      <h4 style={{ marginBottom: '15px' }}>Aprobaciones y Contratos Legales</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-        <div style={{ background: '#fef2f2', padding: '20px', borderRadius: '8px', border: '1px solid #fee2e2' }}>
-          <label style={{ fontWeight: 'bold' }}>Estado de Revisión Legal:</label>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '8px', marginBottom: '15px' }}>
+      <div className="panel-header" style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <FiShield className="panel-icon" style={{ fontSize: '24px', color: '#3b82f6' }} />
+          <div>
+            <h4 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Aprobaciones y Contratos Legales</h4>
+            <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Dictaminar eventos y gestionar bóveda de contratos B2B</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="dashboard-double-panel">
+        <div className="saas-panel-card" style={{ padding: '24px', flex: 2 }}>
+          <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '16px', marginBottom: '16px' }}>
+            <h5 style={{ fontSize: '15px', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FiCheckCircle style={{ color: '#10b981' }}/> Emisión de Dictamen Legal
+            </h5>
+            <label style={{ fontWeight: '600', fontSize: '13px', color: '#475569', display: 'block', marginBottom: '8px' }}>Resolución del Caso:</label>
             <select 
               className="table-select-premium" 
               value={legal.estado_legal} 
               onChange={(e) => setLegal({ ...legal, estado_legal: e.target.value })}
-              style={{ flex: 1 }}
+              style={{ width: '100%', maxWidth: '300px', marginBottom: '16px' }}
             >
               <option value="Pendiente">Pendiente</option>
               <option value="En revisión">En revisión</option>
@@ -392,39 +459,62 @@ export default function FlujoAdministrativo({ usuario }) {
               <option value="Rechazado">Rechazado</option>
             </select>
           </div>
-          <label style={{ fontWeight: 'bold' }}>Observaciones Legales:</label>
-          <textarea 
-            className="form-control-premium" 
-            rows="4" 
-            value={legal.observacion_legal || ''} 
-            onChange={(e) => setLegal({ ...legal, observacion_legal: e.target.value })}
-            placeholder="Ingrese cualquier observación, enmienda requerida o nota jurídica..."
-            style={{ width: '100%', marginTop: '8px', marginBottom: '15px' }}
-          />
-          <button className="btn btn-primary" onClick={guardarLegal}>Guardar Dictamen Legal</button>
+          
+          <div>
+            <label style={{ fontWeight: '600', fontSize: '13px', color: '#475569', display: 'block', marginBottom: '8px' }}>Observaciones / Notas Jurídicas:</label>
+            <textarea 
+              className="form-control-premium" 
+              rows="4" 
+              value={legal.observacion_legal || ''} 
+              onChange={(e) => setLegal({ ...legal, observacion_legal: e.target.value })}
+              placeholder="Ingrese cualquier observación, enmienda requerida o nota jurídica para el solicitante..."
+              style={{ width: '100%', marginBottom: '20px', resize: 'vertical' }}
+            />
+            <button className="btn btn-primary" onClick={guardarLegal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FiShield /> Guardar Dictamen Legal
+            </button>
+          </div>
         </div>
 
-        <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '15px' }}>Servicios que Requieren Contrato</label>
-          {servicios.length === 0 ? <p style={{ fontSize: '13px', color: '#64748b' }}>Sin servicios.</p> : servicios.map(s => (
-            <div key={s.id_servicio_ext} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px' }}>
-              <span>{s.tipo_servicio}</span>
-              <input 
-                type="checkbox" 
-                checked={s.requiere_contrato} 
-                onChange={(e) => {
-                  const updated = [...servicios];
-                  const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
-                  updated[idx].requiere_contrato = e.target.checked;
-                  setServicios(updated);
-                  guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
-                }}
-              />
-            </div>
-          ))}
-          <div style={{ marginTop: '20px' }}>
-            <label className="btn btn-secondary btn-sm" style={{ width: '100%', cursor: 'pointer', textAlign: 'center' }}>
-              <FiUpload /> Subir Contrato Firmado
+        <div className="saas-panel-card" style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <h5 style={{ fontSize: '15px', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FiFileText style={{ color: '#8b5cf6' }}/> Control de Contratos B2B
+          </h5>
+          <p style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '16px' }}>Marque los servicios de proveedores externos que requieren firma de contrato antes de operar.</p>
+          
+          <div style={{ flex: 1 }}>
+            {servicios.length === 0 ? (
+              <div className="empty-panel-state" style={{ padding: '20px 0' }}>
+                <p>Sin servicios externos registrados.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {servicios.map(s => (
+                  <div key={s.id_servicio_ext} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#334155' }}>{s.tipo_servicio}</span>
+                    <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={s.requiere_contrato} 
+                        onChange={(e) => {
+                          const updated = [...servicios];
+                          const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
+                          updated[idx].requiere_contrato = e.target.checked;
+                          setServicios(updated);
+                          guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
+                        }}
+                        style={{ width: '18px', height: '18px', accentColor: '#3b82f6', cursor: 'pointer' }}
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+            <label className="btn btn-secondary" style={{ width: '100%', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <FiUpload /> Subir Contrato Firmado a Bóveda
               <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Contrato')} />
             </label>
           </div>
@@ -435,40 +525,78 @@ export default function FlujoAdministrativo({ usuario }) {
 
   const renderDocumentos = () => (
     <div className="fade-in">
-      <h4 style={{ marginBottom: '15px' }}>Bóveda Digital (Expediente del Evento)</h4>
-      {documentos.length === 0 ? <p>No hay documentos subidos para este evento.</p> : (
-        <table className="tabla-premium">
-          <thead>
-            <tr>
-              <th>Tipo de Documento</th>
-              <th>Nombre del Archivo</th>
-              <th>Subido por</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documentos.map(doc => (
-              <tr key={doc.id_documento}>
-                <td><span className="badge" style={{ background: '#e0e7ff', color: '#4338ca' }}>{doc.tipo_documento}</span></td>
-                <td><FiFileText style={{ marginRight: '5px', color: '#64748b' }}/> {doc.nombre_archivo}</td>
-                <td>{doc.usuario_nombre || 'Sistema'}</td>
-                <td>{new Date(doc.fecha_subida).toLocaleString()}</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <a href={`${API}${doc.ruta_archivo}`} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }}>
-                      <FiDownload />
-                    </a>
-                    <button className="btn btn-danger btn-sm" style={{ padding: '4px 8px' }} onClick={() => archivarDocumento(doc.id_documento)}>
-                      <FiTrash2 />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <div className="saas-panel-card">
+        <div className="panel-header">
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <FiFileText className="panel-icon" style={{ fontSize: '24px', color: '#3b82f6' }} />
+            <div>
+              <h4 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Bóveda Digital</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Expediente completo de documentos del evento</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel-body" style={{ padding: '0' }}>
+          {documentos.length === 0 ? (
+            <div className="empty-panel-state" style={{ padding: '60px 20px' }}>
+              <FiFileText className="empty-icon" style={{ fontSize: '48px', color: '#cbd5e1', marginBottom: '16px' }} />
+              <h5 style={{ margin: '0 0 8px 0', color: '#475569', fontSize: '16px' }}>Sin documentos en la bóveda</h5>
+              <p>No hay documentos subidos para este evento aún.</p>
+            </div>
+          ) : (
+            <div className="table-container" style={{ border: 'none', borderRadius: 0 }}>
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th>TIPO DE DOCUMENTO</th>
+                    <th>NOMBRE DEL ARCHIVO</th>
+                    <th>SUBIDO POR</th>
+                    <th>FECHA</th>
+                    <th style={{ textAlign: 'right', paddingRight: '24px' }}>ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documentos.map(doc => (
+                    <tr key={doc.id_documento} className="table-hover-row">
+                      <td>
+                        <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: '600', backgroundColor: '#e0e7ff', color: '#4338ca' }}>
+                          {doc.tipo_documento}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#334155', fontWeight: '500' }}>
+                          <FiFileText style={{ color: '#64748b', fontSize: '16px' }}/> {doc.nombre_archivo}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontSize: '13.5px' }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>
+                            {doc.usuario_nombre ? doc.usuario_nombre.charAt(0).toUpperCase() : 'S'}
+                          </div>
+                          {doc.usuario_nombre || 'Sistema'}
+                        </div>
+                      </td>
+                      <td style={{ color: '#64748b', fontSize: '13.5px' }}>
+                        {new Date(doc.fecha_subida).toLocaleString('es-DO', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </td>
+                      <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                        <div className="saas-action-group" style={{ display: 'inline-flex' }}>
+                          <a href={`${API}${doc.ruta_archivo}`} target="_blank" rel="noreferrer" className="action-icon-btn view" title="Descargar documento">
+                            <FiDownload />
+                          </a>
+                          <button className="action-icon-btn delete" onClick={() => archivarDocumento(doc.id_documento)} title="Eliminar / Archivar">
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 
@@ -485,64 +613,70 @@ export default function FlujoAdministrativo({ usuario }) {
           </div>
         </div>
 
-        <div className="filters-grid" style={{ marginTop: '20px' }}>
-          <div className="filter-item full-width">
-            <label>Seleccionar Evento Operativo</label>
-            <select onChange={handleSelectEvent} className="table-select-premium" style={{ width: '100%', padding: '10px' }}>
-              <option value="">-- Elige un evento para administrar --</option>
-              {eventos.map((ev) => (
-                <option key={ev.id_evento} value={ev.id_evento}>
-                  {`#EVT-${ev.id_evento} - ${ev.nombre} (${ev.estado})`}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div style={{ padding: '20px 22px', borderBottom: '1px solid #f1f5f9' }}>
+          <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Seleccionar Evento Operativo</label>
+          <select onChange={handleSelectEvent} className="table-select-premium" style={{ width: '100%', padding: '10px 14px', fontSize: '13.5px' }}>
+            <option value="">-- Elige un evento para administrar --</option>
+            {eventos.map((ev) => (
+              <option key={ev.id_evento} value={ev.id_evento}>
+                {`#EVT-${ev.id_evento} — ${ev.nombre} (${ev.estado})`}
+              </option>
+            ))}
+          </select>
         </div>
 
         {eventoSeleccionado && (
-          <div style={{ marginTop: '30px' }}>
-            {/* Tabs de Navegación */}
-            <div style={{ display: 'flex', gap: '10px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginBottom: '20px' }}>
+          <div>
+            {/* Tabs de Navegación Premium */}
+            <div className="flujo-tabs-nav">
               {(isComprasRole || isGeneralRole) && (
                 <button 
+                  className={`flujo-tab-btn${tab === 'compras' ? ' active' : ''}`}
                   onClick={() => setTab('compras')} 
-                  style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'compras' ? '#2563eb' : '#64748b', borderBottom: tab === 'compras' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
                 >
                   Compras y Cotizaciones
                 </button>
               )}
               {(isVAFRole || isGeneralRole) && (
                 <button 
+                  className={`flujo-tab-btn${tab === 'presupuesto' ? ' active' : ''}`}
                   onClick={() => setTab('presupuesto')} 
-                  style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'presupuesto' ? '#2563eb' : '#64748b', borderBottom: tab === 'presupuesto' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
                 >
                   Presupuesto (VAF)
                 </button>
               )}
               {(isLegalRole || isGeneralRole) && (
                 <button 
+                  className={`flujo-tab-btn${tab === 'legal' ? ' active' : ''}`}
                   onClick={() => setTab('legal')} 
-                  style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'legal' ? '#2563eb' : '#64748b', borderBottom: tab === 'legal' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px' }}
                 >
                   Legal y Contratos
                 </button>
               )}
               <button 
-                onClick={() => setTab('documentos')} 
-                style={{ background: 'none', border: 'none', padding: '10px 15px', fontWeight: 'bold', color: tab === 'documentos' ? '#2563eb' : '#64748b', borderBottom: tab === 'documentos' ? '2px solid #2563eb' : 'none', cursor: 'pointer', marginBottom: '-12px', marginLeft: 'auto' }}
+                className={`flujo-tab-btn${tab === 'documentos' ? ' active' : ''}`}
+                onClick={() => setTab('documentos')}
+                style={{ marginLeft: 'auto' }}
               >
-                Archivos ({documentos.length})
+                Bóveda Digital ({documentos.length})
               </button>
             </div>
 
-            {loading ? <div className="loader"></div> : (
-              <>
-                {tab === 'compras' && renderCompras()}
-                {tab === 'presupuesto' && renderPresupuesto()}
-                {tab === 'legal' && renderLegal()}
-                {tab === 'documentos' && renderDocumentos()}
-              </>
-            )}
+            <div style={{ padding: '24px 22px' }}>
+              {loading ? (
+                <div className="table-state-loading" style={{ padding: '60px 0' }}>
+                  <div className="loader"></div>
+                  <p>Cargando expediente del evento...</p>
+                </div>
+              ) : (
+                <>
+                  {tab === 'compras' && renderCompras()}
+                  {tab === 'presupuesto' && renderPresupuesto()}
+                  {tab === 'legal' && renderLegal()}
+                  {tab === 'documentos' && renderDocumentos()}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

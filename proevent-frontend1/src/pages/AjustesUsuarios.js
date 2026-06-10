@@ -3,6 +3,7 @@ import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 import './../css/AjustesUsuarios.css';
 import './../css/Dashboard.css';
+import { FiEdit2, FiCheck, FiSlash } from 'react-icons/fi';
 
 const API = 'http://localhost:8080';
 
@@ -306,14 +307,14 @@ function AjustesUsuarios({ usuario }) {
                                     </td>
                                     <td>
                                         <div className="ajustes-actions" style={{ justifyContent: 'center' }}>
-                                            <button className="ajustes-action-btn edit" onClick={() => handleEdit(usuario)} title="Editar">✎</button>
+                                            <button className="action-icon-btn edit" onClick={() => handleEdit(usuario)} title="Editar"><FiEdit2 /></button>
                                             <button 
-                                                className={`ajustes-action-btn toggle-state ${usuario.estado === 'inactivo' ? 'to-activate' : 'to-deactivate'}`} 
+                                                className={`action-icon-btn ${usuario.estado === 'inactivo' ? 'approve' : 'reject'}`} 
                                                 onClick={() => handleToggleEstado(usuario)} 
                                                 title={usuario.estado === 'inactivo' ? 'Activar Usuario' : 'Desactivar Usuario'}
                                                 style={{ fontSize: '15px' }}
                                             >
-                                                {usuario.estado === 'inactivo' ? '✓' : '⊘'}
+                                                {usuario.estado === 'inactivo' ? <FiCheck /> : <FiSlash />}
                                             </button>
                                         </div>
                                     </td>

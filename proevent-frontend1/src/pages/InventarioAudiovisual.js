@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiBox, FiSearch, FiInfo, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import { FiBox, FiSearch, FiInfo, FiCheckCircle, FiAlertCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 
@@ -138,8 +138,15 @@ function InventarioAudiovisual({ usuario }) {
                   <tr key={eq.id_equipo}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
-                          <FiBox size={18} />
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                          {eq.icono === 'FiMonitor' && <FiMonitor size={18} />}
+                          {eq.icono === 'FiSpeaker' && <FiSpeaker size={18} />}
+                          {eq.icono === 'FiMic' && <FiMic size={18} />}
+                          {eq.icono === 'FiVideo' && <FiVideo size={18} />}
+                          {eq.icono === 'FiRadio' && <FiRadio size={18} />}
+                          {eq.icono === 'FiSun' && <FiSun size={18} />}
+                          {eq.icono === 'FiCast' && <FiCast size={18} />}
+                          {!["FiMonitor", "FiSpeaker", "FiMic", "FiVideo", "FiRadio", "FiSun", "FiCast"].includes(eq.icono) && <FiMonitor size={18} />}
                         </div>
                         <strong style={{ color: '#0F172A', fontWeight: '600' }}>{eq.nombre}</strong>
                       </div>
