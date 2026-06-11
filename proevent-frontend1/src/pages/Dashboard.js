@@ -206,39 +206,46 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
 
                                 {/* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual */}
                                 {(usuario?.rol !== "Responsable de área audiovisual") && (
-                                    <>
-                                        <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>
-                                            <span>Módulo Eventos</span>
-                                            {openMenus.eventos ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
+                                    usuario?.rol === "Solicitante" ? (
+                                        <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
+                                            <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
+                                            Solicitud de Eventos
                                         </li>
-                                        <ul className={`nav-submenu ${openMenus.eventos ? 'open' : ''}`}>
-                                    <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
-                                        <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
-                                        Solicitud de Eventos
-                                    </li>
-                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
+                                    ) : (
                                         <>
-                                            <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
-                                                <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                Catálogos de Eventos
+                                            <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>
+                                                <span>Módulo Eventos</span>
+                                                {openMenus.eventos ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
                                             </li>
-                                            <li className={activeTab === "GestionEventos" ? "active" : ""} onClick={() => setActiveTab("GestionEventos")}>
-                                                <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                Gestión de Solicitudes
-                                            </li>
-                                            <li className={activeTab === "AsignacionPersonal" ? "active" : ""} onClick={() => setActiveTab("AsignacionPersonal")}>
-                                                <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                Asignación de Personal
-                                            </li>
-                                            <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
-                                                <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                Cronograma Logístico
-                                            </li>
+                                            <ul className={`nav-submenu ${openMenus.eventos ? 'open' : ''}`}>
+                                                <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
+                                                    <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
+                                                    Solicitud de Eventos
+                                                </li>
+                                                {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
+                                                    <>
+                                                        <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
+                                                            <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                            Catálogos de Eventos
+                                                        </li>
+                                                        <li className={activeTab === "GestionEventos" ? "active" : ""} onClick={() => setActiveTab("GestionEventos")}>
+                                                            <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                            Gestión de Solicitudes
+                                                        </li>
+                                                        <li className={activeTab === "AsignacionPersonal" ? "active" : ""} onClick={() => setActiveTab("AsignacionPersonal")}>
+                                                            <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                            Asignación de Personal
+                                                        </li>
+                                                        <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
+                                                            <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                            Cronograma Logístico
+                                                        </li>
+                                                    </>
+                                                )}
+                                            </ul>
                                         </>
-                                    )}
-                                </ul>
-                            </>
-                        )}
+                                    )
+                                )}
 
                         {/* MÓDULO AUDIOVISUAL: visible para todos excepto Solicitante */}
                         {(usuario?.rol !== "Solicitante") && (
@@ -294,51 +301,64 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             </>
                         )}
 
-                        <li className="nav-group-header" onClick={() => toggleMenu('admin')}>
-                            <span>Administración</span>
-                            {openMenus.admin ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
-                        </li>
-                        <ul className={`nav-submenu ${openMenus.admin ? 'open' : ''}`}>
-                            {/* Evaluación: Solicitante, Administrador y Administrador de Eventos */}
-                            {(usuario?.rol === "Solicitante" || usuario?.rol === "Administrador" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
+                        {usuario?.rol === "Solicitante" ? (
+                            <>
                                 <li className={activeTab === "Evaluacion" ? "active" : ""} onClick={() => setActiveTab("Evaluacion")}>
                                     <FiStar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                     Evaluación
                                 </li>
-                            )}
-                            {/* Soporte: todos */}
-                            <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
-                                <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                Soporte
-                            </li>
-                            {/* Visualizar evaluaciones: todos excepto Solicitante */}
-                            {usuario?.rol !== "Solicitante" && (
-                                <li className={activeTab === "VisualizarEvaluaciones" ? "active" : ""} onClick={() => setActiveTab("VisualizarEvaluaciones")}>
-                                    <FiActivity className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                    Visualizar Evaluaciones
+                                <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
+                                    <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                    Soporte
                                 </li>
-                            )}
-                            {/* Bitácora y Ajustes: solo Administrador */}
-                            {usuario?.rol === "Administrador" && (
-                                <>
-                                    <li className={activeTab === "Bitacora" ? "active" : ""} onClick={() => setActiveTab("Bitacora")}>
-                                        <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                        Actividad de usuario
-                                    </li>
-                                    <li className={activeTab === "Ajustes" ? "active" : ""} onClick={() => setActiveTab("Ajustes")}>
-                                        <FiSliders className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                        Gestión de Usuarios
-                                    </li>
-                                </>
-                            )}
-                            {/* Presupuesto POA: Administrador */}
-                            {usuario?.rol === "Administrador" && (
-                                <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
-                                    <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                    Presupuesto POA
+                            </>
+                        ) : (
+                            <>
+                                <li className="nav-group-header" onClick={() => toggleMenu('admin')}>
+                                    <span>Administración</span>
+                                    {openMenus.admin ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
                                 </li>
-                            )}
-                        </ul>
+                                <ul className={`nav-submenu ${openMenus.admin ? 'open' : ''}`}>
+                                    {/* Evaluación: Administrador y Administrador de Eventos */}
+                                    {(usuario?.rol === "Administrador" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
+                                        <li className={activeTab === "Evaluacion" ? "active" : ""} onClick={() => setActiveTab("Evaluacion")}>
+                                            <FiStar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                            Evaluación
+                                        </li>
+                                    )}
+                                    {/* Soporte: todos */}
+                                    <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
+                                        <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                        Soporte
+                                    </li>
+                                    {/* Visualizar evaluaciones: todos excepto Solicitante */}
+                                    <li className={activeTab === "VisualizarEvaluaciones" ? "active" : ""} onClick={() => setActiveTab("VisualizarEvaluaciones")}>
+                                        <FiActivity className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                        Visualizar Evaluaciones
+                                    </li>
+                                    {/* Bitácora y Ajustes: solo Administrador */}
+                                    {usuario?.rol === "Administrador" && (
+                                        <>
+                                            <li className={activeTab === "Bitacora" ? "active" : ""} onClick={() => setActiveTab("Bitacora")}>
+                                                <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Actividad de usuario
+                                            </li>
+                                            <li className={activeTab === "Ajustes" ? "active" : ""} onClick={() => setActiveTab("Ajustes")}>
+                                                <FiSliders className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Gestión de Usuarios
+                                            </li>
+                                        </>
+                                    )}
+                                    {/* Presupuesto POA: Administrador */}
+                                    {usuario?.rol === "Administrador" && (
+                                        <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
+                                            <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                            Presupuesto POA
+                                        </li>
+                                    )}
+                                </ul>
+                            </>
+                        )}
                     </ul>
                 </nav>
 
