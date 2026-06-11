@@ -1,5 +1,7 @@
 import React, { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useReactToPrint } from 'react-to-print';
+import html2pdf from 'html2pdf.js';
 import { FiPrinter, FiDownload } from 'react-icons/fi';
 import './../css/Dashboard.css';
 
@@ -18,23 +20,39 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
     documentTitle: `Ficha_Tecnica_EVT_${evento.id_evento}`,
   });
 
+  const handleDownloadPDF = () => {
+    const element = componentRef.current;
+    const opt = {
+      margin:       0.5,
+      filename:     `Ficha_Tecnica_EVT_${evento.id_evento}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
   if (!evento) return null;
 
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '20px' }}>
+  return createPortal(
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, padding: '20px' }}>
       
       <div style={{ background: '#f8fafc', width: '100%', maxWidth: '900px', height: '100%', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
         
         {/* Toolbar superior (No se imprime) */}
-        <div style={{ padding: '15px 20px', background: '#1e293b', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '15px 20px', background: '#ffffff', color: '#0f172a', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <FiDownload /> Generador de Ficha Técnica
           </h3>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn btn-primary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FiPrinter /> Imprimir / Guardar PDF
+            <button className="btn btn-secondary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+              <FiPrinter /> Imprimir
             </button>
-            <button className="btn btn-secondary" onClick={onClose} style={{ background: '#475569', color: 'white', border: 'none' }}>
+            <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+              <FiDownload /> Guardar PDF
+            </button>
+            <button className="btn btn-secondary" onClick={onClose} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
               Cerrar
             </button>
           </div>
@@ -166,6 +184,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
