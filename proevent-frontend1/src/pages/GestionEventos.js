@@ -768,18 +768,18 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {usuario?.rol !== "Solicitante" && (
-                  <button className="btn btn-primary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F59E0B', borderColor: '#F59E0B' }}>
+                  <button className="btn btn-secondary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiSend /> Asignar Servicio Externo
                   </button>
                 )}
                 {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
-                  <button className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button className="btn btn-secondary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiEdit2 /> Editar Evento
                   </button>
                 )}
                 {usuario?.rol !== "Solicitante" && (
-                  <button className="btn btn-primary" onClick={() => setShowFichaPDF(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}>
-                    <FiFileText /> Generar PDF (Imprimir)
+                  <button className="btn btn-secondary" onClick={() => setShowFichaPDF(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiFileText /> Generar PDF
                   </button>
                 )}
               </div>
@@ -864,7 +864,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       )}
 
       {/* MODAL ESTADO DE APROBACIONES */}
-      {modalAprobaciones && (
+      {modalAprobaciones && createPortal(
         <div className="modal-overlay" onClick={() => setModalAprobaciones(null)} style={{ zIndex: 1060 }}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
@@ -941,7 +941,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
