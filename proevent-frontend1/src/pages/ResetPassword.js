@@ -3,6 +3,7 @@ import './../css/Login.css';
 import lockIcon from "./../img/lock.png";
 import viewIcon from "./../img/view.png";
 import hideIcon from "./../img/hide.png";
+import logoProevent from "./../img/logo-proevent.jpeg";
 
 function ResetPassword({ token, onBackClick }) {
   const [newPassword, setNewPassword] = useState("");
@@ -64,84 +65,89 @@ function ResetPassword({ token, onBackClick }) {
 
   if (validating) {
     return (
-      <div className="login-page">
-        <div className="login-wrapper">
-          <div className="login-left">
-            <p className="brand-subtitle">Validando enlace de seguridad...</p>
-          </div>
+      <div className="lc-bg">
+        <div className="lc-card" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+          <p className="lc-subtitle">Validando enlace de seguridad...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="login-page">
-      <div className="login-wrapper">
-        <div className="login-left">
-          <div className="login-form-box">
-            <div className="login-brand-row">
-              <div className="login-brand-icon">PE</div>
-              <div>
-                <p className="welcome-label">Actualización</p>
-                <h1 className="brand-name">Pro<span className="brand-name-highlight">Event</span></h1>
+    <div className="lc-bg">
+      <div className="lc-card">
+        
+        <div className="lc-header">
+          {/* Espacio para el nuevo logo proporcionado */}
+          <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '220px', height: 'auto', margin: '0 auto 15px', display: 'block' }} />
+          
+          <p className="lc-subtitle" style={{ margin: '10px 0 5px', fontWeight: 'bold' }}>Actualización</p>
+          <h1 className="lc-title">ProEvent</h1>
+          <p className="lc-subtitle">
+            {success 
+              ? "Tu contraseña ha sido actualizada con éxito." 
+              : "Ingresa tu nueva contraseña para recuperar el acceso a tu cuenta."}
+          </p>
+        </div>
+
+        {!success && (
+          <form className="lc-form" onSubmit={handleSubmit}>
+            <div className="lc-field">
+              <div className="lc-input-wrap">
+                <img src={lockIcon} alt="contraseña" className="lc-input-icon" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="lc-input"
+                  placeholder="Nueva Contraseña"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <img
+                  src={showPassword ? hideIcon : viewIcon}
+                  alt={showPassword ? "Ocultar" : "Ver"}
+                  className="toggle-password"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', width: '20px' }}
+                />
               </div>
             </div>
 
-            <p className="brand-subtitle">
-              {success 
-                ? "Tu contraseña ha sido actualizada con éxito." 
-                : "Ingresa tu nueva contraseña para recuperar el acceso a tu cuenta."}
-            </p>
+            <div className="lc-field">
+              <div className="lc-input-wrap">
+                <img src={lockIcon} alt="confirmar contraseña" className="lc-input-icon" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="lc-input"
+                  placeholder="Confirmar Contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+            </div>
 
-            {error && !success && (
-              <div className="login-error">
-                <span>⚠️</span>
-                {error}
+            {error && (
+              <div className="lc-error" role="alert">
+                <span className="lc-error-icon">⚠</span>
+                <span>{error}</span>
               </div>
             )}
 
-            {!success && !error && (
-              <form onSubmit={handleSubmit}>
-                <div className="input-group">
-                  <img src={lockIcon} alt="contraseña" className="input-icon" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Nueva Contraseña"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                  <img
-                    src={showPassword ? hideIcon : viewIcon}
-                    alt={showPassword ? "Ocultar" : "Ver"}
-                    className="toggle-password"
-                    onClick={() => setShowPassword(!showPassword)}
-                  />
-                </div>
+            <button type="submit" className="lc-btn-primary" disabled={loading}>
+              {loading ? <span className="lc-spinner" /> : "Actualizar Contraseña"}
+            </button>
+          </form>
+        )}
 
-                <div className="input-group">
-                  <img src={lockIcon} alt="confirmar contraseña" className="input-icon" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Confirmar Contraseña"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-
-                <button type="submit" className="signin-btn" disabled={loading}>
-                  {loading ? "Procesando..." : "Actualizar Contraseña"}
-                </button>
-              </form>
-            )}
-
-            {(success || error) && (
-              <button className="signin-btn" onClick={onBackClick}>
-                Ir al Inicio
-              </button>
-            )}
+        {success && (
+          <div className="lc-form">
+            <button className="lc-btn-primary" onClick={onBackClick}>
+              Ir al Inicio
+            </button>
           </div>
-        </div>
+        )}
+
       </div>
+      <p className="lc-watermark">UAPA · ProEvent © 2025</p>
     </div>
   );
 }
