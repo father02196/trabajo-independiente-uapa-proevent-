@@ -4,6 +4,7 @@ import userIcon from "./../img/user.png";
 import lockIcon from "./../img/lock.png";
 import viewIcon from "./../img/view.png";
 import hideIcon from "./../img/hide.png";
+import logoProevent from "./../img/logo-proevent.jpeg"; // Actualizado a .jpeg
 
 function ForgotPassword({ onBackClick }) {
   const [email, setEmail] = useState("");
@@ -40,63 +41,65 @@ function ForgotPassword({ onBackClick }) {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-wrapper">
-        <div className="login-left">
-          <div className="login-form-box">
-            
-            <button className="login-back-link" onClick={onBackClick}>
-              <span className="login-back-icon">←</span> Volver al login
-            </button>
+    <div className="lc-bg">
+      <div className="lc-card">
 
-            <div className="login-brand-row">
-              <div className="login-brand-icon">PE</div>
-              <div>
-                <p className="welcome-label">Seguridad</p>
-                <h1 className="brand-name">Pro<span className="brand-name-highlight">Event</span></h1>
+        <div className="lc-header">
+          {onBackClick && (
+            <button className="lc-back" onClick={onBackClick}>← Volver al login</button>
+          )}
+
+          {/* Espacio para el nuevo logo proporcionado */}
+          <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '220px', height: 'auto', margin: '0 auto 15px', display: 'block' }} />
+
+          <p className="lc-subtitle">
+            {success
+              ? "Se ha enviado un enlace de recuperación a su correo."
+              : "Ingrese el correo con el que se creó su cuenta para recibir el enlcae de restablecimiento."}
+          </p>
+        </div>
+
+        {!success ? (
+          <form className="lc-form" onSubmit={handleVerifyEmail}>
+            <div className="lc-field">
+              <label className="lc-label" htmlFor="fp-email">Correo electrónico</label>
+              <div className="lc-input-wrap">
+                <img src={userIcon} alt="usuario" className="lc-input-icon" />
+                <input
+                  id="fp-email"
+                  type="email"
+                  className="lc-input"
+                  placeholder="usuario@uapa.edu.do"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
             </div>
 
-            <p className="brand-subtitle">
-              {success 
-                ? "Se ha enviado un enlace de recuperación a su correo electrónico. Por favor, revise su bandeja de entrada."
-                : "Ingresa tu correo institucional para recibir un enlace de recuperación."}
-            </p>
-
-            {!success && (
-              <form onSubmit={handleVerifyEmail}>
-                <div className="input-group">
-                  <img src={userIcon} alt="usuario" className="input-icon" />
-                  <input
-                    type="email"
-                    placeholder="Correo electrónico"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                {error && (
-                  <div className="login-error">
-                    <span>⚠️</span>
-                    {error}
-                  </div>
-                )}
-
-                <button type="submit" className="signin-btn" disabled={loading}>
-                  {loading ? "Procesando..." : "Enviar Enlace"}
-                </button>
-              </form>
+            {error && (
+              <div className="lc-error" role="alert">
+                <span className="lc-error-icon">⚠</span>
+                <span>{error}</span>
+              </div>
             )}
 
-            {success && (
-              <button className="signin-btn" onClick={onBackClick}>
-                Regresar al Inicio
-              </button>
-            )}
-
+            <button type="submit" className="lc-btn-primary" disabled={loading}>
+              {loading ? <span className="lc-spinner" /> : "Enviar Enlace"}
+            </button>
+          </form>
+        ) : (
+          <div className="lc-form">
+            <div className="lc-success-msg" style={{ textAlign: 'center', marginBottom: '20px', color: '#10b981' }}>
+              Por favor, revisa tu bandeja de entrada o la carpeta de spam para encontrar el enlace de recuperación.
+            </div>
+            <button type="button" className="lc-btn-primary" onClick={onBackClick}>
+              Regresar al Inicio
+            </button>
           </div>
-        </div>
+        )}
+
       </div>
+      <p className="lc-watermark">UAPA · ProEvent © 2025</p>
     </div>
   );
 }
