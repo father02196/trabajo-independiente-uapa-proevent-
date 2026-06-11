@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 import './../css/ModuloProveedores.css';
@@ -37,6 +37,7 @@ function ModuloProveedores({ usuario }) {
     const [proveedoresFiltradosTipo, setProveedoresFiltradosTipo] = useState([]);
     const [envioForm, setEnvioForm] = useState({ id_proveedor: '', descripcion_requerimientos: '', fecha_limite: '' });
     const [enviando, setEnviando] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         if (activeTab === 'logistica') fetchServicios();
@@ -786,14 +787,37 @@ function ModuloProveedores({ usuario }) {
                                     {modalConfig.type === 'nuevo_proveedor' && (
                                         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                                             <label>Contraseña de Acceso B2B</label>
-                                            <input 
-                                                className="input-base" 
-                                                required 
-                                                type="password" 
-                                                placeholder="Mínimo 8 caracteres"
-                                                value={formData.contrasena || ''} 
-                                                onChange={e => setFormData({ ...formData, contrasena: e.target.value })}
-                                            />
+                                            <div style={{ position: 'relative' }}>
+                                                <input 
+                                                    className="input-base" 
+                                                    required 
+                                                    type={showPassword ? "text" : "password"} 
+                                                    placeholder="Mínimo 8 caracteres"
+                                                    value={formData.contrasena || ''} 
+                                                    onChange={e => setFormData({ ...formData, contrasena: e.target.value })}
+                                                    style={{ paddingRight: '40px' }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        right: '12px',
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#64748B',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        padding: '4px'
+                                                    }}
+                                                >
+                                                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
