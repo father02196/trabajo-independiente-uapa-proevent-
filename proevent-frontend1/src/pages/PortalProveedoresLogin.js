@@ -4,6 +4,7 @@ import viewIcon from "./../img/view.png";
 import hideIcon from "./../img/hide.png";
 import userIcon from "./../img/user.png";
 import lockIcon from "./../img/lock.png";
+import logoProevent from "./../img/logo-proevent.jpeg";
 
 function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
   const [correo, setCorreo] = useState('');
@@ -51,9 +52,8 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
           {onBackClick && (
             <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
           )}
-          <div className="lc-logo-badge">
-            PE
-          </div>
+          {/* Espacio para el nuevo logo proporcionado */}
+          <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '220px', height: 'auto', margin: '0 auto 15px', display: 'block' }} />
           <h1 className="lc-title">Portal de Suplidores</h1>
           <p className="lc-subtitle">
             Acceso para licitación automatizada UAPA

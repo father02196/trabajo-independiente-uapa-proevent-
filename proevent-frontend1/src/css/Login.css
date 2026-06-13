@@ -71,7 +71,7 @@
   max-width: 420px;
   background: #ffffff;
   border-radius: 20px;
-  padding: 40px 40px 36px;
+  padding: 28px 40px 24px;
   border: 1px solid rgba(0, 0, 0, 0.07);
 
   /* Sombra Stripe-style: varias capas sutiles */
@@ -98,7 +98,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   position: relative;
   width: 100%;
 }
@@ -150,7 +150,7 @@
 .lc-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 /* Campo */
@@ -375,7 +375,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 20px 0 16px;
+  margin: 14px 0 10px;
 }
 
 .lc-sep-line {
@@ -410,8 +410,8 @@
   text-align: center;
   font-size: 13px;
   color: #9ca3af;
-  margin-top: 18px;
-  padding-top: 18px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid #f3f4f6;
 }
 

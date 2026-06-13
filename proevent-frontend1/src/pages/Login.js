@@ -4,6 +4,7 @@ import viewIcon  from "./../img/view.png";
 import hideIcon  from "./../img/hide.png";
 import userIcon  from "./../img/user.png";
 import lockIcon  from "./../img/lock.png";
+import logoProevent from "./../img/logo-proevent.jpeg";
 
 function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const [email,        setEmail]        = useState("");
@@ -96,7 +97,10 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
           {onBackClick && (
             <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
           )}
-          <div className="lc-logo-badge">PE</div>
+          
+          {/* Espacio para el nuevo logo proporcionado */}
+          <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '180px', height: 'auto', margin: '0 auto 10px', display: 'block' }} />
+          
           <h1 className="lc-title">ProEvent</h1>
           <p className="lc-subtitle">
             Inicia sesión en tu cuenta institucional

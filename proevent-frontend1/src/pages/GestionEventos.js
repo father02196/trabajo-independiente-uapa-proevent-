@@ -685,12 +685,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     <FiActivity size={14} /> Tracking Administrativo (Lectura)
                   </div>
                   <div className="modal-grid-3">
-                    <div className="info-row">
-                      <span className="info-label">Presupuesto POA</span>
-                      <span className={`badge ${pdfData.presupuesto?.estado_poa === 'Aprobado' ? 'badge-green' : pdfData.presupuesto?.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
-                        {pdfData.presupuesto?.estado_poa || "Pendiente"}
-                      </span>
-                    </div>
+
                     <div className="info-row">
                       <span className="info-label">Revisión Legal</span>
                       <span className={`badge ${pdfData.legal?.estado_contrato === 'Vigente' ? 'badge-green' : pdfData.legal?.estado_contrato === 'Vencido' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>

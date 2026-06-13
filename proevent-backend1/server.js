@@ -42,7 +42,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 }, // Límite de 15MB
   fileFilter: (req, file, cb) => {
@@ -69,7 +69,7 @@ app.post('/api/documentos/upload', upload.single('archivo'), (req, res) => {
     [id_evento, tipo_documento, req.file.originalname, ruta_archivo, id_usuario_subio || null], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ mensaje: 'Documento subido con éxito', id_documento: result.insertId, ruta_archivo });
-  });
+    });
 });
 
 // Endpoint para listar documentos de un evento
@@ -180,14 +180,14 @@ function crearNotificacion({ id_usuario_destino = null, rol_destino = null, titu
 // Función reutilizable (Helper): Registra una acción administrativa o del sistema en la base de datos auditable (Bitácora)
 function registrarMovimiento(id_usuario, id_rol, accion, detalles = '') {
   if (!id_usuario) return; // Validación de seguridad: no puede registrarse nada sin un responsable directo asociado (id_usuario)
-  
+
   // Sub-función interna (Closure) que realiza la inserción física real en la base de datos
   const registrar = (id_usr, id_rl) => {
     // Sentencia SQL insertando el log de forma parametrizada explícita (usando signaturas '?' para prevenir ataques de inyección SQL)
     const sql = 'INSERT INTO bitacora_movimiento (id_usuario, id_rol, accion, detalles) VALUES (?, ?, ?, ?)';
     db.query(sql, [id_usr, id_rl, accion, detalles], (err) => {
       // Manejo silencioso de errores para garantizar que si falla la bitácora, NO derribe la petición en curso del usuario
-      if (err) console.error('Error registrando bitácora:', err); 
+      if (err) console.error('Error registrando bitácora:', err);
     });
   };
 
@@ -236,7 +236,7 @@ function autoFinalizarEventos() {
           return; // Destruye ciclo del updater si este fracasa
         }
         console.log(`✅ Auto-finalizados ${eventos.length} evento(s): IDs [${ids.join(', ')}]`); // Imprime satisfactoriamente registro de operación modificadora documentando tamaño impactado en consola
-        
+
         // Ciclo secuencial interactivo para documentar uno por uno los históricos operados en la base 
         eventos.forEach(e => {
           if (e.id_usuario) { // Garantiza seguridad asegurando que genuinamente existió en el row el ID del originado humano
@@ -382,7 +382,7 @@ app.post('/usuarios', (req, res) => { // Asigna protocolo procedimental POST apu
     return res.status(400).json({ mensaje: 'Todos los campos son obligatorios' }); // Rechaza procedencia terminantemente ante la imperativa escasez detectada de alguno de los 4 pilares informativos primordiales
   }
   db.query( // Realiza transaccionalmente un intento forzado de insercion relacional MySQL blindado asimétricamente con prepare-statement posicional ("?") para contrarrestar ataques cibernéticos elementales
-    'INSERT INTO usuario (nombre, correo, contrasena, id_rol) VALUES (?, ?, ?, ?)', 
+    'INSERT INTO usuario (nombre, correo, contrasena, id_rol) VALUES (?, ?, ?, ?)',
     [nombre, correo, contrasena, id_rol], // Despliega e imbrica iterativamente la matriz natural emparejada correspondientemente a los placeholders huecos variables de la sentencia final en cadena generada
     (err, result) => {
       if (err) { // Manejador condicional iterativo estricto ramificado en base a la respuesta literal del servidor MySQL
@@ -392,9 +392,9 @@ app.post('/usuarios', (req, res) => { // Asigna protocolo procedimental POST apu
         return res.status(500).json({ mensaje: 'Error al crear usuario', error: err }); // Redundancia y Falla genérica genérica absoluta no relacionada en esencia a factores obvios controlables (duplicados lógicos u ausencias de rellenado)
       }
       res.status(201).json({ mensaje: 'Usuario creado con éxito', id: result.insertId }); // Manifiesta veredicta positivamente Éxito absoluto final emitiendo estatus de entidad forjada HTTP 201 (Created), transmitiéndole correlativamente el nuevo numérico nominal de llave primaria autogenerada MySQL finalizada satisfactoriamente (insertId referenciado)
-      
+
       const adminId = req.headers['x-usuario-id']; // Lee proactivamente el metadato encajado Header silencioso adicional de la petición inyectada enviado para averiguar y destripar inteligentemente de facto a quién (A qué UUID específico administrador) someter forzosamente a responsiva e identificar auditablemente
-      if(adminId) registrarMovimiento(adminId, null, 'CREACION_USUARIO', `Registro de nuevo usuario. ID asignado: ${result.insertId}, Nombre: ${nombre}, Correo: ${correo}, Nivel de Rol ID: ${id_rol}.`); // Log histórico automático si hay autor rastreable
+      if (adminId) registrarMovimiento(adminId, null, 'CREACION_USUARIO', `Registro de nuevo usuario. ID asignado: ${result.insertId}, Nombre: ${nombre}, Correo: ${correo}, Nivel de Rol ID: ${id_rol}.`); // Log histórico automático si hay autor rastreable
     }
   );
 });
@@ -412,7 +412,7 @@ app.put('/usuarios/:id', (req, res) => { // Genera la Ruta PUT hacia URI interna
         if (err) return res.status(500).json({ mensaje: 'Error al actualizar usuario', error: err }); // Escape prematuro por default e interrupción forzada natural ante eventual manifestación física no controlable a eventual avería catastrofíla MySQL local (Status 500 Code)
         res.json({ mensaje: 'Usuario actualizado con éxito' }); // Suministra luz verde y autorización moral afirmativa generalizada con estatus 200 resolutivo estático exitoso pleno definitivo hacia el entorno espectral del marco renderizado componente del front end cliente terminal UI
         const adminId = req.headers['x-usuario-id']; // Inspecciona el encabezado encubierto Header intrínseco inyectado artificialmente previamenten por interceptor Intercept-Like frontend para recuperar al autor admin verazmente
-        if(adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Contraseña modificada)`); // Bitácora y libro log operativo incuestionable explícito auditado internamente en formato legible texto libre natural alertando y delatando intencionalmente cambios drásticos inmiscuibles profundamente intrusivos e invasivos vitalmente operacionales a la infraestructura original ajena incluyendo recambio rotacional directo de credenciales de seguridad limitantes claves (contraseñas mutantes reseteadas autoritariamente)
+        if (adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Contraseña modificada)`); // Bitácora y libro log operativo incuestionable explícito auditado internamente en formato legible texto libre natural alertando y delatando intencionalmente cambios drásticos inmiscuibles profundamente intrusivos e invasivos vitalmente operacionales a la infraestructura original ajena incluyendo recambio rotacional directo de credenciales de seguridad limitantes claves (contraseñas mutantes reseteadas autoritariamente)
       }
     );
   } else {
@@ -423,7 +423,7 @@ app.put('/usuarios/:id', (req, res) => { // Genera la Ruta PUT hacia URI interna
         if (err) return res.status(500).json({ mensaje: 'Error al actualizar usuario', error: err });
         res.json({ mensaje: 'Usuario actualizado con éxito' });
         const adminId = req.headers['x-usuario-id'];
-        if(adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Sin alterar contraseña)`);
+        if (adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Sin alterar contraseña)`);
       }
     );
   }
@@ -436,7 +436,7 @@ app.delete('/usuarios/:id', (req, res) => { // Enruta peticiones Delete apuntand
     if (err) return res.status(500).json({ mensaje: 'Error al eliminar usuario', error: err }); // Fracaso por llave foránea atada o fallo motor MySQL
     res.json({ mensaje: 'Usuario eliminado con éxito' }); // Éxito en borrado
     const adminId = req.headers['x-usuario-id']; // Identificador del autor (El administrador que presionó el botón de borrado)
-    if(adminId) registrarMovimiento(adminId, null, 'ELIMINACION_USUARIO', `Eliminación permanente de cuenta de usuario. ID del usuario erradicado: ${id}.`); // Bitácora de extrema sensibilidad para justificar la desaparición de usuarios (Traceability total)
+    if (adminId) registrarMovimiento(adminId, null, 'ELIMINACION_USUARIO', `Eliminación permanente de cuenta de usuario. ID del usuario erradicado: ${id}.`); // Bitácora de extrema sensibilidad para justificar la desaparición de usuarios (Traceability total)
   });
 });
 
@@ -444,7 +444,7 @@ app.delete('/usuarios/:id', (req, res) => { // Enruta peticiones Delete apuntand
 app.put('/usuarios/:id/estado', (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
-  
+
   if (estado !== 'activo' && estado !== 'inactivo') {
     return res.status(400).json({ mensaje: 'Estado inválido. Debe ser activo o inactivo.' });
   }
@@ -452,7 +452,7 @@ app.put('/usuarios/:id/estado', (req, res) => {
   db.query('UPDATE usuario SET estado = ? WHERE id_usuario = ?', [estado, id], (err) => {
     if (err) return res.status(500).json({ mensaje: 'Error al cambiar estado del usuario', error: err });
     res.json({ mensaje: `Usuario marcado como ${estado} exitosamente` });
-    
+
     const adminId = req.headers['x-usuario-id'];
     if (adminId) {
       registrarMovimiento(adminId, null, 'CAMBIO_ESTADO_USUARIO', `El estado del usuario con ID ${id} cambió a: ${estado.toUpperCase()}.`);
@@ -490,7 +490,7 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
   // Variables inicializadoras matemáticas de pre-calculo en caso de requerirse coversión divisa Extranjera -> Local (DOP)
   let tasa_cambio = 1; // Base multiplicadora natural neutra por defecto (Factor 1.0 = Peso Dominicano)
   let monto_dop = 0; // Contenedor vacío preparado para amparar el valor monetario real transformado a DOP 
-  
+
   const montoPOA = parseFloat(monto_poa) || 0; // Extrae forzosamente y parsea estricto a tipo numérico de coma flotante la solicitud del fondo. Si llega falso/indefinido se anula a cero puro.
 
   try {
@@ -506,13 +506,13 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
         AND (hora_inicio < ? AND hora_fin > ?)
     `;
     const [conflictos] = await dbPromise.query(conflictQuery, [
-      id_recinto, 
-      fecha_fin, fecha_inicio, 
+      id_recinto,
+      fecha_fin, fecha_inicio,
       hora_fin, hora_inicio
     ]);
 
     if (conflictos.length > 0) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         mensaje: `Existe un conflicto de horario. El recinto ya tiene programado el evento "${conflictos[0].nombre}" (#EVT-${conflictos[0].id_evento}) en esa misma fecha y hora.`
       });
     }
@@ -602,8 +602,8 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
           [id_poa_activo, id_evento, montoPOA, moneda || 'DOP', tasa_cambio, monto_dop],
           (poaErr) => { // Espera respuesta asíncrona DB
             if (!poaErr) { // Y solo si no hubo fatal error de insercion en bitacora POA
-               // Realiza el Descuento final FíSICO Y MATEMíTICO REAL de la base central sustrayendo sin compasión el estimado para bloquear el dinero (reserva contable real en caliente UPDATE)
-               db.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, id_poa_activo], ()=>{}); // Deduce
+              // Realiza el Descuento final FíSICO Y MATEMíTICO REAL de la base central sustrayendo sin compasión el estimado para bloquear el dinero (reserva contable real en caliente UPDATE)
+              db.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, id_poa_activo], () => { }); // Deduce
             }
           }
         );
@@ -612,7 +612,7 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
       // CONCLUSIÓN DE MÚLTIPLES HITOS INSERCIONALES EXITOSA (END)
       res.status(201).json({ mensaje: 'Evento creado con éxito', id_evento });
       const reqUserId = req.headers['x-usuario-id'] || id_usuario;
-      if(reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_EVENTO', `Nueva Solicitud de Evento. ID generado: ${id_evento}. Título: "${nombre}".`);
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_EVENTO', `Nueva Solicitud de Evento. ID generado: ${id_evento}. Título: "${nombre}".`);
 
       // ── NOTIFICACIONES FASE 1: Nueva solicitud de evento ─────────────────
       // Alerta a los Administradores de Eventos para que revisen la nueva solicitud
@@ -647,7 +647,7 @@ app.post('/poa', (req, res) => { // Declara la ruta POST '/poa'
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message }); // Escape en caso de error SQL
       res.status(201).json({ mensaje: 'POA Creado', id_poa: result.insertId }); // Respuesta exitosa con ID insertado
-      if(reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_POA', `Nuevo presupuesto POA por ${monto_total}.`); // Log bitácora obligatoria
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_POA', `Nuevo presupuesto POA por ${monto_total}.`); // Log bitácora obligatoria
     }
   );
 });
@@ -656,7 +656,7 @@ app.post('/poa', (req, res) => { // Declara la ruta POST '/poa'
 app.get('/poa', (req, res) => { // Declara el endpoint de listado maestro GET '/poa'
   db.query('SELECT * FROM poa_fiscal ORDER BY fecha_inicio DESC', (err, poas) => { // Busca las carpetas contables matrices ordenadas por la más reciente
     if (err) return res.status(500).json({ error: err.message }); // Handlder err
-    
+
     // Anida asincrónicamente una segunda consulta para obtener todos los sub-registros de consumición contable ('poa_movimiento')
     db.query(`
       SELECT m.*, e.nombre as nombre_evento, e.modalidad, e.fecha_inicio, e.fecha_fin,
@@ -682,7 +682,7 @@ app.put('/poa/movimiento/:id/estado', (req, res) => { // Metodo PUT apuntando a 
 
   db.query('SELECT * FROM poa_movimiento WHERE id_movimiento = ?', [id], (err, results) => { // Lee el estado real anterior anclado en BD
     if (err || results.length === 0) return res.status(404).json({ mensaje: 'Movimiento no encontrado' }); // Validacion de no vacio
-    
+
     const mov = results[0]; // Aparta var referencial
     if (mov.estado === estado) return res.json({ mensaje: 'Sin cambios en el estado' }); // Si el estado es identico, salta la iteracion para ahorrar recursos
 
@@ -690,7 +690,7 @@ app.put('/poa/movimiento/:id/estado', (req, res) => { // Metodo PUT apuntando a 
       [estado, motivo_rechazo || null, id],  // Pasa los parametros de justificación y estado nuevo
       (errUpdate) => {
         if (errUpdate) return res.status(500).json({ error: errUpdate.message }); // Fallo SQL update
-        
+
         // MOTOR DE REINTEGRO/DEDUCCIÓN CONDICIONAL MULTIDIRECCIONAL (CONTABILIDAD INVERSA VIVA)
         // Si el estado anterior NO era Rechazado (Ej. Pendiente) y ahora se castiga como 'Rechazado', devolver integro el dinero a la bolsa POA
         if (estado === 'Rechazado' && mov.estado !== 'Rechazado') {
@@ -702,8 +702,8 @@ app.put('/poa/movimiento/:id/estado', (req, res) => { // Metodo PUT apuntando a 
         }
 
         res.json({ mensaje: 'Estado del movimiento POA actualizado' }); // Success output client
-        if(reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_POA', `Movimiento ${id} cambiado a ${estado}.`); // Bitácora audit trail
-    });
+        if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_POA', `Movimiento ${id} cambiado a ${estado}.`); // Bitácora audit trail
+      });
   });
 });
 // ACTUALIZAR EVENTO EXISTENTE CRUD METADATA Y SUB-TABLAS (PUT)
@@ -731,13 +731,13 @@ app.put('/eventos/:id', async (req, res) => { // Asignación de Endpoint dinámi
     `;
     const [conflictos] = await dbPromise.query(conflictQuery, [
       id,
-      id_recinto, 
-      fecha_fin, fecha_inicio, 
+      id_recinto,
+      fecha_fin, fecha_inicio,
       hora_fin, hora_inicio
     ]);
 
     if (conflictos.length > 0) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         mensaje: `Existe un conflicto de horario. El recinto ya tiene programado el evento "${conflictos[0].nombre}" (#EVT-${conflictos[0].id_evento}) en esa misma fecha y hora.`
       });
     }
@@ -809,7 +809,7 @@ app.put('/eventos/:id', async (req, res) => { // Asignación de Endpoint dinámi
       monto_poa = ?, moneda = ?
       WHERE id_evento = ?`;
     const params = [nombre, modalidad, fecha_inicio, fecha_fin, hora_inicio, hora_fin, cantidad_asistentes, tipo_evento, id_recinto, id_dependencia, monto_poa, moneda, id];
-    
+
     await dbPromise.query(sql, params);
 
     // --- APLICACION DE RECONCILIACION CONTABLE (POA) ---
@@ -820,7 +820,7 @@ app.put('/eventos/:id', async (req, res) => { // Asignación de Endpoint dinámi
       if (montoPOA > 0) {
         await dbPromise.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, movPrevio.id_poa]);
         await dbPromise.query(
-          "UPDATE poa_movimiento SET monto_solicitado_original = ?, moneda_original = ?, tasa_cambio = ?, monto_descontado_dop = ?, estado = 'Pendiente', motivo_rechazo = NULL WHERE id_movimiento = ?", 
+          "UPDATE poa_movimiento SET monto_solicitado_original = ?, moneda_original = ?, tasa_cambio = ?, monto_descontado_dop = ?, estado = 'Pendiente', motivo_rechazo = NULL WHERE id_movimiento = ?",
           [montoPOA, moneda || 'DOP', tasa_cambio, monto_dop, movPrevio.id_movimiento]
         );
       } else {
@@ -869,7 +869,7 @@ app.put('/eventos/:id', async (req, res) => { // Asignación de Endpoint dinámi
     });
 
     res.json({ mensaje: 'Evento actualizado correctamente y POA conciliado' });
-    if(reqUserId) registrarMovimiento(reqUserId, null, 'EDICION_EVENTO', `Evento ${id} actualizado. Presupuesto nuevo: ${montoPOA} ${moneda || 'DOP'}.`);
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'EDICION_EVENTO', `Evento ${id} actualizado. Presupuesto nuevo: ${montoPOA} ${moneda || 'DOP'}.`);
 
   } catch (err) {
     console.error('Error en reconciliacion PUT /eventos:', err.message);
@@ -900,7 +900,7 @@ app.get('/eventos', (req, res) => { // Declara la gran ruta HTTP GET '/eventos'
      LEFT JOIN usuario     u ON e.id_usuario     = u.id_usuario
      LEFT JOIN dependencia d ON e.id_dependencia = d.id_dependencia
      LEFT JOIN recinto     r ON e.id_recinto     = r.id_recinto`; // Enorme Query multi-dimensional con Selects Anidados (Subqueries) para extraer relaciones M:N serializadas en strings separados por comas usando GROUP_CONCAT, evitando duplicar filas.
-  
+
   const params = []; // Lista local vacia de bindings paramétricos a inyectar seguros en BD
   if (usuario_id) { // Si el front end explicitó a quien pertenece...
     sql += ` WHERE e.id_usuario = ?`; // Filtra contundentemente por ID de su creador usando WHERE
@@ -918,7 +918,7 @@ app.get('/eventos', (req, res) => { // Declara la gran ruta HTTP GET '/eventos'
 // ── EVENTOS ─ CALENDARIO PRIVADO (UI SCHEDULING INTERFACE) ───────────────────────
 app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar metadatos para llenar componentes gráficos tipo FullCalendar o BigCalendar
   const { usuario_id } = req.query; // ID del usuario local que activamente consulta (Viene del JWT Decode Front o Token Storage)
-  
+
   const sql = `
     SELECT 
       e.id_evento, e.nombre, e.fecha_inicio, e.fecha_fin, e.id_usuario,
@@ -950,14 +950,14 @@ app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar 
 });
 
 // ── EVENTOS ─ ACTUALIZAR ESTADO GERENCIAL ────────────────────────
-app.put('/eventos/:id/estado', (req, res) => { 
+app.put('/eventos/:id/estado', (req, res) => {
   // --- Módulo: Eventos | Función: Actualizar estado y asignar coordinador (Fase 1 del Relevo) ---
-  const { id } = req.params; 
-  const { estado, id_coordinador } = req.body; 
-  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado']; 
-  
-  if (!estadosValidos.includes(estado)) 
-    return res.status(400).json({ mensaje: 'Estado no válido' }); 
+  const { id } = req.params;
+  const { estado, id_coordinador } = req.body;
+  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado'];
+
+  if (!estadosValidos.includes(estado))
+    return res.status(400).json({ mensaje: 'Estado no válido' });
 
   // Función interna para proceder con la actualización
   const procederUpdate = () => {
@@ -1021,7 +1021,7 @@ app.put('/eventos/:id/estado', (req, res) => {
 
         res.json({ mensaje: 'Estado actualizado con éxito' });
         const reqUserId = req.headers['x-usuario-id'];
-        if(reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_EVENTO', `Resolución de Estado del Evento. El Evento con ID ${id} ha pasado al estado: "${estado}".`);
+        if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_EVENTO', `Resolución de Estado del Evento. El Evento con ID ${id} ha pasado al estado: "${estado}".`);
       });
     });
   };
@@ -1064,7 +1064,7 @@ app.delete('/eventos/:id', (req, res) => { // Ruta explícita DELETE masivo de c
           if (err) return res.status(500).json({ mensaje: 'Error al eliminar evento', error: err.message }); // Falla de sustracción profunda
           res.json({ mensaje: 'Evento eliminado con éxito' }); // Respuesta limpia tras purga
           const reqUserId = req.headers['x-usuario-id']; // Autoria identificativa
-          if(reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_EVENTO', `Cancelación y Borrado de Evento. Evento afectado ID: ${id}.`); // Confirmacion Bitacora de borrado de root tree evento
+          if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_EVENTO', `Cancelación y Borrado de Evento. Evento afectado ID: ${id}.`); // Confirmacion Bitacora de borrado de root tree evento
         });
       });
     });
@@ -1118,7 +1118,7 @@ app.post('/audiovisual', (req, res) => { // Endpoint de generacion POST /audiovi
       if (errInsert) return res.status(500).json({ mensaje: 'Error al registrar servicios', error: errInsert.message });
       res.status(201).json({ mensaje: 'Solicitud audiovisual registrada con éxito' });
       const reqUserId = req.headers['x-usuario-id'];
-      if(reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_AUDIOVISUAL', `Se levantó una Solicitud de Servicios Audiovisuales. Evento Asociado ID: ${id_evento}. Equipos requeridos: ${servicios.map(s => s.equipo).join(', ')}.`);
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_AUDIOVISUAL', `Se levantó una Solicitud de Servicios Audiovisuales. Evento Asociado ID: ${id_evento}. Equipos requeridos: ${servicios.map(s => s.equipo).join(', ')}.`);
     });
   });
 });
@@ -1135,7 +1135,7 @@ app.get('/audiovisual', (req, res) => { // Endpoint de lectura gerencial adminis
      JOIN evento e ON s.id_evento = e.id_evento -- Amarre fuerte obligatorio (INNER JOIN) con la matrix de Evento (El servicio no puede existir huérfano)
      LEFT JOIN recinto r ON e.id_recinto = r.id_recinto -- Amarre débil izquierdo con su recinto posicional
      LEFT JOIN usuario u ON e.id_usuario = u.id_usuario`; // Amarre débil izquierdo con la firma de creador
-  
+
   const params = []; // Colección de inyección segura vacía
   if (usuario_id) { // Condicional discriminador: Si hay ID, solo muestro su pedazo de la torta de Data
     sql += ` WHERE e.id_usuario = ?`; // Filtro subyacente de la Foreign Key del evento padre
@@ -1148,36 +1148,36 @@ app.get('/audiovisual', (req, res) => { // Endpoint de lectura gerencial adminis
     if (err) return res.status(500).json({ error: err.message }); // Ataja de inmediato error MySQL
 
     const parsedResults = results.map(row => { // Algoritmo de mapeo puramente preventivo
-        // Fallback robusto en caso de que aún exista data comprimida vieja incrustada en BD heredada del diseño antiguo (ej: Proyector|Cant:2|Ubic:A)
-        let equipo = row.tipo_servicio; // Intento 1: Asume estructura moderna normalizada 
-        let cant = row.cantidad;
-        let ubic = row.ubicacion;
-        let obs = row.observaciones;
+      // Fallback robusto en caso de que aún exista data comprimida vieja incrustada en BD heredada del diseño antiguo (ej: Proyector|Cant:2|Ubic:A)
+      let equipo = row.tipo_servicio; // Intento 1: Asume estructura moderna normalizada 
+      let cant = row.cantidad;
+      let ubic = row.ubicacion;
+      let obs = row.observaciones;
 
-        if (row.tipo_servicio.includes('|Cant:')) { // Patrón RegEx-like de cacería indicando si este registro particular obedece al esquema viejo pipe concat String V1
-          const parts = row.tipo_servicio.split('|'); // Despedaza la cadena cruda separándola nativamente por símbolo Pipe
-          equipo = parts[0]; // Extrae el nombre crudo de la máquina de manera aislada en slot 0
-          if (parts[1]) cant = parts[1].replace('Cant:', ''); // Extrae e higieniza removiendo texto prefijo cant en slot 1
-          if (parts[2]) ubic = parts[2].replace('Ubic:', ''); // Remueve prefijo Ubic en slot 2
-          if (parts[3]) obs = parts[3].replace('Obs:', ''); // Extrae anotaciones finales en slot 3
-        }
+      if (row.tipo_servicio.includes('|Cant:')) { // Patrón RegEx-like de cacería indicando si este registro particular obedece al esquema viejo pipe concat String V1
+        const parts = row.tipo_servicio.split('|'); // Despedaza la cadena cruda separándola nativamente por símbolo Pipe
+        equipo = parts[0]; // Extrae el nombre crudo de la máquina de manera aislada en slot 0
+        if (parts[1]) cant = parts[1].replace('Cant:', ''); // Extrae e higieniza removiendo texto prefijo cant en slot 1
+        if (parts[2]) ubic = parts[2].replace('Ubic:', ''); // Remueve prefijo Ubic en slot 2
+        if (parts[3]) obs = parts[3].replace('Obs:', ''); // Extrae anotaciones finales en slot 3
+      }
 
-        return { // Retorna y construye al paso dinámico on-the-fly el JSON Object sanitizado definitivo estandarizado listo para inyección Front UI
-          id_servicio: row.id_servicio, // Puntero primario del requerimiento unitario equipo
-          id_evento: row.id_evento, // Puntero FK anexo Evento
-          nombre_evento: row.nombre_evento, // Texto
-          fecha_evento: row.fecha_inicio, // Fecha programada para uso real calendario
-          estado_av: row.estado_av, // Situacional status aislado solo de este equipo (Aprob/Rech)
-          equipo: equipo, // Nombre de maquina
-          cantidad: cant || 1, // Fallback si era NaN a 1 
-          ubicacion: ubic || '', // String Vacio en caso Null
-          observaciones: obs || '', // Comments String
-          nombre_usuario: row.nombre_usuario || '' // Autor
-        };
-      });
+      return { // Retorna y construye al paso dinámico on-the-fly el JSON Object sanitizado definitivo estandarizado listo para inyección Front UI
+        id_servicio: row.id_servicio, // Puntero primario del requerimiento unitario equipo
+        id_evento: row.id_evento, // Puntero FK anexo Evento
+        nombre_evento: row.nombre_evento, // Texto
+        fecha_evento: row.fecha_inicio, // Fecha programada para uso real calendario
+        estado_av: row.estado_av, // Situacional status aislado solo de este equipo (Aprob/Rech)
+        equipo: equipo, // Nombre de maquina
+        cantidad: cant || 1, // Fallback si era NaN a 1 
+        ubicacion: ubic || '', // String Vacio en caso Null
+        observaciones: obs || '', // Comments String
+        nombre_usuario: row.nombre_usuario || '' // Autor
+      };
+    });
 
-      res.json(parsedResults); // Envia lista saneada parseada global al receptor React Hook
-    }
+    res.json(parsedResults); // Envia lista saneada parseada global al receptor React Hook
+  }
   );
 });
 
@@ -1198,7 +1198,7 @@ app.put('/audiovisual/:id/estado', (req, res) => { // Endpoint de mutabilidad di
     console.log(`Update Result for id ${id}:`, result); // Logger satisfactorio de depuracion 
     res.json({ mensaje: 'Estado audiovisual actualizado con éxito', affectedRows: result.affectedRows }); // HTTP response emite cuantas filas exactas se alteraron (deberia ser 1 siempre)
     const reqUserId = req.headers['x-usuario-id']; // Busca el Header oculto del panel admin para ficharlo 
-    if(reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_AUDIOVISUAL', `Resolución de Solicitud Audiovisual. El ticket ID ${id} ha pasado al estado: "${estado}".`); // Trazo logístico oficial de bitácora
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_AUDIOVISUAL', `Resolución de Solicitud Audiovisual. El ticket ID ${id} ha pasado al estado: "${estado}".`); // Trazo logístico oficial de bitácora
   });
 });
 
@@ -1218,7 +1218,7 @@ app.put('/audiovisual/evento/:id_evento/estado', (req, res) => { // Sub-endpoint
     }
     res.json({ mensaje: 'Estado audiovisual del evento actualizado con éxito', affectedRows: result.affectedRows }); // Respuesta victoriosa HTTP Front 
     const reqUserId = req.headers['x-usuario-id']; // Puntero Header Autor Humano Culpable/Responsable del Click accionador masivamente transformador
-    if(reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_AUDIOVISUAL_GLOBAL', `Resolución Global de Audiovisual. Los servicios del Evento ID ${id_evento} pasaron al estado: "${estado}".`); // Inscribe de un solo tajo la alteración estructural global en el libro contable de Bitacora Admin Action Logs History Table Auditorial general del sistema.
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_AUDIOVISUAL_GLOBAL', `Resolución Global de Audiovisual. Los servicios del Evento ID ${id_evento} pasaron al estado: "${estado}".`); // Inscribe de un solo tajo la alteración estructural global en el libro contable de Bitacora Admin Action Logs History Table Auditorial general del sistema.
   });
 });
 
@@ -1257,28 +1257,38 @@ app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo i
           from: `"ProEvent UAPA" <${process.env.GMAIL_USER}>`, // Máscara spoof de remitente alias
           to: correo, // Target endpoint receptor (Cliente)
           subject: 'Restablecer tu contraseña - ProEvent UAPA', // Título Subject header tag
-          text: `Hola,\n\nRecibimos una solicitud para restablecer la contraseña de tu cuenta en ProEvent UAPA.\n\nEnlace de restablecimiento (válido por 1 hora):\n${link}\n\nSi no solicitaste este cambio, ignora este correo.\n\nSistema de Gestión de Eventos ─ UAPA ProEvent`, // Fallback plaintext puro si cliente correo NO admite HTML Render
+          text: `Recuperación de Contraseña\n\nEstimado/a usuario/a,\n\nHemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en UAPA-PROEVENT.\n\nPara continuar con el proceso de recuperación, visita el siguiente enlace (válido por 1 hora):\n${link}\n\nSi no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.\n\nAtentamente,\n\nSistema UAPA-PROEVENT\nPlataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos\nUniversidad Abierta para Adultos (UAPA)`, // Fallback plaintext puro si cliente correo NO admite HTML Render
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
               <div style="text-align:center; margin-bottom: 20px;">
-                <span style="background:#1e3a5f; color:white; font-size:22px; font-weight:bold; padding:8px 18px; border-radius:8px;">PE</span>
-                <span style="font-size:22px; font-weight:bold; color:#1e3a5f; margin-left:10px;">Pro<span style="color:#f97316;">Event</span></span>
+                <img src="cid:logoproevent" alt="Logo ProEvent" style="width: 180px; height: auto;" />
               </div>
-              <h2 style="color:#1e3a5f; text-align:center;">Recuperación de Contraseña</h2>
-              <p>Hola,</p>
-              <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón de abajo para continuar. <strong>Este enlace es válido por 1 hora.</strong></p>
+              <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña</h2>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Estimado/a usuario/a,</p>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en <strong>UAPA-PROEVENT</strong>.</p>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora a partir de la recepción de este mensaje.</strong></p>
               <div style="text-align: center; margin: 32px 0;">
                 <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
-                  Restablecer Contraseña
+                  Presione Para Restablecer Contraseña
                 </a>
               </div>
-              <p style="font-size:13px; color:#555;">O copia y pega este enlace en tu navegador:</p>
-              <p style="word-break:break-all; color:#1e3a5f; font-size:13px;">${link}</p>
+              <p style="color:#555; font-size:14px; line-height:1.5;">Si no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.</p>
               <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
-              <p style="color:#aaa; font-size:12px;">Si no solicitaste este cambio, ignora este correo. Tu cuenta sigue segura.</p>
-              <p style="color:#ccc; font-size:11px;">Sistema de Gestión de Eventos ─ Universidad UAPA</p>
+              <p style="color:#555; font-size:14px; line-height:1.5; margin-bottom: 5px;">Atentamente,</p>
+              <p style="color:#1e3a5f; font-size:14px; line-height:1.4; margin-top:0;">
+                <strong>Sistema UAPA-PROEVENT</strong><br>
+                <span style="font-size:12px; color:#666;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos<br>
+                Universidad Abierta para Adultos (UAPA)</span>
+              </p>
             </div>
           `, // Inyección Inline CSS para bypass de Email Clients restrictivos (Gmail/Outlook safe css render engine compliant code structure rules block table formatting hack fix)
+          attachments: [
+            {
+              filename: 'logo-proevent.jpeg',
+              path: require('path').join(__dirname, '../proevent-frontend1/src/img/logo-proevent.jpeg'),
+              cid: 'logoproevent' // same cid value as in the html img src
+            }
+          ]
         };
 
         transporter.sendMail(mailOptions, (errMail, info) => { // Disparo real TCP del socket hacia SMTP Servers remotos en red con payload compilado base64 content type multipart
@@ -1311,7 +1321,7 @@ app.get('/validar-token/:token', (req, res) => { // Endpoint auxiliar silencioso
 
 app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutador Táctico Finalizador (Post de ejecución destructiva y sobre-escritura)
   const { token, nuevaContrasena } = req.body; // Requiere la llave token devuelta en payload y el plaintext string password recien digitado
-  
+
   // 1. Re-Validar Estrictamente lado servidor node el token antes de matar contraseña antigua (Evita Bypassing REST calls Postman y Replays)
   db.query(
     'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Mismo chequeo de caducidad temporal anti-latencia
@@ -1344,9 +1354,9 @@ app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutad
 // ── EVALUACIONES DE CALIDAD EVENTO POST-MORTEM ─ CREAR ───────────────────────────────
 app.post('/evaluaciones', (req, res) => { // Via POST API graba encuesta final de calidad retroalimentadora del solicitante
   const { id_evento, respuesta_solicitud, recinto, valoracion_respuesta, satisfaccion, comentario } = req.body; // Cosecha respuestas y variables metricas JSON parse destructuradas
-  
+
   // Regla Negocio Fuerte Validatoria de Nulls Protectores (Anti-Blank Form submit prevention)
-  if (!id_evento || !respuesta_solicitud || !recinto || !valoracion_respuesta || !satisfaccion) { 
+  if (!id_evento || !respuesta_solicitud || !recinto || !valoracion_respuesta || !satisfaccion) {
     return res.status(400).json({ mensaje: 'Todos los campos obligatorios deben ser completados.' }); // Bouncer reject fail fast param guard
   }
 
@@ -1510,7 +1520,7 @@ app.delete('/alimentos/:id', (req, res) => { // Remueve Item fisico de sistema g
 // Endpoint para subir documentos asociados a un evento
 app.post('/api/eventos/:id/documentos', upload.single('archivo'), (req, res) => {
   const id_evento = req.params.id;
-  
+
   if (!req.file) {
     return res.status(400).json({ error: 'No se subió ningún archivo' });
   }
@@ -1520,18 +1530,18 @@ app.post('/api/eventos/:id/documentos', upload.single('archivo'), (req, res) => 
   // Extraemos tipo_documento y id_usuario del body (FormData)
   const tipo_documento = req.body.tipo_documento || 'Otro';
   const id_usuario_subio = req.body.id_usuario || null;
-  
+
   const query = 'INSERT INTO documento_evento (id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?)';
-  
+
   db.query(query, [id_evento, tipo_documento, nombre_original, ruta_archivo, id_usuario_subio], (err, result) => {
     if (err) {
       console.error("Error al registrar documento:", err);
       return res.status(500).json({ error: 'Error al registrar el documento en la base de datos' });
     }
-    res.status(201).json({ 
-      mensaje: 'Documento subido y registrado con éxito', 
+    res.status(201).json({
+      mensaje: 'Documento subido y registrado con éxito',
       ruta: ruta_archivo,
-      id_documento: result.insertId 
+      id_documento: result.insertId
     });
   });
 });
@@ -1585,11 +1595,11 @@ app.get('/servicios-externos/:id_evento', (req, res) => {
 app.post('/servicios-externos', (req, res) => {
   const { id_evento, id_tipo_servicio, detalles, cantidad } = req.body;
   if (!id_evento || !id_tipo_servicio) return res.status(400).json({ mensaje: 'Datos requeridos faltantes' });
-  db.query('INSERT INTO servicio_externo (id_evento, id_tipo_servicio, detalles, cantidad) VALUES (?, ?, ?, ?)', 
+  db.query('INSERT INTO servicio_externo (id_evento, id_tipo_servicio, detalles, cantidad) VALUES (?, ?, ?, ?)',
     [id_evento, id_tipo_servicio, detalles || '', cantidad || 1], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ mensaje: 'Servicio Externo Solicitado', id: result.insertId });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ mensaje: 'Servicio Externo Solicitado', id: result.insertId });
+    });
 });
 app.put('/servicios-externos/:id/estado', (req, res) => {
   const { estado } = req.body;
@@ -1619,11 +1629,11 @@ app.get('/organizadores/:id_evento', (req, res) => {
 app.post('/organizadores', (req, res) => {
   const { id_evento, id_usuario, rol_organizacion } = req.body;
   if (!id_evento || !id_usuario || !rol_organizacion) return res.status(400).json({ mensaje: 'Datos faltantes' });
-  db.query('INSERT INTO evento_organizador (id_evento, id_usuario, rol_organizacion) VALUES (?, ?, ?)', 
+  db.query('INSERT INTO evento_organizador (id_evento, id_usuario, rol_organizacion) VALUES (?, ?, ?)',
     [id_evento, id_usuario, rol_organizacion], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ mensaje: 'Organizador asignado' });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ mensaje: 'Organizador asignado' });
+    });
 });
 app.delete('/organizadores/:id_evento_org', (req, res) => {
   db.query('DELETE FROM evento_organizador WHERE id_evento_org=?', [req.params.id_evento_org], (err) => {
@@ -1674,11 +1684,11 @@ app.get('/usuarios-apoyo', (req, res) => {
 app.post('/cronograma', (req, res) => {
   const { id_evento, nombre_actividad, id_usuario_responsable, fecha_cumplimiento } = req.body;
   if (!id_evento || !nombre_actividad || !fecha_cumplimiento) return res.status(400).json({ mensaje: 'Datos faltantes' });
-  db.query('INSERT INTO actividad_cronograma (id_evento, nombre_actividad, id_usuario_responsable, fecha_cumplimiento) VALUES (?, ?, ?, ?)', 
+  db.query('INSERT INTO actividad_cronograma (id_evento, nombre_actividad, id_usuario_responsable, fecha_cumplimiento) VALUES (?, ?, ?, ?)',
     [id_evento, nombre_actividad, id_usuario_responsable || null, fecha_cumplimiento], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ mensaje: 'Actividad agregada al cronograma' });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ mensaje: 'Actividad agregada al cronograma' });
+    });
 });
 app.put('/cronograma/:id_actividad/estado', (req, res) => {
   const { estado } = req.body;
@@ -1762,7 +1772,7 @@ app.put('/servicios-externos/:id/proveedor', (req, res) => {
                       <br><p>Ingresa a tu <a href="http://localhost:3000/licitaciones">Portal de Proveedores B2B</a> para enviar tu oferta.</p>
                       <p>Atentamente,<br>Departamento de Compras UAPA</p>`
                   }).catch(e => console.error('Error enviando correo a proveedor:', e));
-                } catch(e) { /* transporter no disponible, silencio */ }
+                } catch (e) { /* transporter no disponible, silencio */ }
               }
             });
           }
@@ -1795,7 +1805,7 @@ app.get('/documentos/:id_evento', (req, res) => {
 app.post('/documentos/:id_evento', upload.single('archivo'), (req, res) => {
   const { id_evento } = req.params;
   const { tipo_documento, id_usuario_subio } = req.body;
-  
+
   if (!req.file) return res.status(400).json({ mensaje: 'No se subió ningún archivo' });
   if (!tipo_documento) return res.status(400).json({ mensaje: 'Falta el tipo de documento' });
 
@@ -1804,9 +1814,9 @@ app.post('/documentos/:id_evento', upload.single('archivo'), (req, res) => {
 
   db.query(`INSERT INTO documento_evento (id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?)`,
     [id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio || null], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ mensaje: 'Documento subido con éxito', id: result.insertId, ruta_archivo });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ mensaje: 'Documento subido con éxito', id: result.insertId, ruta_archivo });
+    });
 });
 
 app.delete('/documentos/:id_documento', (req, res) => {
@@ -1819,32 +1829,32 @@ app.delete('/documentos/:id_documento', (req, res) => {
 
 // 2. Flujo de Aprobación Legal
 app.get('/flujo-legal/:id_evento', (req, res) => {
-  db.query(`SELECT f.*, u.nombre as revisor FROM flujo_aprobacion_legal f LEFT JOIN usuario u ON f.id_usuario_revisor = u.id_usuario WHERE f.id_evento = ?`, 
+  db.query(`SELECT f.*, u.nombre as revisor FROM flujo_aprobacion_legal f LEFT JOIN usuario u ON f.id_usuario_revisor = u.id_usuario WHERE f.id_evento = ?`,
     [req.params.id_evento], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results.length > 0 ? results[0] : null);
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results.length > 0 ? results[0] : null);
+    });
 });
 
 app.post('/flujo-legal/:id_evento', (req, res) => {
   const { id_evento } = req.params;
   // Inicializar flujo
-  db.query(`INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal) VALUES (?, 'Pendiente') ON DUPLICATE KEY UPDATE estado_legal='Pendiente'`, 
+  db.query(`INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal) VALUES (?, 'Pendiente') ON DUPLICATE KEY UPDATE estado_legal='Pendiente'`,
     [id_evento], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ mensaje: 'Flujo legal iniciado' });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ mensaje: 'Flujo legal iniciado' });
+    });
 });
 
 app.put('/flujo-legal/:id_evento/resolucion', (req, res) => {
   const { id_evento } = req.params;
   const { estado_legal, observacion_legal, id_usuario_revisor } = req.body;
-  
+
   db.query(`UPDATE flujo_aprobacion_legal SET estado_legal=?, observacion_legal=?, id_usuario_revisor=? WHERE id_evento=?`,
     [estado_legal, observacion_legal || '', id_usuario_revisor, id_evento], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ mensaje: 'Resolución legal actualizada' });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: 'Resolución legal actualizada' });
+    });
 });
 
 // ── FASE 3: GESTIÓN OPERATIVA DEL SERVICIO Y CONTABILIDAD ──
@@ -1852,11 +1862,11 @@ app.put('/flujo-legal/:id_evento/resolucion', (req, res) => {
 app.put('/servicios-externos/:id/recepcion', (req, res) => {
   const { id } = req.params;
   const { estado_recepcion, incidencias } = req.body;
-  db.query('UPDATE servicio_externo SET estado_recepcion = ?, incidencias = ?, fecha_recepcion = NOW() WHERE id_servicio_ext = ?', 
+  db.query('UPDATE servicio_externo SET estado_recepcion = ?, incidencias = ?, fecha_recepcion = NOW() WHERE id_servicio_ext = ?',
     [estado_recepcion || 'Recibido', incidencias || '', id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ mensaje: 'Recepción del servicio registrada' });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: 'Recepción del servicio registrada' });
+    });
 });
 
 // 3. Ciclo contable manual (Estado del pago)
@@ -1872,19 +1882,19 @@ app.put('/servicios-externos/:id/pago', (req, res) => {
 // 4. Cierre manual de expediente validado
 app.put('/eventos/:id/cerrar-expediente', (req, res) => {
   const { id } = req.params;
-  
+
   const query = `
     SELECT 
       (SELECT COUNT(*) FROM actividad_cronograma WHERE id_evento = ? AND estado != 'Completada') as pendientes_cronograma,
       (SELECT COUNT(*) FROM servicio_externo WHERE id_evento = ? AND estado_pago != 'Completado') as pendientes_pago
   `;
-  
+
   db.query(query, [id, id], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const { pendientes_cronograma, pendientes_pago } = results[0];
     if (pendientes_cronograma > 0 || pendientes_pago > 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         mensaje: 'No se puede cerrar el expediente. Faltan actividades por completar o pagos por procesar.',
         pendientes_cronograma,
         pendientes_pago
@@ -1916,12 +1926,12 @@ app.get('/servicios-externos-all', (req, res) => {
 app.put('/api/servicio_externo/:id/admin', (req, res) => {
   const { numero_orden_compra, requiere_contrato } = req.body;
   const id_usuario = req.headers['x-usuario-id'];
-  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ? WHERE id_servicio_ext = ?', 
+  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ? WHERE id_servicio_ext = ?',
     [numero_orden_compra, requiere_contrato, req.params.id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
-      if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
+      if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
       res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
-  });
+    });
 });
 
 app.put('/api/presupuesto/:id_evento', (req, res) => {
@@ -1932,13 +1942,13 @@ app.put('/api/presupuesto/:id_evento', (req, res) => {
     if (results.length === 0) {
       db.query('INSERT INTO presupuesto (id_evento, total, estado) VALUES (?, 0, ?)', [req.params.id_evento, estado], (err2) => {
         if (err2) return res.status(500).json({ error: err2.message });
-        if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'CREAR_PRESUPUESTO', `Presupuesto creado con estado ${estado} para evento ${req.params.id_evento}`]);
+        if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'CREAR_PRESUPUESTO', `Presupuesto creado con estado ${estado} para evento ${req.params.id_evento}`]);
         res.json({ mensaje: 'Presupuesto creado y estado actualizado' });
       });
     } else {
       db.query('UPDATE presupuesto SET estado = ? WHERE id_evento = ?', [estado, req.params.id_evento], (err2) => {
         if (err2) return res.status(500).json({ error: err2.message });
-        if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_PRESUPUESTO', `Presupuesto actualizado a ${estado} para evento ${req.params.id_evento}`]);
+        if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_PRESUPUESTO', `Presupuesto actualizado a ${estado} para evento ${req.params.id_evento}`]);
         res.json({ mensaje: 'Estado del presupuesto actualizado' });
       });
     }
@@ -1951,19 +1961,19 @@ app.put('/api/flujo_legal/:id_evento', (req, res) => {
   db.query('SELECT id_flujo_legal FROM flujo_aprobacion_legal WHERE id_evento = ?', [req.params.id_evento], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     if (results.length === 0) {
-      db.query('INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal, observacion_legal, id_usuario_revisor) VALUES (?, ?, ?, ?)', 
+      db.query('INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal, observacion_legal, id_usuario_revisor) VALUES (?, ?, ?, ?)',
         [req.params.id_evento, estado_legal, observacion_legal, id_usuario_revisor], (err2) => {
           if (err2) return res.status(500).json({ error: err2.message });
-          if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL', `Dictamen Legal: ${estado_legal} para evento ${req.params.id_evento}`]);
+          if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL', `Dictamen Legal: ${estado_legal} para evento ${req.params.id_evento}`]);
           res.json({ mensaje: 'Flujo legal creado y actualizado' });
-      });
+        });
     } else {
-      db.query('UPDATE flujo_aprobacion_legal SET estado_legal = ?, observacion_legal = ?, id_usuario_revisor = ? WHERE id_evento = ?', 
+      db.query('UPDATE flujo_aprobacion_legal SET estado_legal = ?, observacion_legal = ?, id_usuario_revisor = ? WHERE id_evento = ?',
         [estado_legal, observacion_legal, id_usuario_revisor, req.params.id_evento], (err2) => {
           if (err2) return res.status(500).json({ error: err2.message });
-          if(id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL_ACTUALIZADO', `Dictamen actualizado a ${estado_legal} para evento ${req.params.id_evento}`]);
+          if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL_ACTUALIZADO', `Dictamen actualizado a ${estado_legal} para evento ${req.params.id_evento}`]);
           res.json({ mensaje: 'Flujo legal actualizado' });
-      });
+        });
     }
   });
 });
@@ -1978,11 +1988,11 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
         JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
         JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
         WHERE sc.id_evento = ?`, [id_evento], (e3, r3) => {
-          res.json({
-            presupuesto: r1[0] || { estado: 'Pendiente' },
-            legal: r2[0] || { estado_legal: 'Pendiente', observacion_legal: '' },
-            cotizaciones: r3 || []
-          });
+        res.json({
+          presupuesto: r1[0] || { estado: 'Pendiente' },
+          legal: r2[0] || { estado_legal: 'Pendiente', observacion_legal: '' },
+          cotizaciones: r3 || []
+        });
       });
     });
   });
@@ -2041,22 +2051,22 @@ app.get('/api/aprobaciones-evento/:id_evento', (req, res) => {
             area: 'Contabilidad / POA',
             estado: evento.estado_poa === 'Aprobado' ? 'Aprobado'
               : evento.estado_poa === 'Rechazado' ? 'Rechazado'
-              : evento.estado_poa || 'Pendiente',
+                : evento.estado_poa || 'Pendiente',
             requerido: true
           },
           {
             area: 'Legal',
             estado: legal === 'Aprobado' ? 'Aprobado'
               : legal === 'Rechazado' ? 'Rechazado'
-              : 'Pendiente',
+                : 'Pendiente',
             requerido: legal !== 'Pendiente' // Solo requerido si hay flujo legal iniciado
           },
           {
             area: 'Audiovisual',
             estado: av.total === 0 ? 'No aplica'
               : av.rechazados > 0 ? 'Rechazado'
-              : av.aprobados === av.total ? 'Aprobado'
-              : 'Pendiente',
+                : av.aprobados === av.total ? 'Aprobado'
+                  : 'Pendiente',
             requerido: av.total > 0
           }
         ];

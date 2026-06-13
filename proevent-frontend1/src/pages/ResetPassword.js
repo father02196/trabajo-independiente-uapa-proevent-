@@ -78,6 +78,10 @@ function ResetPassword({ token, onBackClick }) {
       <div className="lc-card">
         
         <div className="lc-header">
+          {onBackClick && (
+            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+          )}
+
           {/* Espacio para el nuevo logo proporcionado */}
           <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '220px', height: 'auto', margin: '0 auto 15px', display: 'block' }} />
           
