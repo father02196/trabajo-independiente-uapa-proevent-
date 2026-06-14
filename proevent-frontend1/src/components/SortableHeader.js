@@ -1,6 +1,14 @@
+// ============================================================
+// COMPONENTE: SortableHeader
+// Pertenece a: Componentes Genéricos (UI)
+// Propósito: Cabecera de tabla clicable que indica visualmente 
+// si la columna está siendo ordenada (ascendente o descendente).
+// ============================================================
+
 import React from 'react';
 
 const SortableHeader = ({ label, sortKey, sortConfig, requestSort, style }) => {
+  // --- ESTADOS DERIVADOS ---
   const isActive = sortConfig && sortConfig.key === sortKey;
   const direction = isActive ? sortConfig.direction : null;
 
