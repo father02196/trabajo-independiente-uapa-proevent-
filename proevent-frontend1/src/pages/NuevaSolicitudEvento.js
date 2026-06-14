@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiMonitor, FiCalendar, FiMapPin, FiCoffee, FiDollarSign } from "react-icons/fi";
 import InformacionGeneral from "./InformacionGeneral";
 import ModalidadLugar from "./ModalidadLugar";
@@ -58,6 +59,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   }, [editingEvent]);
 
   const [loading, setLoading] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
   const [needsAV, setNeedsAV] = useState(null);
@@ -129,12 +131,9 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       if (!data.asistentes || Number(data.asistentes) < 1) return "La cantidad de asistentes debe ser al menos 1.";
     }
     if (seccion === "Servicios alimenticios y Detalles coorporativos") {
-      const hasItems = data.items && data.items.length > 0;
-      const hasCatering = data.catering && data.catering.length > 0;
-      const hasExternos = data.sugerencias_externas && data.sugerencias_externas.trim() !== "";
-      
-      if (!hasItems && !hasCatering && !hasExternos && !omitirServicios) {
-        return "Debes seleccionar al menos un servicio (Corporativo, Alimentos o Externos) o marcar la casilla para omitir este paso.";
+      const tieneSugerencias = data.sugerencias_externas && data.sugerencias_externas.trim().length > 0;
+      if (!tieneSugerencias && !omitirServicios) {
+        return "(Llene el recuadro se servicios externos o presione omitir en caso de no necesitar estos servicios)";
       }
     }
     if (seccion === "Presupuesto y POA") {
@@ -171,6 +170,10 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const handleSiguiente = () => {
     const err = validarSeccion(activeSection);
     if (err) {
+      if (err.includes("Llene el recuadro se servicios externos")) {
+        setShowServiceModal(true);
+        return;
+      }
       setError(err);
       return;
     }
@@ -380,11 +383,29 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       </div>
 
       {/* Alerts */}
-      {exito && (
-        <div className="form-alert form-alert-success" style={{ marginBottom: '20px' }}>
-          <FiCheckCircle size={18} aria-hidden="true" />
-          <span>{exito}</span>
-        </div>
+      {exito && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ width: '600px', maxWidth: '90%', padding: '48px 32px', textAlign: 'center', borderRadius: '16px' }}>
+            <FiCheckCircle size={64} color="#10B981" style={{ margin: '0 auto 24px', display: 'block' }} />
+            <h3 style={{ marginBottom: '16px', fontSize: '24px', color: '#1E293B', fontWeight: '800' }}>¡Evento Creado Exitosamente!</h3>
+            <p style={{ color: '#475569', fontSize: '16px', marginBottom: '32px', lineHeight: '1.6' }}>
+              {exito}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-success btn-lg" 
+                onClick={() => {
+                  sessionStorage.setItem("dashboard_activeTab", "Dashboard");
+                  window.location.reload();
+                }}
+              >
+                Volver al dashboard
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {error && (
@@ -530,6 +551,28 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
           </button>
         )}
       </div>
+
+      {/* Modal de Validación de Servicios */}
+      {showServiceModal && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <FiAlertTriangle size={48} color="#F59E0B" style={{ margin: '0 auto 16px', display: 'block' }} />
+            <h3 style={{ marginBottom: '12px', fontSize: '18px', color: '#1E293B' }}>Validación de Servicios</h3>
+            <p style={{ color: '#475569', fontSize: '14px', marginBottom: '24px', lineHeight: '1.5' }}>
+              (Llene el recuadro se servicios externos o presione omitir en caso de no necesitar estos servicios)
+            </p>
+            <button 
+              type="button" 
+              className="btn btn-primary" 
+              onClick={() => setShowServiceModal(false)}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Volver a la solicitud
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </form>
   );
 }
