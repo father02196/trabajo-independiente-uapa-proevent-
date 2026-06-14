@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: InventarioAudiovisual
+// Pertenece a: Módulo Audiovisual
+// Propósito: Mostrar en tiempo real el catálogo de dispositivos,
+// la cantidad disponible frente a la cantidad reservada/en uso 
+// por solicitudes activas, y listar los eventos que lo usan.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiBox, FiSearch, FiInfo, FiCheckCircle, FiAlertCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast } from "react-icons/fi";
@@ -7,18 +15,23 @@ import SortableHeader from '../components/SortableHeader';
 const API = "http://localhost:8080";
 
 function InventarioAudiovisual({ usuario }) {
-  const [equipos, setEquipos] = useState([]);
-  const [solicitudes, setSolicitudes] = useState([]);
+  // --- ESTADOS DEL COMPONENTE ---
+  const [equipos, setEquipos] = useState([]);           // Catálogo base de equipos
+  const [solicitudes, setSolicitudes] = useState([]);   // Historial de solicitudes AV
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");     // Búsqueda por texto
   
+  // Modal de detalles
   const [selectedEquipo, setSelectedEquipo] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // --- EFECTO INICIAL ---
   useEffect(() => {
     cargarDatos();
   }, []);
 
+  // --- FUNCIÓN: cargarDatos ---
+  // Descarga simultáneamente el catálogo de equipos y todas las solicitudes audiovisuales
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -51,6 +64,8 @@ function InventarioAudiovisual({ usuario }) {
     }
   };
 
+  // --- LÓGICA DE INVENTARIO (Cálculo en Tiempo Real) ---
+  // Mapea los equipos y resta la cantidad usada en solicitudes 'Pendientes', 'En revisión' o 'Aprobadas'
   const inventario = equipos.map(eq => {
     const solicitudesActivas = solicitudes.filter(req => 
       req.equipo === eq.nombre && 
@@ -82,6 +97,7 @@ function InventarioAudiovisual({ usuario }) {
     return date.toLocaleDateString("es-ES", { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
   };
 
+  // --- MANEJO DEL MODAL ---
   const openModal = (equipo) => {
     setSelectedEquipo(equipo);
     setIsModalOpen(true);
