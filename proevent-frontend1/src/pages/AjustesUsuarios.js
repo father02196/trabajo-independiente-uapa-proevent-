@@ -1,34 +1,68 @@
+// ============================================================
+// AJUSTES USUARIOS - Gestión de Usuarios del Sistema
+// Pertenece a: Módulo de Administración (ProEvent)
+// Propósito: Permite al Administrador crear, editar y
+// desactivar/activar usuarios del sistema. Incluye tabla
+// paginada con búsqueda, filtro por estado y ordenamiento.
+// Solo accesible para el rol "Administrador".
+// ============================================================
+
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from 'react';
+
+// Hook personalizado para ordenar columnas de la tabla
 import { useSortableData } from '../hooks/useSortableData';
+
+// Componente de encabezado de tabla con soporte de ordenamiento
 import SortableHeader from '../components/SortableHeader';
+
+// Estilos específicos del módulo y estilos compartidos del dashboard
 import './../css/AjustesUsuarios.css';
 import './../css/Dashboard.css';
+
+// Iconos de acción para los botones de la tabla
 import { FiEdit2, FiCheck, FiSlash } from 'react-icons/fi';
 
+// URL base de la API del backend (Node.js/Express en XAMPP)
 const API = 'http://localhost:8080';
 
+// ============================================================
+// COMPONENTE: AjustesUsuarios
+// Recibe: usuario (objeto del administrador logueado, usado
+// para el token de autorización en las peticiones al backend).
+// ============================================================
 function AjustesUsuarios({ usuario }) {
-    const [nombre, setNombre] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [idRol, setIdRol] = useState('');
-    const [roles, setRoles] = useState([]);
-    const [editingId, setEditingId] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [usuarios, setUsuarios] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [filterStatus, setFilterStatus] = useState('todos');
-    
-    // Paginación
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
 
+    // --- ESTADOS DEL FORMULARIO ---
+    const [nombre, setNombre]     = useState('');  // Campo nombre del nuevo usuario
+    const [email, setEmail]       = useState('');  // Campo correo electrónico
+    const [password, setPassword] = useState('');  // Campo contraseña (provisional o actualización)
+    const [idRol, setIdRol]       = useState('');  // ID del rol seleccionado en el selector
+    const [roles, setRoles]       = useState([]);  // Lista de roles disponibles (cargada del backend)
+    const [editingId, setEditingId] = useState(null); // ID del usuario en edición (null = modo crear)
+
+    // --- ESTADOS DE LA TABLA ---
+    const [searchTerm, setSearchTerm]     = useState('');      // Término de búsqueda en tiempo real
+    const [usuarios, setUsuarios]         = useState([]);      // Lista completa de usuarios del sistema
+    const [loading, setLoading]           = useState(false);   // Indicador de carga al guardar
+    const [error, setError]               = useState('');      // Mensaje de error del formulario
+    const [filterStatus, setFilterStatus] = useState('todos'); // Filtro de estado: todos/activo/inactivo
+    
+    // --- PAGINACIÓN ---
+    const [currentPage, setCurrentPage] = useState(1); // Página actual de la tabla
+    const itemsPerPage = 10;                           // Cantidad de usuarios por página
+
+    // --- EFECTO: Carga inicial ---
+    // Al montar el componente carga la lista de usuarios y los roles
+    // disponibles para el selector del formulario.
     useEffect(() => {
         cargarUsuarios();
         cargarRoles();
     }, []);
 
+    // --- FUNCIÓN: cargarUsuarios ---
+    // Obtiene la lista completa de usuarios del sistema desde el backend.
+    // Actualiza el estado `usuarios` que alimenta la tabla paginada.
     const cargarUsuarios = async () => {
         try {
             const res = await fetch(`${API}/usuarios`);
@@ -39,19 +73,26 @@ function AjustesUsuarios({ usuario }) {
         }
     };
 
+    // --- FUNCIÓN: cargarRoles ---
+    // Obtiene los roles disponibles del sistema para poblar el selector
+    // del formulario. Se carga una sola vez al montar el componente.
     const cargarRoles = async () => {
         try {
             const res = await fetch(`${API}/roles`);
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 setRoles(data);
-                setIdRol(''); // seleccionar el primer rol por defecto
+                setIdRol(''); // Deja el selector en "Seleccione un rol..."
             }
         } catch (err) {
             console.error('Error cargando roles');
         }
     };
 
+    // --- FUNCIÓN: handleAddOrUpdateUser ---
+    // Maneja el envío del formulario: diferencia entre crear (POST) y editar (PUT)
+    // según si hay un `editingId` activo.
+    // Envía el token de autorización en cada petición para validación en el backend.
     const handleAddOrUpdateUser = async (e) => {
         e.preventDefault();
         setError('');
@@ -59,6 +100,7 @@ function AjustesUsuarios({ usuario }) {
 
         try {
             if (editingId) {
+                // --- MODO EDITAR: PUT /usuarios/:id ---
                 const res = await fetch(`${API}/usuarios/${editingId}`, {
                     method: 'PUT',
                     headers: { 
@@ -72,10 +114,11 @@ function AjustesUsuarios({ usuario }) {
                     setError(data.mensaje || 'Error al actualizar usuario');
                 } else {
                     alert(`Usuario ${nombre} actualizado con éxito.`);
-                    cargarUsuarios();
-                    resetForm();
+                    cargarUsuarios(); // Recarga la tabla con el usuario actualizado
+                    resetForm();      // Limpia el formulario
                 }
             } else {
+                // --- MODO CREAR: POST /usuarios ---
                 const res = await fetch(`${API}/usuarios`, {
                     method: 'POST',
                     headers: { 
@@ -89,7 +132,7 @@ function AjustesUsuarios({ usuario }) {
                     setError(data.mensaje || 'Error al crear usuario');
                 } else {
                     alert(`Usuario ${nombre} agregado con éxito.`);
-                    cargarUsuarios();
+                    cargarUsuarios(); // Recarga la tabla con el nuevo usuario
                     resetForm();
                 }
             }
@@ -100,20 +143,27 @@ function AjustesUsuarios({ usuario }) {
         }
     };
 
+    // --- FUNCIÓN: resetForm ---
+    // Limpia todos los campos del formulario y cancela el modo edición.
+    // Se llama tras guardar con éxito o al hacer clic en "Cancelar".
     const resetForm = () => {
         setNombre('');
         setEmail('');
         setPassword('');
-        setIdRol(roles.length > 0 ? roles[0].id_rol : '');
-        setEditingId(null);
+        setIdRol(roles.length > 0 ? roles[0].id_rol : ''); // Vuelve al primer rol
+        setEditingId(null); // Sale del modo edición
         setError('');
     };
 
+    // --- FUNCIÓN: handleEdit ---
+    // Precarga los datos del usuario en el formulario para editarlos.
+    // Asigna `editingId` para que handleAddOrUpdateUser use PUT en lugar de POST.
+    // Hace scroll al formulario para que el usuario lo vea.
     const handleEdit = (usuario) => {
         setNombre(usuario.nombre);
         setEmail(usuario.correo);
-        setPassword('');
-        // Buscar el id_rol que corresponde al nombre del rol
+        setPassword('');  // Se deja en blanco al editar (no se re-muestra la contraseña)
+        // Busca el id_rol que corresponde al nombre del rol del usuario seleccionado
         const rolEncontrado = roles.find(r => r.nombre === usuario.rol);
         setIdRol(rolEncontrado ? rolEncontrado.id_rol : roles[0]?.id_rol);
         setEditingId(usuario.id_usuario);
@@ -125,26 +175,33 @@ function AjustesUsuarios({ usuario }) {
         }, 50);
     };
 
+    // --- FUNCIÓN: filteredUsuarios ---
+    // Aplica el filtro de búsqueda (nombre, correo o rol) y el filtro de estado
+    // (todos, activo, inactivo) para determinar qué usuarios se muestran en la tabla.
     const filteredUsuarios = usuarios.filter(usuario => {
         const nombreMatch = (usuario.nombre || "").toLowerCase().includes(searchTerm.toLowerCase());
         const correoMatch = (usuario.correo || "").toLowerCase().includes(searchTerm.toLowerCase());
-        const rolMatch = (usuario.rol || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const rolMatch    = (usuario.rol    || "").toLowerCase().includes(searchTerm.toLowerCase());
         const searchMatch = nombreMatch || correoMatch || rolMatch;
 
-        const estadoActual = usuario.estado || 'activo';
+        const estadoActual = usuario.estado || 'activo'; // Por defecto activo si no tiene estado
         if (filterStatus === 'todos') return searchMatch;
         return searchMatch && estadoActual === filterStatus;
     });
 
+    // --- FUNCIÓN: handleToggleEstado ---
+    // Activa o desactiva un usuario en el sistema (no elimina, solo cambia el estado).
+    // - Inactivo: el usuario no puede iniciar sesión pero sus datos se conservan.
+    // - Activo: el usuario recupera el acceso normal al sistema.
+    // Solicita confirmación al administrador antes de ejecutar el cambio.
     const handleToggleEstado = async (usuarioToToggle) => {
         const estadoActual = usuarioToToggle.estado || 'activo';
-        const nuevoEstado = estadoActual === 'inactivo' ? 'activo' : 'inactivo';
-        const accionText = nuevoEstado === 'activo' ? 'activar' : 'desactivar';
+        const nuevoEstado  = estadoActual === 'inactivo' ? 'activo' : 'inactivo';
         const mensajeConfirmacion = nuevoEstado === 'inactivo' 
             ? `¿Estás seguro de que deseas desactivar al usuario ${usuarioToToggle.nombre}? No podrá iniciar sesión en el sistema.`
             : `¿Estás seguro de que deseas activar al usuario ${usuarioToToggle.nombre}? Recuperará el acceso al sistema.`;
 
-        if (!window.confirm(mensajeConfirmacion)) return;
+        if (!window.confirm(mensajeConfirmacion)) return; // Aborta si el admin cancela
 
         try {
             const res = await fetch(`${API}/usuarios/${usuarioToToggle.id_usuario}/estado`, {
@@ -160,22 +217,24 @@ function AjustesUsuarios({ usuario }) {
             if (!res.ok) {
                 alert(data.mensaje || 'Error al cambiar el estado');
             } else {
-                cargarUsuarios();
+                cargarUsuarios(); // Recarga la tabla con el nuevo estado
             }
         } catch (err) {
             alert('No se pudo conectar al servidor.');
         }
     };
 
-    // Lógica de Paginación
+    // --- LÓGICA DE PAGINACIÓN Y ORDENAMIENTO ---
+    // useSortableData aplica ordenamiento por columna al array filtrado.
+    // Luego se calcula el slice de la página actual.
     const { items: sortedUsuarios, requestSort, sortConfig } = useSortableData(filteredUsuarios, { key: 'nombre', direction: 'ascending' });
 
-    const totalPages = Math.ceil(sortedUsuarios.length / itemsPerPage);
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = sortedUsuarios.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages        = Math.ceil(sortedUsuarios.length / itemsPerPage); // Total de páginas
+    const indexOfLastItem   = currentPage * itemsPerPage;                      // Índice del último elemento
+    const indexOfFirstItem  = indexOfLastItem - itemsPerPage;                  // Índice del primer elemento
+    const currentItems      = sortedUsuarios.slice(indexOfFirstItem, indexOfLastItem); // Slice de la página
 
-    // Resetear a pág 1 si cambia el término de búsqueda
+    // Resetear a pág 1 si cambia el término de búsqueda (evita página vacía)
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm]);
