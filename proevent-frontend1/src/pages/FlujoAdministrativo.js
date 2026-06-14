@@ -1,37 +1,71 @@
+// ============================================================
+// FLUJO ADMINISTRATIVO - Componente Principal
+// Pertenece a: Módulo de Administración Operativa (ProEvent)
+// Propósito: Gestiona los 3 flujos post-aprobación de un evento:
+//   1. Compras y Cotizaciones (Administrador de Compras)
+//   2. Presupuesto / VAF (Administrador V-A-F)
+//   3. Legal y Contratos (Administrador de Legal)
+// Incluye la Bóveda Digital con todos los documentos del evento.
+// ============================================================
+
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from 'react';
-import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase } from 'react-icons/fi';
+
+// Iconos de Feather Icons usados en la UI de los paneles y botones
+import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye } from 'react-icons/fi';
+
+// Sistema de notificaciones flotantes (toasts)
 import { toast } from 'react-hot-toast';
 
+// URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: FlujoAdministrativo
+// Recibe: usuario (objeto del usuario logueado con su rol)
+// El componente detecta automáticamente el rol y muestra
+// solo las pestañas que corresponden a ese perfil.
+// ============================================================
 export default function FlujoAdministrativo({ usuario }) {
-  const [eventos, setEventos] = useState([]);
-  const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
+
+  // --- ESTADOS DE DATOS DEL EVENTO SELECCIONADO ---
+  const [eventos, setEventos] = useState([]);                   // Lista de eventos aprobados disponibles
+  const [eventoSeleccionado, setEventoSeleccionado] = useState(null); // Evento activo en el selector
   
-  const [servicios, setServicios] = useState([]);
-  const [presupuesto, setPresupuesto] = useState({ estado: 'Pendiente' });
-  const [legal, setLegal] = useState({ estado_legal: 'Pendiente', observacion_legal: '' });
-  const [cotizaciones, setCotizaciones] = useState([]);
-  const [documentos, setDocumentos] = useState([]);
-  const [analisisIA, setAnalisisIA] = useState(null);
+  const [servicios, setServicios] = useState([]);               // Servicios externos del evento (para OC y contratos)
+  const [presupuesto, setPresupuesto] = useState({ estado: 'Pendiente' }); // Estado del flujo de presupuesto VAF
+  const [legal, setLegal] = useState({ estado_legal: 'Pendiente', observacion_legal: '' }); // Estado del flujo legal
+  const [cotizaciones, setCotizaciones] = useState([]);         // Cotizaciones B2B recibidas de proveedores
+  const [documentos, setDocumentos] = useState([]);             // Documentos en la Bóveda Digital del evento
+  const [analisisIA, setAnalisisIA] = useState(null);           // Resultado del análisis de IA sobre cotizaciones
   
+  // --- DETECCIÓN DE ROL DEL USUARIO ---
+  // Determina qué paneles se muestran según el rol del usuario logueado.
+  // isGeneralRole: muestra todo (para Administrador General o roles desconocidos)
   const isComprasRole = usuario?.rol === "Administrador de Compras" || usuario?.rol === "Compras";
   const isLegalRole = usuario?.rol === "Administrador de Legal" || usuario?.rol === "Administrador Legal" || usuario?.rol === "Legal";
   const isVAFRole = usuario?.rol === "Administrador V-A-F" || usuario?.rol === "VAF" || usuario?.rol === "Contabilidad";
-  const isGeneralRole = !isComprasRole && !isLegalRole && !isVAFRole;
+  const isGeneralRole = !isComprasRole && !isLegalRole && !isVAFRole; // True si no es ninguno de los anteriores
 
+  // --- ESTADO DE LA PESTAÑA ACTIVA ---
+  // Inicializa la pestaña activa según el rol: cada rol tiene su pestaña por defecto
   const [tab, setTab] = useState(() => {
-    if (isComprasRole) return 'compras';
-    if (isLegalRole) return 'legal';
-    if (isVAFRole) return 'presupuesto';
-    return 'compras';
+    if (isComprasRole) return 'compras';      // Compras ve primero su panel
+    if (isLegalRole) return 'legal';           // Legal ve primero su dictamen
+    if (isVAFRole) return 'presupuesto';       // VAF ve primero el presupuesto
+    return 'compras';                          // Por defecto, pestaña de Compras
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Indicador de carga al cambiar de evento
 
+  // --- EFECTO: Carga inicial de eventos operativos ---
+  // Al montar el componente, obtiene todos los eventos del sistema
+  // y filtra solo los que están en estado "Aprobado" o "En Progreso",
+  // ya que el flujo administrativo solo aplica a esos estados.
   useEffect(() => {
     fetch(`${API}/eventos`)
       .then(res => res.json())
       .then(data => {
+        // Solo eventos activos (Aprobado o En Progreso) pueden ser administrados
         const eventosPermitidos = Array.isArray(data) 
           ? data.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") 
           : [];
@@ -40,35 +74,45 @@ export default function FlujoAdministrativo({ usuario }) {
       .catch(err => console.error(err));
   }, []);
 
+  // --- FUNCIÓN: handleSelectEvent ---
+  // Se dispara cuando el usuario elige un evento en el selector.
+  // Busca el objeto del evento en la lista local y carga todos sus datos
+  // administrativos (presupuesto, legal, cotizaciones, documentos).
   const handleSelectEvent = async (e) => {
     const id = e.target.value;
     if (!id) {
-      setEventoSeleccionado(null);
+      setEventoSeleccionado(null); // Limpia si se deselecciona
       return;
     }
-    const evt = eventos.find(ev => ev.id_evento.toString() === id);
+    const evt = eventos.find(ev => ev.id_evento.toString() === id); // Busca el objeto completo
     setEventoSeleccionado(evt);
-    cargarDatos(id);
+    cargarDatos(id); // Carga todos los datos del flujo para ese evento
   };
 
+  // --- FUNCIÓN: cargarDatos ---
+  // Carga centralizada de todos los datos del flujo administrativo de un evento.
+  // Hace 3 peticiones en secuencia:
+  //   1. /api/admin_evento/:id → presupuesto VAF, estado legal, cotizaciones B2B
+  //   2. /servicios-externos-all → filtra los servicios del evento para OC y contratos
+  //   3. cargarDocumentos() → documentos en la Bóveda Digital
   const cargarDatos = async (id_evento) => {
     setLoading(true);
     try {
-      // Admin Evento
+      // 1. Datos del panel administrativo del evento (VAF + Legal + Cotizaciones)
       const resAdmin = await fetch(`${API}/api/admin_evento/${id_evento}`);
       const dataAdmin = await resAdmin.json();
-      setPresupuesto(dataAdmin.presupuesto);
-      setLegal(dataAdmin.legal);
-      setCotizaciones(dataAdmin.cotizaciones || []);
+      setPresupuesto(dataAdmin.presupuesto);        // Estado del presupuesto VAF
+      setLegal(dataAdmin.legal);                    // Estado del dictamen legal
+      setCotizaciones(dataAdmin.cotizaciones || []); // Lista de cotizaciones B2B
 
-      // Servicios
+      // 2. Servicios externos del evento (para OC y control de contratos B2B)
       const resServ = await fetch(`${API}/servicios-externos-all`);
       const dataServ = await resServ.json();
       if (Array.isArray(dataServ)) {
         setServicios(dataServ.filter(s => s.id_evento.toString() === id_evento.toString()));
       }
 
-      // Documentos
+      // 3. Documentos de la Bóveda Digital
       cargarDocumentos(id_evento);
 
     } catch (err) {
@@ -78,72 +122,93 @@ export default function FlujoAdministrativo({ usuario }) {
     }
   };
 
+  // --- FUNCIÓN: cargarDocumentos ---
+  // Obtiene la lista de documentos subidos a la Bóveda Digital del evento.
+  // Se llama al cargar el evento y también después de subir o eliminar un documento.
   const cargarDocumentos = async (id_evento) => {
     try {
       const resDoc = await fetch(`${API}/api/documentos/${id_evento}`);
       const dataDoc = await resDoc.json();
-      setDocumentos(dataDoc);
+      setDocumentos(dataDoc); // Actualiza la tabla de la Bóveda Digital
     } catch (err) {
       console.error("Error cargando documentos", err);
     }
   };
 
+  // --- FUNCIÓN: handleUpload ---
+  // Sube un documento a la Bóveda Digital del evento.
+  // Recibe el evento de cambio del input file y el tipo de documento (ej: "Cotizacion", "Contrato").
+  // Valida que el archivo no supere 15MB, luego hace un POST multipart/form-data
+  // al endpoint de subida. Al completarse, recarga la lista de documentos.
   const handleUpload = async (e, tipo_documento) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) return; // Si no hay archivo seleccionado, no hace nada
 
+    // Validación de tamaño: máximo 15MB
     if (file.size > 15 * 1024 * 1024) {
       toast.error('El archivo excede el límite de 15MB');
       return;
     }
 
+    // Construye el FormData con los metadatos del documento
     const formData = new FormData();
-    formData.append('archivo', file);
-    formData.append('id_evento', eventoSeleccionado.id_evento);
-    formData.append('tipo_documento', tipo_documento);
-    formData.append('id_usuario_subio', usuario?.id_usuario);
+    formData.append('archivo', file);                            // El archivo binario
+    formData.append('id_evento', eventoSeleccionado.id_evento); // ID del evento al que pertenece
+    formData.append('tipo_documento', tipo_documento);           // Tipo: Cotizacion, Contrato, OC, etc.
+    formData.append('id_usuario_subio', usuario?.id_usuario);   // Auditoría: quién subió el archivo
 
-    const loadToast = toast.loading(`Subiendo ${tipo_documento}...`);
+    const loadToast = toast.loading(`Subiendo ${tipo_documento}...`); // Toast de carga mientras sube
     try {
       const res = await fetch(`${API}/api/documentos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData // No se pone Content-Type, el browser lo asigna con boundary automáticamente
       });
       const data = await res.json();
       if (res.ok) {
         toast.success(data.mensaje, { id: loadToast });
-        cargarDocumentos(eventoSeleccionado.id_evento);
+        cargarDocumentos(eventoSeleccionado.id_evento); // Refresca la Bóveda Digital
       } else {
         toast.error(data.error || 'Error al subir documento', { id: loadToast });
       }
     } catch (err) {
       toast.error('Error de conexión al subir archivo', { id: loadToast });
     }
-    e.target.value = null;
+    e.target.value = null; // Limpia el input file para permitir subir el mismo archivo de nuevo
   };
 
+  // --- FUNCIÓN: archivarDocumento ---
+  // Elimina (archiva) un documento de la Bóveda Digital.
+  // Solicita confirmación al usuario antes de proceder.
+  // Usa DELETE en el endpoint /api/documentos/:id y luego recarga la lista.
   const archivarDocumento = async (id_documento) => {
     if (!window.confirm('¿Seguro que deseas archivar este documento? Ya no será visible aquí.')) return;
     try {
       const res = await fetch(`${API}/api/documentos/${id_documento}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Documento archivado');
-        cargarDocumentos(eventoSeleccionado.id_evento);
+        cargarDocumentos(eventoSeleccionado.id_evento); // Refresca la lista de la bóveda
       }
     } catch (err) {
       toast.error('Error de conexión');
     }
   };
 
+  // --- FUNCIÓN: guardarCambiosServicio ---
+  // Actualiza el número de Orden de Compra (OC) y el flag de "requiere contrato"
+  // de un servicio externo específico. Se usa en el panel de Compras (pestaña OC).
+  // Se ejecuta al hacer blur en el input de OC o al cambiar el toggle de contrato.
   const guardarCambiosServicio = async (id_servicio_ext, num_oc, req_contrato) => {
     try {
       const res = await fetch(`${API}/api/servicio_externo/${id_servicio_ext}/admin`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'x-usuario-id': usuario?.id_usuario || ''
+          'x-usuario-id': usuario?.id_usuario || '' // Auditoría del usuario que modifica
         },
-        body: JSON.stringify({ numero_orden_compra: num_oc, requiere_contrato: req_contrato ? 1 : 0 })
+        body: JSON.stringify({ 
+          numero_orden_compra: num_oc,           // Número de OC asignado por Compras
+          requiere_contrato: req_contrato ? 1 : 0 // 1=Sí requiere contrato, 0=No
+        })
       });
       if (res.ok) {
         toast.success('Servicio actualizado');
@@ -155,15 +220,19 @@ export default function FlujoAdministrativo({ usuario }) {
     }
   };
 
+  // --- FUNCIÓN: guardarPresupuesto ---
+  // Guarda el estado del flujo de presupuesto VAF para el evento seleccionado.
+  // El estado puede ser: Pendiente, Asignado, Aprobado o Rechazado.
+  // Solo visible y ejecutable por el rol "Administrador V-A-F".
   const guardarPresupuesto = async () => {
     try {
       const res = await fetch(`${API}/api/presupuesto/${eventoSeleccionado.id_evento}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'x-usuario-id': usuario?.id_usuario || ''
+          'x-usuario-id': usuario?.id_usuario || '' // Auditoría del funcionario VAF
         },
-        body: JSON.stringify({ estado: presupuesto.estado })
+        body: JSON.stringify({ estado: presupuesto.estado }) // Envía solo el nuevo estado
       });
       if (res.ok) toast.success('Estado de presupuesto guardado');
     } catch (err) {
@@ -171,18 +240,22 @@ export default function FlujoAdministrativo({ usuario }) {
     }
   };
 
+  // --- FUNCIÓN: guardarLegal ---
+  // Guarda el dictamen legal del evento: estado (Aprobado/Rechazado/Observado)
+  // y las observaciones jurídicas escritas por el abogado.
+  // Solo visible y ejecutable por el rol "Administrador de Legal".
   const guardarLegal = async () => {
     try {
       const res = await fetch(`${API}/api/flujo_legal/${eventoSeleccionado.id_evento}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'x-usuario-id': usuario?.id_usuario || ''
+          'x-usuario-id': usuario?.id_usuario || '' // Auditoría del abogado revisor
         },
         body: JSON.stringify({ 
-          estado_legal: legal.estado_legal, 
-          observacion_legal: legal.observacion_legal,
-          id_usuario_revisor: usuario?.id_usuario
+          estado_legal: legal.estado_legal,           // Estado del dictamen
+          observacion_legal: legal.observacion_legal, // Notas jurídicas del abogado
+          id_usuario_revisor: usuario?.id_usuario     // Registro de quién dictó el fallo
         })
       });
       if (res.ok) toast.success('Flujo legal actualizado');
@@ -191,25 +264,41 @@ export default function FlujoAdministrativo({ usuario }) {
     }
   };
 
+  // --- FUNCIÓN UTILITARIA: calcularAlertaVencimiento ---
+  // Calcula cuántos días faltan para que venza la vigencia de una cotización.
+  // Devuelve un objeto con texto descriptivo, color y fondo para el badge de alerta.
+  // - Vencida (rojo): la fecha de vigencia ya pasó
+  // - Vence pronto (naranja): quedan 5 días o menos
+  // - Vigente (verde): aún tiene validez suficiente
   const calcularAlertaVencimiento = (fecha_vigencia) => {
     const hoy = new Date();
     const vigencia = new Date(fecha_vigencia);
-    const diffTime = vigencia - hoy;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffTime = vigencia - hoy;                              // Diferencia en milisegundos
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convierte a días
     
-    if (diffDays < 0) return { texto: 'Vencida', color: '#ef4444', bg: '#fef2f2' };
-    if (diffDays <= 5) return { texto: `Vence en ${diffDays} días`, color: '#f97316', bg: '#fff7ed' };
-    return { texto: 'Vigente', color: '#10b981', bg: '#ecfdf5' };
+    if (diffDays < 0) return { texto: 'Vencida', color: '#ef4444', bg: '#fef2f2' };              // Rojo
+    if (diffDays <= 5) return { texto: `Vence en ${diffDays} días`, color: '#f97316', bg: '#fff7ed' }; // Naranja
+    return { texto: 'Vigente', color: '#10b981', bg: '#ecfdf5' };                                // Verde
   };
 
+  // --- FUNCIÓN UTILITARIA: agruparCotizacionesPorSolicitud ---
+  // Agrupa el array plano de cotizaciones por id_solicitud.
+  // Esto permite mostrar en la UI un grupo de ofertas por cada solicitud de cotización,
+  // facilitando la comparación entre proveedores para la misma necesidad.
+  // Retorna: { [id_solicitud]: [cotizacion1, cotizacion2, ...] }
   const agruparCotizacionesPorSolicitud = () => {
     return cotizaciones.reduce((acc, c) => {
-      if (!acc[c.id_solicitud]) acc[c.id_solicitud] = [];
-      acc[c.id_solicitud].push(c);
+      if (!acc[c.id_solicitud]) acc[c.id_solicitud] = []; // Inicializa el grupo si no existe
+      acc[c.id_solicitud].push(c);                        // Agrega la cotización al grupo
       return acc;
     }, {});
   };
 
+  // --- FUNCIÓN: evaluarCotizacionesIA ---
+  // Llama al endpoint de IA del backend para analizar y comparar las cotizaciones
+  // de un grupo de solicitud. La IA evalúa precios, vigencia, condiciones y recomienda
+  // el proveedor más conveniente con una justificación.
+  // Solo aparece el botón cuando hay 2+ cotizaciones en el mismo grupo.
   const evaluarCotizacionesIA = async (id_solicitud) => {
     const loadToast = toast.loading('Analizando cotizaciones con Inteligencia Artificial...');
     try {
@@ -217,7 +306,7 @@ export default function FlujoAdministrativo({ usuario }) {
       const data = await res.json();
       if (res.ok) {
         toast.success('Análisis completado', { id: loadToast });
-        setAnalisisIA(data.veredicto);
+        setAnalisisIA(data.veredicto); // Guarda el veredicto de la IA para mostrarlo en la UI
       } else {
         toast.error(data.error || 'Error en el análisis', { id: loadToast });
       }
@@ -581,7 +670,13 @@ export default function FlujoAdministrativo({ usuario }) {
                       </td>
                       <td style={{ textAlign: 'right', paddingRight: '24px' }}>
                         <div className="saas-action-group" style={{ display: 'inline-flex' }}>
-                          <a href={`${API}${doc.ruta_archivo}`} target="_blank" rel="noreferrer" className="action-icon-btn view" title="Descargar documento">
+                          {/* Módulo: Bóveda Digital | Función: Botón de Vista Previa 
+                              Propósito: Abre el documento en una nueva pestaña del navegador para visualizarlo 
+                              sin descargarlo. Este botón está disponible para todos los roles administrativos. */}
+                          <a href={`${API}${doc.ruta_archivo}`} target="_blank" rel="noreferrer" className="action-icon-btn view" style={{ color: '#10b981' }} title="Vista Previa">
+                            <FiEye />
+                          </a>
+                          <a href={`${API}${doc.ruta_archivo}`} download target="_blank" rel="noreferrer" className="action-icon-btn" style={{ color: '#3b82f6' }} title="Descargar documento">
                             <FiDownload />
                           </a>
                           <button className="action-icon-btn delete" onClick={() => archivarDocumento(doc.id_documento)} title="Eliminar / Archivar">
