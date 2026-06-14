@@ -1,40 +1,68 @@
+// ============================================================
+// MÓDULO AUDIOVISUAL Y EQUIPOS
+// Pertenece a: Módulo Operativo / Recursos Técnicos
+// Propósito: 
+// 1. Permite a los usuarios solicitar equipos AV para sus eventos
+//    validando una anticipación mínima de 5 días (Políticas UAPA).
+// 2. Permite a los Administradores de Audiovisual gestionar,
+//    aprobar o rechazar estas reservas de equipos.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiAlertTriangle, FiCheckCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw, FiEye, FiFileText, FiList } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 
+// URL base de API
 const API = "http://localhost:8080";
 
+// Mapeo dinámico de íconos según la BD
 const IconMap = {
   FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw
 };
 
+// ============================================================
+// COMPONENTE: Audiovisual
+// Recibe:
+//   - usuario: Objeto del usuario logueado
+// ============================================================
 export default function Audiovisual({ usuario }) {
-  const [eventos, setEventos] = useState([]);
-  const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
-  const [equiposDisponibles, setEquiposDisponibles] = useState([]);
-  const [equiposSeleccionados, setEquiposSeleccionados] = useState({});
+  // --- ESTADOS: FORMULARIO DE SOLICITUD ---
+  const [eventos, setEventos]                             = useState([]); // Eventos aprobados que pueden solicitar AV
+  const [eventoSeleccionado, setEventoSeleccionado]       = useState(null); // Evento seleccionado para reservar
+  const [equiposDisponibles, setEquiposDisponibles]       = useState([]); // Catálogo de equipos base
+  const [equiposSeleccionados, setEquiposSeleccionados]   = useState({}); // Objeto { id_equipo: {cantidad, ubicacion} }
   const [observacionesGenerales, setObservacionesGenerales] = useState("");
+  const [errorDate, setErrorDate]                         = useState(null); // Error si anticipación < 5 días
+  
+  // --- ESTADOS: UTILIDADES ---
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
-  const [errorDate, setErrorDate] = useState(null);
-  const [solicitudesAV, setSolicitudesAV] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // --- ESTADOS: VISTA DE ADMINISTRADOR AV ---
+  const [solicitudesAV, setSolicitudesAV] = useState([]); // Listado de reservas hechas (agrupadas por evento)
+  const [currentPage, setCurrentPage]     = useState(1);
+  const itemsPerPage = 10;
+  
+  // --- ESTADOS DEL MODAL TÉCNICO ---
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isModalOpen, setIsModalOpen]         = useState(false);
+
+  // --- FUNCIONES MODAL ---
   const openModal = (req) => { setSelectedRequest(req); setIsModalOpen(true); };
   const closeModal = () => { setIsModalOpen(false); setSelectedRequest(null); };
 
+  // --- FUNCIÓN UTILITARIA ---
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
 
+  // --- EFECTO INICIAL ---
   useEffect(() => {
+    // 1. Obtener eventos que pueden requerir AV (Aprobados o En Progreso)
     fetch(`${API}/eventos`)
       .then((res) => res.json())
       .then((data) => {
@@ -45,21 +73,27 @@ export default function Audiovisual({ usuario }) {
       })
       .catch((err) => console.error("Error cargando eventos:", err));
 
+    // 2. Cargar el catálogo de equipos audiovisuales disponibles
     fetch(`${API}/equipos-audiovisuales`)
       .then(res => res.json())
       .then(data => setEquiposDisponibles(Array.isArray(data) ? data : []))
       .catch(err => console.error("Error cargando equipos", err));
       
+    // 3. Si el usuario gestiona el área, cargar todas las solicitudes pendientes
     if (usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") {
       cargarSolicitudesAV();
     }
   }, [usuario]);
   
+  // --- FUNCIÓN: cargarSolicitudesAV (Vista Admin AV) ---
+  // Obtiene los detalles técnicos (muchas filas) y los agrupa por Evento
+  // para mostrarlos en la tabla inferior del dashboard técnico.
   const cargarSolicitudesAV = () => {
     fetch(`${API}/audiovisual`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
+          // Agrupa múltiples registros de equipos bajo el mismo id_evento
           const agrupadas = Object.values(data.reduce((acc, req) => {
             if (!acc[req.id_evento]) {
               acc[req.id_evento] = {
@@ -81,6 +115,7 @@ export default function Audiovisual({ usuario }) {
               estado_av: req.estado_av
             });
             acc[req.id_evento].total_equipos += 1;
+            // Si algún equipo está Pendiente, marcar todo el evento como Pendiente
             if (req.estado_av === 'Pendiente') acc[req.id_evento].estado_av = 'Pendiente';
             return acc;
           }, {}));
@@ -92,6 +127,8 @@ export default function Audiovisual({ usuario }) {
       .catch((err) => console.error("Error cargando solicitudes audiovisuales:", err));
   };
 
+  // --- FUNCIÓN: handleCambiarEstado (Vista Admin AV) ---
+  // Cambia el estado (Aprobado/Rechazado) de la solicitud AV de un evento
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
     try {
       const res = await fetch(`${API}/audiovisual/evento/${id_evento}/estado`, {
@@ -106,6 +143,9 @@ export default function Audiovisual({ usuario }) {
     }
   };
 
+  // --- FUNCIÓN: handleSelectEvent ---
+  // Selecciona evento del dropdown y valida regla de negocio:
+  // "Toda solicitud AV requiere min. 5 días de antelación"
   const handleSelectEvent = (e) => {
     const evId = e.target.value;
     if (!evId) {
@@ -118,6 +158,7 @@ export default function Audiovisual({ usuario }) {
     setEventoSeleccionado(ev);
     setMensaje(""); 
 
+    // Validación de fecha (Reglas de Protocolo UAPA)
     if (ev) {
       const fechaEv = new Date(ev.fecha_inicio);
       const hoy = new Date();
@@ -133,6 +174,8 @@ export default function Audiovisual({ usuario }) {
     }
   };
 
+  // --- FUNCIONES GESTIÓN DE EQUIPOS SELECCIONADOS ---
+  // Agrega/Quita un equipo del diccionario de selección local
   const handleToggleEquipo = (idEquipo) => {
     setEquiposSeleccionados((prev) => {
       const isSelected = !!prev[idEquipo];
@@ -146,6 +189,7 @@ export default function Audiovisual({ usuario }) {
     });
   };
 
+  // Actualiza cantidad o ubicación de un equipo activo
   const handleChangeEquipo = (idEquipo, field, val) => {
     setEquiposSeleccionados((prev) => ({
       ...prev,
@@ -153,6 +197,8 @@ export default function Audiovisual({ usuario }) {
     }));
   };
 
+  // --- FUNCIÓN: handleSubmit (Enviar reserva) ---
+  // Construye el payload de equipos y lo envía al API de registro
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (errorDate) return; 
@@ -166,6 +212,7 @@ export default function Audiovisual({ usuario }) {
     setLoading(true);
     setMensaje("");
 
+    // Armar el payload basado en la estructura que espera la BD
     const serviciosPayload = seleccionados.map((key) => {
       const eqData = equiposSeleccionados[key];
       const eqMeta = equiposDisponibles.find(e => e.id_equipo === Number(key));
@@ -187,6 +234,7 @@ export default function Audiovisual({ usuario }) {
       if (!res.ok) {
         setMensaje({ tipo: "error", texto: body.mensaje || "Error al enviar solicitud." });
       } else {
+        // Éxito: limpiar form
         setMensaje({ tipo: "success", texto: "Solicitud de servicios audiovisuales procesada con éxito." });
         setEventoSeleccionado(null);
         setEquiposSeleccionados({});
