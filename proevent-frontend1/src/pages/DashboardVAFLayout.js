@@ -39,7 +39,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
       case "DashboardVAF":
         return "Dashboard Financiero";
       case "PoaAdmin":
-        return "Plan Operativo Anual (POA)";
+        return "Presupuesto (POA)";
       case "Calendario":
         return "Calendario";
       case "Soporte":
@@ -70,7 +70,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
             </li>
             <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
               <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-              Plan Operativo Anual (POA)
+              Presupuesto (POA)
             </li>
             <li className={activeTab === "Calendario" ? "active" : ""} onClick={() => setActiveTab("Calendario")}>
               <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />

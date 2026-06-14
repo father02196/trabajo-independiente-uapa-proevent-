@@ -345,7 +345,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                     {usuario?.rol === "Administrador" && (
                                         <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
                                             <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                            Presupuesto POA
+                                            Presupuesto (POA)
                                         </li>
                                     )}
                                 </ul>
