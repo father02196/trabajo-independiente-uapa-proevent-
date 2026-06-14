@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: GestionCategorias
+// Pertenece a: Módulo de Proveedores y Servicios
+// Propósito: ABM (Alta, Baja, Modificación) de categorías o tipos
+// de servicios que pueden brindar los suplidores externos.
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiEdit, FiPower, FiPlusCircle, FiLayers } from 'react-icons/fi';
@@ -6,15 +13,19 @@ import SortableHeader from '../components/SortableHeader';
 import './../css/Dashboard.css';
 
 function GestionCategorias({ usuario }) {
+    // --- ESTADOS ---
     const API = "http://localhost:8080";
     const [categorias, setCategorias] = useState([]);
     const [modalConfig, setModalConfig] = useState({ open: false, type: null, data: null });
     const [formData, setFormData] = useState({ nombre: '', clasificacion: 'Corriente' });
 
+    // --- EFECTOS INICIALES ---
     useEffect(() => {
         fetchCategorias();
     }, []);
 
+    // --- FUNCIÓN: fetchCategorias ---
+    // Obtiene el catálogo de categorías de servicio registradas
     const fetchCategorias = async () => {
         try {
             const res = await fetch(`${API}/api/admin/categorias-servicio`);
@@ -25,6 +36,8 @@ function GestionCategorias({ usuario }) {
         }
     };
 
+    // --- FUNCIÓN: handleGuardarCategoria ---
+    // Inserta una nueva categoría o actualiza una existente (Upsert)
     const handleGuardarCategoria = async (e) => {
         e.preventDefault();
         const isEdit = modalConfig.type === 'editar';
@@ -48,6 +61,8 @@ function GestionCategorias({ usuario }) {
         }
     };
 
+    // --- FUNCIÓN: handleToggleEstado ---
+    // Cambia el estado (Activo/Inactivo) de una categoría (Soft delete/enable)
     const handleToggleEstado = async (cat) => {
         const nuevoEstado = cat.estado === 'Activo' ? 'Inactivo' : 'Activo';
         if(!window.confirm(`¿Marcar la categoría "${cat.nombre}" como ${nuevoEstado}? (No borrará a los suplidores que la tengan asignada)`)) return;
