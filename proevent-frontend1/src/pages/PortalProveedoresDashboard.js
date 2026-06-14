@@ -1,30 +1,52 @@
+// ============================================================
+// PORTAL DE PROVEEDORES B2B - Dashboard Externo
+// Pertenece a: Módulo B2B (Módulo de Licitaciones y Compras)
+// Propósito: Interfaz donde proveedores externos ven licitaciones
+// abiertas de UAPA, revisan detalles técnicos y suben cotizaciones
+// en formato PDF respondiendo a los requerimientos.
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import './../css/PortalProveedores.css';
 import { FiLogOut, FiUploadCloud, FiRefreshCw, FiEye, FiFileText, FiGrid } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+
+// ============================================================
+// COMPONENTE: PortalProveedoresDashboard
+// Recibe:
+//   - proveedor: Objeto de sesión del proveedor autenticado
+//   - onLogout: Función para cerrar sesión
+// ============================================================
 function PortalProveedoresDashboard({ proveedor, onLogout }) {
-  const [solicitudes, setSolicitudes] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  // --- ESTADOS DE DATOS ---
+  const [solicitudes, setSolicitudes] = useState([]); // Lista de licitaciones (eventos en cotización)
+  const [loading, setLoading]         = useState(false); // Spinner
+
+  // --- ESTADOS DEL MODAL DE COTIZACIÓN ---
+  const [modalOpen, setModalOpen]                         = useState(false);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
 
+  // --- ESTADOS DEL MODAL DE DETALLES TÉCNICOS ---
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [solicitudDetalles, setSolicitudDetalles] = useState(null);
 
-  // 7 campos de Mejora 2
-  const [file, setFile] = useState(null);
-  const [moneda, setMoneda] = useState('DOP');
-  const [fechaVigencia, setFechaVigencia] = useState('');
-  const [comentarios, setComentarios] = useState('');
+  // --- ESTADOS DEL FORMULARIO DE OFERTA (Mejora 2) ---
+  const [file, setFile]                   = useState(null);  // Archivo PDF de la cotización
+  const [moneda, setMoneda]               = useState('DOP'); // Moneda ofertada
+  const [fechaVigencia, setFechaVigencia] = useState('');    // Límite de validez de la oferta
+  const [comentarios, setComentarios]     = useState('');    // Notas extras del proveedor
 
-  const [loading, setLoading] = useState(false);
-
+  // --- EFECTO INICIAL ---
   useEffect(() => {
     fetchSolicitudes(false);
   }, []);
 
+  // --- FUNCIÓN: fetchSolicitudes ---
+  // Obtiene las licitaciones activas asignadas a la categoría de este proveedor
   const fetchSolicitudes = async (showAlert = false) => {
     setLoading(true);
     try {
+      // API filtra por id_tipo de categoría del proveedor
       const res = await fetch(`http://localhost:8080/api/proveedor/${proveedor.id_tipo}/solicitudes`);
       const data = await res.json();
       setSolicitudes(data);
@@ -37,16 +59,21 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
     }
   };
 
+  // --- FUNCIONES APERTURA DE MODALES ---
+  // Abre el modal para enviar una oferta a una licitación
   const openCotizar = (sol) => {
     setSolicitudSeleccionada(sol);
     setModalOpen(true);
   };
 
+  // Abre la ficha técnica completa del requerimiento de UAPA
   const openDetalles = (sol) => {
     setSolicitudDetalles(sol);
     setDetailsModalOpen(true);
   };
 
+  // --- FUNCIÓN: handleFileChange ---
+  // Valida que el archivo de cotización sea un PDF menor a 10MB
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
@@ -62,11 +89,15 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
     }
   };
 
+  // --- FUNCIÓN: handleSubmit ---
+  // Envía la oferta (cotización) usando FormData (multipart/form-data)
+  // El backend extrae el monto usando NLP/Expresiones Regulares del PDF
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!file) return alert('Debes adjuntar el PDF de la cotización.');
     if (!fechaVigencia) return alert('Debes indicar la fecha de vigencia.');
 
+    // Construcción del paquete de datos para subida de archivos
     const formData = new FormData();
     formData.append('archivo_pdf', file);
     formData.append('id_solicitud', solicitudSeleccionada.id_solicitud);
@@ -74,7 +105,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
     formData.append('moneda', moneda);
     formData.append('fecha_vigencia', fechaVigencia);
     formData.append('comentarios', comentarios);
-    // Categoría y Evento van implícitos en la solicitud. El Contacto va en el perfil del proveedor.
+    // Nota: Categoría y Evento van implícitos en la solicitud. El Contacto en el perfil.
 
     try {
       const res = await fetch('http://localhost:8080/api/proveedor/subir-cotizacion', {
@@ -83,6 +114,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       });
       const data = await res.json();
       if (res.ok) {
+        // La IA del backend lee el PDF y devuelve el monto_extraido
         alert(`Cotización subida con éxito. Monto detectado por sistema: ${data.monto_extraido || 'No detectado'}`);
         setModalOpen(false);
         setFile(null);
