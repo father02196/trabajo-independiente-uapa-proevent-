@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: CronogramaGlobal
+// Pertenece a: Módulo de Coordinación y Logística
+// Propósito: Contenedor principal para administrar las actividades
+// de apoyo de los eventos. Contiene el selector de evento y renderiza
+// el componente `CronogramaLogistico`.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiCalendar, FiMapPin, FiCheckCircle } from "react-icons/fi";
 import CronogramaLogistico from "./CronogramaLogistico";
@@ -6,10 +14,12 @@ import { toast } from "react-hot-toast";
 const API = "http://localhost:8080";
 
 function CronogramaGlobal({ usuario, eventoPreseleccionado = null }) {
+  // --- ESTADOS ---
   const [eventos, setEventos] = useState([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
     if (eventoPreseleccionado) {
       setEventoSeleccionado(eventoPreseleccionado);
@@ -18,6 +28,8 @@ function CronogramaGlobal({ usuario, eventoPreseleccionado = null }) {
     }
   }, [usuario, eventoPreseleccionado]);
 
+  // --- FUNCIÓN: cargarEventos ---
+  // Carga la lista de eventos según permisos del usuario para ser seleccionados
   const cargarEventos = async () => {
     setLoading(true);
     try {
