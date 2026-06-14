@@ -1,19 +1,48 @@
+// ============================================================
+// DASHBOARD ESPECIALISTA - Panel para Especialistas de Área
+// Pertenece a: Módulo de Inicio (ProEvent - Roles técnicos)
+// Propósito: Dashboard para roles técnicos: Especialistas,
+// Responsables de Área Audiovisual, etc. Muestra eventos
+// globales del sistema, con filtro especial para Administradores
+// de Audiovisual (solo eventos que necesitan equipo AV).
+// ============================================================
+
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
+
+// Iconos de Feather Icons para paneles y accesos rápidos
 import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar } from "react-icons/fi";
+
+// Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
 
+// URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: DashboardEspecialista
+// Recibe:
+//   - usuario: objeto del usuario especialista logueado
+//   - onEditEvent: callback para editar un evento
+//   - setActiveTab: navega entre pestañas del layout
+// ============================================================
 function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
-  const [eventRequests, setEventRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // --- ESTADOS ---
+  const [eventRequests, setEventRequests] = useState([]); // Todos los eventos del sistema
+  const [loading, setLoading]             = useState(true); // Spinner de carga
+  const [error, setError]                 = useState("");   // Mensaje de error
 
+  // --- ESTADOS DEL MODAL ---
+  const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal
+  const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
+
+  // --- DETECCIÓN DE ROL AV ---
+  // Los Administradores de Audiovisual tienen una vista filtrada:
+  // solo ven los eventos que requieren equipos audiovisuales.
   const isAudioVisualAdmin = usuario?.rol === "Administrador de Audiovisual" || usuario?.rol === "Responsable de área audiovisual";
 
+  // --- FUNCIONES: openModal / closeModal ---
   const openModal = (req) => {
     setSelectedRequest(req);
     setIsModalOpen(true);
@@ -23,22 +52,23 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
     setSelectedRequest(null);
   };
 
+  // --- EFECTO: Carga al montar o al cambiar el usuario ---
   useEffect(() => {
     cargarDatos();
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarDatos ---
+  // Carga todos los eventos del sistema.
+  // Los especialistas tienen visibilidad global (no filtran por usuario).
+  // El filtro por necesita_audiovisual se aplica en frontend para el rol AV.
   const cargarDatos = async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
     try {
-      // Especialistas ven todas las solicitudes
+      // Especialistas ven todas las solicitudes del sistema
       const eventUrl = `${API}/eventos`;
-
       const resEvents = await fetch(eventUrl).then(r => r.json());
-
-      if (Array.isArray(resEvents)) {
-        setEventRequests(resEvents);
-      }
+      if (Array.isArray(resEvents)) setEventRequests(resEvents);
     } catch (err) {
       setError("No se pudo establecer conexión con el servidor ProEvent.");
     } finally {
@@ -46,6 +76,8 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
     }
   };
 
+  // --- FUNCIONES UTILITARIAS ---
+  // formatFecha: fecha ISO a formato corto con corrección de timezone
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -53,33 +85,40 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
   };
 
+  // getStatusClass: clase CSS según el estado del evento
   const getStatusClass = (estado) => {
     switch (estado) {
-      case "Pendiente": return "pending";
-      case "Aprobado": return "approved";
-      case "Rechazado": return "rejected";
-      case "Finalizado": return "approved";
+      case "Pendiente":  return "pending";  // Amarillo
+      case "Aprobado":   return "approved"; // Verde
+      case "Rechazado":  return "rejected"; // Rojo
+      case "Finalizado": return "approved"; // Verde
       default: return "pending";
     }
   };
 
-  // Si es AV Admin, tal vez en el futuro se filtre solo los que necesitan_audiovisual === 1
+  // --- FILTRO DE SOLICITUDES RELEVANTES ---
+  // Si el usuario es Administrador de Audiovisual, solo ve eventos
+  // que marcaron necesita_audiovisual=1 en su solicitud.
+  // Otros especialistas ven todo el listado global.
   const solicitudesRelevantes = isAudioVisualAdmin 
     ? eventRequests.filter(e => e.necesita_audiovisual === 1)
     : eventRequests;
 
+  // --- CÁLCULOS ESTADÍSTICOS (sobre solicitudes relevantes) ---
   const totalSolicitudes = solicitudesRelevantes.length;
-  const pendientes = solicitudesRelevantes.filter((e) => e.estado === "Pendiente").length;
-  const aprobados = solicitudesRelevantes.filter((e) => e.estado === "Aprobado").length;
+  const pendientes  = solicitudesRelevantes.filter((e) => e.estado === "Pendiente").length;
+  const aprobados   = solicitudesRelevantes.filter((e) => e.estado === "Aprobado").length;
   const finalizados = solicitudesRelevantes.filter((e) => e.estado === "Finalizado").length;
 
+  // --- DATOS DEL GRÁFICO DONUT ---
   const statusData = [
     { name: "Pendientes", value: pendientes, color: "#f59e0b" },
-    { name: "Aprobados", value: aprobados, color: "#3b82f6" },
-    { name: "Finalizados", value: finalizados, color: "#10b981" },
+    { name: "Aprobados",  value: aprobados,  color: "#3b82f6" },
+    { name: "Finalizados",value: finalizados, color: "#10b981" },
     { name: "Rechazados", value: solicitudesRelevantes.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
   ].filter(item => item.value > 0);
 
+  // --- TIMELINE: PRÓXIMOS 5 EVENTOS ACTIVOS ---
   const proximosEventos = solicitudesRelevantes
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
     .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
