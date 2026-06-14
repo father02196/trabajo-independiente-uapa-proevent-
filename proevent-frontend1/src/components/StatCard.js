@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: StatCard
+// Pertenece a: Componentes Genéricos (UI)
+// Propósito: Tarjeta de estadísticas para dashboards. Muestra un 
+// título, un valor numérico/texto y un icono de forma estandarizada.
+// ============================================================
+
 import React from 'react';
 
 export default function StatCard({ title, value, icon: Icon, className = '' }) {
