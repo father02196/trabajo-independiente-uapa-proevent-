@@ -1,17 +1,43 @@
+// ============================================================
+// DASHBOARD SOLICITANTE - Panel de Inicio para Solicitantes
+// Pertenece a: Módulo de Inicio (ProEvent - Rol Solicitante)
+// Propósito: Vista personalizada del dashboard para usuarios
+// con rol Solicitante. Solo muestra SUS propias solicitudes
+// filtradas por usuario_id. Incluye 3 tarjetas de stats,
+// gráfico donut, timeline personal y accesos rápidos.
+// ============================================================
+
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
+
+// Iconos de Feather Icons para tarjetas y botones
 import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
+
+// Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
 
+// URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: DashboardSolicitante
+// Recibe:
+//   - usuario: objeto del usuario solicitante logueado
+//   - onEditEvent: callback para editar un evento propio
+//   - setActiveTab: navega entre pestañas del layout
+// ============================================================
 function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
-  const [eventRequests, setEventRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // --- ESTADOS ---
+  const [eventRequests, setEventRequests] = useState([]); // Eventos del solicitante
+  const [loading, setLoading]             = useState(true); // Spinner de carga
+  const [error, setError]                 = useState("");   // Mensaje de error
 
+  // --- ESTADOS DEL MODAL ---
+  const [selectedRequest, setSelectedRequest] = useState(null); // Evento seleccionado
+  const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
+
+  // --- FUNCIONES: openModal / closeModal ---
   const openModal = (req) => {
     setSelectedRequest(req);
     setIsModalOpen(true);
@@ -21,23 +47,27 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     setSelectedRequest(null);
   };
 
+  // --- EFECTO: Carga cuando el usuario está disponible ---
+  // Solo dispara cargarDatos si el id_usuario ya existe
+  // (espera a que el contexto de autenticación esté listo).
   useEffect(() => {
     if (usuario?.id_usuario) {
       cargarDatos();
     }
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarDatos ---
+  // Carga SOLO los eventos del solicitante logueado.
+  // Usa el parámetro usuario_id en la URL para filtrar en el backend.
+  // Los solicitantes NO pueden ver eventos de otros usuarios.
   const cargarDatos = async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
     try {
+      // Filtra por usuario_id: el solicitante solo ve sus propias solicitudes
       const eventUrl = `${API}/eventos?usuario_id=${usuario.id_usuario}`;
-
       const resEvents = await fetch(eventUrl).then(r => r.json());
-
-      if (Array.isArray(resEvents)) {
-        setEventRequests(resEvents);
-      }
+      if (Array.isArray(resEvents)) setEventRequests(resEvents);
     } catch (err) {
       setError("No se pudo establecer conexión con el servidor ProEvent.");
     } finally {
@@ -45,6 +75,9 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     }
   };
 
+  // --- FUNCIÓN UTILITARIA: formatFecha ---
+  // Convierte fecha ISO a formato corto (ej: "15 jun").
+  // Corrección de timezone para evitar desfase de 1 día por UTC.
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -52,28 +85,35 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
   };
 
+  // --- FUNCIÓN UTILITARIA: getStatusClass ---
+  // Devuelve la clase CSS del estado del evento para los badges de color.
   const getStatusClass = (estado) => {
     switch (estado) {
-      case "Pendiente": return "pending";
-      case "Aprobado": return "approved";
-      case "Rechazado": return "rejected";
-      case "Finalizado": return "approved";
+      case "Pendiente":  return "pending";  // Amarillo
+      case "Aprobado":   return "approved"; // Verde
+      case "Rechazado":  return "rejected"; // Rojo
+      case "Finalizado": return "approved"; // Verde
       default: return "pending";
     }
   };
 
+  // --- CÁLCULOS ESTADÍSTICOS (solo sobre los eventos del solicitante) ---
   const totalSolicitudes = eventRequests.length;
-  const pendientes = eventRequests.filter((e) => e.estado === "Pendiente").length;
-  const aprobados = eventRequests.filter((e) => e.estado === "Aprobado").length;
+  const pendientes  = eventRequests.filter((e) => e.estado === "Pendiente").length;
+  const aprobados   = eventRequests.filter((e) => e.estado === "Aprobado").length;
   const finalizados = eventRequests.filter((e) => e.estado === "Finalizado").length;
 
+  // --- DATOS DEL GRÁFICO DONUT ---
+  // Solo los estados con al menos 1 evento se incluyen en el donut.
   const statusData = [
     { name: "Pendientes", value: pendientes, color: "#f59e0b" },
-    { name: "Aprobados", value: aprobados, color: "#3b82f6" },
-    { name: "Finalizados", value: finalizados, color: "#10b981" },
+    { name: "Aprobados",  value: aprobados,  color: "#3b82f6" },
+    { name: "Finalizados",value: finalizados, color: "#10b981" },
     { name: "Rechazados", value: eventRequests.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
   ].filter(item => item.value > 0);
 
+  // --- TIMELINE: PRÓXIMOS 5 EVENTOS PERSONALES ---
+  // Solo eventos del solicitante, ordenados por fecha ascendente.
   const proximosEventos = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
     .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
