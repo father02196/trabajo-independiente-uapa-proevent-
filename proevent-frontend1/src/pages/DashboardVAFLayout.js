@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: DashboardVAFLayout
+// Pertenece a: Módulo Financiero (VAF) / Layout
+// Propósito: Contenedor principal (Layout) para el administrador
+// de Presupuesto (VAF). Maneja la navegación lateral y el 
+// renderizado de las vistas financieras.
+// ============================================================
+
 import React, { useState } from "react";
 import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
@@ -11,10 +19,12 @@ import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
 
 export default function DashboardVAFLayout({ usuario, onLogout }) {
+  // --- ESTADOS ---
   const [activeTab, setActiveTab] = useState("DashboardVAF");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  // --- FUNCIONES DE INTERFAZ ---
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -23,7 +33,8 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
     setUserMenuOpen(!userMenuOpen);
   };
 
-  // Renderizador principal del contenido
+  // --- FUNCIÓN: renderContent ---
+  // Renderiza el contenido financiero activo
   const renderContent = () => {
     switch (activeTab) {
       case "DashboardVAF": return <DashboardVAF usuario={usuario} />;
