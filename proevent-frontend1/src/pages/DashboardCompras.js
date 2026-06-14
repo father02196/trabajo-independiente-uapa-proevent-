@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: DashboardCompras
+// Pertenece a: Módulo de Compras / Licitaciones
+// Propósito: Panel analítico para el administrador de compras.
+// Muestra KPIs logísticos (licitaciones, órdenes de compra, presupuesto)
+// y los eventos próximos que requieren adjudicación.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiShoppingCart, FiFileText, FiCheckCircle, FiDollarSign, FiRefreshCw, FiGrid, FiActivity, FiArrowUpRight, FiClock } from "react-icons/fi";
 import './../css/Dashboard.css';
@@ -5,15 +13,19 @@ import './../css/Dashboard.css';
 const API = "http://localhost:8080";
 
 function DashboardCompras({ usuario, setActiveTab }) {
+  // --- ESTADOS ---
   const [eventRequests, setEventRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
     cargarDatos();
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarDatos ---
+  // Obtiene todos los eventos desde la API para extraer las analíticas
   const cargarDatos = async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
@@ -29,6 +41,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
     }
   };
 
+  // --- UTILIDADES DE FORMATO ---
   const formatMonedaDOP = (valor) => {
     return new Intl.NumberFormat("es-DO", {
       style: "currency",
@@ -43,7 +56,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
     return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
-  // KPIs Logísticos
+  // --- CÁLCULOS Y KPIs LOGÍSTICOS ---
   const eventosAprobados = eventRequests.filter((e) => e.estado === "Aprobado" || e.estado === "Finalizado").length;
   // Simulación de cotizaciones basadas en el sistema actual
   const licitacionesAbiertas = eventRequests.filter((e) => e.estado === "Aprobado").length;
@@ -164,7 +177,10 @@ function DashboardCompras({ usuario, setActiveTab }) {
                     </div>
                     
                     <div className="modern-event-body">
-                      <h5 className="modern-event-title">{evt.nombre}</h5>
+                      <h5 className="modern-event-title">
+                        <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                        {evt.nombre}
+                      </h5>
                       <div className="modern-event-meta-info" style={{ marginTop: '8px' }}>
                         <div className="modern-meta-item">
                           <FiGrid className="modern-meta-icon" />
