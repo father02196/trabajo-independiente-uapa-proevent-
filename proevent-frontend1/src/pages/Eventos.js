@@ -1,10 +1,18 @@
+// ============================================================
+// COMPONENTE: Eventos
+// Pertenece a: Módulo de Solicitudes / Eventos
+// Propósito: Componente integrador que renderiza el formulario
+// de "NuevaSolicitudEvento" y, si se está en modo edición,
+// muestra pestañas extra para gestionar el Cronograma Logístico.
+// ============================================================
+
 import React, { useState } from 'react';
 import '../css/Eventos.css';
 import NuevaSolicitudEvento from './NuevaSolicitudEvento';
 import CronogramaLogistico from './CronogramaLogistico';
 
 function Eventos({ usuario, editingEvent, setEditingEvent }) {
-  // --- Persistencia del activeSection en la creación de eventos ---
+  // --- ESTADOS: Persistencia del tab activo ---
   const [activeSection, setActiveSection] = useState(() => {
       return localStorage.getItem("eventos_activeSection") || "Información General";
   });
@@ -13,6 +21,7 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
       localStorage.setItem("eventos_activeSection", activeSection);
   }, [activeSection]);
 
+  // --- VARIABLES DERIVADAS ---
   // Secciones extra para modo edición (cronograma y licitaciones)
   const showExtraTabs = Boolean(editingEvent);
 
