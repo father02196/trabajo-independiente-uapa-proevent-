@@ -1,20 +1,50 @@
+// ============================================================
+// DASHBOARD HOME - Panel Principal de Inicio
+// Pertenece a: Módulo de Inicio (ProEvent)
+// Propósito: Muestra las estadísticas generales del sistema,
+// un gráfico Donut (estados de solicitudes), un gráfico de
+// barras SVG (presupuesto por recinto), el timeline de
+// próximos eventos y los accesos rápidos del usuario.
+// Adaptado por rol: Solicitante solo ve sus propios eventos.
+// ============================================================
+
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
+
+// Iconos de Feather Icons para tarjetas, gráficos y acciones
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiEdit2 } from "react-icons/fi";
+
+// Estilos del panel principal compartidos
 import './../css/Dashboard.css';
 
+// URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: DashboardHome
+// Recibe:
+//   - usuario: objeto del usuario logueado (con rol e id)
+//   - searchTerm: texto de búsqueda global (opcional)
+//   - onEditEvent: callback para navegar al formulario de edición
+//   - setActiveTab: función para cambiar la pestaña activa del Dashboard
+// ============================================================
 function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) {
-  const [eventRequests, setEventRequests] = useState([]);
-  const [avRequests, setAvRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTooltip, setActiveTooltip] = useState(null); // Para tooltips interactivos de SVG
-  const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
+  // --- ESTADOS DE DATOS ---
+  const [eventRequests, setEventRequests] = useState([]);   // Lista de eventos cargados del servidor
+  const [avRequests, setAvRequests] = useState([]);         // Lista de solicitudes audiovisuales
+  const [loading, setLoading] = useState(true);            // Indicador de carga inicial
+  const [error, setError] = useState("");                   // Mensaje de error de conexión
 
+  // --- ESTADOS DEL MODAL ---
+  const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal de detalle
+  const [isModalOpen, setIsModalOpen] = useState(false);        // Controla visibilidad del modal
+  const [activeTooltip, setActiveTooltip] = useState(null);     // Tooltip flotante sobre barras SVG
+  const [sortOrder, setSortOrder] = useState("asc");            // Orden del timeline: "asc" o "desc"
+
+  // --- FUNCIÓN: openModal / closeModal ---
+  // Abre el modal de detalle con el evento seleccionado (clic en tarjeta del timeline).
+  // closeModal limpia el estado para liberar la referencia del evento.
   const openModal = (req) => {
     setSelectedRequest(req);
     setIsModalOpen(true);
@@ -24,18 +54,30 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
     setSelectedRequest(null);
   };
 
+  // --- EFECTO: Carga inicial de datos ---
+  // Se ejecuta al montar el componente para cargar eventos y AV.
   useEffect(() => {
     cargarDatos();
   }, []);
 
+  // --- EFECTO: Re-carga cuando cambia el usuario ---
+  // Si el usuario logueado cambia (ej. sesión expirada y nuevo login),
+  // se recarga la data para reflejar el nuevo contexto de rol.
   useEffect(() => {
     cargarDatos();
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarDatos ---
+  // Carga eventos y solicitudes AV del servidor.
+  // Adapta las URLs según el rol:
+  //   - Solicitante: filtra por su propio usuario (solo ve sus solicitudes)
+  //   - Otros roles: obtiene todos los eventos del sistema
+  // El parámetro `silent=true` evita mostrar el spinner de carga (para refrescos silenciosos).
   const cargarDatos = async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
     try {
+      // URL adaptada por rol para eventos y AV
       const eventUrl = usuario?.rol === "Solicitante" 
         ? `${API}/eventos?usuario_id=${usuario.id_usuario}`
         : `${API}/eventos`;
@@ -43,6 +85,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
         ? `${API}/audiovisual?usuario_id=${usuario.id_usuario}`
         : `${API}/audiovisual`;
 
+      // Peticiones en paralelo para maximizar velocidad
       const [resEvents, resAV] = await Promise.all([
         fetch(eventUrl).then(r => r.json()),
         fetch(avUrl).then(r => r.json())
@@ -60,6 +103,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
       }
     } catch (err) {
       setError("No se pudo establecer conexión con el servidor ProEvent.");
+      // Importación dinámica de toast para no agregar dependencia innecesaria si no hay error
       import("react-hot-toast").then((module) => {
         module.toast.error("Error al conectar con el servidor.");
       });
@@ -68,7 +112,9 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
     }
   };
 
-  // Helper de formato monetario
+  // --- FUNCIÓN UTILITARIA: formatMonedaDOP ---
+  // Formatea un número como moneda dominicana (RD$) usando la localización es-DO.
+  // Ejemplo: 35000 → "RD$35,000.00"
   const formatMonedaDOP = (valor) => {
     return new Intl.NumberFormat("es-DO", {
       style: "currency",
@@ -76,13 +122,18 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
     }).format(valor);
   };
 
+  // --- FUNCIÓN UTILITARIA: formatFecha ---
+  // Formatea una fecha ISO a formato corto (ej: "15 jun").
+  // La corrección de timezone evita el desfase de un día causado por UTC.
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
-    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
+    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset()); // Corrige offset UTC
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
   };
 
+  // --- FUNCIÓN UTILITARIA: formatFechaLarga ---
+  // Formatea una fecha ISO a formato largo para el modal (ej: "15 de junio de 2026").
   const formatFechaLarga = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -90,35 +141,44 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
     return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
+  // --- FUNCIÓN UTILITARIA: getStatusClass ---
+  // Devuelve la clase CSS correspondiente al estado del evento,
+  // usada para colorear badges en la tabla y el modal.
   const getStatusClass = (estado) => {
     switch (estado) {
-      case "Pendiente": return "pending";
-      case "Aprobado": return "approved";
-      case "Rechazado": return "rejected";
-      case "Finalizado": return "approved";
+      case "Pendiente": return "pending";   // Amarillo
+      case "Aprobado":  return "approved";  // Verde
+      case "Rechazado": return "rejected";  // Rojo
+      case "Finalizado": return "approved"; // Verde (igual que aprobado)
       default: return "pending";
     }
   };
 
-  // Cálculos estadísticos
+  // --- CÁLCULOS ESTADÍSTICOS ---
+  // Contadores derivados del array de eventos para las 4 tarjetas de stats.
   const totalSolicitudes = eventRequests.length;
-  const pendientes = eventRequests.filter((e) => e.estado === "Pendiente").length;
-  const aprobados = eventRequests.filter((e) => e.estado === "Aprobado").length;
+  const pendientes  = eventRequests.filter((e) => e.estado === "Pendiente").length;
+  const aprobados   = eventRequests.filter((e) => e.estado === "Aprobado").length;
   const finalizados = eventRequests.filter((e) => e.estado === "Finalizado").length;
 
+  // Suma del presupuesto POA solo de eventos Aprobados y Finalizados
   const totalPresupuestoUtilizado = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Finalizado")
     .reduce((acc, curr) => acc + (parseFloat(curr.monto_poa) || 0), 0);
 
-  // Estado general (Donut)
-
+  // --- DATOS PARA GRÁFICO DONUT (SVG) ---
+  // Cada segmento representa un estado. Se excluyen estados con valor 0
+  // para que el donut no muestre segmentos vacíos.
   const statusData = [
     { name: "Pendientes", value: pendientes, color: "#f59e0b" },
-    { name: "Aprobados", value: aprobados, color: "#3b82f6" },
-    { name: "Finalizados", value: finalizados, color: "#10b981" },
+    { name: "Aprobados",  value: aprobados,  color: "#3b82f6" },
+    { name: "Finalizados",value: finalizados, color: "#10b981" },
     { name: "Rechazados", value: eventRequests.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
   ].filter(item => item.value > 0);
 
+  // --- DATOS PARA GRÁFICO DE BARRAS (SVG) ---
+  // Agrupa el presupuesto aprobado por recinto para el gráfico de barras.
+  // Se acumulan los montos del mismo recinto en un solo bucket.
   const venueBudgets = {};
   eventRequests.forEach(req => {
     if (req.estado === "Aprobado" || req.estado === "Finalizado") {
@@ -128,14 +188,18 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
     }
   });
 
+  // Abrevia los nombres largos de recintos para los labels del eje X del gráfico
   const venueData = Object.entries(venueBudgets).map(([name, value]) => ({
     name: name.replace(" Sede ", "").replace(" Oriental", "").replace(" Santo Domingo", "SD"),
     value
-  })).sort((a, b) => b.value - a.value);
+  })).sort((a, b) => b.value - a.value); // Ordena de mayor a menor para destacar el más activo
 
+  // Altura máxima del eje Y del gráfico de barras (mínimo 10,000 DOP como base)
   const maxBudget = Math.max(...venueData.map(v => v.value), 10000);
 
-  // Obtener los próximos 5 eventos activos
+  // --- TIMELINE: PRÓXIMOS 5 EVENTOS ---
+  // Filtra solo Aprobados y Pendientes, los ordena por fecha según el selector
+  // (ascendente = más próximos primero, descendente = más lejanos primero).
   const proximosEventos = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
     .sort((a, b) => {
@@ -143,7 +207,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
       const dateB = new Date(b.fecha_inicio);
       return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
     })
-    .slice(0, 5);
+    .slice(0, 5); // Máximo 5 eventos en el timeline
 
   return (
     <div className="saas-dashboard-container fade-in">
