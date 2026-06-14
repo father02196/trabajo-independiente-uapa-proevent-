@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: FichaTecnicaPDF
+// Pertenece a: Generación de Reportes / Ficha del Evento
+// Propósito: Funciona como un modal "imprimible" que consolida
+// toda la información del evento (detalles, presupuesto VAF, legal, 
+// servicios externos y organizadores) usando 'react-to-print' para PDF.
+// ============================================================
+
 import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useReactToPrint } from 'react-to-print';
@@ -6,20 +14,28 @@ import { FiPrinter, FiDownload } from 'react-icons/fi';
 import './../css/Dashboard.css';
 
 /**
+ * COMPONENTE: FichaTecnicaPDF
  * Props:
  * - evento: Objeto principal del evento.
- * - detalles: Arrays relacionados (servicios, personal, cronograma, etc).
- * - onClose: función para cerrar el modal o vista.
+ * - presupuesto: Datos del estado VAF
+ * - legal: Datos del estado del dictamen legal
+ * - servicios: Arrays de servicios externos vinculados
+ * - organizadores: Personal asignado al evento
+ * - onClose: función para cerrar la vista modal.
  */
 export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios, organizadores, onClose }) {
   const componentRef = useRef();
 
+  // --- FUNCIÓN: handlePrint ---
+  // Invoca el diálogo nativo de impresión del navegador
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
     contentRef: componentRef,
     documentTitle: `Ficha_Tecnica_EVT_${evento.id_evento}`,
   });
 
+  // --- FUNCIÓN: handleDownloadPDF ---
+  // Convierte el HTML renderizado a un archivo PDF descargable
   const handleDownloadPDF = () => {
     const element = componentRef.current;
     const opt = {
