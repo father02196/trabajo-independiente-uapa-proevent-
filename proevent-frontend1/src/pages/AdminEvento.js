@@ -1,3 +1,12 @@
+// ============================================================
+// COMPONENTE: AdminEvento
+// Pertenece a: Módulo de Mantenimiento / Ajustes
+// Propósito: Permite al administrador gestionar los catálogos base
+// que se muestran en los formularios de solicitud (Tipos de Evento,
+// Detalles Corporativos, Opciones de Alimentos). Funciona de forma 
+// dinámica según la pestaña (tab) seleccionada.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import "./../css/AjustesUsuarios.css";
 import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
@@ -7,8 +16,9 @@ import SortableHeader from '../components/SortableHeader';
 const API = "http://localhost:8080";
 
 export default function AdminEvento({ usuario }) {
+  // --- ESTADOS ---
   const [activeTab, setActiveTab] = useState("tipos"); // tipos | corporativo | alimentos
-  const [dataList, setDataList] = useState([]);
+  const [dataList, setDataList] = useState([]);        // Listado de datos del catálogo actual
   const [loading, setLoading] = useState(false);
   
   // Paginación
@@ -19,6 +29,8 @@ export default function AdminEvento({ usuario }) {
   const [currentId, setCurrentId] = useState(null);
   const [nombre, setNombre] = useState("");
 
+  // --- CONFIGURACIÓN DINÁMICA ---
+  // Retorna el endpoint y el idKey de la BD correspondiente al tab activo
   const getConfig = () => {
     switch(activeTab) {
       case "tipos": return { endpoint: "tipos-evento", idField: "id_tipo_evento", title: "Tipos de Evento" };
@@ -28,6 +40,7 @@ export default function AdminEvento({ usuario }) {
     }
   };
 
+  // --- EFECTO: Cambio de Tab ---
   useEffect(() => {
     cargarDatos();
     setIsEditing(false);
@@ -35,6 +48,7 @@ export default function AdminEvento({ usuario }) {
     setCurrentPage(1); // Reset al cambiar de tab
   }, [activeTab]);
 
+  // --- FUNCIÓN: cargarDatos ---
   const cargarDatos = () => {
     const { endpoint } = getConfig();
     setLoading(true);
@@ -45,6 +59,8 @@ export default function AdminEvento({ usuario }) {
       .finally(() => setLoading(false));
   };
 
+  // --- FUNCIÓN: handleGuardar ---
+  // Crea o edita un registro de forma dinámica según el endpoint
   const handleGuardar = async (e) => {
     e.preventDefault();
     const { endpoint } = getConfig();
@@ -74,6 +90,7 @@ export default function AdminEvento({ usuario }) {
     }
   };
 
+  // --- FUNCIONES: Editar y Eliminar ---
   const handleEditar = (item) => {
     const { idField } = getConfig();
     setIsEditing(true);
