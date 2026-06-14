@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: DashboardComprasLayout
+// Pertenece a: Módulo de Compras / Layout
+// Propósito: Contenedor principal (Layout) para el usuario de Compras.
+// Muestra el sidebar con el menú de navegación y renderiza el 
+// contenido activo correspondiente a este rol.
+// ============================================================
+
 import React, { useState } from "react";
 import { FiLogOut, FiHeadphones, FiList, FiCalendar, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
@@ -13,6 +21,7 @@ import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
 
 function DashboardComprasLayout({ usuario, onLogoutClick }) {
+    // --- ESTADOS ---
     const [activeTab, setActiveTab] = useState(() => {
         return sessionStorage.getItem("dashboard_activeTab") || "Dashboard";
     });
@@ -26,6 +35,7 @@ function DashboardComprasLayout({ usuario, onLogoutClick }) {
         };
     });
 
+    // --- EFECTOS: Sincronización con Session Storage ---
     React.useEffect(() => {
         sessionStorage.setItem("dashboard_activeTab", activeTab);
     }, [activeTab]);
@@ -34,6 +44,7 @@ function DashboardComprasLayout({ usuario, onLogoutClick }) {
         sessionStorage.setItem("dashboard_openMenus", JSON.stringify(openMenus));
     }, [openMenus]);
 
+    // --- FUNCIONES DE NAVEGACIÓN Y MENÚ ---
     const toggleMenu = (menu) => setOpenMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
 
     const toggleSidebar = () => {
@@ -44,6 +55,8 @@ function DashboardComprasLayout({ usuario, onLogoutClick }) {
         setUserMenuOpen(!userMenuOpen);
     };
 
+    // --- FUNCIÓN: renderContent ---
+    // Renderiza el componente correcto según el tab activo
     const renderContent = () => {
         switch (activeTab) {
             case "Dashboard":
