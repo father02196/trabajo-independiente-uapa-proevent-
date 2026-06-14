@@ -1,12 +1,21 @@
+// ============================================================
+// COMPONENTE: InformacionGeneral
+// Pertenece a: Módulo de Solicitudes / Eventos
+// Propósito: Paso 1 del Wizard de creación de evento. Recoge la
+// información básica (título, dependencia, tipo, fechas y horas).
+// ============================================================
+
 import React, { useEffect, useState } from "react";
 import { FiLock } from "react-icons/fi";
 
 const API = "http://localhost:8080";
 
 export default function InformacionGeneral({ data, setData }) {
+  // --- ESTADOS ---
   const [dependencias, setDependencias] = useState([]);
   const [tiposEvento, setTiposEvento] = useState([]);
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
     fetch(`${API}/dependencias`)
       .then(res => res.json())
@@ -19,6 +28,8 @@ export default function InformacionGeneral({ data, setData }) {
       .catch(() => console.error("Error cargando tipos de evento"));
   }, []);
 
+  // --- FUNCIÓN: handleDependencia ---
+  // Sincroniza el id y el nombre del departamento seleccionado
   const handleDependencia = (e) => {
     const selected = dependencias.find(d => String(d.id_dependencia) === e.target.value);
     // Al cambiar la dependencia, si se borra, resetear los siguientes? El usuario pidió evitar inconsistencias.
@@ -31,7 +42,8 @@ export default function InformacionGeneral({ data, setData }) {
     });
   };
 
-  // Validaciones de paso a paso
+  // --- CÁLCULOS: Validaciones de paso a paso ---
+  // Determina si los campos secuenciales están desbloqueados o validados
   const isTituloValid = data.titulo && data.titulo.trim().length > 0;
   const isDependenciaValid = !!data.id_dependencia;
   const isTipoValid = !!data.tipo;
@@ -49,6 +61,8 @@ export default function InformacionGeneral({ data, setData }) {
 
   const isPending = (fieldValid, fieldEnabled) => !fieldValid && fieldEnabled;
 
+  // --- UTILIDAD: renderLabel ---
+  // Muestra el nombre del campo junto con indicadores de bloqueo o acción requerida
   const renderLabel = (label, isEnabled, isCurrentPending) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
       <label className="text-sm font-bold text-text-main" style={{ margin: 0 }}>
