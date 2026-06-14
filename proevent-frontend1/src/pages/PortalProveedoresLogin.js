@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: PortalProveedoresLogin
+// Pertenece a: Módulo de Proveedores (B2B)
+// Propósito: Vista de inicio de sesión exclusiva para proveedores.
+// Permite autenticarse enviando las credenciales al backend y
+// manejando el estado de error o carga.
+// ============================================================
+
 import React, { useState } from 'react';
 import './../css/Login.css';
 import viewIcon from "./../img/view.png";
@@ -7,6 +15,7 @@ import lockIcon from "./../img/lock.png";
 import logoProevent from "./../img/logo-proevent.jpeg";
 
 function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
+  // --- ESTADOS ---
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [showPassword, setShowPassword] = useState(false);
