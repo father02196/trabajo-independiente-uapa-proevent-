@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: Calendario
+// Pertenece a: Módulo Global / Consultas
+// Propósito: Interfaz visual de calendario que muestra los eventos 
+// programados. Filtra eventos según el rol del usuario (personales o globales).
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import './../css/Dashboard.css';
@@ -5,14 +12,18 @@ import './../css/Dashboard.css';
 const API = "http://localhost:8080";
 
 function Calendario({ usuario }) {
+  // --- ESTADOS ---
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [loadingCal, setLoadingCal] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
     cargarCalendario();
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarCalendario ---
+  // Extrae los eventos desde la base de datos y los normaliza para el calendario
   const cargarCalendario = async () => {
     setLoadingCal(true);
     try {
@@ -41,6 +52,8 @@ function Calendario({ usuario }) {
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
 
+  // --- FUNCIÓN: renderCalendar ---
+  // Genera dinámicamente las celdas del mes con sus respectivos eventos filtrados
   const renderCalendar = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
