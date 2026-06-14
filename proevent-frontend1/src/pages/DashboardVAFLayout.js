@@ -5,7 +5,6 @@ import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 
 // Importar los componentes que usará el VAF
 import DashboardVAF from "./DashboardVAF";
-import FlujoAdministrativo from "./FlujoAdministrativo";
 import PoaAdmin from "./PoaAdmin";
 import EventCalendar from "./Calendario";
 import SoporteHome from "./SoporteHome";
@@ -28,7 +27,6 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
   const renderContent = () => {
     switch (activeTab) {
       case "DashboardVAF": return <DashboardVAF usuario={usuario} />;
-      case "FlujoAdministrativo": return <FlujoAdministrativo usuario={usuario} />;
       case "PoaAdmin": return <PoaAdmin usuario={usuario} />;
       case "Calendario": return <EventCalendar usuario={usuario} />;
       case "Soporte": return <SoporteHome />;
@@ -40,10 +38,8 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
     switch (activeTab) {
       case "DashboardVAF":
         return "Dashboard Financiero";
-      case "FlujoAdministrativo":
-        return "Presupuesto Eventos";
       case "PoaAdmin":
-        return "POA Global";
+        return "Plan Operativo Anual (POA)";
       case "Calendario":
         return "Calendario";
       case "Soporte":
@@ -73,12 +69,8 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
               Dashboard Financiero
             </li>
             <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
-              <FiPieChart className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-              POA Global
-            </li>
-            <li className={activeTab === "FlujoAdministrativo" ? "active" : ""} onClick={() => setActiveTab("FlujoAdministrativo")}>
               <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-              Presupuesto Eventos
+              Plan Operativo Anual (POA)
             </li>
             <li className={activeTab === "Calendario" ? "active" : ""} onClick={() => setActiveTab("Calendario")}>
               <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />

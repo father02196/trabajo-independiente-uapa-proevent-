@@ -5,14 +5,18 @@ import { toast } from "react-hot-toast";
 
 const API = "http://localhost:8080";
 
-function CronogramaGlobal({ usuario }) {
+function CronogramaGlobal({ usuario, eventoPreseleccionado = null }) {
   const [eventos, setEventos] = useState([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    cargarEventos();
-  }, [usuario]);
+    if (eventoPreseleccionado) {
+      setEventoSeleccionado(eventoPreseleccionado);
+    } else {
+      cargarEventos();
+    }
+  }, [usuario, eventoPreseleccionado]);
 
   const cargarEventos = async () => {
     setLoading(true);
@@ -45,34 +49,39 @@ function CronogramaGlobal({ usuario }) {
   };
 
   return (
-    <div className="admin-page-container fade-in">
-      <div className="admin-controls-card">
-        <div className="controls-header">
-          <div className="title-section">
-            <FiCalendar className="header-icon" />
-            <div>
-              <h3>Cronograma Logístico Global</h3>
-              <p className="subtitle">Selecciona un evento para administrar sus actividades de apoyo</p>
+    <div className={eventoPreseleccionado ? '' : 'admin-page-container fade-in'}>
+      <div className={eventoPreseleccionado ? '' : 'admin-controls-card'}>
+        {!eventoPreseleccionado && (
+          <>
+            <div className="controls-header">
+              <div className="title-section">
+                <FiCalendar className="header-icon" />
+                <div>
+                  <h3>Cronograma Logístico Global</h3>
+                  <p className="subtitle">Selecciona un evento para administrar sus actividades de apoyo</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="filters-grid" style={{ marginTop: '20px' }}>
-          <div className="filter-item full-width">
-            <label>Seleccionar Evento</label>
-            <select onChange={handleSelectEvent} className="table-select-premium" style={{ width: '100%', padding: '10px' }}>
-              <option value="">-- Elige un evento de la lista --</option>
-              {eventos.map((ev) => (
-                <option key={ev.id_evento} value={ev.id_evento}>
-                  {`#EVT-${ev.id_evento} - ${ev.nombre} (${new Date(ev.fecha_inicio).toLocaleDateString()}) - ${ev.estado}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+            <div className="filters-grid" style={{ marginTop: '20px' }}>
+              <div className="filter-item full-width">
+                <label>Seleccionar Evento</label>
+                <select onChange={handleSelectEvent} className="table-select-premium" style={{ width: '100%', padding: '10px' }}>
+                  <option value="">-- Elige un evento de la lista --</option>
+                  {eventos.map((ev) => (
+                    <option key={ev.id_evento} value={ev.id_evento}>
+                      {`#EVT-${ev.id_evento} - ${ev.nombre} (${new Date(ev.fecha_inicio).toLocaleDateString()}) - ${ev.estado}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </>
+        )}
 
         {eventoSeleccionado && (
-          <div style={{ marginTop: '30px' }}>
+          <div style={{ marginTop: eventoPreseleccionado ? '0' : '30px' }}>
+            {!eventoPreseleccionado && (
             <div style={{ marginBottom: '15px', background: '#eef2f5', padding: '15px', borderRadius: '8px' }}>
               <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>Evento Activo: {eventoSeleccionado.nombre}</h4>
               <div style={{ display: 'flex', gap: '15px', fontSize: '0.9rem', color: '#555' }}>
@@ -81,6 +90,7 @@ function CronogramaGlobal({ usuario }) {
                 <span><FiCheckCircle /> {eventoSeleccionado.estado}</span>
               </div>
             </div>
+            )}
             
             {/* Componente que ya modernizamos anteriormente */}
             <CronogramaLogistico evento={eventoSeleccionado} usuario={usuario} />

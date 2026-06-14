@@ -4,6 +4,8 @@ import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronL
 import { toast } from "react-hot-toast";
 import { useSortableData } from "../hooks/useSortableData";
 import FichaTecnicaPDF from "./FichaTecnicaPDF";
+import AsignacionPersonal from "./AsignacionPersonal";
+import CronogramaGlobal from "./CronogramaGlobal";
 import SortableHeader from "../components/SortableHeader";
 import './../css/Dashboard.css';
 const API = "http://localhost:8080";
@@ -29,6 +31,10 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   const [aprobacionesMap, setAprobacionesMap] = useState({}); // { [id_evento]: { puede_iniciar, aprobaciones, ... } }
   const [modalAprobaciones, setModalAprobaciones] = useState(null); // Evento seleccionado para ver aprobaciones
   const [loadingAprobaciones, setLoadingAprobaciones] = useState({});
+
+  // Sub-paneles dentro de Ficha Técnica
+  const [showPersonal, setShowPersonal] = useState(false);
+  const [showCronograma, setShowCronograma] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/usuarios-coordinadores`)
@@ -69,6 +75,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     setSelectedRequest(null);
     setOrganizadoresAsignados([]);
     setShowFichaPDF(false);
+    setShowPersonal(false);
+    setShowCronograma(false);
   };
 
   const [tiposServicioExterno, setTiposServicioExterno] = useState([]);
@@ -701,6 +709,36 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       </span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* === Sección Expandible: Asignación de Personal === */}
+              <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+                <div className="info-card" style={{ cursor: 'pointer' }} onClick={() => setShowPersonal(!showPersonal)}>
+                  <div className="info-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FiPlay size={14} style={{ transform: showPersonal ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} /> Asignación de Personal Operativo</span>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>{showPersonal ? 'Ocultar' : 'Expandir'}</span>
+                  </div>
+                  {showPersonal && (
+                    <div style={{ marginTop: '16px' }} onClick={(e) => e.stopPropagation()}>
+                      <AsignacionPersonal usuario={usuario} eventoPreseleccionado={selectedRequest} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* === Sección Expandible: Cronograma Logístico === */}
+              <div className="modal-grid-1" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+                <div className="info-card" style={{ cursor: 'pointer' }} onClick={() => setShowCronograma(!showCronograma)}>
+                  <div className="info-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FiPlay size={14} style={{ transform: showCronograma ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} /> Cronograma Logístico</span>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>{showCronograma ? 'Ocultar' : 'Expandir'}</span>
+                  </div>
+                  {showCronograma && (
+                    <div style={{ marginTop: '16px' }} onClick={(e) => e.stopPropagation()}>
+                      <CronogramaGlobal usuario={usuario} eventoPreseleccionado={selectedRequest} />
+                    </div>
+                  )}
                 </div>
               </div>
 
