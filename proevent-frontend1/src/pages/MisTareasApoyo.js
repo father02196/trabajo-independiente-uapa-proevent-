@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: MisTareasApoyo
+// Pertenece a: Módulo Logístico / Operativo
+// Propósito: Visualiza las tareas delegadas al usuario logístico actual
+// desde el Cronograma Global, permitiendo marcarlas como "Completadas".
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import { FiCheck, FiClock, FiCalendar } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
@@ -6,6 +13,7 @@ import SortableHeader from '../components/SortableHeader';
 const API = "http://localhost:8080";
 
 function MisTareasApoyo({ usuario }) {
+  // --- ESTADOS ---
   const [tareas, setTareas] = useState([]);
 
   useEffect(() => {
@@ -14,6 +22,8 @@ function MisTareasApoyo({ usuario }) {
     }
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarTareas ---
+  // Obtiene el checklist de actividades pendientes para el usuario actual
   const cargarTareas = async () => {
     try {
       const res = await fetch(`${API}/mis-tareas/${usuario.id_usuario}`);
@@ -24,6 +34,8 @@ function MisTareasApoyo({ usuario }) {
     }
   };
 
+  // --- FUNCIÓN: handleCompletarTarea ---
+  // Actualiza el estado de una tarea asignada a 'Completada'
   const handleCompletarTarea = async (id_actividad) => {
     try {
       const res = await fetch(`${API}/cronograma/${id_actividad}/estado`, {
