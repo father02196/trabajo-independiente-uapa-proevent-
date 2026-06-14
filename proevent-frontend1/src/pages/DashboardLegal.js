@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: DashboardLegal
+// Pertenece a: Módulo Dashboards Principales
+// Propósito: Pantalla de inicio exclusiva para el Administrador Legal.
+// Muestra indicadores clave (contratos pendientes, dictámenes),
+// alertas de eventos observados y accesos directos al flujo administrativo.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck } from "react-icons/fi";
 import './../css/Dashboard.css';
@@ -5,11 +13,13 @@ import './../css/Dashboard.css';
 const API = "http://localhost:8080";
 
 function DashboardLegal({ usuario, setActiveTab }) {
-  const [eventRequests, setEventRequests] = useState([]);
+  // --- ESTADOS ---
+  const [eventRequests, setEventRequests] = useState([]); // Lista de eventos aprobados
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortOrder, setSortOrder] = useState("asc");      // Orden de los próximos eventos
 
+  // --- EFECTO INICIAL ---
   useEffect(() => {
     cargarDatos();
   }, [usuario]);
@@ -29,6 +39,8 @@ function DashboardLegal({ usuario, setActiveTab }) {
     }
   };
 
+  // --- FUNCIÓN: formatFechaLarga ---
+  // Formatea la fecha para mostrar el día completo y mes en texto
   const formatFechaLarga = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -36,15 +48,17 @@ function DashboardLegal({ usuario, setActiveTab }) {
     return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
-  // KPIs Legales
+  // --- KPIs y Estadísticas (Simuladas/Calculadas) ---
   const eventosAprobados = eventRequests.filter((e) => e.estado === "Aprobado" || e.estado === "Finalizado").length;
   
-  // Simularemos algunos KPIs. En una app real, el endpoint devolvería los status legales.
+  // Contratos pendientes asumen que eventos "Aprobados" necesitan contrato
   const contratosPendientes = eventRequests.filter((e) => e.estado === "Aprobado").length;
+  // Dictámenes asumimos que están "Finalizados"
   const dictamenesEmitidos = eventRequests.filter((e) => e.estado === "Finalizado").length;
-  const eventosObservados = 0; // Idealmente filtramos por e.legal?.estado_legal === 'Observado'
+  const eventosObservados = 0; // Podría leerse de e.legal?.estado_legal
 
-  // Proximos eventos que requieren atención legal
+  // --- FUNCIÓN DE ORDENAMIENTO ---
+  // Obtiene los eventos en progreso/aprobados ordenados por proximidad de fecha
   const eventosEnProceso = eventRequests
     .filter(e => e.estado === "Aprobado")
     .sort((a, b) => {
