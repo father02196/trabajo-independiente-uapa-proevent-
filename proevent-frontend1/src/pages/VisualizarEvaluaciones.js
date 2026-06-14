@@ -1,3 +1,12 @@
+// ============================================================
+// MÓDULO VISUALIZAR EVALUACIONES
+// Pertenece a: Módulo Operativo (Análisis de Feedback)
+// Propósito: Permite a los administradores visualizar las encuestas
+// de satisfacción realizadas por los usuarios, mostrando métricas
+// globales (promedio, total) y graficando resultados mediante Recharts
+// (Barras, Pastel, Radar) de forma dinámica por evaluación.
+// ============================================================
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,22 +20,30 @@ import SortableHeader from '../components/SortableHeader';
 const API = 'http://localhost:8080';
 const ITEMS_PER_PAGE = 10;
 
+// Opciones de gráficas disponibles
 const CHART_TYPES = [
   { id: 'bar', label: 'Barras', icon: <FiBarChart2 /> },
   { id: 'pie', label: 'Pastel', icon: <FiPieChart /> },
   { id: 'radar', label: 'Radar', icon: <FiActivity /> },
 ];
 
+// ============================================================
+// COMPONENTE: VisualizarEvaluaciones
+// ============================================================
 export default function VisualizarEvaluaciones({ searchTerm = '' }) {
-  const [evaluaciones, setEvaluaciones] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [pagina, setPagina] = useState(1);
-  const [chartSelections, setChartSelections] = useState({});
+  // --- ESTADOS ---
+  const [evaluaciones, setEvaluaciones] = useState([]);   // Lista cruda de evaluaciones
+  const [loading, setLoading] = useState(true);           // Spinner
+  const [pagina, setPagina] = useState(1);                // Paginación
+  const [chartSelections, setChartSelections] = useState({}); // Mapeo: id_evaluacion -> tipo de gráfica activa
 
+  // --- EFECTO INICIAL ---
   useEffect(() => {
     cargar();
   }, []);
 
+  // --- FUNCIÓN: cargar ---
+  // Obtiene los datos del backend
   const cargar = () => {
     setLoading(true);
     fetch(`${API}/evaluaciones`)
@@ -61,6 +78,8 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
     return { avg, total: evaluaciones.length, bestRecinto };
   }, [evaluaciones]);
 
+  // --- USEMEMO: filtered (Buscador) ---
+  // Aplica la búsqueda por texto
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return evaluaciones;
     const q = searchTerm.toLowerCase();
@@ -71,11 +90,14 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
     );
   }, [evaluaciones, searchTerm]);
 
+  // Ordenamiento y Paginación
   const { items: sortedFiltered, requestSort, sortConfig } = useSortableData(filtered, { key: 'id_evaluacion', direction: 'ascending' });
 
   const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / ITEMS_PER_PAGE));
   const paginados = sortedFiltered.slice((pagina - 1) * ITEMS_PER_PAGE, pagina * ITEMS_PER_PAGE);
 
+  // --- FUNCIÓN: toggleChart ---
+  // Alterna qué gráfica se muestra en una fila específica
   const toggleChart = (id, tipo) => {
     setChartSelections(prev => {
       if (prev[id] === tipo) {
@@ -87,6 +109,7 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
     });
   };
 
+  // Formatea data para gráficos
   const buildChartData = (ev) => [
     { name: 'Satisfacción', value: ev.satisfaccion || 0, max: 5 },
     { name: 'Valoración', value: ev.valoracion_respuesta === 'Muy eficiente' ? 4 : ev.valoracion_respuesta === 'Excelente' ? 3 : ev.valoracion_respuesta === 'Eficiente' ? 2 : 1, max: 4 },
@@ -97,6 +120,8 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
     { name: 'Resto', value: 5 - (ev.satisfaccion || 0) },
   ];
 
+  // --- FUNCIÓN: renderChart ---
+  // Dibuja el gráfico correspondiente (Bar, Pie, Radar) según la selección de la fila
   const renderChart = (ev) => {
     const tipo = chartSelections[ev.id_evaluacion];
     if (!tipo) return null;
