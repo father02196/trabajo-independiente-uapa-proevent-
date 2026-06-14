@@ -1,19 +1,47 @@
+// ============================================================
+// DASHBOARD ADMIN - Panel Principal para roles administrativos
+// Pertenece a: Módulo de Inicio (ProEvent - Roles Especializados)
+// Propósito: Versión del dashboard principal adaptada para roles
+// como Administrador de Compras, Legal y VAF. Muestra todas
+// las solicitudes del sistema (sin filtro por usuario),
+// gráficos de estado, presupuesto por recinto y timeline.
+// ============================================================
+
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
+
+// Iconos de Feather Icons para tarjetas y gráficos
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
+
+// Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
 
+// URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: DashboardAdmin
+// Recibe:
+//   - usuario: objeto del usuario logueado (administrador)
+//   - searchTerm: filtro de búsqueda global (opcional)
+//   - onEditEvent: callback al editar un evento
+//   - setActiveTab: navega entre pestañas del layout
+// ============================================================
 function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab }) {
-  const [eventRequests, setEventRequests] = useState([]);
-  const [avRequests, setAvRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTooltip, setActiveTooltip] = useState(null);
+  // --- ESTADOS DE DATOS ---
+  const [eventRequests, setEventRequests] = useState([]); // Todos los eventos del sistema
+  const [avRequests, setAvRequests]       = useState([]); // Todas las solicitudes audiovisuales
+  const [loading, setLoading]             = useState(true); // Spinner de carga inicial
+  const [error, setError]                 = useState("");   // Error de conexión
 
+  // --- ESTADOS DEL MODAL ---
+  const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal
+  const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
+  const [activeTooltip, setActiveTooltip]     = useState(null);  // Tooltip SVG del gráfico
+
+  // --- FUNCIONES: openModal / closeModal ---
+  // Abre/cierra el modal de detalle con el evento seleccionado.
   const openModal = (req) => {
     setSelectedRequest(req);
     setIsModalOpen(true);
@@ -23,32 +51,35 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
     setSelectedRequest(null);
   };
 
+  // --- EFECTO: Carga inicial de datos ---
   useEffect(() => {
     cargarDatos();
   }, []);
 
+  // --- EFECTO: Re-carga al cambiar el usuario logueado ---
   useEffect(() => {
     cargarDatos();
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarDatos ---
+  // Carga TODOS los eventos y AV del sistema (sin filtro por usuario).
+  // Los administradores tienen visibilidad completa de todas las solicitudes.
+  // silent=true evita el spinner para refrescos automáticos.
   const cargarDatos = async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
     try {
+      // URLs sin filtro: admin ve todo
       const eventUrl = `${API}/eventos`;
-      const avUrl = `${API}/audiovisual`;
+      const avUrl    = `${API}/audiovisual`;
 
       const [resEvents, resAV] = await Promise.all([
         fetch(eventUrl).then(r => r.json()),
         fetch(avUrl).then(r => r.json())
       ]);
 
-      if (Array.isArray(resEvents)) {
-        setEventRequests(resEvents);
-      }
-      if (Array.isArray(resAV)) {
-        setAvRequests(resAV);
-      }
+      if (Array.isArray(resEvents)) setEventRequests(resEvents);
+      if (Array.isArray(resAV))     setAvRequests(resAV);
     } catch (err) {
       setError("No se pudo establecer conexión con el servidor ProEvent.");
     } finally {
@@ -56,13 +87,14 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
     }
   };
 
+  // --- FUNCIONES UTILITARIAS ---
+  // formatMonedaDOP: formatea un número como moneda dominicana (RD$)
   const formatMonedaDOP = (valor) => {
-    return new Intl.NumberFormat("es-DO", {
-      style: "currency",
-      currency: "DOP"
-    }).format(valor);
+    return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(valor);
   };
 
+  // formatFecha: fecha ISO a formato corto (ej: "15 jun")
+  // Correción de timezone para evitar desfase de 1 día por UTC
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -70,6 +102,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
   };
 
+  // formatFechaLarga: fecha ISO a formato largo para el modal (ej: "15 de junio de 2026")
   const formatFechaLarga = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -77,32 +110,40 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
     return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
+  // getStatusClass: retorna la clase CSS del estado para colorear badges
   const getStatusClass = (estado) => {
     switch (estado) {
-      case "Pendiente": return "pending";
-      case "Aprobado": return "approved";
-      case "Rechazado": return "rejected";
-      case "Finalizado": return "approved";
+      case "Pendiente":  return "pending";  // Amarillo
+      case "Aprobado":   return "approved"; // Verde
+      case "Rechazado":  return "rejected"; // Rojo
+      case "Finalizado": return "approved"; // Verde
       default: return "pending";
     }
   };
 
+  // --- CÁLCULOS ESTADÍSTICOS ---
+  // Contadores para las 4 tarjetas de indicadores del dashboard.
   const totalSolicitudes = eventRequests.length;
-  const pendientes = eventRequests.filter((e) => e.estado === "Pendiente").length;
-  const aprobados = eventRequests.filter((e) => e.estado === "Aprobado").length;
+  const pendientes  = eventRequests.filter((e) => e.estado === "Pendiente").length;
+  const aprobados   = eventRequests.filter((e) => e.estado === "Aprobado").length;
   const finalizados = eventRequests.filter((e) => e.estado === "Finalizado").length;
 
+  // Suma del presupuesto POA de eventos aprobados y finalizados
   const totalPresupuestoUtilizado = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Finalizado")
     .reduce((acc, curr) => acc + (parseFloat(curr.monto_poa) || 0), 0);
 
+  // --- DATOS PARA GRÁFICO DONUT ---
+  // Cada segmento = un estado. Se filtra estados con 0 eventos.
   const statusData = [
     { name: "Pendientes", value: pendientes, color: "#f59e0b" },
-    { name: "Aprobados", value: aprobados, color: "#3b82f6" },
-    { name: "Finalizados", value: finalizados, color: "#10b981" },
+    { name: "Aprobados",  value: aprobados,  color: "#3b82f6" },
+    { name: "Finalizados",value: finalizados, color: "#10b981" },
     { name: "Rechazados", value: eventRequests.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
   ].filter(item => item.value > 0);
 
+  // --- DATOS PARA GRÁFICO DE BARRAS: Presupuesto por recinto ---
+  // Agrupa montos POA aprobados por nombre de recinto.
   const venueBudgets = {};
   eventRequests.forEach(req => {
     if (req.estado === "Aprobado" || req.estado === "Finalizado") {
@@ -112,13 +153,17 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
     }
   });
 
+  // Abrevia nombres de recintos y ordena de mayor a menor presupuesto
   const venueData = Object.entries(venueBudgets).map(([name, value]) => ({
     name: name.replace(" Sede ", "").replace(" Oriental", "").replace(" Santo Domingo", "SD"),
     value
   })).sort((a, b) => b.value - a.value);
 
+  // Valor máximo del eje Y del gráfico de barras (base mínima 10,000 DOP)
   const maxBudget = Math.max(...venueData.map(v => v.value), 10000);
 
+  // --- TIMELINE: PRÓXIMOS 5 EVENTOS APROBADOS/PENDIENTES ---
+  // Ordenados por fecha de inicio ascendente (más próximos primero).
   const proximosEventos = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
     .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
@@ -583,6 +628,12 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                     <span className="info-label">Estado de la Solicitud</span>
                     <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
                       {selectedRequest.estado || "Pendiente"}
+                    </span>
+                  </div>
+                  <div className="info-row" style={{ marginTop: '12px' }}>
+                    <span className="info-label">Estado Presupuesto (POA)</span>
+                    <span className={`badge ${selectedRequest.estado_poa === 'Aprobado' ? 'badge-green' : selectedRequest.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      {selectedRequest.estado_poa || "Pendiente"}
                     </span>
                   </div>
                 </div>
