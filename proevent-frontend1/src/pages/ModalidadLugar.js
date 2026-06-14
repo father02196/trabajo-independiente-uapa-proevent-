@@ -1,9 +1,18 @@
+// ============================================================
+// COMPONENTE: ModalidadLugar
+// Pertenece a: Módulo de Solicitudes / Eventos
+// Propósito: Paso 2 del Wizard de creación de evento. Permite al
+// usuario elegir la modalidad (Presencial, Virtual, Híbrido) y el 
+// recinto o campus donde se ejecutará.
+// ============================================================
+
 import React, { useEffect, useState } from "react";
 import { FiMapPin, FiVideo, FiMonitor } from "react-icons/fi";
 
 const API = "http://localhost:8080";
 
 export default function ModalidadLugar({ data, setData }) {
+  // --- ESTADOS ---
   const [recintos, setRecintos] = useState([]);
 
   useEffect(() => {
@@ -19,6 +28,8 @@ export default function ModalidadLugar({ data, setData }) {
     { value: "Híbrido",    label: "Híbrido",    icon: <FiVideo size={28} />, desc: "Presencial y virtual" },
   ];
 
+  // --- FUNCIÓN: handleRecinto ---
+  // Sincroniza el id y el nombre del recinto (campus) seleccionado
   const handleRecinto = (e) => {
     const selected = recintos.find(r => String(r.id_recinto) === e.target.value);
     setData({ ...data, id_recinto: e.target.value, campus: selected ? selected.nombre : "" });
