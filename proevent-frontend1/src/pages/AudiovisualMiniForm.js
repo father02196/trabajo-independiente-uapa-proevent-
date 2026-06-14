@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: AudiovisualMiniForm
+// Pertenece a: Módulo de Solicitudes / Eventos
+// Propósito: Subformulario para la selección dinámica de equipos
+// audiovisuales al crear o editar una solicitud de evento.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw, FiCheckCircle } from "react-icons/fi";
 
@@ -8,8 +15,10 @@ const IconMap = {
 };
 
 export default function AudiovisualMiniForm({ avData, setAvData }) {
+  // --- ESTADOS ---
   const [equiposDisponibles, setEquiposDisponibles] = useState([]);
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
     fetch(`${API}/equipos-audiovisuales`)
       .then(res => res.json())
@@ -17,6 +26,8 @@ export default function AudiovisualMiniForm({ avData, setAvData }) {
       .catch(err => console.error("Error cargando equipos", err));
   }, []);
 
+  // --- FUNCIÓN: handleToggleEquipo ---
+  // Agrega o elimina un equipo del listado seleccionado
   const handleToggleEquipo = (idEquipo, nombre) => {
     const isAlreadySelected = avData.equipos.some(e => e.id_equipo === idEquipo);
     if (isAlreadySelected) {
@@ -29,10 +40,14 @@ export default function AudiovisualMiniForm({ avData, setAvData }) {
     }
   };
 
+  // --- FUNCIÓN: handleChangeEquipo ---
+  // Actualiza la cantidad o ubicación de un equipo específico
   const handleChangeEquipo = (idEquipo, field, val) => {
     setAvData({ ...avData, equipos: avData.equipos.map(e => e.id_equipo === idEquipo ? { ...e, [field]: val } : e) });
   };
 
+  // --- FUNCIÓN: handleObservacionesChange ---
+  // Sincroniza las observaciones generales
   const handleObservacionesChange = (val) => {
     setAvData({ ...avData, observaciones: val, equipos: avData.equipos.map(e => ({ ...e, observaciones: val })) });
   };
