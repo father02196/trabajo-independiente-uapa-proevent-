@@ -1,12 +1,22 @@
+// ============================================================
+// COMPONENTE: ServiciosCatering
+// Pertenece a: Módulo de Solicitudes / Eventos
+// Propósito: Paso de configuración extra en el Wizard de evento.
+// Permite seleccionar detalles corporativos, alimentos, y sugerir 
+// proveedores externos que podrían requerir una licitación.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiBriefcase, FiCoffee } from "react-icons/fi";
 
 const API = "http://localhost:8080";
 
 export default function ServiciosyDetalles({ data, setData }) {
+  // --- ESTADOS ---
   const [detallesCorp, setDetallesCorp] = useState([]);
   const [alimentos, setAlimentos] = useState([]);
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
     fetch(`${API}/tipos-detalle-corporativo`)
       .then(res => res.json())
@@ -19,6 +29,8 @@ export default function ServiciosyDetalles({ data, setData }) {
       .catch(err => console.error(err));
   }, []);
 
+  // --- FUNCIÓN: toggleItem ---
+  // Agrega o remueve un elemento (alimento/detalle) de la lista de selección
   const toggleItem = (item, listName) => {
     const list = data[listName] || [];
     if (list.includes(item)) {
