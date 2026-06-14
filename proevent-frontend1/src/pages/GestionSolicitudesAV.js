@@ -1,29 +1,51 @@
+// ============================================================
+// MÓDULO GESTIÓN SOLICITUDES AV (Versión Aislada)
+// Pertenece a: Módulo Operativo / Audiovisual
+// Propósito: Interfaz dedicada exclusiva para administradores
+// de audiovisual donde pueden ver las reservas pendientes
+// y actualizar sus estados. Reutiliza la lógica de agrupación
+// vista en la sección inferior de Audiovisual.js.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiEye, FiMonitor, FiFileText, FiCheckCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
+
+// Hooks y componentes para tablas
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 
+// URL API Backend
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: GestionSolicitudesAV
+// Recibe: usuario (Object con rol y token)
+// ============================================================
 export default function GestionSolicitudesAV({ usuario }) {
-  const [solicitudesAV, setSolicitudesAV] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  // --- ESTADOS ---
+  const [solicitudesAV, setSolicitudesAV] = useState([]); // Lista agrupada
+  const [currentPage, setCurrentPage] = useState(1);      // Paginación
   const itemsPerPage = 10;
 
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null); // Detalle del modal
+  const [isModalOpen, setIsModalOpen] = useState(false);        // Visibilidad modal
 
+  // --- EFECTO INICIAL ---
   useEffect(() => {
     cargarSolicitudesAV();
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarSolicitudesAV ---
+  // Obtiene los requerimientos individuales (equipos) y los agrupa
+  // por id_evento para visualizarlos como 1 fila de solicitud por evento.
   const cargarSolicitudesAV = () => {
     fetch(`${API}/audiovisual`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
+          // Reduce crea un objeto de eventos donde cada equipo se mete a su array
           const agrupadas = Object.values(data.reduce((acc, req) => {
             if (!acc[req.id_evento]) {
               acc[req.id_evento] = {
@@ -45,6 +67,7 @@ export default function GestionSolicitudesAV({ usuario }) {
               estado_av: req.estado_av
             });
             acc[req.id_evento].total_equipos += 1;
+            // Si hay un equipo pendiente, el estado global del evento es pendiente
             if (req.estado_av === "Pendiente") acc[req.id_evento].estado_av = "Pendiente";
             return acc;
           }, {}));
@@ -56,6 +79,8 @@ export default function GestionSolicitudesAV({ usuario }) {
       .catch((err) => console.error("Error cargando solicitudes audiovisuales:", err));
   };
 
+  // --- FUNCIÓN: handleCambiarEstado ---
+  // Cambia el estado de aprobación técnico (Aprobado, Rechazado, Completado)
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
     try {
       const res = await fetch(`${API}/audiovisual/evento/${id_evento}/estado`, {
