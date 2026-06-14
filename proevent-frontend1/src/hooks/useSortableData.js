@@ -1,8 +1,20 @@
+// ============================================================
+// HOOK CUSTOM: useSortableData
+// Pertenece a: Utilidades Genéricas
+// Propósito: Hook de React que recibe un array de objetos y 
+// permite ordenarlos dinámicamente por la clave (propiedad)
+// especificada, soportando strings insensibles a mayúsculas 
+// y números parseados.
+// ============================================================
+
 import { useState, useMemo } from 'react';
 
 export const useSortableData = (items, config = null) => {
+  // --- ESTADOS ---
   const [sortConfig, setSortConfig] = useState(config);
 
+  // --- MEMOIZACIÓN: sortedItems ---
+  // Recalcula la lista ordenada solo cuando cambian los items o la configuración
   const sortedItems = useMemo(() => {
     let sortableItems = [...items];
     if (sortConfig !== null) {
@@ -40,6 +52,8 @@ export const useSortableData = (items, config = null) => {
     return sortableItems;
   }, [items, sortConfig]);
 
+  // --- FUNCIÓN: requestSort ---
+  // Cambia la clave de ordenamiento o invierte la dirección si ya estaba activa
   const requestSort = (key) => {
     let direction = 'ascending';
     if (
