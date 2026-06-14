@@ -1,30 +1,54 @@
+// ============================================================
+// MÓDULO POA ADMIN - Administración del Plan Operativo Anual
+// Pertenece a: Módulo de Gestión Administrativa y Financiera (V-A-F)
+// Propósito: Permite al rol Administrador V-A-F definir el
+// presupuesto anual para eventos, ver el balance disponible,
+// revisar movimientos (descuentos por eventos aprobados) y 
+// aprobar/rechazar cargos al presupuesto de cada solicitud.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import "./../css/Dashboard.css";
 import { FiCheckCircle, FiXCircle, FiDollarSign, FiCalendar, FiRefreshCw, FiEye } from "react-icons/fi";
+
+// Hooks y componentes para tablas ordenables
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 
+// URL base del API Backend
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: PoaAdmin
+// Recibe:
+//   - usuario: Objeto del usuario logueado (debe ser admin/VAF)
+//   - searchTerm: Término de búsqueda global para filtrar movimientos
+// ============================================================
 export default function PoaAdmin({ usuario, searchTerm = "" }) {
-  const [poas, setPoas] = useState([]);
-  const [movimientos, setMovimientos] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // --- ESTADOS DE DATOS PRINCIPALES ---
+  const [poas, setPoas]               = useState([]); // Arreglo con el POA actual (generalmente uno por año)
+  const [movimientos, setMovimientos] = useState([]); // Historial de cargos y descuentos al POA
+  const [loading, setLoading]         = useState(false); // Indicador de carga
   
+  // --- ESTADOS DE FORMULARIO (Apertura de POA) ---
   const [fechaInicio, setFechaInicio] = useState("");
-  const [fechaFin, setFechaFin] = useState("");
-  const [montoTotal, setMontoTotal] = useState("");
+  const [fechaFin, setFechaFin]       = useState("");
+  const [montoTotal, setMontoTotal]   = useState("");
 
+  // --- ESTADOS DE PAGINACIÓN ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [modalRechazo, setModalRechazo] = useState(false);
-  const [movRechazoId, setMovRechazoId] = useState(null);
-  const [motivoRechazo, setMotivoRechazo] = useState("");
+  // --- ESTADOS DE MODAL DE RECHAZO ---
+  const [modalRechazo, setModalRechazo]     = useState(false); // Visibilidad del modal
+  const [movRechazoId, setMovRechazoId]     = useState(null);  // ID del movimiento a rechazar
+  const [motivoRechazo, setMotivoRechazo]   = useState("");    // Justificación del rechazo
 
+  // --- ESTADOS DE MODAL DE DETALLES ---
   const [selectedMovDetails, setSelectedMovDetails] = useState(null);
-  const [modalDetallesOpen, setModalDetallesOpen] = useState(false);
+  const [modalDetallesOpen, setModalDetallesOpen]   = useState(false);
 
+  // --- FUNCIONES MODAL DE DETALLES ---
   const openModalDetalles = (mov) => {
     setSelectedMovDetails(mov);
     setModalDetallesOpen(true);
@@ -34,6 +58,8 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
     setModalDetallesOpen(false);
   };
 
+  // --- FUNCIONES DE FORMATO ---
+  // Formatea la fecha a formato local corto (ej: 10 oct 2026)
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -41,6 +67,7 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
   
+  // Convierte hora militar (14:30) a formato 12H (2:30 PM)
   const formatHora = (horaStr) => {
     if (!horaStr) return "—";
     const [hora, min] = horaStr.split(':');
@@ -50,10 +77,14 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
     return `${h12}:${min} ${ampm}`;
   };
 
+  // --- EFECTO INICIAL ---
+  // Carga los datos del POA y los movimientos al montar el componente
   useEffect(() => {
     cargarPoaData();
   }, []);
 
+  // --- FUNCIÓN: cargarPoaData ---
+  // Consulta la API para obtener el resumen del POA y el listado de movimientos
   const cargarPoaData = async () => {
     setLoading(true);
     try {
@@ -68,6 +99,8 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
     }
   };
 
+  // --- FUNCIÓN: handleCrearPoa ---
+  // Envía los datos del formulario para aperturar un nuevo POA (Año Fiscal)
   const handleCrearPoa = async (e) => {
     e.preventDefault();
     if (!fechaInicio || !fechaFin || !montoTotal) return;
@@ -79,6 +112,7 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
       });
       if (res.ok) {
         alert("Presupuesto POA anual guardado con éxito.");
+        // Limpia el formulario y recarga datos
         setFechaInicio(""); setFechaFin(""); setMontoTotal("");
         cargarPoaData();
       } else {
@@ -89,6 +123,9 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
     }
   };
 
+  // --- FUNCIÓN: handleCambiarEstado ---
+  // Aprueba o rechaza un movimiento específico.
+  // Si se rechaza, el backend devolverá el monto descontado al balance disponible.
   const handleCambiarEstado = async (id, estado, motivo = null) => {
     try {
       const res = await fetch(`${API}/poa/movimiento/${id}/estado`, {
@@ -97,8 +134,9 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
         body: JSON.stringify({ estado, motivo_rechazo: motivo })
       });
       if (res.ok) {
-        cargarPoaData();
+        cargarPoaData(); // Actualiza listado y balances
         if (estado === "Rechazado") {
+          // Limpia el modal si fue un rechazo
           setModalRechazo(false);
           setMovRechazoId(null);
           setMotivoRechazo("");
@@ -109,8 +147,12 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
     }
   };
 
+  // --- CÁLCULOS Y FILTROS ---
+  
+  // Extrae el POA actual activo (el primero del array si existe)
   const poaActual = poas.length > 0 ? poas[0] : null;
 
+  // Filtra los movimientos en base al input de búsqueda superior
   const filteredMovimientos = movimientos.filter(m => {
     return searchTerm === "" || 
       m.nombre_evento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,14 +160,19 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
       m.solicitante?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  // Aplica hook de ordenamiento para la tabla
   const { items: sortedMovimientos, requestSort, sortConfig } = useSortableData(filteredMovimientos, { key: 'fecha_movimiento', direction: 'descending' });
 
+  // Paginación de la tabla
   const totalPages = Math.ceil(sortedMovimientos.length / itemsPerPage);
 
+  // Suma total de dinero salvado/devuelto por rechazos
   const totalRechazado = movimientos
     .filter(m => m.estado === 'Rechazado')
     .reduce((sum, m) => sum + Number(m.monto_descontado_dop), 0);
 
+  // --- CONTROL DE ACCESO ---
+  // Bloquea render si el usuario no tiene permisos
   if (usuario?.rol !== "Administrador" && usuario?.rol !== "Administrador V-A-F") {
     return <div style={{ padding: "2rem" }}>No tienes permisos para acceder al módulo POA.</div>;
   }
