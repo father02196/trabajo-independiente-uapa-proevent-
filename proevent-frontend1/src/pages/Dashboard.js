@@ -232,14 +232,6 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                                             <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                                             Gestión de Solicitudes
                                                         </li>
-                                                        <li className={activeTab === "AsignacionPersonal" ? "active" : ""} onClick={() => setActiveTab("AsignacionPersonal")}>
-                                                            <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                            Asignación de Personal
-                                                        </li>
-                                                        <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
-                                                            <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                            Cronograma Logístico
-                                                        </li>
                                                     </>
                                                 )}
                                             </ul>
