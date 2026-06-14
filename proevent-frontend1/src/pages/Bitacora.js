@@ -1,3 +1,11 @@
+// ============================================================
+// MÓDULO DE BITÁCORA DE MOVIMIENTOS (AUDITORÍA)
+// Pertenece a: Módulo de Seguridad y Auditoría del Sistema
+// Propósito: Mostrar el historial detallado de todas las acciones
+// y operaciones realizadas por los usuarios (cambios de estado, login,
+// eliminaciones). Permite filtrar por ID, usuario, acción y fecha.
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText, FiClock } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
@@ -7,25 +15,32 @@ import './../css/Bitacora.css';
 
 const API = 'http://localhost:8080';
 
+// ============================================================
+// COMPONENTE: Bitacora
+// ============================================================
 export default function Bitacora() {
-    const [registros, setRegistros] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    // --- ESTADOS DEL COMPONENTE ---
+    const [registros, setRegistros] = useState([]);       // Historial completo
+    const [loading, setLoading] = useState(true);         // Indicador de carga
+    const [error, setError] = useState('');               // Mensaje de error
     
     // Paginación
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    // Estados para los filtros
-    const [searchQuery, setSearchQuery] = useState(''); // Para ID o Nombre
-    const [filtroAccion, setFiltroAccion] = useState('Todas');
-    const [rangoFecha, setRangoFecha] = useState('todos');
-    const [accionesUnicas, setAccionesUnicas] = useState([]);
+    // Estados para los filtros de búsqueda
+    const [searchQuery, setSearchQuery] = useState('');   // Texto libre
+    const [filtroAccion, setFiltroAccion] = useState('Todas'); // Dropdown de acción
+    const [rangoFecha, setRangoFecha] = useState('todos');     // Dropdown de tiempo
+    const [accionesUnicas, setAccionesUnicas] = useState([]);  // Listado dinámico de acciones
 
+    // --- EFECTO: Carga inicial ---
     useEffect(() => {
         cargarBitacora();
     }, []);
 
+    // --- FUNCIÓN: cargarBitacora ---
+    // Extrae los datos desde el backend y puebla las categorías únicas de acción
     const cargarBitacora = async () => {
         setLoading(true);
         try {
@@ -46,6 +61,8 @@ export default function Bitacora() {
         }
     };
 
+    // --- FUNCIÓN: formatearFecha ---
+    // Convierte el timestamp de BD a formato local "DD/MMM/YYYY HH:MM"
     const formatearFecha = (fechaDb) => {
         if (!fechaDb) return '—';
         const date = new Date(fechaDb);
@@ -55,7 +72,8 @@ export default function Bitacora() {
         });
     };
 
-    // Aplicar filtros a los datos originales
+    // --- LÓGICA DE FILTRADO ---
+    // Filtra la data original según texto, tipo de acción y ventana de tiempo
     const registrosFiltrados = registros.filter(reg => {
         const queryNormalizada = searchQuery.toLowerCase();
         
@@ -94,7 +112,7 @@ export default function Bitacora() {
         return matchSearch && matchAccion && matchFecha;
     });
 
-    // Lógica de Paginación
+    // --- LÓGICA DE PAGINACIÓN Y ORDENAMIENTO ---
     const { items: sortedRegistros, requestSort, sortConfig } = useSortableData(registrosFiltrados, { key: 'fecha', direction: 'descending' });
     const totalPages = Math.ceil(sortedRegistros.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
