@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: AsignacionPersonal
+// Pertenece a: Módulo de Coordinación y Logística
+// Propósito: Permite asignar roles operativos (Responsable, 
+// Coordinador, Apoyo) a los usuarios para un evento específico.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiUsers, FiMapPin, FiCheckCircle, FiCalendar, FiTrash2 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
@@ -5,6 +12,7 @@ import { toast } from "react-hot-toast";
 const API = "http://localhost:8080";
 
 function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
+  // --- ESTADOS ---
   const [eventos, setEventos] = useState([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [coordinadores, setCoordinadores] = useState([]);
@@ -12,6 +20,7 @@ function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
   const [loading, setLoading] = useState(true);
   const [rolSeleccionado, setRolSeleccionado] = useState('Coordinador');
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
     if (eventoPreseleccionado) {
       setEventoSeleccionado(eventoPreseleccionado);
@@ -25,6 +34,8 @@ function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
       .catch(err => console.error("Error al cargar coordinadores:", err));
   }, [usuario, eventoPreseleccionado]);
 
+  // --- FUNCIÓN: cargarEventos ---
+  // Obtiene la lista de eventos disponibles para asignar personal
   const cargarEventos = async () => {
     setLoading(true);
     try {
@@ -68,6 +79,10 @@ function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
     cargarOrganizadoresAsignados(id);
   };
 
+
+
+  // --- FUNCIÓN: asignarRol ---
+  // Llama a la API para asignar un rol logístico a un usuario en un evento
   const asignarRol = async (id_evento, id_usuario, rol) => {
     if (!id_usuario) return;
     try {
@@ -87,6 +102,10 @@ function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
     }
   };
 
+
+
+  // --- FUNCIÓN: eliminarRol ---
+  // Remueve un usuario de la organización del evento logístico
   const eliminarRol = async (id_evento_org, id_evento) => {
     if (!window.confirm("¿Seguro que deseas remover a esta persona de la organización del evento?")) return;
     try {
