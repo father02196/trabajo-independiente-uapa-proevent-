@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: AdminAudiovisual
+// Pertenece a: Módulo de Configuración / Audiovisual
+// Propósito: CRUD (Crear, Leer, Actualizar, Eliminar) del catálogo
+// maestro de equipos audiovisuales (nombre, ícono, y cantidad total).
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiPlus, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
@@ -10,6 +17,7 @@ const ICON_OPTIONS = [
 ];
 
 export default function AdminAudiovisual({ usuario }) {
+  // --- ESTADOS ---
   const [equipos, setEquipos] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -22,10 +30,12 @@ export default function AdminAudiovisual({ usuario }) {
   const [icono, setIcono] = useState("FiMonitor");
   const [cantidad_total, setCantidadTotal] = useState(0);
 
+  // --- EFECTO INICIAL ---
   useEffect(() => {
     cargarEquipos();
   }, []);
 
+  // --- FUNCIÓN: cargarEquipos ---
   const cargarEquipos = () => {
     setLoading(true);
     fetch(`${API}/equipos-audiovisuales`)
@@ -37,6 +47,8 @@ export default function AdminAudiovisual({ usuario }) {
       .finally(() => setLoading(false));
   };
 
+  // --- FUNCIÓN: handleGuardar ---
+  // Lógica dinámica para crear (POST) o editar (PUT) un equipo
   const handleGuardar = async (e) => {
     e.preventDefault();
     const url = isEditing ? `${API}/equipos-audiovisuales/${currentId}` : `${API}/equipos-audiovisuales`;
@@ -67,6 +79,7 @@ export default function AdminAudiovisual({ usuario }) {
     }
   };
 
+  // --- FUNCIONES: Editar y Eliminar ---
   const handleEditar = (eq) => {
     setIsEditing(true);
     setCurrentId(eq.id_equipo);
