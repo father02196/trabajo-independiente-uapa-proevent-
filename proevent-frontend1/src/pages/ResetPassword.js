@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: ResetPassword
+// Pertenece a: Módulo de Autenticación
+// Propósito: Interfaz donde el usuario introduce su nueva
+// contraseña, validando el token proporcionado por la URL.
+// ============================================================
+
 import { useState, useEffect } from "react";
 import './../css/Login.css';
 import lockIcon from "./../img/lock.png";
@@ -6,6 +13,7 @@ import hideIcon from "./../img/hide.png";
 import logoProevent from "./../img/logo-proevent.jpeg";
 
 function ResetPassword({ token, onBackClick }) {
+  // --- ESTADOS ---
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,7 +22,10 @@ function ResetPassword({ token, onBackClick }) {
   const [validating, setValidating] = useState(true);
   const [success, setSuccess] = useState(false);
 
+  // --- EFECTOS INICIALES ---
   useEffect(() => {
+    // --- FUNCIÓN: validateToken ---
+    // Verifica si el token en la URL aún es válido antes de permitir el cambio
     const validateToken = async () => {
       try {
         const response = await fetch(`http://localhost:8080/validar-token/${token}`);
@@ -30,6 +41,8 @@ function ResetPassword({ token, onBackClick }) {
     validateToken();
   }, [token]);
 
+  // --- FUNCIÓN: handleSubmit ---
+  // Envía la nueva contraseña al backend junto con el token
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
