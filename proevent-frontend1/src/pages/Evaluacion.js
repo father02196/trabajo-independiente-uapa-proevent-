@@ -1,24 +1,42 @@
+// ============================================================
+// MÓDULO EVALUACIÓN - Sistema de Feedback de Servicios
+// Pertenece a: Módulo Operativo (Satisfacción de Cliente Interno)
+// Propósito: Permite al solicitante calificar el servicio del 
+// Departamento de Protocolo al terminar un evento (estado 'Finalizado').
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import { FiStar, FiCheckCircle, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
 
 const API = 'http://localhost:8080';
 
+// Listas estáticas para los inputs radio/selección
 const RECINTOS = ['Cibao Oriental', 'Nagua', 'Santo Domingo Oriental', 'Santiago'];
 const VALORACIONES = ['Muy eficiente', 'Excelente', 'Eficiente', 'Deficiente'];
 
+// ============================================================
+// COMPONENTE: Evaluacion
+// Recibe:
+//   - usuario: logueado para registrar el feedback
+//   - eventoEvalId: si se navega desde otro lado preseleccionando evento
+//   - onEvalConsumed: callback si se consume el param URL/state
+// ============================================================
 function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
-  const [respuesta, setRespuesta] = useState('');
-  const [recinto, setRecinto] = useState('');
-  const [eventoId, setEventoId] = useState('');
-  const [valoracion, setValoracion] = useState('');
-  const [satisfaccion, setSatisfaccion] = useState(0);
-  const [comentario, setComentario] = useState('');
+  // --- ESTADOS DEL FORMULARIO ---
+  const [respuesta, setRespuesta]       = useState(''); // Si/No recibió actividad
+  const [recinto, setRecinto]           = useState(''); // Recinto donde operó
+  const [eventoId, setEventoId]         = useState(''); // ID del evento a calificar
+  const [valoracion, setValoracion]     = useState(''); // Nivel de eficiencia
+  const [satisfaccion, setSatisfaccion] = useState(0);  // Puntuación 1-5 estrellas
+  const [comentario, setComentario]     = useState(''); // Nota adicional opcional
 
-  const [eventos, setEventos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState(null);
-  const [enviado, setEnviado] = useState(false);
+  // --- ESTADOS DE CONTROL ---
+  const [eventos, setEventos] = useState([]);       // Eventos "Finalizados" a evaluar
+  const [loading, setLoading] = useState(false);    // Spinner
+  const [mensaje, setMensaje] = useState(null);     // Notificaciones
+  const [enviado, setEnviado] = useState(false);    // Renderiza pantalla de éxito
 
+  // --- EFECTO: Preselección desde props ---
   useEffect(() => {
     if (eventoEvalId) {
       setEventoId(String(eventoEvalId));
@@ -26,6 +44,10 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
     }
   }, [eventoEvalId, onEvalConsumed]);
 
+  // --- EFECTO: Carga de eventos elegibles ---
+  // Obtiene eventos y evaluaciones hechas.
+  // Filtra la lista para solo dejar eventos "Finalizados" 
+  // que AÚN NO han sido evaluados (ausentes en evaluacionesData).
   useEffect(() => {
     Promise.all([
       fetch(`${API}/eventos`).then(r => r.json()),
@@ -36,7 +58,10 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
           const evaluacionesIds = Array.isArray(evaluacionesData) 
             ? evaluacionesData.map(ev => ev.id_evento) 
             : [];
-          setEventos(eventosData.filter(e => e.estado === 'Finalizado' && !evaluacionesIds.includes(e.id_evento)));
+          
+          setEventos(eventosData.filter(e => 
+            e.estado === 'Finalizado' && !evaluacionesIds.includes(e.id_evento)
+          ));
         } else {
           setEventos([]);
         }
@@ -44,12 +69,17 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
       .catch(() => setEventos([]));
   }, []);
 
+  // --- FUNCIÓN: handleSubmit ---
+  // Envía el paquete de feedback al servidor
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validación en cliente
     if (!respuesta || !recinto || !eventoId || !valoracion || !satisfaccion) {
       setMensaje({ tipo: 'error', texto: 'Por favor completa todos los campos obligatorios.' });
       return;
     }
+    
     setLoading(true);
     setMensaje(null);
     try {
@@ -72,6 +102,7 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
       if (!res.ok) {
         setMensaje({ tipo: 'error', texto: body.mensaje || 'Error al enviar la evaluación.' });
       } else {
+        // Al éxito, cambia a la pantalla de completado
         setEnviado(true);
       }
     } catch {
