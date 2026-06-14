@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: CronogramaLogistico
+// Pertenece a: Módulo de Coordinación / Operativa
+// Propósito: Gestión de tareas logísticas para un evento. 
+// Permite programar actividades, delegarlas a personal de apoyo 
+// y marcar las tareas como completadas.
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiCheck, FiClock, FiUser, FiCalendar, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -7,6 +15,7 @@ import SortableHeader from '../components/SortableHeader';
 const API = "http://localhost:8080";
 
 function CronogramaLogistico({ evento, usuario }) {
+  // --- ESTADOS ---
   const [tareas, setTareas] = useState([]);
   const [apoyos, setApoyos] = useState([]);
   const [nuevaTarea, setNuevaTarea] = useState({ nombre_actividad: '', id_usuario_responsable: '', fecha_cumplimiento: '' });
@@ -38,6 +47,8 @@ function CronogramaLogistico({ evento, usuario }) {
     }
   };
 
+  // --- FUNCIÓN: handleCrearTarea ---
+  // Registra una nueva tarea en el cronograma delegada a un responsable
   const handleCrearTarea = async (e) => {
     e.preventDefault();
     if (!nuevaTarea.nombre_actividad || !nuevaTarea.fecha_cumplimiento || !nuevaTarea.id_usuario_responsable) {
@@ -67,6 +78,10 @@ function CronogramaLogistico({ evento, usuario }) {
     }
   };
 
+
+
+  // --- FUNCIÓN: handleCompletarTarea ---
+  // Actualiza el estado de una tarea a "Completada"
   const handleCompletarTarea = async (id_actividad, estado) => {
     try {
       const res = await fetch(`${API}/cronograma/${id_actividad}/estado`, {
