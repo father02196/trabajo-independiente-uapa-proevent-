@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: DashboardVAF
+// Pertenece a: Módulo Financiero / VAF
+// Propósito: Panel global del presupuesto (Plan Operativo Anual).
+// Resume los fondos totales, disponibles, y retenidos, brindando 
+// acceso a la gestión presupuestaria profunda.
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import { FiDollarSign, FiPieChart, FiTrendingDown, FiClock, FiActivity } from "react-icons/fi";
 import "./../css/Dashboard.css";
@@ -5,6 +13,7 @@ import "./../css/Dashboard.css";
 const API = "http://localhost:8080";
 
 export default function DashboardVAF({ usuario }) {
+  // --- ESTADOS ---
   const [poaSummary, setPoaSummary] = useState({
     monto_total: 0,
     monto_disponible: 0,
@@ -12,6 +21,8 @@ export default function DashboardVAF({ usuario }) {
     monto_rechazado: 0
   });
 
+  // --- EFECTOS INICIALES ---
+  // Carga el resumen financiero del POA global actual y las solicitudes retenidas
   useEffect(() => {
     // Aquí idealmente haríamos fetch a un endpoint de resumen de VAF.
     // Usaremos datos simulados o del endpoint existente por ahora.
