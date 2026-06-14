@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: Login
+// Pertenece a: Módulo de Autenticación / Acceso
+// Propósito: Pantalla de inicio de sesión que soporta autenticación
+// mediante credenciales clásicas (correo/contraseña) y mediante 
+// SSO con Google Sign-In para correos institucionales.
+// ============================================================
+
 import { useState, useEffect, useRef } from "react";
 import './../css/Login.css';
 import viewIcon  from "./../img/view.png";
@@ -15,6 +23,8 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const googleButtonRef = useRef(null);
 
   /* ── Google Sign-In ──────────────────────────────────── */
+  // Función de callback que procesa el token JWT devuelto por Google
+  // y lo envía al backend para iniciar sesión sin contraseña.
   const handleGoogleCallback = async (response) => {
     setLoading(true);
     setError("");
@@ -57,7 +67,10 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
     return () => { document.body.removeChild(script); };
   }, []); // eslint-disable-line
 
+
   /* ── Credenciales ────────────────────────────────────── */
+  // Envía el correo y contraseña ingresados al backend para autenticarse
+  // Retorna el token JWT del sistema propio.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
