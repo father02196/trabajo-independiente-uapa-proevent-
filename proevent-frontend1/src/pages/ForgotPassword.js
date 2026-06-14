@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: ForgotPassword
+// Pertenece a: Módulo de Autenticación
+// Propósito: Interfaz para que el usuario solicite un enlace de 
+// restablecimiento de contraseña enviando su correo electrónico.
+// ============================================================
+
 import { useState } from "react";
 import './../css/Login.css';
 import userIcon from "./../img/user.png";
@@ -7,11 +14,14 @@ import hideIcon from "./../img/hide.png";
 import logoProevent from "./../img/logo-proevent.jpeg"; // Actualizado a .jpeg
 
 function ForgotPassword({ onBackClick }) {
+  // --- ESTADOS ---
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // --- FUNCIÓN: handleVerifyEmail ---
+  // Envía la solicitud de restablecimiento al backend
   const handleVerifyEmail = async (e) => {
     e.preventDefault();
     setError("");
