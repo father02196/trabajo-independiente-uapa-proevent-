@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: DashboardLegalLayout
+// Pertenece a: Módulo Legal / Layout
+// Propósito: Contenedor principal (Layout) para el usuario de Legal.
+// Gestiona el menú lateral, estado de la sesión y renderiza
+// dinámicamente las vistas legales (Contratos, Dictámenes).
+// ============================================================
+
 import React, { useState } from "react";
 import { FiLogOut, FiHeadphones, FiCalendar, FiShield, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
@@ -11,16 +19,19 @@ import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
 
 function DashboardLegalLayout({ usuario, onLogoutClick }) {
+    // --- ESTADOS ---
     const [activeTab, setActiveTab] = useState(() => {
         return sessionStorage.getItem("dashboard_legal_activeTab") || "Dashboard";
     });
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+    // --- EFECTOS: Sincronización con Session Storage ---
     React.useEffect(() => {
         sessionStorage.setItem("dashboard_legal_activeTab", activeTab);
     }, [activeTab]);
 
+    // --- FUNCIONES DE INTERFAZ ---
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
@@ -29,6 +40,8 @@ function DashboardLegalLayout({ usuario, onLogoutClick }) {
         setUserMenuOpen(!userMenuOpen);
     };
 
+    // --- FUNCIÓN: renderContent ---
+    // Retorna la vista correspondiente a la sección legal actual
     const renderContent = () => {
         switch (activeTab) {
             case "Dashboard":
