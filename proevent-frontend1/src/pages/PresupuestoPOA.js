@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: PresupuestoPOA
+// Pertenece a: Módulo de Solicitudes / Eventos
+// Propósito: Paso del Wizard de creación de eventos donde el 
+// usuario indica el presupuesto estimado, observaciones 
+// adicionales, y puede adjuntar documentación (Flujo Documental).
+// ============================================================
+
 import React from "react";
 import { FiDollarSign, FiFileText, FiPaperclip } from "react-icons/fi";
 
