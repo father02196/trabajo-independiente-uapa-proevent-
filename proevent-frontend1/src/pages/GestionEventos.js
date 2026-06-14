@@ -1,41 +1,82 @@
+// ============================================================
+// GESTIÓN DE EVENTOS - Componente Principal
+// Pertenece a: Módulo de Administración de Eventos (ProEvent)
+// Propósito: Muestra la tabla principal de solicitudes de eventos,
+// permite cambiar estados, ver la Ficha Técnica en detalle,
+// asignar servicios externos, personal y cronograma.
+// ============================================================
+
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+
+// Iconos de Feather Icons usados en la UI de la tabla y modales
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity, FiPlay, FiLock, FiAlertCircle, FiXCircle, FiInfo } from "react-icons/fi";
+
+// Sistema de notificaciones flotantes (toasts)
 import { toast } from "react-hot-toast";
+
+// Hook personalizado para ordenar columnas de la tabla
 import { useSortableData } from "../hooks/useSortableData";
-import FichaTecnicaPDF from "./FichaTecnicaPDF";
-import AsignacionPersonal from "./AsignacionPersonal";
-import CronogramaGlobal from "./CronogramaGlobal";
-import SortableHeader from "../components/SortableHeader";
+
+// Sub-componentes de la Ficha Técnica del evento
+import FichaTecnicaPDF from "./FichaTecnicaPDF";        // Genera el resumen PDF del evento
+import AsignacionPersonal from "./AsignacionPersonal"; // Panel de asignación de personal/organizadores
+import CronogramaGlobal from "./CronogramaGlobal";     // Panel del cronograma de actividades
+import SortableHeader from "../components/SortableHeader"; // Encabezado de tabla ordenable
+
+// Estilos globales del panel de administración
 import './../css/Dashboard.css';
+
+// URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
+// ============================================================
+// COMPONENTE: GestionEventos
+// Recibe: usuario (objeto del usuario logueado), searchTerm
+// (texto de búsqueda global), onEditEvent (callback para editar)
+// ============================================================
 function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
+
+  // --- ESTADOS DE FILTROS DE LA TABLA ---
+  // Controlan los filtros de la barra superior: departamento, estado y fecha
   const [departmentFilter, setDepartmentFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [dateFilter, setDateFilter] = useState("");
+
+  // --- DATOS PRINCIPALES ---
+  // Lista completa de solicitudes de eventos traídas del backend
   const [eventRequests, setEventRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true); // Indicador de carga inicial
+  const [error, setError] = useState("");        // Mensaje de error si falla la API
   
-  // Paginación
+  // --- PAGINACIÓN DE LA TABLA ---
+  // Controla qué página de resultados se muestra (8 eventos por página)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  // --- ESTADOS DEL MODAL DE FICHA TÉCNICA ---
+  // selectedRequest: el evento que se está viendo en detalle
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAsignarServicioModalOpen, setIsAsignarServicioModalOpen] = useState(false); // Modal para Asignar Servicio
-  const [coordinadores, setCoordinadores] = useState([]);
+  const [isAsignarServicioModalOpen, setIsAsignarServicioModalOpen] = useState(false); // Modal para Asignar Servicio Externo
+  const [coordinadores, setCoordinadores] = useState([]); // Lista de coordinadores disponibles para asignar
 
-  // === LÓGICA DE APROBACIONES ===
+  // --- LÓGICA DE APROBACIONES PREVIAS AL INICIO ---
+  // aprobacionesMap: mapa de id_evento → { puede_iniciar, aprobaciones[] }
+  // Se consulta antes de permitir cambiar estado a "En Progreso"
   const [aprobacionesMap, setAprobacionesMap] = useState({}); // { [id_evento]: { puede_iniciar, aprobaciones, ... } }
-  const [modalAprobaciones, setModalAprobaciones] = useState(null); // Evento seleccionado para ver aprobaciones
+  const [modalAprobaciones, setModalAprobaciones] = useState(null); // Evento seleccionado para ver aprobaciones faltantes
   const [loadingAprobaciones, setLoadingAprobaciones] = useState({});
 
-  // Sub-paneles dentro de Ficha Técnica
-  const [showPersonal, setShowPersonal] = useState(false);
-  const [showCronograma, setShowCronograma] = useState(false);
+  // --- SUB-PANELES DE LA FICHA TÉCNICA ---
+  // Controlan si se muestran los sub-componentes dentro del modal de detalle
+  const [showPersonal, setShowPersonal] = useState(false);    // Muestra el panel de AsignacionPersonal
+  const [showCronograma, setShowCronograma] = useState(false); // Muestra el CronogramaGlobal del evento
 
+  // --- CARGA INICIAL: COORDINADORES ---
+  // Al montar el componente, obtiene la lista de usuarios con rol coordinador
+  // para el selector de asignación de personal dentro de la ficha
   useEffect(() => {
     fetch(`${API}/usuarios-coordinadores`)
       .then(res => res.json())
@@ -43,11 +84,18 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       .catch(err => console.error("Error al cargar coordinadores:", err));
   }, []);
 
+  // --- FUNCIÓN: handleVerDetalles ---
+  // Se ejecuta al hacer clic en el botón "Ver" de cualquier evento en la tabla.
+  // Abre el modal principal y pre-carga en paralelo:
+  //   1. Datos administrativos (presupuesto VAF, estado legal, cotizaciones)
+  //   2. Servicios externos asociados al evento
+  //   3. Personal/organizadores asignados
+  // Esto permite que la vista previa del PDF esté lista sin esperar al usuario.
   const handleVerDetalles = async (req) => {
-    setSelectedRequest(req);
-    setIsModalOpen(true);
+    setSelectedRequest(req); // Establece el evento activo en el modal
+    setIsModalOpen(true);    // Abre el modal de la Ficha Técnica
     
-    // Preparar datos para el PDF en background
+    // Pre-carga de datos enriquecidos para la vista de detalle y el PDF
     try {
       const resAdmin = await fetch(`${API}/api/admin_evento/${req.id_evento}`);
       const dataAdmin = await resAdmin.json();
@@ -59,6 +107,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       const resOrg = await fetch(`${API}/eventos/${req.id_evento}/personal`);
       const dataOrg = await resOrg.json();
 
+      // Almacena todos los datos en el estado pdfData para el componente FichaTecnicaPDF
       setPdfData({
         presupuesto: dataAdmin.presupuesto,
         legal: dataAdmin.legal,
@@ -68,49 +117,68 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     } catch (e) {
       console.error("Error pre-cargando datos del PDF", e);
     }
-    cargarOrganizadoresAsignados(req.id_evento);
+    cargarOrganizadoresAsignados(req.id_evento); // También carga los organizadores asignados
   };
+
+  // --- FUNCIÓN: closeModal ---
+  // Cierra el modal de la Ficha Técnica y limpia todos los estados
+  // relacionados con el evento activo para evitar datos obsoletos.
   const closeModal = () => {
     setIsModalOpen(false);
-    setSelectedRequest(null);
-    setOrganizadoresAsignados([]);
-    setShowFichaPDF(false);
-    setShowPersonal(false);
-    setShowCronograma(false);
+    setSelectedRequest(null);        // Limpia el evento seleccionado
+    setOrganizadoresAsignados([]);   // Limpia la lista de organizadores
+    setShowFichaPDF(false);          // Oculta el sub-panel PDF
+    setShowPersonal(false);          // Oculta el panel de personal
+    setShowCronograma(false);        // Oculta el cronograma
   };
 
-  const [tiposServicioExterno, setTiposServicioExterno] = useState([]);
-  const [servicioForm, setServicioForm] = useState({ id_tipo_servicio: "", detalles: "", cantidad: 1 });
+  // --- ESTADOS DEL FORMULARIO DE SERVICIOS EXTERNOS ---
+  // Gestionan el modal para asignar un servicio externo (Catering, Audio, etc.) al evento
+  const [tiposServicioExterno, setTiposServicioExterno] = useState([]); // Catálogo de tipos de servicio disponibles
+  const [servicioForm, setServicioForm] = useState({ id_tipo_servicio: "", detalles: "", cantidad: 1 }); // Formulario del nuevo servicio
   
-  // Datos extra para la Ficha PDF
+  // --- ESTADOS DE LA FICHA TÉCNICA PDF ---
+  // Controlan si se muestra el componente FichaTecnicaPDF y los datos que alimenta
   const [showFichaPDF, setShowFichaPDF] = useState(false);
   const [pdfData, setPdfData] = useState({ presupuesto: null, legal: null, servicios: [], organizadores: [] });
-  const [enviandoServicio, setEnviandoServicio] = useState(false);
+  const [enviandoServicio, setEnviandoServicio] = useState(false); // Bloquea el botón mientras se guarda un servicio
 
+  // --- FUNCIÓN: openAsignarServicioModal ---
+  // Abre el modal de asignación de servicio externo.
+  // Al abrirlo, consulta la API para obtener los tipos de servicio disponibles (catálogo)
+  // que luego se muestran en el selector del formulario.
   const openAsignarServicioModal = async () => {
     setIsAsignarServicioModalOpen(true);
     try {
       const res = await fetch(`${API}/tipos-servicio-externo`);
       if (res.ok) {
-        setTiposServicioExterno(await res.json());
+        setTiposServicioExterno(await res.json()); // Carga el catálogo de servicios desde el backend
       }
     } catch (err) {
       console.error(err);
     }
   };
 
+  // --- FUNCIÓN: closeAsignarServicioModal ---
+  // Cierra el modal de asignación de servicio y resetea el formulario a sus valores iniciales
   const closeAsignarServicioModal = () => {
     setIsAsignarServicioModalOpen(false);
-    setServicioForm({ id_tipo_servicio: "", detalles: "", cantidad: 1 });
+    setServicioForm({ id_tipo_servicio: "", detalles: "", cantidad: 1 }); // Limpia el formulario
   };
 
+  // --- FUNCIÓN: handleSubmitServicio ---
+  // Envía el formulario de asignación de servicio externo.
+  // Valida que se haya seleccionado un tipo de servicio, luego hace
+  // POST al backend para registrar el servicio en la tabla servicios_externos.
+  // Al completarse, recarga los datos del evento para reflejar el nuevo servicio
+  // en la Ficha Técnica sin cerrar el modal principal.
   const handleSubmitServicio = async (e) => {
     e.preventDefault();
     if (!servicioForm.id_tipo_servicio) {
       toast.error("Seleccione un tipo de servicio");
       return;
     }
-    setEnviandoServicio(true);
+    setEnviandoServicio(true); // Desactiva el botón de envío mientras se procesa
     try {
       const res = await fetch(`${API}/servicios-externos`, {
         method: "POST",
@@ -125,32 +193,39 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       if (res.ok) {
         toast.success("Servicio asignado correctamente a Logística Operativa");
         closeAsignarServicioModal();
-        handleVerDetalles(selectedRequest); // <-- Actualiza los datos del modal PDF
+        handleVerDetalles(selectedRequest); // Recarga el modal con los datos actualizados incluyendo el nuevo servicio
       } else {
         toast.error("Error al asignar servicio");
       }
     } catch (err) {
       toast.error("Error de conexión");
     } finally {
-      setEnviandoServicio(false);
+      setEnviandoServicio(false); // Reactiva el botón independientemente del resultado
     }
   };
 
+  // Lista de organizadores/personal asignados al evento actualmente abierto en la ficha
   const [organizadoresAsignados, setOrganizadoresAsignados] = useState([]);
 
+  // --- FUNCIÓN: cargarOrganizadoresAsignados ---
+  // Obtiene del backend los usuarios asignados como organizadores del evento.
+  // Se llama al abrir la ficha técnica y también después de asignar un nuevo rol.
   const cargarOrganizadoresAsignados = async (id_evento) => {
     try {
       const res = await fetch(`${API}/organizadores/${id_evento}`);
       if (res.ok) {
-        setOrganizadoresAsignados(await res.json());
+        setOrganizadoresAsignados(await res.json()); // Actualiza la lista de personal mostrada en la ficha
       }
     } catch (err) {
       console.error(err);
     }
   };
 
+  // --- FUNCIÓN: asignarRol ---
+  // Asigna un usuario a un rol específico dentro del evento (Coordinador, Asistente, etc.).
+  // Realiza POST al endpoint /organizadores y luego recarga la lista para actualizar la UI.
   const asignarRol = async (id_evento, id_usuario, rol) => {
-    if (!id_usuario) return;
+    if (!id_usuario) return; // Evita envíos sin usuario seleccionado
     try {
       const res = await fetch(`${API}/organizadores`, {
         method: "POST",
@@ -159,7 +234,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       });
       if (res.ok) {
         toast.success(`${rol} asignado correctamente`);
-        cargarOrganizadoresAsignados(id_evento);
+        cargarOrganizadoresAsignados(id_evento); // Refresca la tabla de personal dentro de la ficha
       } else {
         toast.error(`Error al asignar ${rol}`);
       }
@@ -168,38 +243,52 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     }
   };
 
+  // --- FUNCIÓN: cargarAprobacionesEvento ---
+  // Consulta el estado de las aprobaciones previas necesarias para iniciar un evento.
+  // El sistema requiere que Compras, Legal y VAF hayan dado su OK antes de permitir
+  // cambiar el estado a "En Progreso". Almacena el resultado en aprobacionesMap.
   const cargarAprobacionesEvento = async (id_evento) => {
-    setLoadingAprobaciones(prev => ({ ...prev, [id_evento]: true }));
+    setLoadingAprobaciones(prev => ({ ...prev, [id_evento]: true })); // Activa el loader para ese evento
     try {
       const res = await fetch(`${API}/api/aprobaciones-evento/${id_evento}`);
       if (res.ok) {
         const data = await res.json();
-        setAprobacionesMap(prev => ({ ...prev, [id_evento]: data }));
+        setAprobacionesMap(prev => ({ ...prev, [id_evento]: data })); // Guarda el mapa de aprobaciones
       }
     } catch (e) {
       console.error('Error cargando aprobaciones:', e);
     } finally {
-      setLoadingAprobaciones(prev => ({ ...prev, [id_evento]: false }));
+      setLoadingAprobaciones(prev => ({ ...prev, [id_evento]: false })); // Apaga el loader
     }
   };
 
+  // --- EFECTO: Carga de eventos al cambiar de usuario ---
+  // Se ejecuta automáticamente cuando el prop 'usuario' cambia (ej. al iniciar sesión).
+  // Reinicia la paginación a la primera página y recarga toda la lista de eventos.
   useEffect(() => {
     cargarEventos();
-    setCurrentPage(1);
+    setCurrentPage(1); // Siempre vuelve a la página 1 al recargar los datos
   }, [usuario]);
 
+  // --- FUNCIÓN: cargarEventos ---
+  // Función principal de carga de datos de la tabla.
+  // - Si el usuario es Solicitante: solo trae SUS eventos (filtrado por usuario_id)
+  // - Si es Admin u otro rol: trae TODOS los eventos del sistema
+  // Adicionalmente, para cada evento en estado "Aprobado" carga el mapa de aprobaciones
+  // administrativas necesarias para el botón de "Iniciar Evento".
   const cargarEventos = async () => {
     setLoading(true);
     setError("");
     try {
+      // URL condicional según el rol del usuario logueado
       const url = usuario?.rol === "Solicitante" 
-        ? `${API}/eventos?usuario_id=${usuario.id_usuario}`
-        : `${API}/eventos`;
+        ? `${API}/eventos?usuario_id=${usuario.id_usuario}` // Solo sus eventos
+        : `${API}/eventos`;                                  // Todos los eventos
       const res = await fetch(url);
       const data = await res.json();
       if (Array.isArray(data)) {
         setEventRequests(data);
-        // Cargar aprobaciones para todos los eventos que estén en estado Aprobado (candidatos a Iniciar)
+        // Carga aprobaciones para los eventos "Aprobados" (candidatos a pasar a "En Progreso")
         const aprobados = data.filter(e => e.estado === 'Aprobado');
         aprobados.forEach(e => cargarAprobacionesEvento(e.id_evento));
       } else {
@@ -214,34 +303,51 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     }
   };
 
+  // --- FUNCIÓN: handleCambiarEstado ---
+  // Cambia el estado de un evento (Pendiente → Aprobado → En Progreso → Finalizado / Rechazado).
+  // REGLA ESPECIAL: Para pasar a "En Progreso" el sistema verifica que existan aprobaciones
+  // de Compras, Legal y VAF. Si alguna falta, muestra el modal de aprobaciones pendientes
+  // en lugar de permitir el cambio de estado.
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
-    // Validación especial para Iniciar Evento
+    // Bloqueo especial: solo permite iniciar si todas las áreas han aprobado
     if (nuevoEstado === 'En Progreso') {
       const aprobInfo = aprobacionesMap[id_evento];
       if (!aprobInfo) {
-        // Intentar cargar y bloquear por ahora
+        // Si aún no se cargaron las aprobaciones, las solicita y aborta esta vez
         toast.error('Verificando aprobaciones... Por favor intenta de nuevo.');
         cargarAprobacionesEvento(id_evento);
         return;
       }
       if (!aprobInfo.puede_iniciar) {
+        // Muestra el modal con el checklist de aprobaciones faltantes
         setModalAprobaciones({ id_evento, ...aprobInfo });
         return;
       }
     }
+    // Si pasa la validación (o el estado no es "En Progreso"), hace el PUT al backend
     try {
       const res = await fetch(`${API}/eventos/${id_evento}/estado`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${usuario?.token || ""}`,
-          "x-usuario-id": usuario?.id_usuario || ""
+          "x-usuario-id": usuario?.id_usuario || "" // Auditoría: quién hizo el cambio
         },
         body: JSON.stringify({ estado: nuevoEstado })
       });
       if (res.ok) {
         toast.success(`Estado actualizado a ${nuevoEstado}`);
-        cargarEventos();
+        
+        // Efecto Cascada UI: Si se rechaza, el POA también se rechaza visualmente sin esperar recarga
+        setEventRequests(prev => prev.map(e => e.id_evento === id_evento 
+            ? { ...e, estado: nuevoEstado, ...(nuevoEstado === 'Rechazado' ? { estado_poa: 'Rechazado' } : {}) } 
+            : e));
+        
+        if (selectedRequest && selectedRequest.id_evento === id_evento) {
+           setSelectedRequest(prev => ({ ...prev, estado: nuevoEstado, ...(nuevoEstado === 'Rechazado' ? { estado_poa: 'Rechazado' } : {}) }));
+        }
+        
+        cargarEventos(); // Refresca la tabla completa en background
       } else {
         toast.error("Error al cambiar el estado del evento.");
       }
@@ -250,6 +356,10 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     }
   };
 
+  // --- FUNCIÓN: handleEliminarEvento ---
+  // Elimina permanentemente un evento del sistema previa confirmación del usuario.
+  // Solo usuarios con permisos de administrador deberían ver este botón.
+  // Al completarse, recarga la tabla para remover el evento de la vista.
   const handleEliminarEvento = async (id_evento) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.")) return;
     setLoading(true);
@@ -258,12 +368,12 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
         method: "DELETE",
         headers: { 
           "Authorization": `Bearer ${usuario?.token || ""}`,
-          "x-usuario-id": usuario?.id_usuario || ""
+          "x-usuario-id": usuario?.id_usuario || "" // Auditoría del usuario que elimina
         }
       });
       if (res.ok) {
         toast.success("Evento eliminado exitosamente.");
-        cargarEventos();
+        cargarEventos(); // Actualiza la tabla sin el evento borrado
       } else {
         const errorData = await res.json();
         toast.error(errorData.mensaje || "Error al eliminar el evento.");
@@ -275,29 +385,39 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     }
   };
 
+  // --- FUNCIÓN UTILITARIA: formatFecha ---
+  // Convierte una fecha ISO del backend (ej: "2026-06-14T00:00:00Z") a formato
+  // legible en español dominicano (ej: "14 jun 2026").
+  // El ajuste de timezone evita que las fechas aparezcan un día antes por UTC.
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
-    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
+    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset()); // Corrección de zona horaria local
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
   
+  // --- FUNCIÓN UTILITARIA: formatHora ---
+  // Convierte una hora en formato 24h ("14:30:00") al formato 12h con AM/PM ("2:30 PM").
+  // Se usa para mostrar las horas de inicio y fin del evento en la Ficha Técnica.
   const formatHora = (horaStr) => {
     if (!horaStr) return "—";
     const [hora, min] = horaStr.split(':');
     const h = parseInt(hora, 10);
     const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
+    const h12 = h % 12 || 12; // Convierte 0 → 12 para medianoche
     return `${h12}:${min} ${ampm}`;
   };
 
+  // --- FUNCIÓN UTILITARIA: getStatusClass ---
+  // Devuelve la clase CSS correspondiente al estado de un evento.
+  // Estas clases están definidas en Dashboard.css y controlan el color del badge de estado.
   const getStatusClass = (estado) => {
     switch (estado) {
-      case "Pendiente": return "pending";
-      case "Aprobado": return "approved";
-      case "Rechazado": return "rejected";
-      case "Finalizado": return "approved";
-      default: return "pending";
+      case "Pendiente":  return "pending";  // Amarillo
+      case "Aprobado":   return "approved"; // Verde
+      case "Rechazado":  return "rejected"; // Rojo
+      case "Finalizado": return "approved"; // Verde (mismo que aprobado)
+      default:           return "pending";  // Amarillo por defecto
     }
   };
 
@@ -681,6 +801,12 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     <span className="info-label">Estado de la Solicitud</span>
                     <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
                       {selectedRequest.estado || "Pendiente"}
+                    </span>
+                  </div>
+                  <div className="info-row" style={{ marginTop: '12px' }}>
+                    <span className="info-label">Estado Presupuesto (POA)</span>
+                    <span className={`badge ${selectedRequest.estado_poa === 'Aprobado' ? 'badge-green' : selectedRequest.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      {selectedRequest.estado_poa || "Pendiente"}
                     </span>
                   </div>
                 </div>
