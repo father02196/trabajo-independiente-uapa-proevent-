@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: SoporteHome
+// Pertenece a: Módulo Global / Ayuda
+// Propósito: Página estática que provee información de contacto
+// y preguntas frecuentes a los usuarios (Soporte Técnico,
+// Logística, Audiovisual).
+// ============================================================
+
 import React from 'react';
 import { FiCamera, FiChevronDown, FiChevronUp, FiClock, FiMail, FiMonitor, FiTruck } from 'react-icons/fi';
 import './../css/SoporteHome.css';
