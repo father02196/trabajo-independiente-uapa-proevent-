@@ -1,21 +1,25 @@
+// ============================================================
+// COMPONENTE: NotificationBell
+// Pertenece a: Módulo de Notificaciones en Tiempo Real
+// Propósito: Consume el endpoint /api/notificaciones para mostrar
+// alertas personalizadas por usuario y rol. Permite marcar como
+// leídas y navega a la sección correspondiente según la alerta.
+//
+// Props:
+//  - usuario: { id_usuario, rol }
+//  - onGoToEvaluacion: (eventoId?) => void
+//  - onGoToVisualizarEvaluaciones: () => void
+//  - onGoToPoaAdmin: () => void
+// ============================================================
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FiBell } from 'react-icons/fi';
 import './../css/NotificationBell.css';
 
 const API = 'http://localhost:8080';
 
-/**
- * NotificationBell — Sistema real de notificaciones (Fase 3)
- * Consume el endpoint /api/notificaciones del backend para mostrar
- * alertas personalizadas por usuario y por rol, en tiempo real.
- *
- * Props:
- *  - usuario: { id_usuario, rol }
- *  - onGoToEvaluacion: (eventoId?) => void
- *  - onGoToVisualizarEvaluaciones: () => void
- *  - onGoToPoaAdmin: () => void
- */
 export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones, onGoToPoaAdmin }) {
+  // --- ESTADOS ---
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -25,7 +29,8 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
   const rol = usuario?.rol;
   const id_usuario = usuario?.id_usuario;
 
-  // Cerrar al hacer clic fuera
+  // --- EFECTO: Cerrar Dropdown ---
+  // Detecta clics fuera del componente para cerrarlo automáticamente
   useEffect(() => {
     const handleClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -34,7 +39,8 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Función para cargar notificaciones desde el backend real
+  // --- FUNCIÓN: fetchNotifications ---
+  // Descarga las notificaciones activas desde el backend
   const fetchNotifications = useCallback(() => {
     if (!id_usuario && !rol) return;
     setLoading(true);
@@ -49,7 +55,8 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
       .finally(() => setLoading(false));
   }, [id_usuario, rol]);
 
-  // Carga inicial y polling cada 60 segundos
+  // --- EFECTO: Polling Automático ---
+  // Realiza carga inicial y auto-refresca cada 60 segundos
   useEffect(() => {
     if (!rol) return;
     fetchNotifications();
@@ -57,7 +64,8 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
     return () => clearInterval(pollingRef.current);
   }, [fetchNotifications, rol]);
 
-  // Marcar una notificación como leída en el backend y en el estado local
+  // --- FUNCIÓN: markRead ---
+  // Marca una notificación como leída en la BD y navega a su sección destino
   const markRead = (notif) => {
     fetch(`${API}/api/notificaciones/${notif.id_notificacion}/leer`, { method: 'PUT' })
       .catch(() => {});
@@ -75,7 +83,8 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
     }
   };
 
-  // Marcar todas como leídas
+  // --- FUNCIÓN: markAllRead ---
+  // Marca todas las notificaciones pendientes como leídas
   const markAllRead = () => {
     fetch(`${API}/api/notificaciones/marcar-todas-leidas`, {
       method: 'PUT',
@@ -85,7 +94,7 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
     setNotifications([]);
   };
 
-  // Formatear la fecha de la notificación
+  // --- UTILIDAD: formatFecha ---
   const formatFecha = (fecha) => {
     if (!fecha) return '';
     try {
