@@ -1,3 +1,11 @@
+// ============================================================
+// MÓDULO B2B (ADMINISTRACIÓN DE PROVEEDORES)
+// Pertenece a: Módulo Operativo / Licitaciones y Compras
+// Propósito: Permite gestionar suplidores (CRUD), enviarles
+// órdenes de cotización, visualizar el estatus de las cotizaciones
+// y subir la factura saldada para licitaciones adjudicadas por IA.
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo, FiEye, FiEyeOff } from 'react-icons/fi';
@@ -5,11 +13,15 @@ import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 import './../css/ModuloProveedores.css';
 
-
-
+// ============================================================
+// COMPONENTE: ModuloProveedores
+// Recibe:
+//   - usuario: Objeto del administrador o gestor de compras logueado
+// ============================================================
 function ModuloProveedores({ usuario }) {
     const API = "http://localhost:8080";
-    // --- Persistencia de la pestaña activa ---
+    
+    // --- ESTADO Y PERSISTENCIA DE PESTAÑA ---
     const [activeTab, setActiveTab] = useState(() => {
         return localStorage.getItem("proveedores_activeTab") || 'logistica';
     });
@@ -17,28 +29,31 @@ function ModuloProveedores({ usuario }) {
     useEffect(() => {
         localStorage.setItem("proveedores_activeTab", activeTab);
     }, [activeTab]);
-    const [servicios, setServicios] = useState([]);
-    const [proveedores, setProveedores] = useState([]);
-    const [categoriasActivas, setCategoriasActivas] = useState([]);
-    const [licitacionesAdjudicadas, setLicitacionesAdjudicadas] = useState([]);
-    const [fileFactura, setFileFactura] = useState(null);
-    const [filtroEstadoRecepcion, setFiltroEstadoRecepcion] = useState('Todos');
+
+    // --- ESTADOS DE DATOS GLOBALES ---
+    const [servicios, setServicios] = useState([]);               // Requerimientos (órdenes)
+    const [proveedores, setProveedores] = useState([]);           // Directorio de suplidores
+    const [categoriasActivas, setCategoriasActivas] = useState([]); // Categorías disponibles para asignar suplidor
+    const [licitacionesAdjudicadas, setLicitacionesAdjudicadas] = useState([]); // Resultados de la IA
+    const [fileFactura, setFileFactura] = useState(null);         // PDF de la factura a subir
     
-    // --- Módulo: Interfaz de Usuario | Función: Filtros del Directorio ---
-    const [searchTermDirectorio, setSearchTermDirectorio] = useState("");
-    const [filtroCategoria, setFiltroCategoria] = useState("Todas");
+    // --- ESTADOS DE FILTROS ---
+    const [filtroEstadoRecepcion, setFiltroEstadoRecepcion] = useState('Todos'); // Logística
+    const [searchTermDirectorio, setSearchTermDirectorio] = useState("");        // Directorio
+    const [filtroCategoria, setFiltroCategoria] = useState("Todas");             // Directorio
     
-    // Estados para Modales
+    // --- ESTADOS PARA MODALES CRUD (Directorio) ---
     const [modalConfig, setModalConfig] = useState({ open: false, type: null, data: null });
     const [formData, setFormData] = useState({});
+    const [showPassword, setShowPassword] = useState(false); // Para mostrar pass en form de creación
 
-    // --- Módulo: Logística | Estado del Modal de Envío al Proveedor ---
+    // --- ESTADOS PARA MODAL DE ENVÍO DE ÓRDENES (Logística) ---
     const [modalEnvio, setModalEnvio] = useState({ open: false, servicio: null });
-    const [proveedoresFiltradosTipo, setProveedoresFiltradosTipo] = useState([]);
+    const [proveedoresFiltradosTipo, setProveedoresFiltradosTipo] = useState([]); // Filtrados por la cat. de la orden
     const [envioForm, setEnvioForm] = useState({ id_proveedor: '', descripcion_requerimientos: '', fecha_limite: '' });
     const [enviando, setEnviando] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
 
+    // --- EFECTOS: Carga dinámica según la pestaña ---
     useEffect(() => {
         if (activeTab === 'logistica') fetchServicios();
         if (activeTab === 'directorio') fetchProveedores();
@@ -46,6 +61,8 @@ function ModuloProveedores({ usuario }) {
         fetchCategoriasActivas(); // Siempre cargar categorías para los modales
     }, [activeTab]);
 
+    // --- FUNCIÓN: fetchCategoriasActivas ---
+    // Obtiene categorías de proveedor para los combos (ej. Floristería, Catering)
     const fetchCategoriasActivas = async () => {
         try {
             const res = await fetch(`${API}/api/admin/categorias-servicio`);
@@ -67,6 +84,8 @@ function ModuloProveedores({ usuario }) {
         }
     };
 
+    // --- FUNCIÓN: fetchServicios ---
+    // Obtiene las órdenes de servicio que necesitan ser enviadas a suplidores
     const fetchServicios = async () => {
         try {
             const response = await fetch('http://localhost:8080/servicios-externos-all');
@@ -228,9 +247,12 @@ function ModuloProveedores({ usuario }) {
         }
     };
 
+    // --- FUNCIONES DE FILTRO Y ORDENAMIENTO DE TABLAS ---
+    // Logística:
     const serviciosList = servicios.filter(s => filtroEstadoRecepcion === 'Todos' || (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor));
     const { items: sortedServicios, requestSort: requestSortServicios, sortConfig: sortConfigServicios } = useSortableData(serviciosList, { key: 'nombre_evento', direction: 'ascending' });
 
+    // Directorio:
     const categoriasUnicas = [...new Set(proveedores.map(p => p.categoria))];
     const proveedoresFiltrados = proveedores.filter(p => {
         const text = searchTermDirectorio.toLowerCase();
