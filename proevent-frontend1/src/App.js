@@ -1,3 +1,10 @@
+// ============================================================
+// COMPONENTE: App
+// Pertenece a: Raíz de la Aplicación
+// Propósito: Controla el enrutamiento principal, el estado global 
+// de autenticación y renderiza el Layout adecuado según el rol.
+// ============================================================
+
 import { useState, useEffect } from "react";
 import Login from "./pages/Login";
 import Welcome from "./pages/Welcome";
@@ -11,6 +18,7 @@ import PortalProveedoresLogin from "./pages/PortalProveedoresLogin";
 import PortalProveedoresDashboard from "./pages/PortalProveedoresDashboard";
 
 function App() {
+  // --- ESTADOS GLOBALES ---
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return sessionStorage.getItem("isLoggedIn") === "true";
   });
@@ -46,6 +54,7 @@ function App() {
   });
   const [resetToken, setResetToken] = useState(null);
 
+  // --- EFECTOS: Sincronización con Session Storage ---
   useEffect(() => {
     sessionStorage.setItem("page", page);
   }, [page]);
