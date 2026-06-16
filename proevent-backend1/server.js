@@ -618,14 +618,14 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
       // Alerta a los Administradores de Eventos para que revisen la nueva solicitud
       crearNotificacion({
         rol_destino: 'Administrador de Evento',
-        titulo: '📅œâ€¹ Nueva Solicitud de Evento',
+        titulo: '📅 Nueva Solicitud de Evento',
         cuerpo: `Se recibió una nueva solicitud de evento: "${nombre}" (#EVT-${id_evento}). Requiere revisión y aprobación.`,
         enlace_accion: 'gestion-eventos'
       });
       // También alerta al Administrador General
       crearNotificacion({
         rol_destino: 'Administrador',
-        titulo: '📅œâ€¹ Nueva Solicitud de Evento',
+        titulo: '📅 Nueva Solicitud de Evento',
         cuerpo: `Se recibió una nueva solicitud: "${nombre}" (#EVT-${id_evento}) pendiente de revisión.`,
         enlace_accion: 'gestion-eventos'
       });
@@ -1002,20 +1002,20 @@ app.put('/eventos/:id/estado', (req, res) => {
             crearNotificacion({ id_usuario_destino: idSolicitante, titulo: '✅ Evento Aprobado', cuerpo: `Tu evento "${nombreEvt}" (#EVT-${id}) ha sido aprobado. Ya está en proceso de organización.`, enlace_accion: 'mis-eventos' });
           }
           // Notificar a Presupuesto/VAF
-          crearNotificacion({ rol_destino: 'Presupuesto', titulo: '📅™Â° Nuevo evento aprobado requiere revisión POA', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Verifica el estado del presupuesto POA asignado.`, enlace_accion: 'poa-admin' });
+          crearNotificacion({ rol_destino: 'Presupuesto', titulo: '📅 Nuevo evento aprobado requiere revisión POA', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Verifica el estado del presupuesto POA asignado.`, enlace_accion: 'poa-admin' });
           // Notificar a Legal
-          crearNotificacion({ rol_destino: 'Legal', titulo: '📅œÅ“ Nuevo evento aprobado requiere contrato', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Procede a revisar y firmar los contratos legales correspondientes.`, enlace_accion: 'flujo-administrativo' });
+          crearNotificacion({ rol_destino: 'Legal', titulo: '📅 Nuevo evento aprobado requiere contrato', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Procede a revisar y firmar los contratos legales correspondientes.`, enlace_accion: 'flujo-administrativo' });
           // Notificar a Compras/B2B
-          crearNotificacion({ rol_destino: 'Compras', titulo: '📅ºâ€™ Nuevo evento aprobado listo para licitaciones', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Puedes iniciar las solicitudes de cotización a proveedores.`, enlace_accion: 'compras' });
+          crearNotificacion({ rol_destino: 'Compras', titulo: '📅 Nuevo evento aprobado listo para licitaciones', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Puedes iniciar las solicitudes de cotización a proveedores.`, enlace_accion: 'compras' });
           // Notificar al área de Audiovisual
-          crearNotificacion({ rol_destino: 'Audiovisual', titulo: '🎓Â¬ Evento aprobado: verificar solicitud AV', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Revisa si tiene requerimientos de equipos audiovisuales.`, enlace_accion: 'audiovisual' });
+          crearNotificacion({ rol_destino: 'Audiovisual', titulo: '🎓 Evento aprobado: verificar solicitud AV', cuerpo: `El evento "${nombreEvt}" (#EVT-${id}) fue aprobado. Revisa si tiene requerimientos de equipos audiovisuales.`, enlace_accion: 'audiovisual' });
         } else if (estado === 'Rechazado') {
           if (idSolicitante) {
             crearNotificacion({ id_usuario_destino: idSolicitante, titulo: '❌ Evento Rechazado', cuerpo: `Tu evento "${nombreEvt}" (#EVT-${id}) ha sido rechazado. Puedes contactar a la administración para más detalles.`, enlace_accion: 'mis-eventos' });
           }
         } else if (estado === 'Finalizado') {
           if (idSolicitante) {
-            crearNotificacion({ id_usuario_destino: idSolicitante, titulo: '🎓â€° Evento finalizado ─ Evalúa el servicio', cuerpo: `Tu evento "${nombreEvt}" (#EVT-${id}) ha concluido exitosamente. ¡Completa la evaluación de calidad para ayudarnos a mejorar!`, enlace_accion: 'evaluacion' });
+            crearNotificacion({ id_usuario_destino: idSolicitante, titulo: '🎓 Evento finalizado ─ Evalúa el servicio', cuerpo: `Tu evento "${nombreEvt}" (#EVT-${id}) ha concluido exitosamente. ¡Completa la evaluación de calidad para ayudarnos a mejorar!`, enlace_accion: 'evaluacion' });
           }
         }
 
