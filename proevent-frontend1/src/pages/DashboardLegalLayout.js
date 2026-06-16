@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import { FiLogOut, FiHeadphones, FiCalendar, FiShield, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
+import emblemProevent from "./../img/Emblema-Proevent.jpeg";
 import dashboardIcon from "./../img/dashboard.png";
 
 import DashboardLegal from "./DashboardLegal";
@@ -75,13 +76,15 @@ function DashboardLegalLayout({ usuario, onLogoutClick }) {
     return (
         <div className={`dashboard-layout${isSidebarOpen ? '' : ' sidebar-collapsed'}`}>
             <aside className={`dashboard-sidebar${isSidebarOpen ? '' : ' sidebar-hidden'}`}>
-                <div className="sidebar-brand">
-                    <div className="brand-logo-container">
-                        <img src={uapaLogo} alt="UAPA Logo" className="brand-logo-img" />
-                    </div>
-                    <div className="brand-text">
-                        <h2>PROEVENT</h2>
-                        <p>SISTEMA DE EVENTOS</p>
+                <div className="sidebar-brand-custom">
+                    <img src={emblemProevent} alt="Emblema UAPA" className="brand-emblem-img" />
+                    <div className="brand-text-block">
+                        <span className="brand-title">
+                            <span className="brand-uapa">UAPA</span>
+                            <span className="brand-dash">-</span>
+                            <span className="brand-proevent">ProEvent</span>
+                        </span>
+                        <span className="brand-subtitle">Sistema de Gestión de Eventos</span>
                     </div>
                 </div>
 
