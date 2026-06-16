@@ -254,7 +254,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                             Solicitud de Audiovisual
                                         </li>
                                     )}
-                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Responsable de área audiovisual") && (
+                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Responsable de área audiovisual" || usuario?.rol === "Administrador de Audiovisual") && (
                                         <>
                                             <li className={activeTab === "GestionSolicitudes" ? "active" : ""} onClick={() => setActiveTab("GestionSolicitudes")}>
                                                 <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
