@@ -38,6 +38,7 @@ import DashboardApoyo from "./dashboards/DashboardApoyo";
 import DashboardResponsable from "./dashboards/DashboardResponsable";
 
 import HistorialSolicitudes from "./HistorialSolicitudes";
+import MisTareasApoyo from "./MisTareasApoyo";
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
         return sessionStorage.getItem("dashboard_activeTab") || "Dashboard";
@@ -136,6 +137,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "AsignacionPersonal":
                 return <AsignacionPersonal usuario={usuario} />;
             case "CronogramaGlobal":
+                // Personal de Apoyo ve directamente su lista de tareas asignadas
+                if (usuario?.rol === "Personal de Apoyo") return <MisTareasApoyo usuario={usuario} />;
                 return <CronogramaGlobal usuario={usuario} />;
             case "HistorialSolicitudes":
                 return <HistorialSolicitudes usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
@@ -181,7 +184,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "AsignacionPersonal":
                 return "Asignación de Personal Operativo";
             case "CronogramaGlobal":
-                return "Cronograma Logístico";
+                return usuario?.rol === "Personal de Apoyo" ? "Mi Checklist de Tareas" : "Cronograma Logístico";
             case "VisualizarEvaluaciones":
             case "VisualizarEvaluaciones":
                 return "Historial de Evaluaciones";
@@ -223,49 +226,64 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                     </li>
                                 )}
 
-                                {/* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual */}
-                                {(usuario?.rol !== "Responsable de área audiovisual") && (
-                                    usuario?.rol === "Solicitante" ? (
-                                        <>
-                                            <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
-                                                <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
-                                                Solicitud de Eventos
+                                {/* MÓDULO OPERATIVO: específico para Personal de Apoyo */}
+                                {usuario?.rol === "Personal de Apoyo" ? (
+                                    <>
+                                        <li className="nav-group-header" style={{ marginTop: '4px' }}>
+                                            <span>Mis Tareas</span>
+                                        </li>
+                                        <ul className="nav-submenu open">
+                                            <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
+                                                <FiCheckCircle className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Mi Checklist de Tareas
                                             </li>
-                                            <li className={activeTab === "HistorialSolicitudes" ? "active" : ""} onClick={() => setActiveTab("HistorialSolicitudes")}>
-                                                <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                Mi Historial de Solicitudes
-                                            </li>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>
-                                                <span>Módulo Eventos</span>
-                                                {openMenus.eventos ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
-                                            </li>
-                                            <ul className={`nav-submenu ${openMenus.eventos ? 'open' : ''}`}>
+                                        </ul>
+                                    </>
+                                ) : (
+                                    /* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual y Personal de Apoyo */
+                                    (usuario?.rol !== "Responsable de área audiovisual") && (
+                                        usuario?.rol === "Solicitante" ? (
+                                            <>
                                                 <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
                                                     <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
                                                     Solicitud de Eventos
                                                 </li>
-                                                {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
-                                                    <>
-                                                        <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
-                                                            <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                            Catálogos de Eventos
-                                                        </li>
-                                                        <li className={activeTab === "GestionEventos" ? "active" : ""} onClick={() => setActiveTab("GestionEventos")}>
-                                                            <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                            Gestión de Solicitudes
-                                                        </li>
-                                                    </>
-                                                )}
-                                            </ul>
-                                        </>
+                                                <li className={activeTab === "HistorialSolicitudes" ? "active" : ""} onClick={() => setActiveTab("HistorialSolicitudes")}>
+                                                    <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                    Mi Historial de Solicitudes
+                                                </li>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>
+                                                    <span>Módulo Eventos</span>
+                                                    {openMenus.eventos ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
+                                                </li>
+                                                <ul className={`nav-submenu ${openMenus.eventos ? 'open' : ''}`}>
+                                                    <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
+                                                        <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
+                                                        Solicitud de Eventos
+                                                    </li>
+                                                    {(usuario?.rol === "Administrador" || usuario?.rol === "Especialista de eventos" || (usuario?.rol || "").toLowerCase().includes("administrador de evento")) && (
+                                                        <>
+                                                            <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
+                                                                <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                                Catálogos de Eventos
+                                                            </li>
+                                                            <li className={activeTab === "GestionEventos" ? "active" : ""} onClick={() => setActiveTab("GestionEventos")}>
+                                                                <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                                Gestión de Solicitudes
+                                                            </li>
+                                                        </>
+                                                    )}
+                                                </ul>
+                                            </>
+                                        )
                                     )
                                 )}
 
-                        {/* MÓDULO AUDIOVISUAL: visible para todos excepto Solicitante */}
-                        {(usuario?.rol !== "Solicitante") && (
+                        {/* MÓDULO AUDIOVISUAL: visible para todos excepto Solicitante y Personal de Apoyo */}
+                        {(usuario?.rol !== "Solicitante" && usuario?.rol !== "Personal de Apoyo") && (
                             <>
                                 <li className="nav-group-header" onClick={() => toggleMenu('audiovisual')}>
                                     <span>Módulo Audiovisual</span>

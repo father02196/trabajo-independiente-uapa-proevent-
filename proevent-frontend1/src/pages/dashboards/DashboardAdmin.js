@@ -9,6 +9,7 @@
 
 // Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para tarjetas y gráficos
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
@@ -551,7 +552,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
         </div>
       </div>
 
-      {isModalOpen && selectedRequest && (
+      {isModalOpen && selectedRequest && ReactDOM.createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -675,7 +676,8 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

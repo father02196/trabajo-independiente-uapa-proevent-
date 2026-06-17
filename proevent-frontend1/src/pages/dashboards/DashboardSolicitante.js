@@ -9,6 +9,7 @@
 
 // Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para tarjetas y botones
 import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
@@ -351,7 +352,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
         </div>
       </div>
 
-      {isModalOpen && selectedRequest && (
+      {isModalOpen && selectedRequest && ReactDOM.createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -361,7 +362,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
               </div>
               <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
-            
+
             <div className="modal-body">
               <div className="modal-grid-3">
                 {/* Columna 1: Info General */}
@@ -376,7 +377,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   <div className="info-row">
                     <span className="info-label">Fechas</span>
                     <span className="info-value">
-                      {formatFecha(selectedRequest.fecha_inicio)} 
+                      {formatFecha(selectedRequest.fecha_inicio)}
                       {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
                     </span>
                   </div>
@@ -405,7 +406,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   </div>
                 </div>
 
-                {/* Columna 3: Finanzas y Estado */}
+                {/* Columna 3: Estado */}
                 <div className="info-card">
                   <div className="info-card-title">
                     <FiStar size={14} /> Estado
@@ -419,12 +420,13 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                 </div>
               </div>
             </div>
-            
+
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
