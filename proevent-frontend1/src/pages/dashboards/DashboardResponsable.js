@@ -9,9 +9,10 @@
 
 // Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para paneles y accesos rápidos
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -83,6 +84,14 @@ function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
     const fecha = new Date(fechaStr);
     fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
+  };
+
+  // formatFechaLarga: fecha ISO a formato largo para las tarjetas de eventos
+  const formatFechaLarga = (fechaStr) => {
+    if (!fechaStr) return "—";
+    const fecha = new Date(fechaStr);
+    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
+    return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
   // getStatusClass: clase CSS según el estado del evento
@@ -264,33 +273,48 @@ function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
                 <p>No hay eventos activos programados.</p>
               </div>
             ) : (
-              <div className="upcoming-events-list">
-                {proximosEventos.map((evt) => {
-                  const dateParts = formatFecha(evt.fecha_inicio).split(' ');
-                  const day = dateParts[0] || '—';
-                  const month = dateParts[1] || '—';
-                  
-                  return (
-                    <div key={evt.id_evento} className="upcoming-event-item" onClick={() => openModal(evt)}>
-                      <div className="event-date-badge">
-                        <span className="day">{day}</span>
-                        <span className="month">{month}</span>
+              <div className="modern-upcoming-events-list">
+                {proximosEventos.map((evt) => (
+                  <div key={evt.id_evento} className="modern-event-card" onClick={() => openModal(evt)}>
+                    <div className="modern-event-header">
+                      <div className="modern-event-date">
+                        <FiCalendar className="modern-date-icon" />
+                        <span>{formatFechaLarga(evt.fecha_inicio)}</span>
+                        {evt.hora_inicio && (
+                          <>
+                            <span className="modern-date-separator">•</span>
+                            <FiClock className="modern-date-icon" />
+                            <span>{evt.hora_inicio}</span>
+                          </>
+                        )}
                       </div>
-                      <div className="event-item-details">
-                        <h5>{evt.nombre}</h5>
-                        <span className="venue">{evt.recinto || "UAPA Virtual"}</span>
-                      </div>
-                      <div className="event-item-meta">
-                        <span className={`status-pill ${getStatusClass(evt.estado)}`}>
-                          {evt.estado}
-                        </span>
-                        <button className="view-quick-btn" title="Ver Detalles">
-                          <FiEye />
-                        </button>
+                      <span className={`modern-status-badge modern-status-${evt.estado?.toLowerCase() || 'pendiente'}`}>
+                        {evt.estado || 'Pendiente'}
+                      </span>
+                    </div>
+
+                    <div className="modern-event-body">
+                      <h5 className="modern-event-title">{evt.nombre}</h5>
+                      <div className="modern-event-meta-info">
+                        <div className="modern-meta-item">
+                          <FiGrid className="modern-meta-icon" />
+                          <span>{evt.recinto || "UAPA Virtual"}</span>
+                        </div>
+                        <div className="modern-meta-item">
+                          <FiMonitor className="modern-meta-icon" />
+                          <span>{evt.modalidad || "Presencial"}</span>
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
+
+                    <div className="modern-event-footer">
+                      <button className="modern-view-btn" title="Ver detalles del evento">
+                        <span>Ver Ficha Técnica</span>
+                        <FiArrowUpRight className="modern-btn-icon" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -325,7 +349,7 @@ function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
         </div>
       </div>
 
-      {isModalOpen && selectedRequest && (
+      {isModalOpen && selectedRequest && ReactDOM.createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -335,7 +359,7 @@ function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
               </div>
               <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
-            
+
             <div className="modal-body">
               <div className="modal-grid-3">
                 {/* Columna 1: Info General */}
@@ -350,7 +374,7 @@ function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
                   <div className="info-row">
                     <span className="info-label">Fechas</span>
                     <span className="info-value">
-                      {formatFecha(selectedRequest.fecha_inicio)} 
+                      {formatFecha(selectedRequest.fecha_inicio)}
                       {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
                     </span>
                   </div>
@@ -379,7 +403,7 @@ function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
                   </div>
                 </div>
 
-                {/* Columna 3: Finanzas y Estado */}
+                {/* Columna 3: Estado */}
                 <div className="info-card">
                   <div className="info-card-title">
                     <FiStar size={14} /> Estado
@@ -393,12 +417,13 @@ function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
                 </div>
               </div>
             </div>
-            
+
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
