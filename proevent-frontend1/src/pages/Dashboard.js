@@ -29,6 +29,15 @@ import CronogramaGlobal from "./CronogramaGlobal";
 import AsignacionPersonal from "./AsignacionPersonal";
 import FlujoAdministrativo from "./FlujoAdministrativo";
 
+// Dashboards por rol
+import DashboardAdmin from "./dashboards/DashboardAdmin";
+import DashboardSolicitante from "./dashboards/DashboardSolicitante";
+import DashboardAdminEventos from "./dashboards/DashboardAdminEventos";
+import DashboardAudiovisual from "./dashboards/DashboardAudiovisual";
+import DashboardApoyo from "./dashboards/DashboardApoyo";
+import DashboardResponsable from "./dashboards/DashboardResponsable";
+
+import HistorialSolicitudes from "./HistorialSolicitudes";
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState(() => {
         return sessionStorage.getItem("dashboard_activeTab") || "Dashboard";
@@ -70,6 +79,14 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const renderContent = () => {
         switch (activeTab) {
             case "Dashboard":
+                if (usuario?.rol === "Administrador") return <DashboardAdmin usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
+                if (usuario?.rol === "Solicitante") return <DashboardSolicitante usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
+                if (usuario?.rol === "Administrador de Eventos") return <DashboardAdminEventos usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
+                if (usuario?.rol === "Administrador de Audiovisual") return <DashboardAudiovisual usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
+                if (usuario?.rol === "Personal de Apoyo") return <DashboardApoyo usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
+                if (usuario?.rol === "Responsable") return <DashboardResponsable usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
+                
+                // Fallback para otros roles (Ej. Compras, Legal, VAF que usan DashboardHome o sus propios layouts separados, o cualquiera que no encaje)
                 return <DashboardHome 
                     usuario={usuario} 
                     onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }}
@@ -120,6 +137,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return <AsignacionPersonal usuario={usuario} />;
             case "CronogramaGlobal":
                 return <CronogramaGlobal usuario={usuario} />;
+            case "HistorialSolicitudes":
+                return <HistorialSolicitudes usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); setActiveTab("Eventos"); }} setActiveTab={setActiveTab} />;
             default:
                 return <DashboardHome usuario={usuario} />;
         }
@@ -207,10 +226,16 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                 {/* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual */}
                                 {(usuario?.rol !== "Responsable de área audiovisual") && (
                                     usuario?.rol === "Solicitante" ? (
-                                        <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
-                                            <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
-                                            Solicitud de Eventos
-                                        </li>
+                                        <>
+                                            <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
+                                                <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
+                                                Solicitud de Eventos
+                                            </li>
+                                            <li className={activeTab === "HistorialSolicitudes" ? "active" : ""} onClick={() => setActiveTab("HistorialSolicitudes")}>
+                                                <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Mi Historial de Solicitudes
+                                            </li>
+                                        </>
                                     ) : (
                                         <>
                                             <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>

@@ -1,17 +1,17 @@
 // ============================================================
-// DASHBOARD SOLICITANTE - Panel de Inicio para Solicitantes
-// Pertenece a: Módulo de Inicio (ProEvent - Rol Solicitante)
-// Propósito: Vista personalizada del dashboard para usuarios
-// con rol Solicitante. Solo muestra SUS propias solicitudes
-// filtradas por usuario_id. Incluye 3 tarjetas de stats,
-// gráfico donut, timeline personal y accesos rápidos.
+// DASHBOARD ESPECIALISTA - Panel para Especialistas de Área
+// Pertenece a: Módulo de Inicio (ProEvent - Roles técnicos)
+// Propósito: Dashboard para roles técnicos: Especialistas,
+// Responsables de Área Audiovisual, etc. Muestra eventos
+// globales del sistema, con filtro especial para Administradores
+// de Audiovisual (solo eventos que necesitan equipo AV).
 // ============================================================
 
 // Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from "react";
 
-// Iconos de Feather Icons para tarjetas y botones
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
+// Iconos de Feather Icons para paneles y accesos rápidos
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -20,22 +20,27 @@ import './../../css/Dashboard.css';
 const API = "http://localhost:8080";
 
 // ============================================================
-// COMPONENTE: DashboardSolicitante
+// COMPONENTE: DashboardResponsable
 // Recibe:
-//   - usuario: objeto del usuario solicitante logueado
-//   - onEditEvent: callback para editar un evento propio
+//   - usuario: objeto del usuario especialista logueado
+//   - onEditEvent: callback para editar un evento
 //   - setActiveTab: navega entre pestañas del layout
 // ============================================================
-function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
+function DashboardResponsable({ usuario, onEditEvent, setActiveTab }) {
 
   // --- ESTADOS ---
-  const [eventRequests, setEventRequests] = useState([]); // Eventos del solicitante
+  const [eventRequests, setEventRequests] = useState([]); // Todos los eventos del sistema
   const [loading, setLoading]             = useState(true); // Spinner de carga
   const [error, setError]                 = useState("");   // Mensaje de error
 
   // --- ESTADOS DEL MODAL ---
-  const [selectedRequest, setSelectedRequest] = useState(null); // Evento seleccionado
+  const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal
   const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
+
+  // --- DETECCIÓN DE ROL AV ---
+  // Los Administradores de Audiovisual tienen una vista filtrada:
+  // solo ven los eventos que requieren equipos audiovisuales.
+  const isAudioVisualAdmin = usuario?.rol === "Administrador de Audiovisual" || usuario?.rol === "Responsable de área audiovisual";
 
   // --- FUNCIONES: openModal / closeModal ---
   const openModal = (req) => {
@@ -47,25 +52,21 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     setSelectedRequest(null);
   };
 
-  // --- EFECTO: Carga cuando el usuario está disponible ---
-  // Solo dispara cargarDatos si el id_usuario ya existe
-  // (espera a que el contexto de autenticación esté listo).
+  // --- EFECTO: Carga al montar o al cambiar el usuario ---
   useEffect(() => {
-    if (usuario?.id_usuario) {
-      cargarDatos();
-    }
+    cargarDatos();
   }, [usuario]);
 
   // --- FUNCIÓN: cargarDatos ---
-  // Carga SOLO los eventos del solicitante logueado.
-  // Usa el parámetro usuario_id en la URL para filtrar en el backend.
-  // Los solicitantes NO pueden ver eventos de otros usuarios.
+  // Carga todos los eventos del sistema.
+  // Los especialistas tienen visibilidad global (no filtran por usuario).
+  // El filtro por necesita_audiovisual se aplica en frontend para el rol AV.
   const cargarDatos = async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
     try {
-      // Filtra por usuario_id: el solicitante solo ve sus propias solicitudes
-      const eventUrl = `${API}/eventos?usuario_id=${usuario.id_usuario}`;
+      // Especialistas ven todas las solicitudes del sistema
+      const eventUrl = `${API}/eventos`;
       const resEvents = await fetch(eventUrl).then(r => r.json());
       if (Array.isArray(resEvents)) setEventRequests(resEvents);
     } catch (err) {
@@ -75,9 +76,8 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     }
   };
 
-  // --- FUNCIÓN UTILITARIA: formatFecha ---
-  // Convierte fecha ISO a formato corto (ej: "15 jun").
-  // Corrección de timezone para evitar desfase de 1 día por UTC.
+  // --- FUNCIONES UTILITARIAS ---
+  // formatFecha: fecha ISO a formato corto con corrección de timezone
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -85,15 +85,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
   };
 
-  const formatFechaLarga = (fechaStr) => {
-    if (!fechaStr) return "—";
-    const fecha = new Date(fechaStr);
-    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
-    return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
-  };
-
-  // --- FUNCIÓN UTILITARIA: getStatusClass ---
-  // Devuelve la clase CSS del estado del evento para los badges de color.
+  // getStatusClass: clase CSS según el estado del evento
   const getStatusClass = (estado) => {
     switch (estado) {
       case "Pendiente":  return "pending";  // Amarillo
@@ -104,24 +96,30 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     }
   };
 
-  // --- CÁLCULOS ESTADÍSTICOS (solo sobre los eventos del solicitante) ---
-  const totalSolicitudes = eventRequests.length;
-  const pendientes  = eventRequests.filter((e) => e.estado === "Pendiente").length;
-  const aprobados   = eventRequests.filter((e) => e.estado === "Aprobado").length;
-  const finalizados = eventRequests.filter((e) => e.estado === "Finalizado").length;
+  // --- FILTRO DE SOLICITUDES RELEVANTES ---
+  // Si el usuario es Administrador de Audiovisual, solo ve eventos
+  // que marcaron necesita_audiovisual=1 en su solicitud.
+  // Otros especialistas ven todo el listado global.
+  const solicitudesRelevantes = isAudioVisualAdmin 
+    ? eventRequests.filter(e => e.necesita_audiovisual === 1)
+    : eventRequests;
+
+  // --- CÁLCULOS ESTADÍSTICOS (sobre solicitudes relevantes) ---
+  const totalSolicitudes = solicitudesRelevantes.length;
+  const pendientes  = solicitudesRelevantes.filter((e) => e.estado === "Pendiente").length;
+  const aprobados   = solicitudesRelevantes.filter((e) => e.estado === "Aprobado").length;
+  const finalizados = solicitudesRelevantes.filter((e) => e.estado === "Finalizado").length;
 
   // --- DATOS DEL GRÁFICO DONUT ---
-  // Solo los estados con al menos 1 evento se incluyen en el donut.
   const statusData = [
     { name: "Pendientes", value: pendientes, color: "#f59e0b" },
     { name: "Aprobados",  value: aprobados,  color: "#3b82f6" },
     { name: "Finalizados",value: finalizados, color: "#10b981" },
-    { name: "Rechazados", value: eventRequests.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
+    { name: "Rechazados", value: solicitudesRelevantes.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
   ].filter(item => item.value > 0);
 
-  // --- TIMELINE: PRÓXIMOS 5 EVENTOS PERSONALES ---
-  // Solo eventos del solicitante, ordenados por fecha ascendente.
-  const proximosEventos = eventRequests
+  // --- TIMELINE: PRÓXIMOS 5 EVENTOS ACTIVOS ---
+  const proximosEventos = solicitudesRelevantes
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
     .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
     .slice(0, 5);
@@ -131,7 +129,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
       <div className="stats-cards-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="saas-stat-card primary-glow">
           <div className="card-top">
-            <span className="card-label">Mis Solicitudes</span>
+            <span className="card-label">Total Solicitudes Globales</span>
             <div className="card-icon-container bg-primary-light">
               <FiFileText className="card-icon text-primary" />
             </div>
@@ -139,34 +137,34 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
           <div className="card-bottom">
             <h3>{totalSolicitudes}</h3>
             <span className="card-trend text-green">
-              <FiArrowUpRight /> Activas
+              <FiArrowUpRight /> En el sistema
             </span>
           </div>
         </div>
 
         <div className="saas-stat-card warning-glow">
           <div className="card-top">
-            <span className="card-label">En Proceso de Revisión</span>
+            <span className="card-label">Pendientes por Revisar</span>
             <div className="card-icon-container bg-warning-light">
               <FiClock className="card-icon text-warning" />
             </div>
           </div>
           <div className="card-bottom">
             <h3>{pendientes}</h3>
-            <span className="card-trend text-orange">Esperando aprobación</span>
+            <span className="card-trend text-orange">Revisión requerida</span>
           </div>
         </div>
 
         <div className="saas-stat-card success-glow">
           <div className="card-top">
-            <span className="card-label">Aprobadas / Finalizadas</span>
+            <span className="card-label">Eventos Confirmados</span>
             <div className="card-icon-container bg-success-light">
               <FiCheckCircle className="card-icon text-success" />
             </div>
           </div>
           <div className="card-bottom">
             <h3>{aprobados + finalizados}</h3>
-            <span className="card-trend text-green">Confirmadas</span>
+            <span className="card-trend text-green">Aprobados / Finalizados</span>
           </div>
         </div>
       </div>
@@ -175,8 +173,8 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
         <div className="saas-chart-card saas-donut-card">
           <div className="chart-header">
             <div>
-              <h4>Estado de Mis Solicitudes</h4>
-              <p>Resumen de aprobación</p>
+              <h4>Estado General de Solicitudes</h4>
+              <p>Volumen de solicitudes asignadas a tu departamento</p>
             </div>
           </div>
           <div className="chart-wrapper donut-center" style={{ height: '240px' }}>
@@ -186,7 +184,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                 <p>Cargando información...</p>
               </div>
             ) : statusData.length === 0 ? (
-              <div className="no-data-placeholder">Aún no has creado ninguna solicitud</div>
+              <div className="no-data-placeholder">No hay solicitudes registradas</div>
             ) : (
               <div className="donut-chart-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ position: 'relative', width: '120px', height: '120px' }}>
@@ -250,61 +248,44 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
           <div className="panel-header">
             <FiCalendar className="panel-icon" />
             <div>
-              <h4>Próximos Eventos en Agenda</h4>
-              <p>Agenda personal</p>
+              <h4>Eventos Próximos (Global)</h4>
+              <p>Agenda general de los próximos días</p>
             </div>
           </div>
           <div className="panel-body">
             {loading ? (
               <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '150px' }}>
                 <div className="loader" style={{ marginBottom: '10px' }}></div>
-                <p>Buscando eventos en agenda...</p>
+                <p>Buscando eventos...</p>
               </div>
             ) : proximosEventos.length === 0 ? (
               <div className="empty-panel-state">
                 <FiActivity className="icon" />
-                <p>No tienes eventos activos programados.</p>
+                <p>No hay eventos activos programados.</p>
               </div>
             ) : (
-              <div className="modern-upcoming-events-list">
+              <div className="upcoming-events-list">
                 {proximosEventos.map((evt) => {
+                  const dateParts = formatFecha(evt.fecha_inicio).split(' ');
+                  const day = dateParts[0] || '—';
+                  const month = dateParts[1] || '—';
+                  
                   return (
-                    <div key={evt.id_evento} className="modern-event-card" onClick={() => openModal(evt)}>
-                      <div className="modern-event-header">
-                        <div className="modern-event-date">
-                          <FiCalendar className="modern-date-icon" />
-                          <span>{formatFechaLarga(evt.fecha_inicio)}</span>
-                          {evt.hora_inicio && (
-                            <>
-                              <span className="modern-date-separator">•</span>
-                              <FiClock className="modern-date-icon" />
-                              <span>{evt.hora_inicio}</span>
-                            </>
-                          )}
-                        </div>
-                        <span className={`modern-status-badge modern-status-${evt.estado?.toLowerCase() || 'pendiente'}`}>
-                          {evt.estado || 'Pendiente'}
+                    <div key={evt.id_evento} className="upcoming-event-item" onClick={() => openModal(evt)}>
+                      <div className="event-date-badge">
+                        <span className="day">{day}</span>
+                        <span className="month">{month}</span>
+                      </div>
+                      <div className="event-item-details">
+                        <h5>{evt.nombre}</h5>
+                        <span className="venue">{evt.recinto || "UAPA Virtual"}</span>
+                      </div>
+                      <div className="event-item-meta">
+                        <span className={`status-pill ${getStatusClass(evt.estado)}`}>
+                          {evt.estado}
                         </span>
-                      </div>
-                      
-                      <div className="modern-event-body">
-                        <h5 className="modern-event-title">{evt.nombre}</h5>
-                        <div className="modern-event-meta-info">
-                          <div className="modern-meta-item">
-                            <FiGrid className="modern-meta-icon" />
-                            <span>{evt.recinto || "UAPA Virtual"}</span>
-                          </div>
-                          <div className="modern-meta-item">
-                            <FiMonitor className="modern-meta-icon" />
-                            <span>{evt.modalidad || "Presencial"}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="modern-event-footer">
-                        <button className="modern-view-btn" title="Ver detalles del evento">
-                          <span>Ver Ficha Técnica</span>
-                          <FiArrowUpRight className="modern-btn-icon" />
+                        <button className="view-quick-btn" title="Ver Detalles">
+                          <FiEye />
                         </button>
                       </div>
                     </div>
@@ -319,31 +300,24 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
           <div className="panel-header">
             <FiGrid className="panel-icon" />
             <div>
-              <h4>Acciones Rápidas</h4>
-              <p>Gestiones de usuario</p>
+              <h4>Accesos Rápidos Especialista</h4>
+              <p>Atajos operativos</p>
             </div>
           </div>
           <div className="panel-body flex-column-body">
             <div className="quick-actions-list">
-              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("Eventos")}>
-                <div className="icon-wrapper"><FiPlus /></div>
+              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab(isAudioVisualAdmin ? "GestionSolicitudes" : "GestionEventos")}>
+                <div className="icon-wrapper"><FiList /></div>
                 <div className="btn-text">
-                  <strong>Crear Evento</strong>
-                  <span>Nueva solicitud de evento</span>
+                  <strong>Gestionar Solicitudes</strong>
+                  <span>Revisar y aprobar peticiones</span>
                 </div>
               </div>
-              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("Audiovisual")}>
-                <div className="icon-wrapper"><FiMonitor /></div>
+              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
+                <div className="icon-wrapper"><FiCalendar /></div>
                 <div className="btn-text">
-                  <strong>Solicitud AV</strong>
-                  <span>Reserva de equipos</span>
-                </div>
-              </div>
-              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("Soporte")}>
-                <div className="icon-wrapper"><FiStar /></div>
-                <div className="btn-text">
-                  <strong>Soporte</strong>
-                  <span>Ayuda técnica</span>
+                  <strong>Ver Agenda</strong>
+                  <span>Calendario de actividades</span>
                 </div>
               </div>
             </div>
@@ -356,8 +330,8 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div>
-                <h3 className="modal-title">Ficha Técnica de Mi Solicitud</h3>
-                <span className="modal-subtitle">Resumen de tu solicitud y logística</span>
+                <h3 className="modal-title">Ficha Técnica del Evento</h3>
+                <span className="modal-subtitle">Revisión general de la solicitud y logística</span>
               </div>
               <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
@@ -430,4 +404,4 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   );
 }
 
-export default DashboardSolicitante;
+export default DashboardResponsable;

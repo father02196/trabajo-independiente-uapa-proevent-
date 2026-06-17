@@ -11,7 +11,7 @@
 import React, { useState, useEffect } from "react";
 
 // Iconos de Feather Icons para paneles y accesos rápidos
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -20,13 +20,13 @@ import './../../css/Dashboard.css';
 const API = "http://localhost:8080";
 
 // ============================================================
-// COMPONENTE: DashboardEspecialista
+// COMPONENTE: DashboardAudiovisual
 // Recibe:
 //   - usuario: objeto del usuario especialista logueado
 //   - onEditEvent: callback para editar un evento
 //   - setActiveTab: navega entre pestañas del layout
 // ============================================================
-function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
+function DashboardAudiovisual({ usuario, onEditEvent, setActiveTab }) {
 
   // --- ESTADOS ---
   const [eventRequests, setEventRequests] = useState([]); // Todos los eventos del sistema
@@ -83,6 +83,13 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
     const fecha = new Date(fechaStr);
     fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short" });
+  };
+
+  const formatFechaLarga = (fechaStr) => {
+    if (!fechaStr) return "—";
+    const fecha = new Date(fechaStr);
+    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
+    return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
   // getStatusClass: clase CSS según el estado del evento
@@ -256,7 +263,7 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
             {loading ? (
               <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '150px' }}>
                 <div className="loader" style={{ marginBottom: '10px' }}></div>
-                <p>Buscando eventos...</p>
+                <p>Buscando eventos en agenda...</p>
               </div>
             ) : proximosEventos.length === 0 ? (
               <div className="empty-panel-state">
@@ -264,28 +271,45 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
                 <p>No hay eventos activos programados.</p>
               </div>
             ) : (
-              <div className="upcoming-events-list">
+              <div className="modern-upcoming-events-list">
                 {proximosEventos.map((evt) => {
-                  const dateParts = formatFecha(evt.fecha_inicio).split(' ');
-                  const day = dateParts[0] || '—';
-                  const month = dateParts[1] || '—';
-                  
                   return (
-                    <div key={evt.id_evento} className="upcoming-event-item" onClick={() => openModal(evt)}>
-                      <div className="event-date-badge">
-                        <span className="day">{day}</span>
-                        <span className="month">{month}</span>
-                      </div>
-                      <div className="event-item-details">
-                        <h5>{evt.nombre}</h5>
-                        <span className="venue">{evt.recinto || "UAPA Virtual"}</span>
-                      </div>
-                      <div className="event-item-meta">
-                        <span className={`status-pill ${getStatusClass(evt.estado)}`}>
-                          {evt.estado}
+                    <div key={evt.id_evento} className="modern-event-card" onClick={() => openModal(evt)}>
+                      <div className="modern-event-header">
+                        <div className="modern-event-date">
+                          <FiCalendar className="modern-date-icon" />
+                          <span>{formatFechaLarga(evt.fecha_inicio)}</span>
+                          {evt.hora_inicio && (
+                            <>
+                              <span className="modern-date-separator">•</span>
+                              <FiClock className="modern-date-icon" />
+                              <span>{evt.hora_inicio}</span>
+                            </>
+                          )}
+                        </div>
+                        <span className={`modern-status-badge modern-status-${evt.estado?.toLowerCase() || 'pendiente'}`}>
+                          {evt.estado || 'Pendiente'}
                         </span>
-                        <button className="view-quick-btn" title="Ver Detalles">
-                          <FiEye />
+                      </div>
+                      
+                      <div className="modern-event-body">
+                        <h5 className="modern-event-title">{evt.nombre}</h5>
+                        <div className="modern-event-meta-info">
+                          <div className="modern-meta-item">
+                            <FiGrid className="modern-meta-icon" />
+                            <span>{evt.recinto || "UAPA Virtual"}</span>
+                          </div>
+                          <div className="modern-meta-item">
+                            <FiMonitor className="modern-meta-icon" />
+                            <span>{evt.modalidad || "Presencial"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="modern-event-footer">
+                        <button className="modern-view-btn" title="Ver detalles del evento">
+                          <span>Ver Ficha Técnica</span>
+                          <FiArrowUpRight className="modern-btn-icon" />
                         </button>
                       </div>
                     </div>
@@ -404,4 +428,4 @@ function DashboardEspecialista({ usuario, onEditEvent, setActiveTab }) {
   );
 }
 
-export default DashboardEspecialista;
+export default DashboardAudiovisual;
