@@ -56,34 +56,68 @@
   width: 68px;
 }
 
-/* ── Brand ── */
-.sidebar-brand {
-  padding: 24px 14px 16px;
+/* ── Brand Custom (Nuevo Logo) ── */
+.sidebar-brand-custom {
+  padding: 14px 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid #1e3a8a; /* match dark theme */
-  background: #1e40af; /* UAPA Navy Blue */
-  border-radius: 0;
-  position: relative;
-  z-index: 1;
-  min-height: 110px;
+  gap: 10px;
+  border-bottom: 1px solid #1e3a8a; /* match original sidebar border */
+  background: #FFFFFF; /* Fondo blanco para el logo */
+  min-height: 80px;
   flex-shrink: 0;
-  text-align: center;
 }
 
-.brand-logo-container {
+/* Emblema / escudo */
+.brand-emblem-img {
+  height: 42px;
+  width: 42px;
+  object-fit: contain;
   flex-shrink: 0;
-  width: 140px;
-  height: 48px;
-  background: transparent;
-  border-radius: 0;
+  border-radius: 4px;
+}
+
+/* Texto al lado del emblema */
+.brand-text-block {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: none;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.brand-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  font-family: var(--font-family-base);
+}
+
+.brand-uapa {
+  color: #1E293B; /* Azul oscuro/negro */
+  letter-spacing: 0.02em;
+}
+
+.brand-dash {
+  color: #1E293B; /* Mismo azul oscuro para el guión */
+  font-weight: 800;
+  margin: 0 1px;
+}
+
+.brand-proevent {
+  color: #F59E0B; /* Naranja vibrante de la imagen */
+  letter-spacing: 0.01em;
+}
+
+.brand-subtitle {
+  font-size: 7px;
+  color: #64748B;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: var(--font-family-base);
 }
 
 .brand-logo-img {

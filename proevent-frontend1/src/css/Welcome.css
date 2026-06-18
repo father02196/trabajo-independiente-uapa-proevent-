@@ -71,17 +71,57 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-left: -24px;
 }
 
-.header-logo-img {
-  height: 32px;
-  width: auto;
+.header-emblem-img {
+  height: 54px;
+  width: 54px;
   object-fit: contain;
-  filter: brightness(0);
-  background: var(--slate-900);
-  border-radius: var(--radius-sm);
-  padding: 5px 8px;
-  filter: none;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
+.header-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  font-family: var(--font-family-base);
+}
+
+.header-uapa {
+  color: #1E293B; /* Azul oscuro/negro */
+  letter-spacing: 0.02em;
+}
+
+.header-dash {
+  color: #1E293B;
+  font-weight: 800;
+  margin: 0 1px;
+}
+
+.header-proevent {
+  color: #F59E0B; /* Naranja vibrante */
+  letter-spacing: 0.01em;
+}
+
+.header-subtitle {
+  font-size: 9px;
+  color: #64748B;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: var(--font-family-base);
 }
 
 /* Logo container pill */

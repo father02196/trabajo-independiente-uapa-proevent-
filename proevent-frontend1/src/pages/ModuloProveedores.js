@@ -10,7 +10,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 import './../css/ModuloProveedores.css';
 
 // ============================================================
@@ -250,7 +249,7 @@ function ModuloProveedores({ usuario }) {
     // --- FUNCIONES DE FILTRO Y ORDENAMIENTO DE TABLAS ---
     // Logística:
     const serviciosList = servicios.filter(s => filtroEstadoRecepcion === 'Todos' || (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor));
-    const { items: sortedServicios, requestSort: requestSortServicios, sortConfig: sortConfigServicios } = useSortableData(serviciosList, { key: 'nombre_evento', direction: 'ascending' });
+    const sortedServicios = [...serviciosList].sort((a, b) => (a.nombre_evento || '').localeCompare(b.nombre_evento || ''));
 
     // Directorio:
     const categoriasUnicas = [...new Set(proveedores.map(p => p.categoria))];
@@ -264,9 +263,9 @@ function ModuloProveedores({ usuario }) {
         const matchesCategory = filtroCategoria === "Todas" || p.categoria === filtroCategoria;
         return matchesSearch && matchesCategory;
     });
-    const { items: sortedProveedores, requestSort: requestSortProveedores, sortConfig: sortConfigProveedores } = useSortableData(proveedoresFiltrados, { key: 'nombre_empresa', direction: 'ascending' });
+    const sortedProveedores = [...proveedoresFiltrados].sort((a, b) => (a.nombre_empresa || '').localeCompare(b.nombre_empresa || ''));
 
-    const { items: sortedLicitaciones, requestSort: requestSortLicitaciones, sortConfig: sortConfigLicitaciones } = useSortableData(licitacionesAdjudicadas, { key: 'nombre_evento', direction: 'ascending' });
+    const sortedLicitaciones = [...licitacionesAdjudicadas].sort((a, b) => (a.nombre_evento || '').localeCompare(b.nombre_evento || ''));
 
     return (
         <div className="proveedores-container">
@@ -316,9 +315,9 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
-                                    <SortableHeader label="Evento" sortKey="nombre_evento" sortConfig={sortConfigServicios} requestSort={requestSortServicios} />
-                                    <SortableHeader label="Servicio / Detalle" sortKey="tipo_servicio" sortConfig={sortConfigServicios} requestSort={requestSortServicios} />
-                                    <SortableHeader label="Estado Envío" sortKey="fecha_envio_proveedor" sortConfig={sortConfigServicios} requestSort={requestSortServicios} />
+                                    <th>Evento</th>
+                                    <th>Servicio / Detalle</th>
+                                    <th>Estado Envío</th>
                                     <th style={{ textAlign: 'center' }}>Acción</th>
                                 </tr>
                             </thead>
@@ -428,11 +427,11 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
-                                    <SortableHeader label="Empresa / RNC" sortKey="nombre_empresa" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
-                                    <SortableHeader label="Categoría" sortKey="categoria" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
-                                    <SortableHeader label="Persona de Contacto" sortKey="persona_contacto" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
-                                    <SortableHeader label="Correo" sortKey="correo" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
-                                    <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfigProveedores} requestSort={requestSortProveedores} />
+                                    <th>Empresa / RNC</th>
+                                    <th>Categoría</th>
+                                    <th>Persona de Contacto</th>
+                                    <th>Correo</th>
+                                    <th>Estado</th>
                                     {['Administrador', 'Compras', 'Administrador de Compras'].includes(usuario?.rol) && (
                                         <th style={{ textAlign: 'center' }}>Acciones</th>
                                     )}
@@ -525,10 +524,10 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
-                                    <SortableHeader label="Evento / Requisitos" sortKey="nombre_evento" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
-                                    <SortableHeader label="Proveedor Ganador" sortKey="proveedor_nombre" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
-                                    <SortableHeader label="Monto Total" sortKey="monto_total_detectado" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
-                                    <SortableHeader label="Estado Pago" sortKey="estado_pago" sortConfig={sortConfigLicitaciones} requestSort={requestSortLicitaciones} />
+                                    <th>Evento / Requisitos</th>
+                                    <th>Proveedor Ganador</th>
+                                    <th>Monto Total</th>
+                                    <th>Estado Pago</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>

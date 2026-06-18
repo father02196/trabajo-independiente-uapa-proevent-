@@ -10,7 +10,6 @@ import React, { useState, useEffect } from 'react';
 import { FiPlus, FiCheck, FiClock, FiUser, FiCalendar, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -102,7 +101,7 @@ function CronogramaLogistico({ evento, usuario }) {
   const isAdminOrCoord = ["Administrador", "Administrador de Evento", "Coordinador de Evento", "Solicitante"].includes(usuario?.rol);
   // Nota: Solicitante también puede ver, pero no puede asignar según la vista antigua.
 
-  const { items: sortedTareas, requestSort, sortConfig } = useSortableData(tareas, { key: 'fecha_cumplimiento', direction: 'ascending' });
+  const sortedTareas = [...tareas].sort((a, b) => new Date(a.fecha_cumplimiento) - new Date(b.fecha_cumplimiento));
   return (
     <div className="cronograma-module modern-section">
       <div className="section-header-row">
@@ -160,10 +159,10 @@ function CronogramaLogistico({ evento, usuario }) {
             <table className="modern-table">
               <thead>
                 <tr>
-                  <SortableHeader label="Actividad Asignada" sortKey="nombre_actividad" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="Responsable" sortKey="responsable" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="Límite" sortKey="fecha_cumplimiento" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+                  <th>Actividad Asignada</th>
+                  <th>Responsable</th>
+                  <th>Límite</th>
+                  <th>Estado</th>
                   {usuario?.rol !== 'Solicitante' && <th>Acción</th>}
                 </tr>
               </thead>

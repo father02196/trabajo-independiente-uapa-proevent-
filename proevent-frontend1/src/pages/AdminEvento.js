@@ -11,7 +11,6 @@ import React, { useState, useEffect } from "react";
 import "./../css/AjustesUsuarios.css";
 import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -118,7 +117,7 @@ export default function AdminEvento({ usuario }) {
 
   // Lógica de Paginación
   const { title, idField } = getConfig();
-  const { items: sortedDataList, requestSort, sortConfig } = useSortableData(dataList, { key: idField, direction: 'ascending' });
+  const sortedDataList = dataList;
 
   const totalPages = Math.ceil(sortedDataList.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -192,8 +191,8 @@ export default function AdminEvento({ usuario }) {
         <table className="modern-table">
           <thead>
             <tr>
-              <SortableHeader label="ID" sortKey={idField} sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label={`Descripción en el catálogo (${title})`} sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
+              <th>ID</th>
+              <th>{`Descripción en el catálogo (${title})`}</th>
               <th style={{textAlign: 'right'}}>Acciones</th>
             </tr>
           </thead>

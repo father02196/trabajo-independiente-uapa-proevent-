@@ -13,8 +13,7 @@ import { FiEye, FiMonitor, FiFileText, FiCheckCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
 // Hooks y componentes para tablas
-import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
+// (Ordenamiento por columna removido por petición del usuario)
 
 // URL API Backend
 const API = "http://localhost:8080";
@@ -117,8 +116,8 @@ export default function GestionSolicitudesAV({ usuario }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
 
-  const { items: sortedSolicitudes, requestSort, sortConfig } = useSortableData(solicitudesAV, { key: 'id_evento', direction: 'ascending' });
-  const { items: sortedEquipos, requestSort: requestSortEquipos, sortConfig: sortConfigEquipos } = useSortableData(selectedRequest?.equipos || [], { key: 'equipo', direction: 'ascending' });
+  const sortedSolicitudes = solicitudesAV;
+  const sortedEquipos = selectedRequest?.equipos || [];
 
   const totalPages = Math.ceil(sortedSolicitudes.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -138,11 +137,11 @@ export default function GestionSolicitudesAV({ usuario }) {
         <table className="modern-table">
           <thead>
             <tr>
-              <SortableHeader label="ID Evento" sortKey="id_evento" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="Evento" sortKey="nombre_evento" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="Solicitante" sortKey="nombre_usuario" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="Cant. Equipos" sortKey="total_equipos" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="Estado" sortKey="estado_av" sortConfig={sortConfig} requestSort={requestSort} />
+              <th>ID Evento</th>
+              <th>Evento</th>
+              <th>Solicitante</th>
+              <th>Cant. Equipos</th>
+              <th>Estado</th>
               <th style={{ textAlign: 'center' }}>Detalles</th>
             </tr>
           </thead>
@@ -263,10 +262,10 @@ export default function GestionSolicitudesAV({ usuario }) {
                     <table className="modern-table">
                       <thead>
                         <tr>
-                          <SortableHeader label="Equipo Requerido" sortKey="equipo" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} />
-                          <SortableHeader label="Cantidad" sortKey="cantidad" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} style={{ textAlign: 'center' }} />
-                          <SortableHeader label="Ubicación" sortKey="ubicacion" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} />
-                          <SortableHeader label="Observaciones Especiales" sortKey="observaciones" sortConfig={sortConfigEquipos} requestSort={requestSortEquipos} />
+                          <th>Equipo Requerido</th>
+                          <th style={{ textAlign: 'center' }}>Cantidad</th>
+                          <th>Ubicación</th>
+                          <th>Observaciones Especiales</th>
                         </tr>
                       </thead>
                       <tbody>

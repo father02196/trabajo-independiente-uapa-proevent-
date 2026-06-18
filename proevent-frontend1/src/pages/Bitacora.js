@@ -9,7 +9,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText, FiClock } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 import './../css/Dashboard.css'; // Reutilizamos estilos base
 import './../css/Bitacora.css';
 
@@ -113,7 +112,7 @@ export default function Bitacora() {
     });
 
     // --- LÓGICA DE PAGINACIÓN Y ORDENAMIENTO ---
-    const { items: sortedRegistros, requestSort, sortConfig } = useSortableData(registrosFiltrados, { key: 'fecha', direction: 'descending' });
+    const sortedRegistros = [...registrosFiltrados].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     const totalPages = Math.ceil(sortedRegistros.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -183,10 +182,10 @@ export default function Bitacora() {
                     <table className="requests-table bitacora-table">
                         <thead>
                             <tr>
-                                <SortableHeader label="FECHA Y HORA" sortKey="fecha" sortConfig={sortConfig} requestSort={requestSort} />
-                                <SortableHeader label="ACCIÓN Y DETALLE" sortKey="accion" sortConfig={sortConfig} requestSort={requestSort} />
-                                <SortableHeader label="USUARIO AUTOR" sortKey="nombre_usuario" sortConfig={sortConfig} requestSort={requestSort} />
-                                <SortableHeader label="ROL" sortKey="rol_usuario" sortConfig={sortConfig} requestSort={requestSort} />
+                                <th>FECHA Y HORA</th>
+                                <th>ACCIÓN Y DETALLE</th>
+                                <th>USUARIO AUTOR</th>
+                                <th>ROL</th>
                             </tr>
                         </thead>
                         <tbody>

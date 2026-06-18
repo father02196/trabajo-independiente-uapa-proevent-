@@ -11,9 +11,8 @@ import React, { useState, useEffect } from "react";
 import "./../css/Dashboard.css";
 import { FiCheckCircle, FiXCircle, FiDollarSign, FiCalendar, FiRefreshCw, FiEye } from "react-icons/fi";
 
-// Hooks y componentes para tablas ordenables
+// Hooks para tablas
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 
 // URL base del API Backend
 const API = "http://localhost:8080";
@@ -160,8 +159,8 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
       m.solicitante?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Aplica hook de ordenamiento para la tabla
-  const { items: sortedMovimientos, requestSort, sortConfig } = useSortableData(filteredMovimientos, { key: 'fecha_movimiento', direction: 'descending' });
+  // Ordena movimientos por fecha más reciente primero
+  const sortedMovimientos = [...filteredMovimientos].sort((a, b) => new Date(b.fecha_movimiento) - new Date(a.fecha_movimiento));
 
   // Paginación de la tabla
   const totalPages = Math.ceil(sortedMovimientos.length / itemsPerPage);
@@ -252,12 +251,12 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
         <table className="modern-table" style={{ marginTop: '12px' }}>
           <thead>
             <tr>
-              <SortableHeader label="FECHA" sortKey="fecha_movimiento" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="EVENTO" sortKey="nombre_evento" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="SOLICITANTE" sortKey="solicitante" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="SOLICITUD ORIG." sortKey="monto_solicitado_original" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="DESCUENTO (DOP)" sortKey="monto_descontado_dop" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableHeader label="ESTADO" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+              <th>FECHA</th>
+              <th>EVENTO</th>
+              <th>SOLICITANTE</th>
+              <th>SOLICITUD ORIG.</th>
+              <th>DESCUENTO (DOP)</th>
+              <th>ESTADO</th>
               <th style={{textAlign: 'center'}}>ACCIONES</th>
             </tr>
           </thead>

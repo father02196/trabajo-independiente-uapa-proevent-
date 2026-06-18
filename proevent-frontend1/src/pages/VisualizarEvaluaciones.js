@@ -15,7 +15,6 @@ import {
 } from 'recharts';
 import { FiBarChart2, FiPieChart, FiActivity, FiStar, FiChevronLeft, FiChevronRight, FiRefreshCw } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 
 const API = 'http://localhost:8080';
 const ITEMS_PER_PAGE = 10;
@@ -90,8 +89,7 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
     );
   }, [evaluaciones, searchTerm]);
 
-  // Ordenamiento y Paginación
-  const { items: sortedFiltered, requestSort, sortConfig } = useSortableData(filtered, { key: 'id_evaluacion', direction: 'ascending' });
+  const sortedFiltered = [...filtered].sort((a, b) => b.id_evaluacion - a.id_evaluacion);
 
   const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / ITEMS_PER_PAGE));
   const paginados = sortedFiltered.slice((pagina - 1) * ITEMS_PER_PAGE, pagina * ITEMS_PER_PAGE);
@@ -240,11 +238,11 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
             <table className="modern-table">
               <thead>
                 <tr>
-                  <SortableHeader label="Solicitud" sortKey="id_evaluacion" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="Evento & Fecha" sortKey="nombre_evento" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="Recinto" sortKey="recinto" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="Valoración" sortKey="valoracion_respuesta" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="Satisfacción" sortKey="satisfaccion" sortConfig={sortConfig} requestSort={requestSort} style={{ textAlign: 'center' }} />
+                  <th>Solicitud</th>
+                  <th>Evento &amp; Fecha</th>
+                  <th>Recinto</th>
+                  <th>Valoración</th>
+                  <th style={{ textAlign: 'center' }}>Satisfacción</th>
                   <th style={{ textAlign: 'center' }}>Visualización</th>
                 </tr>
               </thead>

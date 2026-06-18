@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import './../css/Welcome.css';
 import uapaLogo from './../img/Logo-blanco-UAPA.png';
+import logoProevent from './../img/logo-proevent.jpeg';
+import emblemProevent from './../img/Emblema-Proevent.jpeg';
 
 const API = "http://localhost:8080";
 
@@ -153,7 +155,15 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, on
       {/* ══════════════════════ NAVBAR ══════════════════════ */}
       <header className={`welcome-header${scrolled ? " scrolled" : ""}`}>
         <div className="header-logo-area">
-          <img src={uapaLogo} alt="UAPA Logo" className="header-logo-img" />
+          <img src={emblemProevent} alt="Emblema UAPA" className="header-emblem-img" />
+          <div className="header-text-block">
+            <span className="header-title">
+              <span className="header-uapa">UAPA</span>
+              <span className="header-dash">-</span>
+              <span className="header-proevent">ProEvent</span>
+            </span>
+            <span className="header-subtitle">Sistema de Gestión de Eventos Institucionales</span>
+          </div>
         </div>
 
         <nav className="header-nav">

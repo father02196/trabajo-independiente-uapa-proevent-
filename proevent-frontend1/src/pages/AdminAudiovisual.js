@@ -8,7 +8,6 @@
 import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiPlus, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -105,7 +104,7 @@ export default function AdminAudiovisual({ usuario }) {
     }
   };
 
-  const { items: sortedEquipos, requestSort, sortConfig } = useSortableData(equipos, { key: 'id_equipo', direction: 'ascending' });
+  const sortedEquipos = equipos;
 
   const totalPages = Math.ceil(sortedEquipos.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -184,10 +183,10 @@ export default function AdminAudiovisual({ usuario }) {
           <table className="modern-table">
             <thead>
               <tr>
-                <SortableHeader label="ID" sortKey="id_equipo" sortConfig={sortConfig} requestSort={requestSort} />
-                <SortableHeader label="Nombre del Equipo" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
-                <SortableHeader label="Ícono Asignado" sortKey="icono" sortConfig={sortConfig} requestSort={requestSort} />
-                <SortableHeader label="Cant. Total" sortKey="cantidad_total" sortConfig={sortConfig} requestSort={requestSort} style={{ textAlign: 'center' }} />
+                <th>ID</th>
+                <th>Nombre del Equipo</th>
+                <th>Ícono Asignado</th>
+                <th style={{ textAlign: 'center' }}>Cant. Total</th>
                 <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
             </thead>

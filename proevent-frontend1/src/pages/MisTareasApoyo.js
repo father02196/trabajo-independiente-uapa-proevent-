@@ -8,7 +8,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiCheck, FiClock, FiCalendar } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -49,7 +48,7 @@ function MisTareasApoyo({ usuario }) {
     }
   };
 
-  const { items: sortedTareas, requestSort, sortConfig } = useSortableData(tareas, { key: 'fecha_cumplimiento', direction: 'ascending' });
+  const sortedTareas = [...tareas].sort((a, b) => new Date(a.fecha_cumplimiento) - new Date(b.fecha_cumplimiento));
 
   return (
     <div style={{ padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
@@ -58,10 +57,10 @@ function MisTareasApoyo({ usuario }) {
       <table className="requests-table">
         <thead>
           <tr>
-            <SortableHeader label="Evento Asignado" sortKey="nombre_evento" sortConfig={sortConfig} requestSort={requestSort} />
-            <SortableHeader label="Actividad" sortKey="nombre_actividad" sortConfig={sortConfig} requestSort={requestSort} />
-            <SortableHeader label="Fecha Límite" sortKey="fecha_cumplimiento" sortConfig={sortConfig} requestSort={requestSort} />
-            <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+            <th>Evento Asignado</th>
+            <th>Actividad</th>
+            <th>Fecha Límite</th>
+            <th>Estado</th>
             <th>Acción</th>
           </tr>
         </thead>

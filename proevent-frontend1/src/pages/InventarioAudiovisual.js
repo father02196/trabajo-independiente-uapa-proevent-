@@ -10,7 +10,6 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiBox, FiSearch, FiInfo, FiCheckCircle, FiAlertCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 
 const API = "http://localhost:8080";
 
@@ -88,8 +87,8 @@ function InventarioAudiovisual({ usuario }) {
     eq.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const { items: sortedInventario, requestSort: requestSortInventario, sortConfig: sortConfigInventario } = useSortableData(filteredInventario, { key: 'nombre', direction: 'ascending' });
-  const { items: sortedSolicitudes, requestSort: requestSortSolicitudes, sortConfig: sortConfigSolicitudes } = useSortableData(selectedEquipo?.solicitudesActivas || [], { key: 'fecha_evento', direction: 'descending' });
+  const sortedInventario = filteredInventario;
+  const sortedSolicitudes = [...(selectedEquipo?.solicitudesActivas || [])].sort((a, b) => new Date(b.fecha_evento) - new Date(a.fecha_evento));
 
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "N/D";
@@ -142,10 +141,10 @@ function InventarioAudiovisual({ usuario }) {
             <table className="modern-table">
               <thead>
                 <tr>
-                  <SortableHeader label="Dispositivo" sortKey="nombre" sortConfig={sortConfigInventario} requestSort={requestSortInventario} />
-                  <SortableHeader label="Total Inventario" sortKey="total" sortConfig={sortConfigInventario} requestSort={requestSortInventario} style={{ textAlign: 'center' }} />
-                  <SortableHeader label="En Uso / Reservado" sortKey="enUso" sortConfig={sortConfigInventario} requestSort={requestSortInventario} style={{ textAlign: 'center' }} />
-                  <SortableHeader label="Disponible" sortKey="disponible" sortConfig={sortConfigInventario} requestSort={requestSortInventario} style={{ textAlign: 'center' }} />
+                  <th>Dispositivo</th>
+                  <th style={{ textAlign: 'center' }}>Total Inventario</th>
+                  <th style={{ textAlign: 'center' }}>En Uso / Reservado</th>
+                  <th style={{ textAlign: 'center' }}>Disponible</th>
                   <th style={{ textAlign: 'center' }}>Estado</th>
                   <th style={{ textAlign: 'center' }}>Detalles de Uso</th>
                 </tr>
@@ -249,13 +248,13 @@ function InventarioAudiovisual({ usuario }) {
                     <table className="modern-table">
                       <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                         <tr>
-                          <SortableHeader label="ID Evento" sortKey="id_evento" sortConfig={sortConfigSolicitudes} requestSort={requestSortSolicitudes} />
-                          <SortableHeader label="Evento" sortKey="nombre_evento" sortConfig={sortConfigSolicitudes} requestSort={requestSortSolicitudes} />
-                          <SortableHeader label="Solicitante" sortKey="nombre_usuario" sortConfig={sortConfigSolicitudes} requestSort={requestSortSolicitudes} />
-                          <SortableHeader label="Fecha" sortKey="fecha_evento" sortConfig={sortConfigSolicitudes} requestSort={requestSortSolicitudes} />
-                          <SortableHeader label="Ubicación" sortKey="ubicacion" sortConfig={sortConfigSolicitudes} requestSort={requestSortSolicitudes} />
-                          <SortableHeader label="Cant." sortKey="cantidad" sortConfig={sortConfigSolicitudes} requestSort={requestSortSolicitudes} style={{ textAlign: 'center' }} />
-                          <SortableHeader label="Estado" sortKey="estado_av" sortConfig={sortConfigSolicitudes} requestSort={requestSortSolicitudes} style={{ textAlign: 'center' }} />
+                          <th>ID Evento</th>
+                          <th>Evento</th>
+                          <th>Solicitante</th>
+                          <th>Fecha</th>
+                          <th>Ubicación</th>
+                          <th style={{ textAlign: 'center' }}>Cant.</th>
+                          <th style={{ textAlign: 'center' }}>Estado</th>
                         </tr>
                       </thead>
                       <tbody>

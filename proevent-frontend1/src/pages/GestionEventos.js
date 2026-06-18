@@ -23,7 +23,6 @@ import { useSortableData } from "../hooks/useSortableData";
 import FichaTecnicaPDF from "./FichaTecnicaPDF";        // Genera el resumen PDF del evento
 import AsignacionPersonal from "./AsignacionPersonal"; // Panel de asignación de personal/organizadores
 import CronogramaGlobal from "./CronogramaGlobal";     // Panel del cronograma de actividades
-import SortableHeader from "../components/SortableHeader"; // Encabezado de tabla ordenable
 
 // Estilos globales del panel de administración
 import './../css/Dashboard.css';
@@ -39,10 +38,9 @@ const API = "http://localhost:8080";
 function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
   // --- ESTADOS DE FILTROS DE LA TABLA ---
-  // Controlan los filtros de la barra superior: departamento, estado y fecha
-  const [departmentFilter, setDepartmentFilter] = useState("Todos");
-  const [statusFilter, setStatusFilter] = useState("Todos");
-  const [dateFilter, setDateFilter] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState('Todos los estados');
+  const [filtroDepartamento, setFiltroDepartamento] = useState('Todos los Departamentos');
+  const [filtroFecha, setFiltroFecha] = useState('');
 
   // --- DATOS PRINCIPALES ---
   // Lista completa de solicitudes de eventos traídas del backend
@@ -429,13 +427,12 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
         req.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         `#EVT-${req.id_evento}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.solicitante?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      if (!matchSearch) return false;
 
-      const matchDept = departmentFilter === "Todos" || req.dependencia === departmentFilter;
-      const matchStatus = statusFilter === "Todos" || req.estado === statusFilter;
-      const matchDate = !dateFilter || (req.fecha_inicio && req.fecha_inicio.startsWith(dateFilter));
-      return matchDept && matchStatus && matchDate;
+      const matchEstado = filtroEstado === 'Todos los estados' || req.estado === filtroEstado;
+      const matchDept = filtroDepartamento === 'Todos los Departamentos' || req.dependencia === filtroDepartamento;
+      const matchFecha = !filtroFecha || (req.fecha_inicio && req.fecha_inicio.startsWith(filtroFecha));
+      
+      return matchSearch && matchEstado && matchDept && matchFecha;
     });
 
   const { items: sortedRequests, requestSort, sortConfig } = useSortableData(filteredRequests, { key: 'fecha_inicio', direction: 'descending' });
@@ -446,9 +443,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedRequests.slice(indexOfFirstItem, indexOfLastItem);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [departmentFilter, statusFilter, dateFilter]);
+  // (Efecto de paginación reseteo eliminado ya que no hay filtros extra)
 
   return (
     <div className="admin-page-container fade-in">
@@ -470,44 +465,58 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
         <div className="filters-grid">
           <div className="filter-item">
-            <label><FiFilter /> Estado</label>
-            <select className="input-base" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="Todos">Todos los estados</option>
-              <option value="Pendiente">🟡 Pendientes</option>
-              <option value="Aprobado">🟢 Aprobados</option>
-              <option value="Rechazado">🔴 Rechazados</option>
-              <option value="Finalizado">🔵 Finalizados</option>
+            <label><FiFilter style={{marginRight:'4px',verticalAlign:'middle'}}/>Estado</label>
+            <select value={filtroEstado} onChange={e => { setFiltroEstado(e.target.value); setCurrentPage(1); }}>
+              <option>Todos los estados</option>
+              <option>Pendiente</option>
+              <option>Aprobado</option>
+              <option>Rechazado</option>
+              <option>En Progreso</option>
+              <option>Finalizado</option>
             </select>
           </div>
 
-          {usuario?.rol !== "Solicitante" && (
-            <div className="filter-item">
-              <label><FiBriefcase style={{ display: 'inline', marginRight: '6px' }} /> Departamento / Dependencia</label>
-              <select className="input-base" value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
-                {departamentosUnicos.map((d) => (
-                  <option key={d} value={d}>{d === "Todos" ? "Todos los Departamentos" : d}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <div className="filter-item">
-            <label><FiCalendar /> Fecha del Evento</label>
-            <input
-              type="date"
-              className="input-base"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
+            <label><FiGrid style={{marginRight:'4px',verticalAlign:'middle'}}/>Departamento / Dependencia</label>
+            <select value={filtroDepartamento} onChange={e => { setFiltroDepartamento(e.target.value); setCurrentPage(1); }}>
+              {departamentosUnicos.map(d => <option key={d}>{d}</option>)}
+            </select>
           </div>
 
           <div className="filter-item">
-            <label>⇅ Ordenar por Fecha</label>
-            <button 
-              className={`sort-toggle-btn ${sortConfig?.direction === "ascending" ? "asc" : "desc"}`} 
+            <label><FiCalendar style={{marginRight:'4px',verticalAlign:'middle'}}/>Fecha del Evento</label>
+            <input type="date" value={filtroFecha} onChange={e => { setFiltroFecha(e.target.value); setCurrentPage(1); }} />
+          </div>
+
+          <div className="filter-item" style={{display:'flex', flexDirection:'column', justifyContent:'flex-end'}}>
+            <label style={{marginBottom:'6px', fontSize:'12px', color:'#64748b', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em'}}>
+              &#8645; Ordenar por Fecha
+            </label>
+            <button
               onClick={() => requestSort('fecha_inicio')}
+              title={sortConfig?.direction === 'ascending' ? 'Click: más recientes primero' : 'Click: más antiguos primero'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1.5px solid',
+                borderColor: sortConfig?.direction === 'ascending' ? '#bfdbfe' : '#e2e8f0',
+                background: sortConfig?.direction === 'ascending' ? '#eff6ff' : '#f8fafc',
+                color: sortConfig?.direction === 'ascending' ? '#1d4ed8' : '#475569',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                width: '100%'
+              }}
             >
-              {sortConfig?.direction === "ascending" ? "Más antiguos primero" : "Más recientes primero"}
+              {sortConfig?.direction === 'ascending'
+                ? <><span style={{fontSize:'16px'}}>&#8593;</span> Más antiguos</>
+                : <><span style={{fontSize:'16px'}}>&#8595;</span> Más recientes</>
+              }
             </button>
           </div>
         </div>
@@ -535,13 +544,13 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <table className="requests-table modern-table">
               <thead>
                 <tr>
-                  <SortableHeader label="EVENTO ID & NOMBRE" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
-                  {usuario?.rol !== "Solicitante" && <SortableHeader label="SOLICITANTE" sortKey="solicitante" sortConfig={sortConfig} requestSort={requestSort} />}
-                  {usuario?.rol !== "Solicitante" && <SortableHeader label="DEPENDENCIA" sortKey="dependencia" sortConfig={sortConfig} requestSort={requestSort} />}
-                  <SortableHeader label="FECHA DE INICIO" sortKey="fecha_inicio" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="RECINTO / LUGAR" sortKey="recinto" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="ESTADO EVENTO" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="CONTABILIDAD POA" sortKey="aprobacion_poa" sortConfig={sortConfig} requestSort={requestSort} />
+                  <th>EVENTO ID & NOMBRE</th>
+                  {usuario?.rol !== "Solicitante" && <th>SOLICITANTE</th>}
+                  {usuario?.rol !== "Solicitante" && <th>DEPENDENCIA</th>}
+                  <th>FECHA DE INICIO</th>
+                  <th>RECINTO / LUGAR</th>
+                  <th>ESTADO EVENTO</th>
+                  <th>CONTABILIDAD POA</th>
                   <th>MÁS DETALLES</th>
                   {usuario?.rol !== "Administrador V-A-F" && <th style={{ textAlign: 'center' }}>ACCIONES DE GESTIÓN</th>}
                 </tr>

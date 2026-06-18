@@ -10,11 +10,8 @@
 // Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from 'react';
 
-// Hook personalizado para ordenar columnas de la tabla
-import { useSortableData } from '../hooks/useSortableData';
-
-// Componente de encabezado de tabla con soporte de ordenamiento
-import SortableHeader from '../components/SortableHeader';
+// Hook personalizado para ordenar columnas de la tabla (removido)
+// Componente de encabezado de tabla con soporte de ordenamiento (removido)
 
 // Estilos específicos del módulo y estilos compartidos del dashboard
 import './../css/AjustesUsuarios.css';
@@ -225,9 +222,8 @@ function AjustesUsuarios({ usuario }) {
     };
 
     // --- LÓGICA DE PAGINACIÓN Y ORDENAMIENTO ---
-    // useSortableData aplica ordenamiento por columna al array filtrado.
-    // Luego se calcula el slice de la página actual.
-    const { items: sortedUsuarios, requestSort, sortConfig } = useSortableData(filteredUsuarios, { key: 'nombre', direction: 'ascending' });
+    // (Ordenamiento por columna removido por petición. Se usa la lista filtrada)
+    const sortedUsuarios = filteredUsuarios;
 
     const totalPages        = Math.ceil(sortedUsuarios.length / itemsPerPage); // Total de páginas
     const indexOfLastItem   = currentPage * itemsPerPage;                      // Índice del último elemento
@@ -338,10 +334,10 @@ function AjustesUsuarios({ usuario }) {
                     <table className="ajustes-table">
                         <thead>
                             <tr>
-                                <SortableHeader label="USUARIO" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
-                                <SortableHeader label="CORREO ELECTRÓNICO" sortKey="correo" sortConfig={sortConfig} requestSort={requestSort} />
-                                <SortableHeader label="ROL" sortKey="rol" sortConfig={sortConfig} requestSort={requestSort} />
-                                <SortableHeader label="ESTADO" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+                                <th>USUARIO</th>
+                                <th>CORREO ELECTRÓNICO</th>
+                                <th>ROL</th>
+                                <th>ESTADO</th>
                                 <th style={{textAlign: 'center'}}>ACCIONES</th>
                             </tr>
                         </thead>

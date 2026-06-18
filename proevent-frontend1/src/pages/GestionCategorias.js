@@ -9,7 +9,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiEdit, FiPower, FiPlusCircle, FiLayers } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
-import SortableHeader from '../components/SortableHeader';
 import './../css/Dashboard.css';
 
 function GestionCategorias({ usuario }) {
@@ -90,7 +89,7 @@ function GestionCategorias({ usuario }) {
         }
     };
 
-    const { items: sortedCategorias, requestSort, sortConfig } = useSortableData(categorias, { key: 'id_tipo_servicio', direction: 'ascending' });
+    const sortedCategorias = categorias;
 
     return (
         <div className="space-y-6 animate-fade" style={{ padding: '24px' }}>
@@ -114,10 +113,10 @@ function GestionCategorias({ usuario }) {
                 <table className="modern-table">
                     <thead>
                         <tr>
-                            <SortableHeader label="ID" sortKey="id_tipo_servicio" sortConfig={sortConfig} requestSort={requestSort} />
-                            <SortableHeader label="Nombre de la Categoría" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
-                            <SortableHeader label="Clasificación" sortKey="clasificacion" sortConfig={sortConfig} requestSort={requestSort} />
-                            <SortableHeader label="Estado" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+                            <th>ID</th>
+                            <th>Nombre de la Categoría</th>
+                            <th>Clasificación</th>
+                            <th>Estado</th>
                             <th style={{ textAlign: 'center' }}>Acciones</th>
                         </tr>
                     </thead>
