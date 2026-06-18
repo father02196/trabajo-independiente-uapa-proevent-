@@ -191,6 +191,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return "Historial de Evaluaciones";
             case "FlujoAdministrativo":
                 return "Flujo Administrativo (Legal, Compras, Presupuesto)";
+            case "HistorialSolicitudes":
+                return "Mi Historial de Solicitudes";
             default:
                 return activeTab;
         }

@@ -40,6 +40,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
   const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal
   const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
   const [activeTooltip, setActiveTooltip]     = useState(null);  // Tooltip SVG del gráfico
+  const [sortOrder, setSortOrder]             = useState("asc"); // Orden del timeline
 
   // --- FUNCIONES: openModal / closeModal ---
   // Abre/cierra el modal de detalle con el evento seleccionado.
@@ -167,7 +168,11 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
   // Ordenados por fecha de inicio ascendente (más próximos primero).
   const proximosEventos = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
-    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_inicio);
+      const dateB = new Date(b.fecha_inicio);
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    })
     .slice(0, 5);
 
   return (
@@ -430,11 +435,25 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
 
       <div className="dashboard-double-panel">
         <div className="saas-panel-card">
-          <div className="panel-header">
-            <FiCalendar className="panel-icon" />
-            <div>
-              <h4>Próximos Eventos en Agenda</h4>
-              <p>Eventos aprobados y pendientes programados próximamente</p>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <FiCalendar className="panel-icon" />
+              <div>
+                <h4>Próximos Eventos en Agenda</h4>
+                <p>Eventos aprobados y pendientes programados próximamente</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select 
+                className="saas-select" 
+                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="asc">Más próximos (Asc)</option>
+                <option value="desc">Más lejanos (Desc)</option>
+              </select>
+              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -471,7 +490,10 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                       </div>
                       
                       <div className="modern-event-body">
-                        <h5 className="modern-event-title">{evt.nombre}</h5>
+                        <h5 className="modern-event-title">
+                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          {evt.nombre}
+                        </h5>
                         <div className="modern-event-meta-info">
                           <div className="modern-meta-item">
                             <FiGrid className="modern-meta-icon" />

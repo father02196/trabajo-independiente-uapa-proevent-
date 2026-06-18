@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para tarjetas y botones
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiRefreshCw } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -37,6 +37,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   // --- ESTADOS DEL MODAL ---
   const [selectedRequest, setSelectedRequest] = useState(null); // Evento seleccionado
   const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
+  const [sortOrder, setSortOrder]             = useState("asc"); // Orden del timeline
 
   // --- FUNCIONES: openModal / closeModal ---
   const openModal = (req) => {
@@ -124,7 +125,11 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   // Solo eventos del solicitante, ordenados por fecha ascendente.
   const proximosEventos = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
-    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_inicio);
+      const dateB = new Date(b.fecha_inicio);
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    })
     .slice(0, 5);
 
   return (
@@ -248,11 +253,25 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
 
       <div className="dashboard-double-panel">
         <div className="saas-panel-card">
-          <div className="panel-header">
-            <FiCalendar className="panel-icon" />
-            <div>
-              <h4>Próximos Eventos en Agenda</h4>
-              <p>Agenda personal</p>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <FiCalendar className="panel-icon" />
+              <div>
+                <h4>Próximos Eventos en Agenda</h4>
+                <p>Agenda personal</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select 
+                className="saas-select" 
+                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="asc">Más próximos (Asc)</option>
+                <option value="desc">Más lejanos (Desc)</option>
+              </select>
+              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -289,7 +308,10 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                       </div>
                       
                       <div className="modern-event-body">
-                        <h5 className="modern-event-title">{evt.nombre}</h5>
+                        <h5 className="modern-event-title">
+                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          {evt.nombre}
+                        </h5>
                         <div className="modern-event-meta-info">
                           <div className="modern-meta-item">
                             <FiGrid className="modern-meta-icon" />
