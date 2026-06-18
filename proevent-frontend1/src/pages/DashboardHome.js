@@ -497,14 +497,18 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                 <p>Eventos aprobados y pendientes programados próximamente</p>
               </div>
             </div>
-            <select 
-              value={sortOrder} 
-              onChange={(e) => setSortOrder(e.target.value)}
-              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #E2E8F0', cursor: 'pointer', backgroundColor: '#fff', color: '#475569', outline: 'none' }}
-            >
-              <option value="asc">Más próximos (Asc)</option>
-              <option value="desc">Más lejanos (Desc)</option>
-            </select>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select 
+                className="saas-select" 
+                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="asc">Más próximos (Asc)</option>
+                <option value="desc">Más lejanos (Desc)</option>
+              </select>
+              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+            </div>
           </div>
           <div className="panel-body">
             {loading ? (
@@ -540,7 +544,10 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                       </div>
                       
                       <div className="modern-event-body">
-                        <h5 className="modern-event-title">{evt.nombre}</h5>
+                        <h5 className="modern-event-title">
+                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          {evt.nombre}
+                        </h5>
                         <div className="modern-event-meta-info">
                           <div className="modern-meta-item">
                             <FiGrid className="modern-meta-icon" />

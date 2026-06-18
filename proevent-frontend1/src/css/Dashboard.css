@@ -630,6 +630,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  container-type: inline-size;
+  overflow: hidden;
 }
 
 .saas-stat-card:hover {
@@ -724,12 +726,15 @@
 .text-info     { color: #6366f1 !important; }
 
 .card-bottom h3 {
-  font-size: var(--text-4xl);
+  font-size: clamp(18px, 11cqw, var(--text-4xl, 36px));
   font-weight: var(--font-bold);
   color: #0f172a;
   letter-spacing: var(--tracking-tight);
   line-height: var(--leading-tight);
   margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-trend {

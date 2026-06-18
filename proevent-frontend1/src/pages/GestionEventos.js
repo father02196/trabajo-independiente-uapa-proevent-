@@ -450,10 +450,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       <div className="admin-controls-card">
         <div className="controls-header">
           <div className="title-section">
-            <FiSliders className="header-icon" />
+            {usuario?.rol === "Solicitante" ? <FiList className="header-icon" /> : <FiSliders className="header-icon" />}
             <div>
-              <h3>Panel de Control de Solicitudes</h3>
-              <p className="subtitle">Filtra, aprueba y administra todas las solicitudes de eventos institucionales</p>
+              <h3>{usuario?.rol === "Solicitante" ? "Mi Historial de Solicitudes" : "Panel de Control de Solicitudes"}</h3>
+              <p className="subtitle">
+                {usuario?.rol === "Solicitante" 
+                  ? "Consulta todas las solicitudes de eventos que has creado." 
+                  : "Filtra, aprueba y administra todas las solicitudes de eventos institucionales"}
+              </p>
             </div>
           </div>
           <div className="header-actions-group">

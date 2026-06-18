@@ -18,7 +18,8 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [estadoFiltro, setEstadoFiltro] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState("Todos los estados");
+  const [filtroFecha, setFiltroFecha] = useState("");
   const [selectedViewEvent, setSelectedViewEvent] = useState(null);
   
   // Paginación
@@ -62,10 +63,13 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
 
   // Filtrado
   const filteredData = solicitudes.filter(sol => {
-    const matchesSearch = sol.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          sol.id_evento.toString().includes(searchTerm);
-    const matchesStatus = estadoFiltro === "" || sol.estado === estadoFiltro;
-    return matchesSearch && matchesStatus;
+    const matchesSearch = searchTerm === "" || 
+                          sol.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          `#EVT-${sol.id_evento}`.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = estadoFiltro === "Todos los estados" || estadoFiltro === "" || sol.estado === estadoFiltro;
+    const matchFecha = !filtroFecha || (sol.fecha_inicio && sol.fecha_inicio.startsWith(filtroFecha));
+
+    return matchesSearch && matchesStatus && matchFecha;
   });
 
   // Ordenamiento
@@ -98,32 +102,77 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
             <FiList className="header-icon" />
             <div>
               <h3>Mi Historial de Solicitudes</h3>
-              <p className="subtitle">Consulta todas las solicitudes de eventos que has creado</p>
+              <p className="subtitle">Consulta todas las solicitudes de eventos que has creado.</p>
             </div>
           </div>
         </div>
 
-        <div className="filters-grid">
-          <div className="filter-item search-bar-container">
-            <FiSearch className="search-icon" />
+        <div className="filters-grid" style={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'flex-end', gap: '16px' }}>
+          <div className="filter-item search-bar-container" style={{ flex: '2 1 0' }}>
+            <FiSearch className="search-icon" style={{ top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
               placeholder="Buscar por nombre o ID..." 
               className="input-base search-input" 
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              style={{ width: '100%', paddingLeft: '36px' }}
             />
           </div>
-          
-          <div className="filter-item">
-            <label><FiFilter /> Estado</label>
-            <select className="input-base" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
-              <option value="">Todos los estados</option>
-              <option value="Pendiente">🟡 Pendientes</option>
-              <option value="Aprobado">🟢 Aprobados</option>
-              <option value="Rechazado">🔴 Rechazados</option>
-              <option value="Finalizado">🔵 Finalizados</option>
+
+          <div className="filter-item" style={{ flex: '1 1 0' }}>
+            <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px', display: 'block' }}>
+              <FiFilter style={{marginRight:'4px',verticalAlign:'middle'}}/>Estado
+            </label>
+            <select className="input-base" value={estadoFiltro} onChange={e => { setEstadoFiltro(e.target.value); setCurrentPage(1); }} style={{ width: '100%' }}>
+              <option value="Todos los estados">Todos los estados</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Rechazado">Rechazado</option>
+              <option value="En Progreso">En Progreso</option>
+              <option value="Finalizado">Finalizado</option>
             </select>
+          </div>
+
+          <div className="filter-item" style={{ flex: '1 1 0' }}>
+            <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px', display: 'block' }}>
+              <FiCalendar style={{marginRight:'4px',verticalAlign:'middle'}}/>Fecha del Evento
+            </label>
+            <input className="input-base" type="date" value={filtroFecha} onChange={e => { setFiltroFecha(e.target.value); setCurrentPage(1); }} style={{ width: '100%' }} />
+          </div>
+
+          <div className="filter-item" style={{ flex: '1 1 0', display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+            <label style={{marginBottom:'6px', fontSize:'12px', color:'#64748b', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em'}}>
+              &#8645; Ordenar por Fecha
+            </label>
+            <button
+              onClick={() => requestSort('fecha_inicio')}
+              title={sortConfig?.direction === 'ascending' ? 'Click: más recientes primero' : 'Click: más antiguos primero'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '0 16px',
+                borderRadius: '8px',
+                border: '1px solid',
+                borderColor: sortConfig?.direction === 'ascending' ? '#bfdbfe' : '#e2e8f0',
+                background: sortConfig?.direction === 'ascending' ? '#eff6ff' : '#ffffff',
+                color: sortConfig?.direction === 'ascending' ? '#1d4ed8' : '#475569',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                width: '100%',
+                height: '42px',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+              }}
+            >
+              {sortConfig?.direction === 'ascending'
+                ? <><span style={{fontSize:'16px'}}>&#8593;</span> Más antiguos</>
+                : <><span style={{fontSize:'16px'}}>&#8595;</span> Más recientes</>
+              }
+            </button>
           </div>
         </div>
       </div>
@@ -145,10 +194,10 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
             <table className="requests-table modern-table">
               <thead>
                 <tr>
-                  <SortableHeader label="EVENTO ID & NOMBRE" sortKey="nombre" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="FECHA DE INICIO" sortKey="fecha_inicio" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="RECINTO / LUGAR" sortKey="recinto" sortConfig={sortConfig} requestSort={requestSort} />
-                  <SortableHeader label="ESTADO" sortKey="estado" sortConfig={sortConfig} requestSort={requestSort} />
+                  <th>EVENTO ID & NOMBRE</th>
+                  <th>FECHA DE INICIO</th>
+                  <th>RECINTO / LUGAR</th>
+                  <th>ESTADO</th>
                   <th style={{ textAlign: 'center' }}>ACCIONES</th>
                 </tr>
               </thead>
