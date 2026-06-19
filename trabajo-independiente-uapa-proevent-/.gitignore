@@ -1,0 +1,25 @@
+# Archivos temporales de scripts
+proevent-backend1/fix_*.js
+proevent-backend1/test_smtp.js
+
+# Archivos subidos por usuarios durante pruebas
+proevent-backend1/uploads/*
+!proevent-backend1/uploads/.gitkeep
+
+# Archivos ambientales locales
+proevent-frontend1/.env
+
+# Imágenes redundantes
+proevent-frontend1/src/pages/img/logo-proevent.jpg.jpeg
+
+# Archivos de registro (Logs)
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Entornos y temporales
+node_modules/
+scratch/
+.vscode/
+.DS_Store
