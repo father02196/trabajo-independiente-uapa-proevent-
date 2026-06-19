@@ -1,0 +1,482 @@
+/* ═══════════════════════════════════════════════════════════════
+   Login.css — ProEvent UAPA
+   Single-card · Minimalista · SaaS Premium
+   Inspirado en Stripe, Linear, Vercel, Notion
+   ═══════════════════════════════════════════════════════════════ */
+
+@import './typography.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FONDO GENERAL
+───────────────────────────────────────────────────────────── */
+.lc-bg {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  font-family: var(--font-family-base);
+
+  /* Fondo claro tipo Vercel / Linear */
+  background-color: #f5f5f7;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%,
+      rgba(226, 232, 255, 0.55) 0%,
+      transparent 70%),
+    radial-gradient(ellipse 50% 40% at 90% 90%,
+      rgba(213, 229, 255, 0.30) 0%,
+      transparent 70%);
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BOTÓN VOLVER
+───────────────────────────────────────────────────────────── */
+.lc-header .lc-back {
+  position: absolute;
+  left: 0;
+  top: 16px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
+}
+
+.lc-header .lc-back:hover {
+  color: #374151;
+  text-decoration: underline;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CARD PRINCIPAL
+───────────────────────────────────────────────────────────── */
+.lc-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px 40px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+
+  /* Sombra Stripe-style: varias capas sutiles */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.05),
+    0 24px 48px rgba(0, 0, 0, 0.06);
+
+  animation: lc-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lc-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HEADER DE LA CARD
+───────────────────────────────────────────────────────────── */
+.lc-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+  position: relative;
+  width: 100%;
+}
+
+.lc-logo-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow:
+    0 4px 12px rgba(37, 99, 235, 0.30),
+    0 1px 3px rgba(37, 99, 235, 0.20);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lc-logo-badge:hover {
+  transform: scale(1.05) rotate(2deg);
+  box-shadow:
+    0 6px 16px rgba(37, 99, 235, 0.40),
+    0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.lc-title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: #0f172a;
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: 6px;
+}
+
+.lc-subtitle {
+  font-size: var(--text-base);
+  color: #6b7280;
+  font-weight: var(--font-regular);
+  line-height: var(--leading-normal);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FORMULARIO
+───────────────────────────────────────────────────────────── */
+.lc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Campo */
+.lc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lc-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lc-label {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: #374151;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+/* Input wrapper */
+.lc-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lc-input {
+  width: 100%;
+  padding: 11px 14px 11px 40px;
+  font-size: var(--text-base);
+  font-family: var(--font-family-base);
+  color: #111827;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+  transition:
+    border-color 0.18s ease,
+    background   0.18s ease,
+    box-shadow   0.18s ease;
+  -webkit-appearance: none;
+}
+
+.lc-input:hover {
+  border-color: #93c5fd;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+}
+
+.lc-input:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.15), 0 2px 8px rgba(37, 99, 235, 0.12);
+}
+
+.lc-input::placeholder {
+  color: #9ca3af;
+  font-size: 13.5px;
+}
+
+/* Íconos dentro del input */
+.lc-input-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.18s;
+}
+
+.lc-input-wrap:focus-within .lc-input-icon {
+  opacity: 0.65;
+}
+
+/* Botón toggle contraseña */
+.lc-pw-toggle {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.lc-pw-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.lc-pw-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  opacity: 0.40;
+  transition: opacity 0.15s;
+}
+
+.lc-pw-toggle:hover .lc-pw-icon {
+  opacity: 0.70;
+}
+
+/* Olvidé contraseña */
+.lc-forgot {
+  background: none;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #2563eb;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.lc-forgot:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MENSAJE DE ERROR
+───────────────────────────────────────────────────────────── */
+.lc-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 13px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #b91c1c;
+  line-height: 1.45;
+  animation: lc-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.lc-error-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BOTÓN PRINCIPAL
+───────────────────────────────────────────────────────────── */
+.lc-btn-primary {
+  width: 100%;
+  padding: 13px 20px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  font-family: var(--font-family-base);
+  letter-spacing: var(--tracking-normal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  margin-top: 4px;
+
+  /* Transición suave Stripe-style */
+  transition:
+    background    0.2s ease,
+    box-shadow    0.2s ease,
+    transform     0.25s ease;
+
+  box-shadow:
+    0 1px 2px rgba(37, 99, 235, 0.20),
+    0 4px 12px rgba(37, 99, 235, 0.22);
+}
+
+.lc-btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  box-shadow:
+    0 2px 4px rgba(37, 99, 235, 0.25),
+    0 8px 20px rgba(37, 99, 235, 0.28);
+  transform: translateY(-2px);
+}
+
+.lc-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.20);
+}
+
+.lc-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinner de carga */
+.lc-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.30);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: lc-spin 0.65s linear infinite;
+  display: inline-block;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SEPARADOR "o continuar con"
+───────────────────────────────────────────────────────────── */
+.lc-sep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+}
+
+.lc-sep-line {
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+  border-radius: 1px;
+}
+
+.lc-sep-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  white-space: nowrap;
+  text-transform: lowercase;
+  letter-spacing: 0.01em;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GOOGLE BUTTON WRAPPER
+───────────────────────────────────────────────────────────── */
+.lc-google-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FOOTER DE LA CARD
+───────────────────────────────────────────────────────────── */
+.lc-footer-text {
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.lc-footer-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.lc-footer-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   WATERMARK
+───────────────────────────────────────────────────────────── */
+.lc-watermark {
+  margin-top: 28px;
+  font-size: 12px;
+  color: #c4c9d4;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .lc-card {
+    padding: 32px 24px 28px;
+    border-radius: 16px;
+    max-width: 100%;
+  }
+
+  .lc-title { font-size: var(--text-2xl); }
+}
+
+@media (max-width: 360px) {
+  .lc-card { padding: 24px 18px 22px; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ANIMACIONES
+───────────────────────────────────────────────────────────── */
+@keyframes lc-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes lc-shake {
+  0%, 100% { transform: translateX(0);  }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px);  }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px);  }
+}
+
+@keyframes lc-spin {
+  to { transform: rotate(360deg); }
+}

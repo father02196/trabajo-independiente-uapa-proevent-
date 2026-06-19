@@ -1,0 +1,124 @@
+/* ── Calendar Component Styles ── */
+.calendar-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.calendar-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-controls span {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0F172A;
+}
+
+.calendar-nav-btn {
+  width: 32px;
+  height: 32px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748B;
+  transition: background 0.2s, color 0.2s;
+}
+
+.calendar-nav-btn:hover {
+  background: #F0F5FF;
+  color: #2563EB;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar-day-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  text-align: center;
+}
+
+.calendar-day {
+  min-height: 80px;
+  background: #F8FAFC;
+  border-radius: 10px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.calendar-day.today {
+  border: 2px solid #2563EB;
+}
+
+.day-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.event-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.event-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981; /* default */
+}
+
+.event-dot.mine { background: #2563EB; }
+.event-dot.others { background: #64748B; }
+.event-dot.av-req { background: #8b5cf6; }
+
+.calendar-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-color.mine { background: #2563EB; }
+.legend-color.others { background: #64748B; }
+.legend-color.av-req { background: #8b5cf6; }
