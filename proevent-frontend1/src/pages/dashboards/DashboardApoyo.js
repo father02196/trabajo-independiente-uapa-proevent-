@@ -30,6 +30,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
   const [eventosParticipa, setEventosParticipa] = useState([]); // Eventos donde está asignado
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState("");
+  const [activeEventsSortOrder, setActiveEventsSortOrder] = useState("desc"); // Orden tabla eventos activos
   const [completandoId, setCompletandoId] = useState(null); // ID de tarea en proceso de completar
   const [modalEvento, setModalEvento]     = useState(null); // Evento activo en modal
 
@@ -135,6 +136,12 @@ function DashboardApoyo({ usuario, setActiveTab }) {
   const tareasPendientesSorted = misTareas
     .filter(t => t.estado !== "Completada")
     .sort((a, b) => new Date(a.fecha_cumplimiento) - new Date(b.fecha_cumplimiento));
+
+  const sortedEventosParticipa = [...eventosParticipa].sort((a, b) => {
+    const dateA = new Date(a.fecha_inicio || 0);
+    const dateB = new Date(b.fecha_inicio || 0);
+    return activeEventsSortOrder === "desc" ? dateB - dateA : dateA - dateB;
+  });
 
   if (loading) {
     return (
@@ -476,15 +483,31 @@ function DashboardApoyo({ usuario, setActiveTab }) {
 
       {/* ── TABLA: TODOS MIS EVENTOS ACTIVOS ── */}
       <div className="saas-panel-card">
-        <div className="panel-header">
-          <FiCalendar className="panel-icon" style={{ color: '#2563eb' }} />
-          <div>
-            <h4>Eventos Activos del Sistema</h4>
-            <p>Eventos aprobados y en proceso donde puedes participar</p>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <FiCalendar className="panel-icon" style={{ color: '#2563eb' }} />
+            <div>
+              <h4>Eventos Activos del Sistema</h4>
+              <p>Eventos aprobados y en proceso donde puedes participar</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px' }}>
+              <FiCalendar style={{ color: '#64748b', marginRight: '8px' }} />
+              <select
+                className="saas-select"
+                style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: '500' }}
+                value={activeEventsSortOrder}
+                onChange={(e) => setActiveEventsSortOrder(e.target.value)}
+              >
+                <option value="desc">Más recientes primero</option>
+                <option value="asc">Menos recientes primero</option>
+              </select>
+            </div>
           </div>
         </div>
         <div className="panel-body" style={{ padding: '0' }}>
-          {eventosParticipa.length === 0 ? (
+          {sortedEventosParticipa.length === 0 ? (
             <div className="empty-panel-state" style={{ padding: '40px' }}>
               <FiCalendar className="icon" />
               <p>No hay eventos activos en este momento.</p>
@@ -502,7 +525,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {eventosParticipa.map((evt, idx) => (
+                  {sortedEventosParticipa.map((evt, idx) => (
                     <tr
                       key={evt.id_evento}
                       style={{

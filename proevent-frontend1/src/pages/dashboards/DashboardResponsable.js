@@ -33,6 +33,8 @@ function DashboardResponsable({ usuario, setActiveTab }) {
   const [tareasEquipo, setTareasEquipo] = useState([]); // Tareas globales del cronograma
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
+  const [sortOrder, setSortOrder]     = useState("asc"); // Orden del timeline de eventos
+  const [activeEventsSortOrder, setActiveEventsSortOrder] = useState("desc"); // Orden tabla eventos activos
 
   // --- ESTADOS DEL MODAL DE EVENTO ---
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -115,11 +117,22 @@ function DashboardResponsable({ usuario, setActiveTab }) {
 
   // --- CÁLCULOS: EVENTOS ---
   const eventosAprobados  = eventos.filter(e => e.estado === "Aprobado").length;
-  const eventosActivos    = eventos.filter(e => e.estado === "Aprobado" || e.estado === "Pendiente");
+  const eventosActivosBase = eventos.filter(e => e.estado === "Aprobado" || e.estado === "Pendiente");
 
-  const proximosEventos = eventosActivos
-    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
+  const proximosEventos = [...eventosActivosBase]
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_inicio);
+      const dateB = new Date(b.fecha_inicio);
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    })
     .slice(0, 5);
+
+  const eventosActivos = [...eventosActivosBase]
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_inicio || 0);
+      const dateB = new Date(b.fecha_inicio || 0);
+      return activeEventsSortOrder === "desc" ? dateB - dateA : dateA - dateB;
+    });
 
   // --- CÁLCULOS: TAREAS DEL EQUIPO ---
   const totalTareas       = tareasEquipo.length;
@@ -313,11 +326,25 @@ function DashboardResponsable({ usuario, setActiveTab }) {
 
         {/* Panel izquierdo: Próximos Eventos (estética modern-event-card) */}
         <div className="saas-panel-card">
-          <div className="panel-header">
-            <FiCalendar className="panel-icon" />
-            <div>
-              <h4>Eventos Próximos (Global)</h4>
-              <p>Agenda general de los próximos días</p>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <FiCalendar className="panel-icon" />
+              <div>
+                <h4>Eventos Próximos (Global)</h4>
+                <p>Agenda general de los próximos días</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                className="saas-select"
+                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="asc">Más próximos (Asc)</option>
+                <option value="desc">Más lejanos (Desc)</option>
+              </select>
+              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -476,11 +503,27 @@ function DashboardResponsable({ usuario, setActiveTab }) {
 
       {/* ── TABLA DETALLADA: TODOS LOS EVENTOS ACTIVOS ── */}
       <div className="saas-panel-card">
-        <div className="panel-header">
-          <FiActivity className="panel-icon" style={{ color: '#2563eb' }} />
-          <div>
-            <h4>Todos los Eventos Activos del Sistema</h4>
-            <p>Vista detallada para supervisión · {eventosActivos.length} evento{eventosActivos.length !== 1 ? 's' : ''} activo{eventosActivos.length !== 1 ? 's' : ''}</p>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <FiActivity className="panel-icon" style={{ color: '#2563eb' }} />
+            <div>
+              <h4>Todos los Eventos Activos del Sistema</h4>
+              <p>Vista detallada para supervisión · {eventosActivos.length} evento{eventosActivos.length !== 1 ? 's' : ''} activo{eventosActivos.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px' }}>
+              <FiCalendar style={{ color: '#64748b', marginRight: '8px' }} />
+              <select
+                className="saas-select"
+                style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: '500' }}
+                value={activeEventsSortOrder}
+                onChange={(e) => setActiveEventsSortOrder(e.target.value)}
+              >
+                <option value="desc">Más recientes primero</option>
+                <option value="asc">Menos recientes primero</option>
+              </select>
+            </div>
           </div>
         </div>
         <div className="panel-body" style={{ padding: '0' }}>

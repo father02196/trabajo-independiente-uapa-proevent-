@@ -234,15 +234,10 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                 {/* MÓDULO OPERATIVO: específico para Personal de Apoyo */}
                                 {usuario?.rol === "Personal de Apoyo" ? (
                                     <>
-                                        <li className="nav-group-header" style={{ marginTop: '4px' }}>
-                                            <span>Mis Tareas</span>
+                                        <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
+                                            <FiCheckCircle className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                            Mi Checklist de Tareas
                                         </li>
-                                        <ul className="nav-submenu open">
-                                            <li className={activeTab === "CronogramaGlobal" ? "active" : ""} onClick={() => setActiveTab("CronogramaGlobal")}>
-                                                <FiCheckCircle className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                Mi Checklist de Tareas
-                                            </li>
-                                        </ul>
                                     </>
                                 ) : (
                                     /* MÓDULO EVENTOS: visible para todos excepto Responsable de área audiovisual y Personal de Apoyo */
@@ -258,6 +253,11 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                                     Mi Historial de Solicitudes
                                                 </li>
                                             </>
+                                        ) : usuario?.rol === "Responsable" ? (
+                                            <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
+                                                <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
+                                                Solicitud de Eventos
+                                            </li>
                                         ) : (
                                             <>
                                                 <li className="nav-group-header" onClick={() => toggleMenu('eventos')}>
@@ -289,6 +289,12 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
 
                         {/* MÓDULO AUDIOVISUAL: visible para todos excepto Solicitante y Personal de Apoyo */}
                         {(usuario?.rol !== "Solicitante" && usuario?.rol !== "Personal de Apoyo") && (
+                            usuario?.rol === "Responsable" ? (
+                                <li className={activeTab === "Audiovisual" ? "active" : ""} onClick={() => setActiveTab("Audiovisual")}>
+                                    <img src={audiovisualIcon} alt="Audiovisual" className="nav-icon-img" />
+                                    Solicitud de Audiovisual
+                                </li>
+                            ) : (
                             <>
                                 <li className="nav-group-header" onClick={() => toggleMenu('audiovisual')}>
                                     <span>Módulo Audiovisual</span>
@@ -320,6 +326,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                     )}
                                 </ul>
                             </>
+                            )
                         )}
 
                         {usuario?.rol === "Administrador" && (
@@ -350,6 +357,17 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                 <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
                                     <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                     Soporte
+                                </li>
+                            </>
+                        ) : (usuario?.rol === "Personal de Apoyo" || usuario?.rol === "Responsable") ? (
+                            <>
+                                <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
+                                    <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                    Soporte
+                                </li>
+                                <li className={activeTab === "VisualizarEvaluaciones" ? "active" : ""} onClick={() => setActiveTab("VisualizarEvaluaciones")}>
+                                    <FiActivity className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                    Visualizar Evaluaciones
                                 </li>
                             </>
                         ) : (

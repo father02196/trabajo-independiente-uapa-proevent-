@@ -109,15 +109,17 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
 
         <div className="filters-grid" style={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'flex-end', gap: '16px' }}>
           <div className="filter-item search-bar-container" style={{ flex: '2 1 0' }}>
-            <FiSearch className="search-icon" style={{ top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder="Buscar por nombre o ID..." 
-              className="input-base search-input" 
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              style={{ width: '100%', paddingLeft: '36px' }}
-            />
+            <div style={{ position: 'relative', width: '100%' }}>
+              <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '16px', pointerEvents: 'none' }} />
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre o ID..." 
+                className="input-base search-input" 
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                style={{ width: '100%', paddingLeft: '38px' }}
+              />
+            </div>
           </div>
 
           <div className="filter-item" style={{ flex: '1 1 0' }}>
