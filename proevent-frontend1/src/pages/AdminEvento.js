@@ -16,7 +16,7 @@ const API = "http://localhost:8080";
 
 export default function AdminEvento({ usuario }) {
   // --- ESTADOS ---
-  const [activeTab, setActiveTab] = useState("tipos"); // tipos | corporativo | alimentos
+  const [activeTab, setActiveTab] = useState("tipos"); // tipos | corporativo | alimentos | recintos | dependencias
   const [dataList, setDataList] = useState([]);        // Listado de datos del catálogo actual
   const [loading, setLoading] = useState(false);
   
@@ -27,6 +27,7 @@ export default function AdminEvento({ usuario }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [nombre, setNombre] = useState("");
+  const [responsable, setResponsable] = useState(""); // Solo para el tab de dependencias
 
   // --- CONFIGURACIÓN DINÁMICA ---
   // Retorna el endpoint y el idKey de la BD correspondiente al tab activo
@@ -35,6 +36,8 @@ export default function AdminEvento({ usuario }) {
       case "tipos": return { endpoint: "tipos-evento", idField: "id_tipo_evento", title: "Tipos de Evento" };
       case "corporativo": return { endpoint: "tipos-detalle-corporativo", idField: "id_detalle_corp", title: "Detalles Corporativos" };
       case "alimentos": return { endpoint: "alimentos", idField: "id_alimento", title: "Servicios de Alimentos" };
+      case "recintos": return { endpoint: "recintos", idField: "id_recinto", title: "Recintos" };
+      case "dependencias": return { endpoint: "dependencias", idField: "id_dependencia", title: "Dependencias" };
       default: return {};
     }
   };
@@ -44,6 +47,7 @@ export default function AdminEvento({ usuario }) {
     cargarDatos();
     setIsEditing(false);
     setNombre("");
+    setResponsable(""); // Limpia el campo responsable al cambiar de tab
     setCurrentPage(1); // Reset al cambiar de tab
   }, [activeTab]);
 
@@ -66,15 +70,21 @@ export default function AdminEvento({ usuario }) {
     const url = isEditing ? `${API}/${endpoint}/${currentId}` : `${API}/${endpoint}`;
     const method = isEditing ? "PUT" : "POST";
 
+    // El catálogo de dependencias admite un campo extra 'responsable'
+    const body = activeTab === "dependencias"
+      ? { nombre, responsable }
+      : { nombre };
+
     setLoading(true);
     try {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre })
+        body: JSON.stringify(body)
       });
       if (res.ok) {
         setNombre("");
+        setResponsable("");
         setIsEditing(false);
         setCurrentId(null);
         cargarDatos();
@@ -95,10 +105,13 @@ export default function AdminEvento({ usuario }) {
     setIsEditing(true);
     setCurrentId(item[idField]);
     setNombre(item.nombre);
+    // Carga el campo responsable si es un registro de dependencia
+    setResponsable(item.responsable || "");
   };
 
   const handleEliminar = async (id) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta opción?")) return;
+    const { title } = getConfig();
+    if (!window.confirm(`¿Seguro que deseas eliminar este registro de ${title}? Esta acción no se puede deshacer.`)) return;
     const { endpoint } = getConfig();
     setLoading(true);
     try {
@@ -106,7 +119,8 @@ export default function AdminEvento({ usuario }) {
       if (res.ok) {
         cargarDatos();
       } else {
-        alert("Error al eliminar");
+        const err = await res.json();
+        alert(err.mensaje || "Error al eliminar el registro.");
       }
     } catch {
       alert("Error de conexión");
@@ -144,6 +158,8 @@ export default function AdminEvento({ usuario }) {
         <button className={activeTab === "tipos" ? "active" : ""} onClick={() => setActiveTab("tipos")}>Tipos de Evento</button>
         <button className={activeTab === "corporativo" ? "active" : ""} onClick={() => setActiveTab("corporativo")}>Detalles Corporativos</button>
         <button className={activeTab === "alimentos" ? "active" : ""} onClick={() => setActiveTab("alimentos")}>Opciones de Alimentos</button>
+        <button className={activeTab === "recintos" ? "active" : ""} onClick={() => setActiveTab("recintos")}>Recintos</button>
+        <button className={activeTab === "dependencias" ? "active" : ""} onClick={() => setActiveTab("dependencias")}>Dependencias</button>
       </div>
 
       <div className="saas-panel-card" style={{ marginBottom: '24px', padding: '24px' }}>
@@ -161,22 +177,43 @@ export default function AdminEvento({ usuario }) {
           </div>
         </div>
 
-        <form onSubmit={handleGuardar} style={{ display: 'flex', gap: '16px', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', flex: 1, backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '0 12px', transition: 'border-color 0.2s, box-shadow 0.2s' }} className="focus-within-ring">
-            <FiEdit2 style={{ color: '#94a3b8', fontSize: '18px' }} />
-            <input 
-              type="text" 
-              required
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              style={{ border: 'none', outline: 'none', padding: '12px', width: '100%', fontSize: '14.5px', color: '#334155', backgroundColor: 'transparent' }}
-              placeholder={`Ej: ${activeTab === 'tipos' ? 'Conferencia Magistral' : activeTab === 'corporativo' ? 'Banner Institucional' : 'Coffee Break'}`}
-            />
+        <form onSubmit={handleGuardar} style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '200px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '0 12px', transition: 'border-color 0.2s, box-shadow 0.2s' }} className="focus-within-ring">
+              <FiEdit2 style={{ color: '#94a3b8', fontSize: '18px' }} />
+              <input 
+                type="text" 
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                style={{ border: 'none', outline: 'none', padding: '12px', width: '100%', fontSize: '14.5px', color: '#334155', backgroundColor: 'transparent' }}
+                placeholder={`Ej: ${
+                  activeTab === 'tipos' ? 'Conferencia Magistral' :
+                  activeTab === 'corporativo' ? 'Banner Institucional' :
+                  activeTab === 'alimentos' ? 'Coffee Break' :
+                  activeTab === 'recintos' ? 'Sede Norte' :
+                  'Vicerrectoría Académica'
+                }`}
+              />
+            </div>
+            {/* Campo extra: Responsable — solo visible en el tab de Dependencias */}
+            {activeTab === 'dependencias' && (
+              <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '0 12px' }} className="focus-within-ring">
+                <FiEdit2 style={{ color: '#94a3b8', fontSize: '18px' }} />
+                <input 
+                  type="text" 
+                  value={responsable}
+                  onChange={(e) => setResponsable(e.target.value)}
+                  style={{ border: 'none', outline: 'none', padding: '12px', width: '100%', fontSize: '14.5px', color: '#334155', backgroundColor: 'transparent' }}
+                  placeholder="Responsable (opcional, ej: Dra. María López)"
+                />
+              </div>
+            )}
           </div>
           
           <div style={{ display: 'flex', gap: '12px' }}>
             {isEditing && (
-              <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', fontWeight: 600 }}>
+              <button type="button" onClick={() => { setIsEditing(false); setNombre(""); setResponsable(""); }} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', fontWeight: 600 }}>
                 Cancelar
               </button>
             )}
@@ -193,6 +230,7 @@ export default function AdminEvento({ usuario }) {
             <tr>
               <th>ID</th>
               <th>{`Descripción en el catálogo (${title})`}</th>
+              {activeTab === 'dependencias' && <th>Responsable</th>}
               <th style={{textAlign: 'right'}}>Acciones</th>
             </tr>
           </thead>
@@ -201,6 +239,9 @@ export default function AdminEvento({ usuario }) {
               <tr key={item[idField]}>
                 <td style={{color: 'var(--text-muted)', fontWeight: 600}}>{item[idField]}</td>
                 <td><strong>{item.nombre}</strong></td>
+                {activeTab === 'dependencias' && (
+                  <td style={{color: 'var(--text-muted)', fontSize: '13px'}}>{item.responsable || <span style={{fontStyle:'italic', opacity: 0.5}}>Sin asignar</span>}</td>
+                )}
                 <td style={{textAlign: 'right'}}>
                   <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
                     <button className="action-icon-btn edit" onClick={() => handleEditar(item)} title="Editar"><FiEdit2 /></button>

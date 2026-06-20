@@ -1514,6 +1514,78 @@ app.delete('/alimentos/:id', (req, res) => { // Remueve Item fisico de sistema g
   });
 });
 
+// 5. Recintos (Catálogo de Sedes y Sub-sedes Universitarias — CRUD completo)
+// GET /recintos ya existe en la línea de consultas para combos (lectura de formularios de eventos)
+app.post('/recintos', (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ mensaje: 'El nombre del recinto es requerido.' });
+  db.query('INSERT INTO recinto (nombre) VALUES (?)', [nombre.trim()], (err, result) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe un recinto con ese nombre.' });
+      return res.status(500).json({ error: err.message });
+    }
+    res.status(201).json({ mensaje: 'Recinto creado exitosamente.', id: result.insertId });
+  });
+});
+app.put('/recintos/:id', (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ mensaje: 'El nombre del recinto es requerido.' });
+  db.query('UPDATE recinto SET nombre=? WHERE id_recinto=?', [nombre.trim(), req.params.id], (err) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe un recinto con ese nombre.' });
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ mensaje: 'Recinto actualizado exitosamente.' });
+  });
+});
+app.delete('/recintos/:id', (req, res) => {
+  db.query('DELETE FROM recinto WHERE id_recinto=?', [req.params.id], (err) => {
+    if (err) {
+      if (err.code === 'ER_ROW_IS_REFERENCED_2' || (err.message && err.message.includes('foreign key'))) {
+        return res.status(409).json({ mensaje: 'No se puede eliminar este recinto porque tiene eventos registrados. Debe reasignar o eliminar esos eventos primero.' });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ mensaje: 'Recinto eliminado exitosamente.' });
+  });
+});
+
+// 6. Dependencias (Catálogo de Dependencias Universitarias — CRUD completo)
+// GET /dependencias ya existe en la línea de consultas para combos (lectura de formularios de eventos)
+app.post('/dependencias', (req, res) => {
+  const { nombre, responsable } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ mensaje: 'El nombre de la dependencia es requerido.' });
+  db.query('INSERT INTO dependencia (nombre, responsable) VALUES (?, ?)', [nombre.trim(), responsable ? responsable.trim() : null], (err, result) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe una dependencia con ese nombre.' });
+      return res.status(500).json({ error: err.message });
+    }
+    res.status(201).json({ mensaje: 'Dependencia creada exitosamente.', id: result.insertId });
+  });
+});
+app.put('/dependencias/:id', (req, res) => {
+  const { nombre, responsable } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ mensaje: 'El nombre de la dependencia es requerido.' });
+  db.query('UPDATE dependencia SET nombre=?, responsable=? WHERE id_dependencia=?', [nombre.trim(), responsable ? responsable.trim() : null, req.params.id], (err) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe una dependencia con ese nombre.' });
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ mensaje: 'Dependencia actualizada exitosamente.' });
+  });
+});
+app.delete('/dependencias/:id', (req, res) => {
+  db.query('DELETE FROM dependencia WHERE id_dependencia=?', [req.params.id], (err) => {
+    if (err) {
+      if (err.code === 'ER_ROW_IS_REFERENCED_2' || (err.message && err.message.includes('foreign key'))) {
+        return res.status(409).json({ mensaje: 'No se puede eliminar esta dependencia porque tiene eventos registrados. Debe reasignar o eliminar esos eventos primero.' });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ mensaje: 'Dependencia eliminada exitosamente.' });
+  });
+});
+
 // ── FASE: FLUJO DOCUMENTAL (SUBIDA DE ARCHIVOS) ──
 // (La configuración de multer 'storage' y 'upload' ya está definida en la parte superior del archivo)
 

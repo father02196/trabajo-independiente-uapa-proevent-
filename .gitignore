@@ -11,3 +11,6 @@ proevent-frontend1/.env
 
 # Imágenes redundantes
 proevent-frontend1/src/pages/img/logo-proevent.jpg.jpeg
+
+# Ignorar backups locales
+*.zip
