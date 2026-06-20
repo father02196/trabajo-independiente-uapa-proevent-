@@ -7,7 +7,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck } from "react-icons/fi";
+import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck, FiRefreshCw } from "react-icons/fi";
 import './../css/Dashboard.css';
 
 const API = "http://localhost:8080";
@@ -141,15 +141,18 @@ function DashboardLegal({ usuario, setActiveTab }) {
                 <p>Eventos próximos que necesitan validación de contratos</p>
               </div>
             </div>
-            <select 
-              value={sortOrder} 
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="dashboard-select"
-              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '1px solid #E2E8F0', cursor: 'pointer', backgroundColor: '#fff', color: '#475569', outline: 'none' }}
-            >
-              <option value="asc">Más próximos (Asc)</option>
-              <option value="desc">Más lejanos (Desc)</option>
-            </select>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="saas-select"
+                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
+              >
+                <option value="asc">Más próximos (Asc)</option>
+                <option value="desc">Más lejanos (Desc)</option>
+              </select>
+              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+            </div>
           </div>
           
           <div className="panel-body">

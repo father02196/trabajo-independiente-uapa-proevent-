@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para paneles y accesos rápidos
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor, FiRefreshCw } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -33,6 +33,7 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
   const [eventRequests, setEventRequests] = useState([]); // Todos los eventos del sistema
   const [loading, setLoading]             = useState(true); // Spinner de carga
   const [error, setError]                 = useState("");   // Mensaje de error
+  const [sortOrder, setSortOrder]         = useState("asc"); // Orden del timeline
 
   // --- ESTADOS DEL MODAL ---
   const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal
@@ -130,7 +131,11 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
   // --- TIMELINE: PRÓXIMOS 5 EVENTOS ACTIVOS ---
   const proximosEventos = solicitudesRelevantes
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
-    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_inicio);
+      const dateB = new Date(b.fecha_inicio);
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    })
     .slice(0, 5);
 
   return (
@@ -254,11 +259,25 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
 
       <div className="dashboard-double-panel">
         <div className="saas-panel-card">
-          <div className="panel-header">
-            <FiCalendar className="panel-icon" />
-            <div>
-              <h4>Eventos Próximos (Global)</h4>
-              <p>Agenda general de los próximos días</p>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <FiCalendar className="panel-icon" />
+              <div>
+                <h4>Eventos Próximos (Global)</h4>
+                <p>Agenda general de los próximos días</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                className="saas-select"
+                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="asc">Más próximos (Asc)</option>
+                <option value="desc">Más lejanos (Desc)</option>
+              </select>
+              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">

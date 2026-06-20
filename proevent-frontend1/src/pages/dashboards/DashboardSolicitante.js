@@ -443,6 +443,37 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
               </div>
             </div>
 
+              {/* Requerimientos Adicionales a Ancho Completo */}
+              <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div className="info-card">
+                  <div className="info-card-title">
+                    <FiCheckCircle size={14} /> Requerimientos Adicionales
+                  </div>
+                  <div className="modal-grid-3">
+                    {selectedRequest.detalles_corporativos && (
+                      <div className="info-row">
+                        <span className="info-label">Montaje Corporativo</span>
+                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.detalles_corporativos}</span>
+                      </div>
+                    )}
+                    {selectedRequest.alimentos && (
+                      <div className="info-row">
+                        <span className="info-label">Alimentos (Catering)</span>
+                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.alimentos}</span>
+                      </div>
+                    )}
+                    <div className="info-row">
+                      <span className="info-label">Equipos Audiovisuales</span>
+                      <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>
+                        {selectedRequest.necesita_audiovisual
+                          ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)")
+                          : "Ninguno"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
