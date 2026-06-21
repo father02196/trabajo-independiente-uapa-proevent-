@@ -64,6 +64,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const [exito, setExito] = useState("");
   const [needsAV, setNeedsAV] = useState(null);
   const [omitirServicios, setOmitirServicios] = useState(false);
+  const [validationModal, setValidationModal] = useState({ isOpen: false, message: "", targetSection: "" });
 
   const [archivo, setArchivo] = useState(null); // Nuevo estado para Flujo Documental
 
@@ -200,20 +201,29 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       if (section === "Audiovisual") continue; // Validado abajo
       const err = validarSeccion(section);
       if (err) {
-        setActiveSection(section);
-        setError(`Falta completar ${seccionLabels[i]}: ${err}`);
+        setValidationModal({
+          isOpen: true,
+          message: `Falta completar ${seccionLabels[i]}: ${err}`,
+          targetSection: section
+        });
         return;
       }
     }
 
     if (needsAV === null) {
-      setActiveSection("Audiovisual");
-      setError("Por favor, selecciona si deseas gestionar equipos audiovisuales.");
+      setValidationModal({
+        isOpen: true,
+        message: "Por favor, selecciona si deseas gestionar equipos audiovisuales.",
+        targetSection: "Audiovisual"
+      });
       return;
     }
     if (needsAV === true && avData.equipos.length === 0) {
-      setActiveSection("Audiovisual");
-      setError("Selecciona al menos un equipo o marca que no necesitas.");
+      setValidationModal({
+        isOpen: true,
+        message: "Selecciona al menos un equipo o marca que no necesitas.",
+        targetSection: "Audiovisual"
+      });
       return;
     }
 
@@ -569,6 +579,35 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
             >
               Volver a la solicitud
             </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal de Validación General (Pantalla Completa) */}
+      {validationModal.isOpen && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: '450px', padding: '40px 32px', textAlign: 'center', borderRadius: '16px' }}>
+            <FiAlertTriangle size={56} color="#EF4444" style={{ margin: '0 auto 20px', display: 'block' }} />
+            <h3 style={{ marginBottom: '16px', fontSize: '22px', color: '#1E293B', fontWeight: '800' }}>
+              Información Incompleta
+            </h3>
+            <p style={{ color: '#475569', fontSize: '15px', marginBottom: '32px', lineHeight: '1.6' }}>
+              {validationModal.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary btn-lg" 
+                style={{ width: '100%', justifyContent: 'center' }}
+                onClick={() => {
+                  setValidationModal({ isOpen: false, message: "", targetSection: "" });
+                  setActiveSection(validationModal.targetSection);
+                }}
+              >
+                Ir al apartado a completar
+              </button>
+            </div>
           </div>
         </div>,
         document.body
