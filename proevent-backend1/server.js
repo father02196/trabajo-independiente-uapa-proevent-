@@ -617,7 +617,7 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
       // ── NOTIFICACIONES FASE 1: Nueva solicitud de evento ─────────────────
       // Alerta a los Administradores de Eventos para que revisen la nueva solicitud
       crearNotificacion({
-        rol_destino: 'Administrador de Evento',
+        rol_destino: 'Administrador de Eventos',
         titulo: '📅 Nueva Solicitud de Evento',
         cuerpo: `Se recibió una nueva solicitud de evento: "${nombre}" (#EVT-${id_evento}). Requiere revisión y aprobación.`,
         enlace_accion: 'gestion-eventos'
@@ -628,6 +628,27 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
         titulo: '📅 Nueva Solicitud de Evento',
         cuerpo: `Se recibió una nueva solicitud: "${nombre}" (#EVT-${id_evento}) pendiente de revisión.`,
         enlace_accion: 'gestion-eventos'
+      });
+      // Alerta al Administrador de Audiovisual
+      crearNotificacion({
+        rol_destino: 'Administrador de Audiovisual',
+        titulo: '🎥 Nuevo Evento — Revisa Audiovisual',
+        cuerpo: `Se registró el evento: "${nombre}" (#EVT-${id_evento}). Verifica si requiere soporte técnico o audiovisual.`,
+        enlace_accion: 'gestion-solicitudes-av'
+      });
+      // Alerta al Administrador de Compras
+      crearNotificacion({
+        rol_destino: 'Administrador de Compras',
+        titulo: '🛒 Nuevo Evento — Gestión de Compras',
+        cuerpo: `El evento: "${nombre}" (#EVT-${id_evento}) ha sido solicitado. Revisa si requiere adquisiciones o cotizaciones.`,
+        enlace_accion: 'gestion-eventos-compras'
+      });
+      // Alerta al Administrador V-A-F
+      crearNotificacion({
+        rol_destino: 'Administrador V-A-F',
+        titulo: '💰 Nuevo Evento — Viabilidad Financiera',
+        cuerpo: `Nueva solicitud de evento: "${nombre}" (#EVT-${id_evento}). Revisa la viabilidad presupuestaria del POA.`,
+        enlace_accion: 'poa-admin'
       });
     }
   );

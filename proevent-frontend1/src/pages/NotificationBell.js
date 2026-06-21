@@ -18,7 +18,7 @@ import './../css/NotificationBell.css';
 
 const API = 'http://localhost:8080';
 
-export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones, onGoToPoaAdmin }) {
+export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones, onGoToPoaAdmin, onGoToGestionEventos, onGoToGestionSolicitudesAV }) {
   // --- ESTADOS ---
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -80,6 +80,12 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
       onGoToPoaAdmin && onGoToPoaAdmin();
     } else if (accion === 'mis-evaluaciones') {
       onGoToVisualizarEvaluaciones && onGoToVisualizarEvaluaciones();
+    } else if (accion === 'gestion-eventos') {
+      onGoToGestionEventos && onGoToGestionEventos();
+    } else if (accion === 'gestion-solicitudes-av') {
+      onGoToGestionSolicitudesAV && onGoToGestionSolicitudesAV();
+    } else if (accion === 'gestion-eventos-compras') {
+      onGoToGestionEventos && onGoToGestionEventos();
     }
   };
 

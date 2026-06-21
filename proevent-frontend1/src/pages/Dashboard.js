@@ -467,6 +467,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             }}
                             onGoToVisualizarEvaluaciones={() => setActiveTab("VisualizarEvaluaciones")}
                             onGoToPoaAdmin={() => setActiveTab("PoaAdmin")}
+                            onGoToGestionEventos={() => setActiveTab("GestionEventos")}
+                            onGoToGestionSolicitudesAV={() => setActiveTab("GestionSolicitudes")}
                         />
                     </div>
                 </header>
