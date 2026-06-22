@@ -46,6 +46,11 @@ function ModuloProveedores({ usuario }) {
     const [formData, setFormData] = useState({});
     const [showPassword, setShowPassword] = useState(false); // Para mostrar pass en form de creación
 
+    // --- ESTADOS PARA VALIDACIÓN AVANZADA DE CORREO ---
+    const [errorEmailModal, setErrorEmailModal] = useState(false);
+    const [mensajeErrorCorreo, setMensajeErrorCorreo] = useState("");
+    const [validandoCorreo, setValidandoCorreo] = useState(false);
+
     // --- ESTADOS PARA MODAL DE ENVÍO DE ÓRDENES (Logística) ---
     const [modalEnvio, setModalEnvio] = useState({ open: false, servicio: null });
     const [proveedoresFiltradosTipo, setProveedoresFiltradosTipo] = useState([]); // Filtrados por la cat. de la orden
@@ -158,8 +163,78 @@ function ModuloProveedores({ usuario }) {
 
     // --- Módulo: Directorio de Suplidores | Función: Guardar Proveedor (Crear/Editar) ---
     // Esta función maneja tanto la creación de un nuevo suplidor como la edición de uno existente
+    
+    // Función de validación avanzada de correo
+    const validarCorreoAvanzado = async (email) => {
+        // 1. Regex Estricto (Formato básico)
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) return { valid: false, message: "El formato del correo es inválido." };
+
+        const domain = email.split('@')[1].toLowerCase();
+
+        // 2. Lista Negra Local (Dominios desechables conocidos)
+        const blacklist = ['yopmail.com', 'mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'sharklasers.com', 'dispostable.com'];
+        if (blacklist.includes(domain)) return { valid: false, message: "No se permiten proveedores de correo temporal o desechable." };
+
+        // 3. Verificación Real de DNS (Registros MX) usando la API de Google DNS (Sin CORS, 100% gratuita y confiable)
+        try {
+            const controllerMX = new AbortController();
+            const timeoutMX = setTimeout(() => controllerMX.abort(), 3500); // 3.5 segundos de timeout
+            
+            // Consultamos los registros MX del dominio
+            const resMX = await fetch(`https://dns.google/resolve?name=${domain}&type=MX`, { signal: controllerMX.signal });
+            clearTimeout(timeoutMX);
+            
+            if (resMX.ok) {
+                const dataMX = await resMX.json();
+                // Status !== 0 significa que el dominio no existe (NXDOMAIN) u otro error de DNS
+                if (dataMX.Status !== 0) {
+                    return { valid: false, message: `El dominio "@${domain}" no existe o no está registrado en internet.` };
+                }
+                // Si el dominio existe pero no tiene respuestas (Answer) o no son tipo 15 (MX)
+                if (!dataMX.Answer || dataMX.Answer.length === 0) {
+                    return { valid: false, message: `El dominio "@${domain}" no está configurado para recibir correos (No tiene registros MX).` };
+                }
+            }
+        } catch (error) {
+            console.warn("Fallo al verificar DNS MX (Fail-Open):", error);
+        }
+
+        // 4. API Externa (debounce.io) para chequear si el dominio es desechable en sus listas globales
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 segundos timeout
+            const res = await fetch(`https://disposable.debounce.io/?email=${email}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            const data = await res.json();
+            
+            if (data.disposable === "true") {
+                return { valid: false, message: "El dominio ingresado fue identificado como temporal o inválido por los servidores globales." };
+            }
+        } catch (error) {
+            console.warn("API de debounce falló (Fail-Open activado):", error);
+        }
+
+        return { valid: true };
+    };
+
     const handleGuardarProveedor = async (e) => {
         e.preventDefault(); // Evita que la página se recargue al enviar el formulario
+        
+        // --- NUEVA CAPA DE VALIDACIÓN AVANZADA ---
+        if (formData.correo) {
+            setValidandoCorreo(true);
+            const validacion = await validarCorreoAvanzado(formData.correo);
+            setValidandoCorreo(false);
+            
+            if (!validacion.valid) {
+                setMensajeErrorCorreo(validacion.message || "El correo electrónico ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente.");
+                setErrorEmailModal(true);
+                return; // Bloquea la continuación del guardado
+            }
+        }
+        // -----------------------------------------
+
         // Verifica si estamos en modo edición o creación revisando el tipo de modal
         const isEdit = modalConfig.type === 'editar_proveedor';
         // Asigna la URL del backend dinámicamente; si es edición, añade el ID del proveedor al final
@@ -244,6 +319,19 @@ function ModuloProveedores({ usuario }) {
                 });
             }
         }
+    };
+
+    // Función para manejar el botón "Corregir correo" del modal de error
+    const handleCorregirCorreo = () => {
+        setErrorEmailModal(false);
+        // Pequeño delay para permitir que el modal se cierre y el DOM del form reciba el foco
+        setTimeout(() => {
+            const inputCorreo = document.getElementById("input-correo-proveedor");
+            if (inputCorreo) {
+                inputCorreo.focus();
+                inputCorreo.select();
+            }
+        }, 100);
     };
 
     // --- FUNCIONES DE FILTRO Y ORDENAMIENTO DE TABLAS ---
@@ -797,6 +885,7 @@ function ModuloProveedores({ usuario }) {
                                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                                         <label>Correo Electrónico</label>
                                         <input 
+                                            id="input-correo-proveedor"
                                             className="input-base" 
                                             required 
                                             type="email" 
@@ -849,14 +938,73 @@ function ModuloProveedores({ usuario }) {
                             <button type="button" className="btn btn-secondary" onClick={() => setModalConfig({ open: false })}>
                                 Cancelar
                             </button>
-                            <button type="submit" form="proveedor-form" className="btn btn-primary">
-                                {modalConfig.type === 'editar_proveedor' ? 'Guardar Cambios' : 'Registrar Suplidor'}
+                            <button type="submit" form="proveedor-form" className="btn btn-primary" disabled={validandoCorreo}>
+                                {validandoCorreo ? 'Validando...' : (modalConfig.type === 'editar_proveedor' ? 'Guardar Cambios' : 'Registrar Suplidor')}
                             </button>
                         </div>
                     </div>
                 </div>,
                 document.body
             )}
+
+            {/* MODAL GLOBAL SUPERPUESTO: ERROR DE CORREO NO VÁLIDO */}
+            {errorEmailModal && createPortal(
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                    backdropFilter: 'blur(8px)',
+                    zIndex: 99999, // Z-index superior a todo
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '16px',
+                        padding: '32px',
+                        maxWidth: '420px',
+                        width: '90%',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        textAlign: 'center',
+                        transform: 'scale(1)',
+                        animation: 'scaleIn 0.2s ease-out'
+                    }}>
+                        <div style={{
+                            width: '64px', height: '64px', borderRadius: '50%', background: '#FEF2F2',
+                            color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 24px'
+                        }}>
+                            <FiAlertTriangle size={32} />
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0F172A', marginBottom: '12px' }}>
+                            Correo electrónico no válido
+                        </h3>
+                        <p style={{ fontSize: '0.95rem', color: '#475569', lineHeight: '1.6', marginBottom: '32px' }}>
+                            {mensajeErrorCorreo || "El correo electrónico ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente."}
+                        </p>
+                        <button 
+                            className="btn btn-primary" 
+                            style={{ 
+                                width: '100%', 
+                                padding: '14px', 
+                                fontSize: '1rem', 
+                                fontWeight: '700', 
+                                justifyContent: 'center',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 14px 0 rgba(15, 23, 42, 0.2)'
+                            }}
+                            onClick={handleCorregirCorreo}
+                        >
+                            Corregir correo
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            `}</style>
         </div>
     );
 }

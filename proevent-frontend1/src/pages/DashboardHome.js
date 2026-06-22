@@ -534,7 +534,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                             <>
                               <span className="modern-date-separator">•</span>
                               <FiClock className="modern-date-icon" />
-                              <span>{evt.hora_inicio}</span>
+                              <span>{evt.hora_inicio.substring(0, 5)}</span>
                             </>
                           )}
                         </div>

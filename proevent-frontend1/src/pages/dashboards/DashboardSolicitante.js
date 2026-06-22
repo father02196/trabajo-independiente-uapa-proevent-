@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para tarjetas y botones
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiRefreshCw } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiRefreshCw, FiList } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -298,7 +298,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                             <>
                               <span className="modern-date-separator">•</span>
                               <FiClock className="modern-date-icon" />
-                              <span>{evt.hora_inicio}</span>
+                              <span>{evt.hora_inicio?.substring(0, 5)}</span>
                             </>
                           )}
                         </div>
@@ -362,11 +362,18 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   <span>Reserva de equipos</span>
                 </div>
               </div>
-              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("Soporte")}>
+              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("HistorialSolicitudes")}>
+                <div className="icon-wrapper"><FiList /></div>
+                <div className="btn-text">
+                  <strong>Mi Historial</strong>
+                  <span>Ver mis solicitudes</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Evaluacion")}>
                 <div className="icon-wrapper"><FiStar /></div>
                 <div className="btn-text">
-                  <strong>Soporte</strong>
-                  <span>Ayuda técnica</span>
+                  <strong>Evaluar Servicio</strong>
+                  <span>Calificar eventos</span>
                 </div>
               </div>
             </div>

@@ -35,14 +35,13 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
   };
 
   // --- FUNCIÓN: renderContent ---
-  // Renderiza el contenido financiero activo
   const renderContent = () => {
     switch (activeTab) {
-      case "DashboardVAF": return <DashboardVAF usuario={usuario} />;
-      case "PoaAdmin": return <PoaAdmin usuario={usuario} />;
-      case "Calendario": return <EventCalendar usuario={usuario} />;
-      case "Soporte": return <SoporteHome />;
-      default: return <DashboardVAF usuario={usuario} />;
+      case "DashboardVAF": return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
+      case "PoaAdmin": return <PoaAdmin usuario={usuario} setActiveTab={setActiveTab} />;
+      case "Calendario": return <EventCalendar usuario={usuario} setActiveTab={setActiveTab} />;
+      case "Soporte": return <SoporteHome setActiveTab={setActiveTab} />;
+      default: return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
     }
   };
 
@@ -51,9 +50,9 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
       case "DashboardVAF":
         return "Dashboard Financiero";
       case "PoaAdmin":
-        return "Presupuesto (POA)";
+        return "Plan Operativo Anual";
       case "Calendario":
-        return "Calendario";
+        return "Calendario de Eventos";
       case "Soporte":
         return "Soporte y Ayuda";
       default:
@@ -80,15 +79,15 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
           <ul>
             <li className={activeTab === "DashboardVAF" ? "active" : ""} onClick={() => setActiveTab("DashboardVAF")}>
               <FiPieChart className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-              Dashboard Financiero
-            </li>
-            <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
-              <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-              Presupuesto (POA)
+              Dashboard
             </li>
             <li className={activeTab === "Calendario" ? "active" : ""} onClick={() => setActiveTab("Calendario")}>
               <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
               Calendario
+            </li>
+            <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
+              <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+              Presupuesto (POA)
             </li>
             <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
               <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />

@@ -303,7 +303,7 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
                           <>
                             <span className="modern-date-separator">•</span>
                             <FiClock className="modern-date-icon" />
-                            <span>{evt.hora_inicio}</span>
+                            <span>{evt.hora_inicio?.substring(0, 5)}</span>
                           </>
                         )}
                       </div>
@@ -349,11 +349,18 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
           </div>
           <div className="panel-body flex-column-body">
             <div className="quick-actions-list">
-              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab(isAudioVisualAdmin ? "GestionSolicitudes" : "GestionEventos")}>
+              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
                 <div className="icon-wrapper"><FiList /></div>
                 <div className="btn-text">
                   <strong>Gestionar Solicitudes</strong>
                   <span>Revisar y aprobar peticiones</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("AdminEvento")}>
+                <div className="icon-wrapper"><FiGrid /></div>
+                <div className="btn-text">
+                  <strong>Catálogos de Eventos</strong>
+                  <span>Tipos, recintos y más</span>
                 </div>
               </div>
               <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
@@ -361,6 +368,13 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
                 <div className="btn-text">
                   <strong>Ver Agenda</strong>
                   <span>Calendario de actividades</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("VisualizarEvaluaciones")}>
+                <div className="icon-wrapper"><FiStar /></div>
+                <div className="btn-text">
+                  <strong>Historial de Evaluaciones</strong>
+                  <span>Resultados de calificaciones</span>
                 </div>
               </div>
             </div>

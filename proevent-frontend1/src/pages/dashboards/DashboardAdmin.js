@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para tarjetas y gráficos
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiSettings } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -480,7 +480,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                             <>
                               <span className="modern-date-separator">•</span>
                               <FiClock className="modern-date-icon" />
-                              <span>{evt.hora_inicio}</span>
+                              <span>{evt.hora_inicio?.substring(0, 5)}</span>
                             </>
                           )}
                         </div>
@@ -530,32 +530,32 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
           </div>
           <div className="panel-body flex-column-body">
             <div className="quick-actions-list">
-              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("Eventos")}>
-                <div className="icon-wrapper"><FiPlus /></div>
+              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+                <div className="icon-wrapper"><FiFileText /></div>
                 <div className="btn-text">
-                  <strong>Crear Evento</strong>
-                  <span>Nueva solicitud de evento</span>
+                  <strong>Gestión de Solicitudes</strong>
+                  <span>Revisar y aprobar solicitudes</span>
                 </div>
               </div>
-              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("Audiovisual")}>
-                <div className="icon-wrapper"><FiMonitor /></div>
+              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("Ajustes")}>
+                <div className="icon-wrapper"><FiSettings /></div>
                 <div className="btn-text">
-                  <strong>Solicitud AV</strong>
-                  <span>Reserva de equipos audiovisuales</span>
+                  <strong>Gestión de Usuarios</strong>
+                  <span>Administrar roles y accesos</span>
                 </div>
               </div>
-              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
-                <div className="icon-wrapper"><FiCalendar /></div>
+              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("PoaAdmin")}>
+                <div className="icon-wrapper"><FiDollarSign /></div>
                 <div className="btn-text">
-                  <strong>Ver Agenda</strong>
-                  <span>Calendario de actividades</span>
+                  <strong>Presupuesto POA</strong>
+                  <span>Control financiero de eventos</span>
                 </div>
               </div>
-              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("Soporte")}>
-                <div className="icon-wrapper"><FiStar /></div>
+              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("Bitacora")}>
+                <div className="icon-wrapper"><FiActivity /></div>
                 <div className="btn-text">
-                  <strong>Soporte</strong>
-                  <span>Ayuda técnica</span>
+                  <strong>Auditoría de Actividad</strong>
+                  <span>Bitácora del sistema</span>
                 </div>
               </div>
             </div>
