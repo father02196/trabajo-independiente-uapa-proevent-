@@ -7,10 +7,98 @@
 // vista en la sección inferior de Audiovisual.js.
 // ============================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { FiEye, FiMonitor, FiFileText, FiCheckCircle } from "react-icons/fi";
+import { FiEye, FiMonitor, FiFileText, FiCheckCircle, FiRefreshCw, FiFilter, FiSearch, FiUser, FiChevronDown } from "react-icons/fi";
 import { toast } from "react-hot-toast";
+
+// --- COMPONENTE SELECTOR DE ESTADOS PREMIUM (Diseño Minimalista Institucional) ---
+const CustomBadgeDropdown = ({ currentStatus, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Tonos pastel sutiles, institucionales y sin íconos según requerimiento
+  const config = {
+    "Pendiente": { bg: "#f8fafc", text: "#475569", border: "#e2e8f0" }, // Gris pizarra muy sutil y limpio
+    "En revisión": { bg: "#dbeafe", text: "#1e3a8a", border: "#bfdbfe" }, // Azul pastel
+    "Aprobado": { bg: "#dcfce7", text: "#166534", border: "#bbf7d0" }, // Verde pastel
+    "Rechazado": { bg: "#fee2e2", text: "#991b1b", border: "#fecaca" }, // Rojo pastel
+    "Completado": { bg: "#f3f4f6", text: "#374151", border: "#e5e7eb" }, // Gris institucional neutro
+  };
+
+  const getConf = (st) => config[st] || config["Pendiente"];
+
+  const handleSelect = async (st) => {
+    if (st === currentStatus) {
+      setIsOpen(false);
+      return;
+    }
+    setIsOpen(false);
+    setIsUpdating(true);
+    try {
+      await onChange(st);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <div className="custom-badge-wrapper" ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+      <button 
+        onClick={() => !isUpdating && setIsOpen(!isOpen)}
+        disabled={isUpdating}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px',
+          backgroundColor: getConf(currentStatus).bg, color: getConf(currentStatus).text,
+          border: `1px solid ${getConf(currentStatus).border}`, borderRadius: '6px',
+          fontSize: '12px', fontWeight: '600', cursor: isUpdating ? 'wait' : 'pointer', 
+          transition: 'all 0.2s ease', minWidth: '110px', justifyContent: 'space-between',
+          opacity: isUpdating ? 0.7 : 1, boxShadow: 'none'
+        }}
+      >
+        <span>{currentStatus}</span>
+        <FiChevronDown size={14} style={{ opacity: 0.6, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 100,
+          backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', minWidth: '100%',
+          padding: '4px', display: 'flex', flexDirection: 'column', gap: '2px',
+        }}>
+          {Object.keys(config).map((st) => (
+            <div 
+              key={st}
+              onClick={() => handleSelect(st)}
+              style={{
+                padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500',
+                color: '#475569', transition: 'background 0.15s ease',
+                backgroundColor: currentStatus === st ? '#f8fafc' : 'transparent',
+                textAlign: 'left'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = getConf(st).bg; e.currentTarget.style.color = getConf(st).text; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = currentStatus === st ? '#f8fafc' : 'transparent'; e.currentTarget.style.color = '#475569'; }}
+            >
+              {st}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Hooks y componentes para tablas
 // (Ordenamiento por columna removido por petición del usuario)
@@ -31,56 +119,83 @@ export default function GestionSolicitudesAV({ usuario }) {
   const [selectedRequest, setSelectedRequest] = useState(null); // Detalle del modal
   const [isModalOpen, setIsModalOpen] = useState(false);        // Visibilidad modal
 
-  // --- EFECTO INICIAL ---
-  useEffect(() => {
-    cargarSolicitudesAV();
-  }, [usuario]);
+  // --- FILTROS Y ORDENAMIENTO ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [filtroSolicitante, setFiltroSolicitante] = useState("Todos");
+  const [sortDirection, setSortDirection] = useState("descending"); // descending = Más recientes, ascending = Más antiguos
+  const [isLoadingReload, setIsLoadingReload] = useState(false); // Estado de carga para recargar
 
   // --- FUNCIÓN: cargarSolicitudesAV ---
-  // Obtiene los requerimientos individuales (equipos) y los agrupa
-  // por id_evento para visualizarlos como 1 fila de solicitud por evento.
-  const cargarSolicitudesAV = () => {
-    fetch(`${API}/audiovisual`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // Reduce crea un objeto de eventos donde cada equipo se mete a su array
-          const agrupadas = Object.values(data.reduce((acc, req) => {
-            if (!acc[req.id_evento]) {
-              acc[req.id_evento] = {
-                id_evento: req.id_evento,
-                nombre_evento: req.nombre_evento,
-                fecha_evento: req.fecha_evento,
-                nombre_usuario: req.nombre_usuario || "—",
-                estado_av: req.estado_av,
-                equipos: [],
-                total_equipos: 0
-              };
-            }
-            acc[req.id_evento].equipos.push({
-              id_servicio: req.id_servicio,
-              equipo: req.equipo,
-              cantidad: req.cantidad,
-              ubicacion: req.ubicacion,
-              observaciones: req.observaciones,
-              estado_av: req.estado_av
-            });
-            acc[req.id_evento].total_equipos += 1;
-            // Si hay un equipo pendiente, el estado global del evento es pendiente
-            if (req.estado_av === "Pendiente") acc[req.id_evento].estado_av = "Pendiente";
-            return acc;
-          }, {}));
-          setSolicitudesAV(agrupadas);
-        } else {
-          setSolicitudesAV([]);
-        }
-      })
-      .catch((err) => console.error("Error cargando solicitudes audiovisuales:", err));
+  const cargarSolicitudesAV = async () => {
+    try {
+      const res = await fetch(`${API}/audiovisual?t=${new Date().getTime()}`, { headers: { 'Cache-Control': 'no-cache' } });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const agrupadas = Object.values(data.reduce((acc, req) => {
+          if (!acc[req.id_evento]) {
+            acc[req.id_evento] = {
+              id_evento: req.id_evento,
+              nombre_evento: req.nombre_evento,
+              fecha_evento: req.fecha_evento,
+              nombre_usuario: req.nombre_usuario || "—",
+              estado_av: req.estado_av,
+              equipos: [],
+              total_equipos: 0
+            };
+          }
+          acc[req.id_evento].equipos.push({
+            id_servicio: req.id_servicio,
+            equipo: req.equipo,
+            cantidad: req.cantidad,
+            ubicacion: req.ubicacion,
+            observaciones: req.observaciones,
+            estado_av: req.estado_av
+          });
+          acc[req.id_evento].total_equipos += 1;
+          if (req.estado_av === "Pendiente") acc[req.id_evento].estado_av = "Pendiente";
+          return acc;
+        }, {}));
+        setSolicitudesAV(agrupadas);
+      } else {
+        setSolicitudesAV([]);
+      }
+    } catch (err) {
+      console.error("Error cargando solicitudes audiovisuales:", err);
+      throw err;
+    }
+  };
+
+  // --- EFECTO INICIAL ---
+  useEffect(() => {
+    cargarSolicitudesAV().catch(()=>{});
+  }, [usuario]);
+
+  // --- FUNCIÓN: handleRecargar ---
+  const handleRecargar = async () => {
+    setIsLoadingReload(true);
+    setSearchTerm("");
+    setFiltroEstado("Todos");
+    setFiltroSolicitante("Todos");
+    setSortDirection("descending");
+    setCurrentPage(1);
+    try {
+      await cargarSolicitudesAV();
+      toast.success("Datos actualizados y filtros limpiados");
+    } catch (error) {
+      toast.error("Error al conectar con el servidor");
+    } finally {
+      setIsLoadingReload(false);
+    }
   };
 
   // --- FUNCIÓN: handleCambiarEstado ---
-  // Cambia el estado de aprobación técnico (Aprobado, Rechazado, Completado)
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
+    // 1. Optimistic Update: Cambiamos el estado visualmente al instante
+    setSolicitudesAV(prev => prev.map(av => 
+      av.id_evento === id_evento ? { ...av, estado_av: nuevoEstado } : av
+    ));
+
     try {
       const res = await fetch(`${API}/audiovisual/evento/${id_evento}/estado`, {
         method: "PUT",
@@ -92,12 +207,15 @@ export default function GestionSolicitudesAV({ usuario }) {
       });
       if (res.ok) {
         toast.success(`Estado actualizado a ${nuevoEstado}`);
-        cargarSolicitudesAV();
+        // 2. Sincronización en background
+        cargarSolicitudesAV().catch(()=>{});
       } else {
         toast.error("Error al cambiar el estado.");
+        cargarSolicitudesAV().catch(()=>{}); 
       }
     } catch {
       toast.error("No se pudo conectar al servidor.");
+      cargarSolicitudesAV().catch(()=>{}); 
     }
   };
 
@@ -116,7 +234,27 @@ export default function GestionSolicitudesAV({ usuario }) {
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
 
-  const sortedSolicitudes = solicitudesAV;
+  const solicitantesUnicos = ["Todos", ...new Set(solicitudesAV.map(av => av.nombre_usuario).filter(Boolean))];
+
+  const filteredSolicitudes = solicitudesAV.filter(av => {
+    const matchSearch = searchTerm === "" || 
+      av.nombre_evento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `#EVT-${av.id_evento}`.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchEstado = filtroEstado === "Todos" || av.estado_av === filtroEstado;
+    const matchSolicitante = filtroSolicitante === "Todos" || av.nombre_usuario === filtroSolicitante;
+
+    return matchSearch && matchEstado && matchSolicitante;
+  });
+
+  const sortedSolicitudes = [...filteredSolicitudes].sort((a, b) => {
+    if (sortDirection === 'ascending') {
+      return a.id_evento - b.id_evento; // Más antiguos primero
+    } else {
+      return b.id_evento - a.id_evento; // Más recientes primero
+    }
+  });
+
   const sortedEquipos = selectedRequest?.equipos || [];
 
   const totalPages = Math.ceil(sortedSolicitudes.length / itemsPerPage);
@@ -126,10 +264,102 @@ export default function GestionSolicitudesAV({ usuario }) {
 
   return (
     <div className="animate-fade">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Gestión de Solicitudes Audiovisuales</h1>
-          <p style={{ color: '#64748B', fontSize: '13.5px' }}>Administra y actualiza el estado de las solicitudes técnicas de los eventos.</p>
+      <style>{`
+        @keyframes spin-cw { 100% { transform: rotate(360deg); } }
+      `}</style>
+      <div className="admin-controls-card" style={{ marginBottom: '24px' }}>
+        <div className="controls-header">
+          <div className="title-section">
+            <FiMonitor className="header-icon" />
+            <div>
+              <h3>Gestión de Solicitudes Audiovisuales</h3>
+              <p className="subtitle">Administra y actualiza el estado de las solicitudes técnicas de los eventos.</p>
+            </div>
+          </div>
+          <div className="header-actions-group">
+            <button 
+              className="btn btn-secondary btn-sm" 
+              onClick={handleRecargar} 
+              disabled={isLoadingReload}
+              title="Recargar lista y reiniciar filtros"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', opacity: isLoadingReload ? 0.7 : 1, cursor: isLoadingReload ? 'not-allowed' : 'pointer' }}
+            >
+              <FiRefreshCw style={{ animation: isLoadingReload ? 'spin-cw 1s linear infinite' : 'none' }} />
+              {isLoadingReload ? "Recargando..." : "Recargar"}
+            </button>
+          </div>
+        </div>
+
+        <div className="filters-grid">
+          <div className="filter-item">
+            <label><FiSearch style={{marginRight:'4px',verticalAlign:'middle'}}/>Buscar</label>
+            <input 
+              type="text" 
+              placeholder="ID o nombre del evento..." 
+              value={searchTerm} 
+              onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
+              className="input-base" 
+            />
+          </div>
+
+          <div className="filter-item">
+            <label><FiFilter style={{marginRight:'4px',verticalAlign:'middle'}}/>Estado</label>
+            <select 
+              value={filtroEstado} 
+              onChange={e => { setFiltroEstado(e.target.value); setCurrentPage(1); }} 
+              className="input-base"
+            >
+              <option>Todos</option>
+              <option>Pendiente</option>
+              <option>En revisión</option>
+              <option>Aprobado</option>
+              <option>Rechazado</option>
+              <option>Completado</option>
+            </select>
+          </div>
+
+          <div className="filter-item">
+            <label><FiUser style={{marginRight:'4px',verticalAlign:'middle'}}/>Solicitante</label>
+            <select 
+              value={filtroSolicitante} 
+              onChange={e => { setFiltroSolicitante(e.target.value); setCurrentPage(1); }} 
+              className="input-base"
+            >
+              {solicitantesUnicos.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+
+          <div className="filter-item" style={{display:'flex', flexDirection:'column', justifyContent:'flex-end'}}>
+            <label style={{marginBottom:'6px', fontSize:'12px', color:'#64748b', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em'}}>
+              &#8645; Ordenar por Creación
+            </label>
+            <button
+              onClick={() => setSortDirection(prev => prev === 'descending' ? 'ascending' : 'descending')}
+              title={sortDirection === 'descending' ? 'Click: más antiguos primero' : 'Click: más recientes primero'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1.5px solid',
+                borderColor: sortDirection === 'descending' ? '#bfdbfe' : '#e2e8f0',
+                background: sortDirection === 'descending' ? '#eff6ff' : '#f8fafc',
+                color: sortDirection === 'descending' ? '#1d4ed8' : '#475569',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                width: '100%'
+              }}
+            >
+              {sortDirection === 'descending'
+                ? <><span style={{fontSize:'16px'}}>&#8595;</span> Más recientes</>
+                : <><span style={{fontSize:'16px'}}>&#8593;</span> Más antiguos</>
+              }
+            </button>
+          </div>
         </div>
       </div>
 
@@ -153,18 +383,10 @@ export default function GestionSolicitudesAV({ usuario }) {
                 <td>{av.nombre_usuario}</td>
                 <td><span className="badge badge-slate">{av.total_equipos} equipo(s)</span></td>
                 <td>
-                  <select
-                    value={av.estado_av || "Pendiente"}
-                    onChange={(e) => handleCambiarEstado(av.id_evento, e.target.value)}
-                    className="input-base"
-                    style={{ padding: '6px 12px', fontSize: '13px', width: 'auto', minWidth: '130px' }}
-                  >
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En revisión">En revisión</option>
-                    <option value="Aprobado">Aprobado</option>
-                    <option value="Rechazado">Rechazado</option>
-                    <option value="Completado">Completado</option>
-                  </select>
+                  <CustomBadgeDropdown 
+                    currentStatus={av.estado_av || "Pendiente"} 
+                    onChange={(nuevoEstado) => handleCambiarEstado(av.id_evento, nuevoEstado)} 
+                  />
                 </td>
                 <td style={{ textAlign: 'center' }}>
                   <button className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
@@ -186,10 +408,10 @@ export default function GestionSolicitudesAV({ usuario }) {
       </div>
 
       {/* CONTROLES DE PAGINACIÓN */}
-      {solicitudesAV.length > 0 && (
+      {sortedSolicitudes.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
           <div style={{ fontSize: '13px', color: '#64748B' }}>
-            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, solicitudesAV.length)} de {solicitudesAV.length} solicitudes
+            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, sortedSolicitudes.length)} de {sortedSolicitudes.length} solicitudes
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>

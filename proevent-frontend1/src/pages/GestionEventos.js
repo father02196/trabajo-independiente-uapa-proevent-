@@ -395,15 +395,12 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   };
   
   // --- FUNCIÓN UTILITARIA: formatHora ---
-  // Convierte una hora en formato 24h ("14:30:00") al formato 12h con AM/PM ("2:30 PM").
+  // Extrae y devuelve la hora en formato 24h (HH:mm) eliminando los segundos ("14:30:00" -> "14:30")
   // Se usa para mostrar las horas de inicio y fin del evento en la Ficha Técnica.
   const formatHora = (horaStr) => {
     if (!horaStr) return "—";
     const [hora, min] = horaStr.split(':');
-    const h = parseInt(hora, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12; // Convierte 0 → 12 para medianoche
-    return `${h12}:${min} ${ampm}`;
+    return `${hora}:${min}`;
   };
 
   // --- FUNCIÓN UTILITARIA: getStatusClass ---

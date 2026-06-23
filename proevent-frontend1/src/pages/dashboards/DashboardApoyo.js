@@ -414,22 +414,22 @@ function DashboardApoyo({ usuario, setActiveTab }) {
               <div className="quick-actions-list">
                 <div
                   className="quick-action-btn premium-btn-blue"
+                  onClick={() => setActiveTab && setActiveTab("CronogramaGlobal")}
+                >
+                  <div className="icon-wrapper"><FiCheckCircle /></div>
+                  <div className="btn-text">
+                    <strong>Mis Tareas</strong>
+                    <span>Ver checklist operativo</span>
+                  </div>
+                </div>
+                <div
+                  className="quick-action-btn premium-btn-orange"
                   onClick={() => setActiveTab && setActiveTab("Calendario")}
                 >
                   <div className="icon-wrapper"><FiCalendar /></div>
                   <div className="btn-text">
                     <strong>Ver Calendario</strong>
                     <span>Agenda de eventos UAPA</span>
-                  </div>
-                </div>
-                <div
-                  className="quick-action-btn premium-btn-orange"
-                  onClick={() => setActiveTab && setActiveTab("VisualizarEvaluaciones")}
-                >
-                  <div className="icon-wrapper"><FiStar /></div>
-                  <div className="btn-text">
-                    <strong>Evaluaciones</strong>
-                    <span>Resultados de eventos</span>
                   </div>
                 </div>
                 <div
@@ -628,7 +628,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                   <div className="info-row">
                     <span className="info-label">Horario</span>
                     <span className="info-value">
-                      {modalEvento.hora_inicio || '—'} – {modalEvento.hora_fin || '—'}
+                      {modalEvento.hora_inicio?.substring(0,5) || '—'} – {modalEvento.hora_fin?.substring(0,5) || '—'}
                     </span>
                   </div>
                 </div>

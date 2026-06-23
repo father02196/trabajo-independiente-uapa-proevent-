@@ -5,10 +5,103 @@
 // información básica (título, dependencia, tipo, fechas y horas).
 // ============================================================
 
-import React, { useEffect, useState } from "react";
-import { FiLock } from "react-icons/fi";
+import React, { useEffect, useState, useRef } from "react";
+import { FiLock, FiClock, FiChevronDown } from "react-icons/fi";
 
 const API = "http://localhost:8080";
+
+// --- COMPONENTE SELECTOR DE TIEMPO ESTRICTO 24H ---
+// Sustituye al <input type="time"> nativo para obligar formato 24h en cualquier SO.
+const TimePicker24h = ({ id, value, onChange, disabled, isPending }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const currentH = value ? value.split(':')[0] : "08";
+  const currentM = value ? value.split(':')[1] : "00";
+
+  const handleSelect = (type, val) => {
+    let newH = currentH;
+    let newM = currentM;
+    if (type === 'h') newH = val;
+    if (type === 'm') newM = val;
+    onChange(`${newH}:${newM}`);
+  };
+
+  const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+  // Intervalos de 5 min: 00, 05, 10... 55
+  const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')); 
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+      <button
+        id={id}
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`input-base ${isPending ? 'ring-2 ring-blue-500' : ''}`}
+        style={{ 
+          opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer', 
+          backgroundColor: disabled ? '#F3F4F6' : '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FiClock color="#9CA3AF" />
+          <span style={{ color: value ? '#111827' : '#9CA3AF' }}>
+            {value ? value : "HH:mm"}
+          </span>
+        </div>
+        <FiChevronDown color="#9CA3AF" />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 50,
+          background: 'white', border: '1px solid #E5E7EB', borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', display: 'flex', width: '220px'
+        }}>
+          {/* Columna Horas */}
+          <div style={{ flex: 1, maxHeight: '200px', overflowY: 'auto', borderRight: '1px solid #E5E7EB' }}>
+            <div style={{ padding: '8px', fontSize: '12px', fontWeight: 'bold', color: '#6B7280', textAlign: 'center', borderBottom: '1px solid #E5E7EB', position: 'sticky', top: 0, background: '#fff' }}>Hora</div>
+            {hours.map(h => (
+              <div 
+                key={h} 
+                onClick={() => handleSelect('h', h)}
+                style={{ padding: '8px', textAlign: 'center', cursor: 'pointer', background: currentH === h ? '#EFF6FF' : 'transparent', color: currentH === h ? '#2563EB' : '#374151' }}
+                onMouseEnter={e => { if(currentH !== h) e.target.style.background = '#F3F4F6'; }}
+                onMouseLeave={e => { if(currentH !== h) e.target.style.background = 'transparent'; }}
+              >
+                {h}
+              </div>
+            ))}
+          </div>
+          {/* Columna Minutos */}
+          <div style={{ flex: 1, maxHeight: '200px', overflowY: 'auto' }}>
+            <div style={{ padding: '8px', fontSize: '12px', fontWeight: 'bold', color: '#6B7280', textAlign: 'center', borderBottom: '1px solid #E5E7EB', position: 'sticky', top: 0, background: '#fff' }}>Minuto</div>
+            {minutes.map(m => (
+              <div 
+                key={m} 
+                onClick={() => { handleSelect('m', m); setIsOpen(false); }}
+                style={{ padding: '8px', textAlign: 'center', cursor: 'pointer', background: currentM === m ? '#EFF6FF' : 'transparent', color: currentM === m ? '#2563EB' : '#374151' }}
+                onMouseEnter={e => { if(currentM !== m) e.target.style.background = '#F3F4F6'; }}
+                onMouseLeave={e => { if(currentM !== m) e.target.style.background = 'transparent'; }}
+              >
+                {m}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function InformacionGeneral({ data, setData }) {
   // --- ESTADOS ---
@@ -166,15 +259,12 @@ export default function InformacionGeneral({ data, setData }) {
         {/* Hora Inicio */}
         <div>
           {renderLabel("Hora de inicio", enableHoraInicio, isPending(isHoraInicioValid, enableHoraInicio))}
-          <input
+          <TimePicker24h
             id="horaInicio"
-            type="time"
-            className={`input-base ${isPending(isHoraInicioValid, enableHoraInicio) ? 'ring-2 ring-blue-500' : ''}`}
             value={data.horaInicio || ""}
-            onChange={(e) => setData({ ...data, horaInicio: e.target.value })}
-            required
+            onChange={(val) => setData({ ...data, horaInicio: val })}
             disabled={!enableHoraInicio}
-            style={!enableHoraInicio ? disabledStyle : {}}
+            isPending={isPending(isHoraInicioValid, enableHoraInicio)}
           />
         </div>
 
@@ -196,15 +286,12 @@ export default function InformacionGeneral({ data, setData }) {
         {/* Hora Fin */}
         <div>
           {renderLabel("Hora de cierre", enableHoraFin, isPending(!data.horaFin, enableHoraFin))}
-          <input
+          <TimePicker24h
             id="horaFin"
-            type="time"
-            className={`input-base ${isPending(!data.horaFin, enableHoraFin) ? 'ring-2 ring-blue-500' : ''}`}
             value={data.horaFin || ""}
-            onChange={(e) => setData({ ...data, horaFin: e.target.value })}
-            required
+            onChange={(val) => setData({ ...data, horaFin: val })}
             disabled={!enableHoraFin}
-            style={!enableHoraFin ? disabledStyle : {}}
+            isPending={isPending(!data.horaFin, enableHoraFin)}
           />
         </div>
       </div>

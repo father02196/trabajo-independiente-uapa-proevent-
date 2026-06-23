@@ -34,8 +34,9 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
   const [fechaFin, setFechaFin]       = useState("");
   const [montoTotal, setMontoTotal]   = useState("");
 
-  // --- ESTADOS DE PAGINACIÓN ---
+  // --- ESTADOS DE PAGINACIÓN Y ORDENAMIENTO ---
   const [currentPage, setCurrentPage] = useState(1);
+  const [ordenFecha, setOrdenFecha]   = useState("desc");
   const itemsPerPage = 10;
 
   // --- ESTADOS DE MODAL DE RECHAZO ---
@@ -69,11 +70,8 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
   // Convierte hora militar (14:30) a formato 12H (2:30 PM)
   const formatHora = (horaStr) => {
     if (!horaStr) return "—";
-    const [hora, min] = horaStr.split(':');
-    const h = parseInt(hora, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${min} ${ampm}`;
+    const [h, m] = horaStr.split(":");
+    return `${h}:${m}`;
   };
 
   // --- EFECTO INICIAL ---
@@ -159,8 +157,12 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
       m.solicitante?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Ordena movimientos por fecha más reciente primero
-  const sortedMovimientos = [...filteredMovimientos].sort((a, b) => new Date(b.fecha_movimiento) - new Date(a.fecha_movimiento));
+  // Ordena movimientos por fecha según el selector
+  const sortedMovimientos = [...filteredMovimientos].sort((a, b) => {
+    const dateA = new Date(a.fecha_movimiento);
+    const dateB = new Date(b.fecha_movimiento);
+    return ordenFecha === 'asc' ? dateA - dateB : dateB - dateA;
+  });
 
   // Paginación de la tabla
   const totalPages = Math.ceil(sortedMovimientos.length / itemsPerPage);
@@ -183,14 +185,6 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
           <h2 style={{fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px'}}>Plan Operativo Anual (POA)</h2>
           <p style={{color: 'var(--text-muted)', fontSize: '14px'}}>Administración de fondos y aprobaciones de presupuesto para eventos.</p>
         </div>
-        <button 
-          type="button" 
-          className="btn btn-secondary"
-          onClick={cargarPoaData} 
-          disabled={loading}
-        >
-          <FiRefreshCw /> {loading ? "Actualizando..." : "Actualizar"}
-        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -245,8 +239,29 @@ export default function PoaAdmin({ usuario, searchTerm = "" }) {
       </div>
 
       <div className="table-container" style={{ marginTop: '24px' }}>
-        <div style={{padding: '16px 16px 0 16px'}}>
-          <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)'}}>Historial de Movimientos y Solicitudes del POA</h3>
+        <div style={{padding: '16px 16px 0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'}}>
+          <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0}}>Historial de Movimientos y Solicitudes del POA</h3>
+          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+            <select 
+              className="input-base" 
+              style={{ padding: '8px 12px', fontSize: '13.5px', width: 'auto', minWidth: '180px', margin: 0, cursor: 'pointer', backgroundColor: '#F8FAFC' }}
+              value={ordenFecha}
+              onChange={(e) => setOrdenFecha(e.target.value)}
+            >
+              <option value="desc">Más lejanos (Desc)</option>
+              <option value="asc">Más próximos (Asc)</option>
+            </select>
+            <button 
+              type="button" 
+              className="btn btn-secondary btn-sm"
+              onClick={cargarPoaData} 
+              disabled={loading}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', transition: 'all 0.2s ease-in-out' }}
+            >
+              <FiRefreshCw className={loading ? "spin-animation" : ""} size={14} style={{ transition: 'transform 0.3s ease' }} /> 
+              {loading ? "Actualizando..." : "Actualizar"}
+            </button>
+          </div>
         </div>
         <table className="modern-table" style={{ marginTop: '12px' }}>
           <thead>

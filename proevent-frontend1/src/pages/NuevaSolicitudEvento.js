@@ -97,17 +97,23 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       if (!data.horaFin) return "La hora de cierre es obligatoria.";
       if (data.fin < data.inicio) return "La fecha de fin no puede ser antes de la fecha de inicio.";
 
-      // Validar Horario de Oficina (08:00 AM - 06:00 PM)
+      // Validar Horario de Oficina (08:00 - 18:00) y coherencia de tiempos
       const hI = parseInt(data.horaInicio.split(':')[0], 10);
       const mI = parseInt(data.horaInicio.split(':')[1], 10);
       const hF = parseInt(data.horaFin.split(':')[0], 10);
       const mF = parseInt(data.horaFin.split(':')[1], 10);
-
-      if (hI < 8 || hI >= 18) {
-        if (!(hI === 18 && mI === 0)) return "La hora de inicio debe estar entre las 08:00 AM y 06:00 PM.";
+      
+      if (hI < 8 || hI > 18) {
+        if (!(hI === 18 && mI === 0)) return "La hora de inicio debe estar entre las 08:00 y las 18:00.";
       }
       if (hF < 8 || hF > 18 || (hF === 18 && mF > 0)) {
-        return "La hora de finalización debe estar entre las 08:00 AM y 06:00 PM.";
+        return "La hora de finalización debe estar entre las 08:00 y las 18:00.";
+      }
+
+      const minInicio = hI * 60 + mI;
+      const minFin = hF * 60 + mF;
+      if (minFin <= minInicio) {
+        return "La hora de cierre debe ser mayor que la hora de inicio.";
       }
 
       // Validar contra Año Fiscal POA

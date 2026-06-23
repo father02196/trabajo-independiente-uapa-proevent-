@@ -365,7 +365,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                           <>
                             <span className="modern-date-separator">•</span>
                             <FiClock className="modern-date-icon" />
-                            <span>{evt.hora_inicio}</span>
+                            <span>{evt.hora_inicio?.substring(0, 5)}</span>
                           </>
                         )}
                       </div>
@@ -415,11 +415,18 @@ function DashboardResponsable({ usuario, setActiveTab }) {
             </div>
             <div className="panel-body" style={{ padding: '12px 16px' }}>
               <div className="quick-actions-list">
-                <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("GestionEventos")}>
+                <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("Eventos")}>
                   <div className="icon-wrapper"><FiList /></div>
                   <div className="btn-text">
-                    <strong>Gestionar Eventos</strong>
-                    <span>Revisar y coordinar eventos</span>
+                    <strong>Crear Evento</strong>
+                    <span>Nueva solicitud de evento</span>
+                  </div>
+                </div>
+                <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("Audiovisual")}>
+                  <div className="icon-wrapper"><FiMonitor /></div>
+                  <div className="btn-text">
+                    <strong>Solicitud AV</strong>
+                    <span>Reserva de audiovisual</span>
                   </div>
                 </div>
                 <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
@@ -432,12 +439,12 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                 <div
                   className="quick-action-btn"
                   style={{ background: 'linear-gradient(135deg, #0f766e, #14b8a6)', cursor: 'pointer', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 2px 8px rgba(15,118,110,0.25)' }}
-                  onClick={() => setActiveTab && setActiveTab("CronogramaGlobal")}
+                  onClick={() => setActiveTab && setActiveTab("VisualizarEvaluaciones")}
                 >
-                  <div className="icon-wrapper" style={{ color: 'white' }}><FiTrendingUp /></div>
+                  <div className="icon-wrapper" style={{ color: 'white' }}><FiStar /></div>
                   <div className="btn-text">
-                    <strong style={{ color: 'white' }}>Cronograma Global</strong>
-                    <span style={{ color: 'rgba(255,255,255,0.8)' }}>Estado del equipo</span>
+                    <strong style={{ color: 'white' }}>Historial Evaluaciones</strong>
+                    <span style={{ color: 'rgba(255,255,255,0.8)' }}>Resultados de eventos</span>
                   </div>
                 </div>
               </div>
@@ -633,7 +640,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                   </div>
                   <div className="info-row">
                     <span className="info-label">Horario</span>
-                    <span className="info-value">{selectedRequest.hora_inicio || '—'} – {selectedRequest.hora_fin || '—'}</span>
+                    <span className="info-value">{selectedRequest.hora_inicio?.substring(0,5) || '—'} – {selectedRequest.hora_fin?.substring(0,5) || '—'}</span>
                   </div>
                 </div>
 

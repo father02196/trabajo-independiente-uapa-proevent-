@@ -243,6 +243,13 @@ function DashboardCompras({ usuario, setActiveTab }) {
                   <span>Aprobar cuentas B2B</span>
                 </div>
               </div>
+              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("GestionCategorias")}>
+                <div className="icon-wrapper"><FiFileText /></div>
+                <div className="btn-text">
+                  <strong>Categorías</strong>
+                  <span>Gestión de rubros B2B</span>
+                </div>
+              </div>
             </div>
 
             <div className="poa-summary-box" style={{ marginTop: '24px' }}>

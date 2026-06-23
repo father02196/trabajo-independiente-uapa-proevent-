@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para paneles y accesos rápidos
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor, FiRefreshCw } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor, FiRefreshCw, FiBox } from "react-icons/fi";
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -303,7 +303,7 @@ function DashboardAudiovisual({ usuario, onEditEvent, setActiveTab }) {
                             <>
                               <span className="modern-date-separator">•</span>
                               <FiClock className="modern-date-icon" />
-                              <span>{evt.hora_inicio}</span>
+                              <span>{evt.hora_inicio?.substring(0, 5)}</span>
                             </>
                           )}
                         </div>
@@ -313,7 +313,10 @@ function DashboardAudiovisual({ usuario, onEditEvent, setActiveTab }) {
                       </div>
                       
                       <div className="modern-event-body">
-                        <h5 className="modern-event-title">{evt.nombre}</h5>
+                        <h5 className="modern-event-title">
+                          <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
+                          {evt.nombre}
+                        </h5>
                         <div className="modern-event-meta-info">
                           <div className="modern-meta-item">
                             <FiGrid className="modern-meta-icon" />
@@ -342,26 +345,33 @@ function DashboardAudiovisual({ usuario, onEditEvent, setActiveTab }) {
 
         <div className="saas-panel-card">
           <div className="panel-header">
-            <FiGrid className="panel-icon" />
+            <FiMonitor className="panel-icon" />
             <div>
-              <h4>Accesos Rápidos Especialista</h4>
-              <p>Atajos operativos</p>
+              <h4>Accesos Rápidos Audiovisual</h4>
+              <p>Módulos de gestión audiovisual</p>
             </div>
           </div>
           <div className="panel-body flex-column-body">
             <div className="quick-actions-list">
-              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab(isAudioVisualAdmin ? "GestionSolicitudes" : "GestionEventos")}>
+              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("GestionSolicitudes")}>
                 <div className="icon-wrapper"><FiList /></div>
                 <div className="btn-text">
-                  <strong>Gestionar Solicitudes</strong>
-                  <span>Revisar y aprobar peticiones</span>
+                  <strong>Aprobaciones AV</strong>
+                  <span>Gestión de solicitudes AV</span>
                 </div>
               </div>
-              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
-                <div className="icon-wrapper"><FiCalendar /></div>
+              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("InventarioAV")}>
+                <div className="icon-wrapper"><FiBox /></div>
                 <div className="btn-text">
-                  <strong>Ver Agenda</strong>
-                  <span>Calendario de actividades</span>
+                  <strong>Inventario AV</strong>
+                  <span>Control de equipos</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("AdminAudiovisual")}>
+                <div className="icon-wrapper"><FiMonitor /></div>
+                <div className="btn-text">
+                  <strong>Catálogo Audiovisual</strong>
+                  <span>Equipos disponibles</span>
                 </div>
               </div>
             </div>
