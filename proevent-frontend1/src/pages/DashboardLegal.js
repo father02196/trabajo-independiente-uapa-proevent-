@@ -178,7 +178,7 @@ function DashboardLegal({ usuario, setActiveTab }) {
                           <>
                             <span className="modern-date-separator">•</span>
                             <FiClock className="modern-date-icon" />
-                            <span>{evt.hora_inicio}</span>
+                            <span>{evt.hora_inicio?.substring(0, 5)}</span>
                           </>
                         )}
                       </div>
@@ -233,25 +233,11 @@ function DashboardLegal({ usuario, setActiveTab }) {
                   <span>Ir al Flujo Administrativo</span>
                 </div>
               </div>
-              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
-                <div className="icon-wrapper"><FiFileText /></div>
-                <div className="btn-text">
-                  <strong>Bóveda Digital</strong>
-                  <span>Subir Contratos Firmados</span>
-                </div>
-              </div>
               <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
                 <div className="icon-wrapper"><FiCalendar /></div>
                 <div className="btn-text">
                   <strong>Calendario Institucional</strong>
                   <span>Revisar Fechas Aprobadas</span>
-                </div>
-              </div>
-              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
-                <div className="icon-wrapper"><FiFilter /></div>
-                <div className="btn-text">
-                  <strong>Filtro de Expedientes</strong>
-                  <span>Auditar Casos Observados</span>
                 </div>
               </div>
             </div>
