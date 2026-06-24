@@ -7,7 +7,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from "react";
-import { FiDollarSign, FiPieChart, FiTrendingDown, FiClock, FiActivity, FiArrowRight, FiCalendar, FiStar, FiChevronRight, FiAlertCircle } from "react-icons/fi";
+import { FiDollarSign, FiPieChart, FiTrendingDown, FiClock, FiActivity, FiArrowRight, FiCalendar, FiStar, FiChevronRight, FiAlertCircle, FiTrendingUp } from "react-icons/fi";
 import "./../css/Dashboard.css";
 
 const API = "http://localhost:8080";
@@ -167,7 +167,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '500' }} onClick={() => setActiveTab && setActiveTab("PoaAdmin")}>
+                  <span style={{ fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '500' }} onClick={() => setActiveTab && setActiveTab("GestionPresupuestaria")}>
                     Ver todas <FiArrowRight />
                   </span>
                 </div>
@@ -225,6 +225,14 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                     <div className="btn-text">
                       <strong>Gestionar POA</strong>
                       <span>Aprobar o rechazar fondos</span>
+                    </div>
+                  </div>
+
+                  <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("GestionPresupuestaria")}>
+                    <div className="icon-wrapper"><FiTrendingUp /></div>
+                    <div className="btn-text">
+                      <strong>Gestión Presupuestaria</strong>
+                      <span>Historial y control de movimientos financieros</span>
                     </div>
                   </div>
 

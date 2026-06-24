@@ -18,7 +18,7 @@ import './../css/AjustesUsuarios.css';
 import './../css/Dashboard.css';
 
 // Iconos de acción para los botones de la tabla
-import { FiEdit2, FiCheck, FiSlash } from 'react-icons/fi';
+import { FiEdit2, FiCheck, FiSlash, FiSearch } from 'react-icons/fi';
 
 // URL base de la API del backend (Node.js/Express en XAMPP)
 const API = 'http://localhost:8080';
@@ -42,6 +42,7 @@ function AjustesUsuarios({ usuario }) {
     const [searchTerm, setSearchTerm]     = useState('');      // Término de búsqueda en tiempo real
     const [usuarios, setUsuarios]         = useState([]);      // Lista completa de usuarios del sistema
     const [loading, setLoading]           = useState(false);   // Indicador de carga al guardar
+    const [validandoCorreo, setValidandoCorreo] = useState(false); // Indicador de validación de correo
     const [error, setError]               = useState('');      // Mensaje de error del formulario
     const [filterStatus, setFilterStatus] = useState('todos'); // Filtro de estado: todos/activo/inactivo
     
@@ -93,6 +94,20 @@ function AjustesUsuarios({ usuario }) {
     const handleAddOrUpdateUser = async (e) => {
         e.preventDefault();
         setError('');
+        
+        // --- VALIDACIÓN AVANZADA DE CORREO ---
+        if (email) {
+            setValidandoCorreo(true);
+            const validacion = await validarCorreoAvanzado(email);
+            setValidandoCorreo(false);
+            
+            if (!validacion.valid) {
+                setError(validacion.message || "El correo electrónico ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente.");
+                return; // Bloquea el guardado si el correo es inválido
+            }
+        }
+        // -------------------------------------
+
         setLoading(true);
 
         try {
@@ -138,6 +153,51 @@ function AjustesUsuarios({ usuario }) {
         } finally {
             setLoading(false);
         }
+    };
+
+    // --- FUNCIÓN: validarCorreoAvanzado ---
+    const validarCorreoAvanzado = async (email) => {
+        // 1. Regex Estricto
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) return { valid: false, message: "El formato del correo es inválido." };
+
+        const domain = email.split('@')[1].toLowerCase();
+
+        // 2. Lista Negra
+        const blacklist = ['yopmail.com', 'mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'sharklasers.com', 'dispostable.com'];
+        if (blacklist.includes(domain)) return { valid: false, message: "No se permiten proveedores de correo temporal o desechable." };
+
+        // 3. Verificación de DNS MX
+        try {
+            const controllerMX = new AbortController();
+            const timeoutMX = setTimeout(() => controllerMX.abort(), 3500);
+            const resMX = await fetch(`https://dns.google/resolve?name=${domain}&type=MX`, { signal: controllerMX.signal });
+            clearTimeout(timeoutMX);
+            if (resMX.ok) {
+                const dataMX = await resMX.json();
+                if (dataMX.Status !== 0 || !dataMX.Answer) {
+                    return { valid: false, message: "El dominio del correo no existe o no puede recibir mensajes (DNS Inválido)." };
+                }
+            }
+        } catch (error) {
+            console.warn("Fallo al verificar DNS MX:", error);
+        }
+
+        // 4. API Externa para correos desechables
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+            const res = await fetch(`https://disposable.debounce.io/?email=${email}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            const data = await res.json();
+            if (data.disposable === "true") {
+                return { valid: false, message: "El dominio ingresado fue identificado como temporal o inválido por los servidores globales." };
+            }
+        } catch (error) {
+            console.warn("API de debounce falló:", error);
+        }
+
+        return { valid: true };
     };
 
     // --- FUNCIÓN: resetForm ---
@@ -297,12 +357,10 @@ function AjustesUsuarios({ usuario }) {
                             </div>
                         </div>
 
-                        <div className="ajustes-form-footer" style={{ marginTop: '24px', padding: '0', background: 'transparent', borderTop: 'none', justifyContent: 'flex-start' }}>
-                            {editingId && (
-                                <button type="button" className="btn-ajustes-secondary" onClick={resetForm}>Cancelar</button>
-                            )}
-                            <button type="submit" className="btn-ajustes-primary" disabled={loading}>
-                                {loading ? 'Guardando...' : editingId ? 'Actualizar Usuario' : 'Guardar Usuario'}
+                        <div className="ajustes-form-actions-row">
+                            <button type="button" className="btn-ajustes-secondary" onClick={resetForm}>Cancelar</button>
+                            <button type="submit" className="btn-ajustes-primary" disabled={loading || validandoCorreo}>
+                                {validandoCorreo ? 'Validando correo...' : loading ? 'Guardando...' : (editingId ? 'Actualizar Usuario' : 'Crear Usuario')}
                             </button>
                         </div>
                     </form>
@@ -319,7 +377,7 @@ function AjustesUsuarios({ usuario }) {
                             <button className={`filter-tab ${filterStatus === 'inactivo' ? 'active' : ''}`} onClick={() => setFilterStatus('inactivo')}>Inactivos</button>
                         </div>
                         <div className="ajustes-search">
-                            <span className="ajustes-search-icon" style={{ fontSize: '13px' }}>🔍</span>
+                            <FiSearch size={15} className="ajustes-search-icon" />
                             <input
                                 type="text"
                                 placeholder="Buscar usuario..."

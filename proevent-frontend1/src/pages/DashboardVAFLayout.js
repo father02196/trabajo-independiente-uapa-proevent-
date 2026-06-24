@@ -7,7 +7,7 @@
 // ============================================================
 
 import React, { useState } from "react";
-import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiMenu } from "react-icons/fi";
+import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiMenu, FiTrendingUp } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import emblemProevent from "./../img/Emblema-Proevent.jpeg";
@@ -15,6 +15,7 @@ import emblemProevent from "./../img/Emblema-Proevent.jpeg";
 // Importar los componentes que usará el VAF
 import DashboardVAF from "./DashboardVAF";
 import PoaAdmin from "./PoaAdmin";
+import GestionPresupuestaria from "./GestionPresupuestaria";
 import EventCalendar from "./Calendario";
 import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
@@ -39,6 +40,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
     switch (activeTab) {
       case "DashboardVAF": return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
       case "PoaAdmin": return <PoaAdmin usuario={usuario} setActiveTab={setActiveTab} />;
+      case "GestionPresupuestaria": return <GestionPresupuestaria usuario={usuario} setActiveTab={setActiveTab} />;
       case "Calendario": return <EventCalendar usuario={usuario} setActiveTab={setActiveTab} />;
       case "Soporte": return <SoporteHome setActiveTab={setActiveTab} />;
       default: return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
@@ -51,6 +53,8 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
         return "Dashboard Financiero";
       case "PoaAdmin":
         return "Plan Operativo Anual";
+      case "GestionPresupuestaria":
+        return "Gestión Presupuestaria";
       case "Calendario":
         return "Calendario de Eventos";
       case "Soporte":
@@ -85,9 +89,14 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
               <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
               Calendario
             </li>
+
             <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
               <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
               Presupuesto (POA)
+            </li>
+            <li className={activeTab === "GestionPresupuestaria" ? "active" : ""} onClick={() => setActiveTab("GestionPresupuestaria")}>
+              <FiTrendingUp className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+              Gestión Presupuestaria
             </li>
             <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
               <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
