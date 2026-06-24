@@ -57,6 +57,12 @@ function ModuloProveedores({ usuario }) {
     const [envioForm, setEnvioForm] = useState({ id_proveedor: '', descripcion_requerimientos: '', fecha_limite: '' });
     const [enviando, setEnviando] = useState(false);
 
+    // --- ESTADOS PARA INCIDENCIAS Y EVIDENCIAS ---
+    const [modalIncidencia, setModalIncidencia] = useState({ open: false, servicio: null });
+    const [resolucionForm, setResolucionForm] = useState("");
+    const [modalEvidencia, setModalEvidencia] = useState({ open: false, eventoId: null });
+    const [evidenciaFile, setEvidenciaFile] = useState(null);
+
     // --- EFECTOS: Carga dinámica según la pestaña ---
     useEffect(() => {
         if (activeTab === 'logistica') fetchServicios();
@@ -158,6 +164,54 @@ function ModuloProveedores({ usuario }) {
             alert('Error de conexión con el servidor.');
         } finally {
             setEnviando(false);
+        }
+    };
+
+    // --- LOGÍSTICA: Resolver Incidencia ---
+    const handleResolverIncidencia = async (e) => {
+        e.preventDefault();
+        if (!resolucionForm.trim()) return alert("Debe ingresar la resolución.");
+        try {
+            const res = await fetch(`${API}/api/servicios/${modalIncidencia.servicio.id_servicio_ext}/resolver-incidencia`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ resolucion: resolucionForm })
+            });
+            if (res.ok) {
+                alert("Incidencia resuelta correctamente.");
+                setModalIncidencia({ open: false, servicio: null });
+                setResolucionForm("");
+                fetchServicios();
+            } else {
+                alert("Error al resolver incidencia.");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // --- LOGÍSTICA: Subir Evidencia Contabilidad ---
+    const handleSubirEvidencia = async (e) => {
+        e.preventDefault();
+        if (!evidenciaFile) return alert("Debe seleccionar un archivo.");
+        const formData = new FormData();
+        formData.append("archivo", evidenciaFile);
+        formData.append("id_usuario", usuario?.id_usuario || "");
+
+        try {
+            const res = await fetch(`${API}/api/eventos/${modalEvidencia.eventoId}/evidencia-contabilidad`, {
+                method: 'POST',
+                body: formData
+            });
+            if (res.ok) {
+                alert("Evidencia subida correctamente.");
+                setModalEvidencia({ open: false, eventoId: null });
+                setEvidenciaFile(null);
+            } else {
+                alert("Error al subir evidencia.");
+            }
+        } catch (error) {
+            console.error(error);
         }
     };
 
@@ -455,14 +509,32 @@ function ModuloProveedores({ usuario }) {
                                                     </span>
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
-                                                    {!s.fecha_envio_proveedor && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                                                        {!s.fecha_envio_proveedor && (
+                                                            <button 
+                                                                className="btn btn-primary btn-sm" 
+                                                                onClick={() => openModalEnvio(s)}
+                                                            >
+                                                                <FiSend size={13} /> Enviar Orden
+                                                            </button>
+                                                        )}
+                                                        {s.estado_incidencia === 'En Proceso' && (
+                                                            <button 
+                                                                className="btn btn-sm" 
+                                                                style={{ backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fde68a' }}
+                                                                onClick={() => setModalIncidencia({ open: true, servicio: s })}
+                                                            >
+                                                                <FiAlertTriangle size={13} /> Resolver Incidencia
+                                                            </button>
+                                                        )}
                                                         <button 
-                                                            className="btn btn-primary btn-sm" 
-                                                            onClick={() => openModalEnvio(s)}
+                                                            className="btn btn-secondary btn-sm" 
+                                                            onClick={() => setModalEvidencia({ open: true, eventoId: s.id_evento })}
+                                                            title="Subir evidencia de envío a CxP"
                                                         >
-                                                            <FiSend size={13} /> Enviar Orden
+                                                            <FiUpload size={13} /> Evidencia CxP
                                                         </button>
-                                                    )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -1005,6 +1077,66 @@ function ModuloProveedores({ usuario }) {
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
             `}</style>
+            {/* Modal Evidencia CxP */}
+            {modalEvidencia.open && createPortal(
+                <div className="modal-overlay" onClick={() => setModalEvidencia({ open: false, eventoId: null })}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Subir Evidencia CxP</h2>
+                        </div>
+                        <form onSubmit={handleSubirEvidencia}>
+                            <div className="modal-body">
+                                <p style={{marginBottom: '10px', fontSize: '14px', color: '#64748B'}}>
+                                    Sube el comprobante de que la factura de este evento fue enviada al departamento de Contabilidad.
+                                </p>
+                                <input 
+                                    type="file" 
+                                    className="input-base" 
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    onChange={(e) => setEvidenciaFile(e.target.files[0])}
+                                />
+                            </div>
+                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalEvidencia({ open: false, eventoId: null })}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary">Subir Archivo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Modal Resolver Incidencia */}
+            {modalIncidencia.open && createPortal(
+                <div className="modal-overlay" onClick={() => setModalIncidencia({ open: false, servicio: null })}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Resolver Incidencia</h2>
+                        </div>
+                        <form onSubmit={handleResolverIncidencia}>
+                            <div className="modal-body">
+                                <p style={{marginBottom: '10px', fontSize: '14px', color: '#64748B'}}>
+                                    Detalla cómo se resolvió la incidencia logística para este servicio.
+                                </p>
+                                <textarea 
+                                    className="input-base" 
+                                    style={{ width: '100%', minHeight: '100px' }}
+                                    value={resolucionForm}
+                                    onChange={(e) => setResolucionForm(e.target.value)}
+                                    placeholder="Ej. Se reasignó a otro proveedor..."
+                                    required
+                                />
+                            </div>
+                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalIncidencia({ open: false, servicio: null })}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary">Guardar Resolución</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
+
         </div>
     );
 }
