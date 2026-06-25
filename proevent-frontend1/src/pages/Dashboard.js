@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiChevronLeft, FiEye, FiEdit2, FiFilter, FiSearch, FiTrash2 } from "react-icons/fi";
+﻿import React, { useState } from "react";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiChevronLeft, FiEye, FiEdit2, FiFilter, FiSearch, FiTrash2, FiTrendingUp } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import emblemProevent from "./../img/Emblema-Proevent.jpeg";
@@ -21,6 +21,7 @@ import AdminEvento from "./AdminEvento";
 import Calendario from "./Calendario";
 import GestionSolicitudesAV from "./GestionSolicitudesAV";
 import PoaAdmin from "./PoaAdmin";
+import GestionPresupuestaria from "./GestionPresupuestaria";
 import VisualizarEvaluaciones from "./VisualizarEvaluaciones";
 import NotificationBell from "./NotificationBell";
 import ModuloProveedores from "./ModuloProveedores";
@@ -135,6 +136,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return <GestionSolicitudesAV usuario={usuario} />;
             case "PoaAdmin":
                 return <PoaAdmin usuario={usuario} />;
+            case "GestionPresupuestaria":
+                return <GestionPresupuestaria usuario={usuario} />;
             case "AsignacionPersonal":
                 return <AsignacionPersonal usuario={usuario} />;
             case "CronogramaGlobal":
@@ -182,6 +185,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return "Gestión de Solicitudes Audiovisuales";
             case "PoaAdmin":
                 return "Plan Operativo Anual";
+            case "GestionPresupuestaria":
+                return "Gestión Presupuestaria";
             case "AsignacionPersonal":
                 return "Asignación de Personal Operativo";
             case "CronogramaGlobal":
@@ -409,10 +414,16 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                     )}
                                     {/* Presupuesto POA: Administrador */}
                                     {usuario?.rol === "Administrador" && (
-                                        <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
-                                            <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                            Presupuesto (POA)
-                                        </li>
+                                        <>
+                                            <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
+                                                <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Presupuesto (POA)
+                                            </li>
+                                            <li className={activeTab === "GestionPresupuestaria" ? "active" : ""} onClick={() => setActiveTab("GestionPresupuestaria")}>
+                                                <FiTrendingUp className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Gestión Presupuestaria
+                                            </li>
+                                        </>
                                     )}
                                 </ul>
                             </>

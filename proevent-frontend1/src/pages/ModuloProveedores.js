@@ -457,7 +457,9 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
+                                    <th>ID Evento</th>
                                     <th>Evento</th>
+                                    <th>Fecha</th>
                                     <th>Servicio / Detalle</th>
                                     <th>Estado Envío</th>
                                     <th style={{ textAlign: 'center' }}>Acción</th>
@@ -466,7 +468,7 @@ function ModuloProveedores({ usuario }) {
                             <tbody>
                                 {sortedServicios.length === 0 ? (
                                     <tr>
-                                        <td colSpan="4" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                                        <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
                                             <FiPackage style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
                                             <div style={{ fontWeight: '600', color: '#64748B', marginBottom: '4px' }}>No hay órdenes en logística</div>
                                             <div style={{ fontSize: '13px' }}>Los servicios externos aparecerán aquí cuando sean asignados a eventos</div>
@@ -476,8 +478,16 @@ function ModuloProveedores({ usuario }) {
                                     sortedServicios.map(s => (
                                             <tr key={s.id_servicio_ext}>
                                                 <td>
+                                                    <div style={{ fontSize: '14px', color: '#64748B', fontWeight: '600' }}>#EVT-{s.id_evento}</div>
+                                                </td>
+                                                <td>
                                                     <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '2px' }}>{s.nombre_evento}</div>
-                                                    <div style={{ fontSize: '12px', color: '#94A3B8' }}>ID: {s.id_servicio_ext}</div>
+                                                    <div style={{ fontSize: '12px', color: '#94A3B8' }}>Orden ID: {s.id_servicio_ext}</div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontSize: '13px', color: '#475569' }}>
+                                                        {s.fecha_inicio ? new Date(s.fecha_inicio).toLocaleDateString('es-DO') : '—'}
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
