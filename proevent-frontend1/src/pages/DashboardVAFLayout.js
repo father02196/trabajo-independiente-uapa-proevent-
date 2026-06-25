@@ -1,20 +1,21 @@
-// ============================================================
+﻿// ============================================================
 // COMPONENTE: DashboardVAFLayout
-// Pertenece a: Módulo Financiero (VAF) / Layout
-// Propósito: Contenedor principal (Layout) para el administrador
-// de Presupuesto (VAF). Maneja la navegación lateral y el 
+// Pertenece a: M├│dulo Financiero (VAF) / Layout
+// Prop├│sito: Contenedor principal (Layout) para el administrador
+// de Presupuesto (VAF). Maneja la navegaci├│n lateral y el 
 // renderizado de las vistas financieras.
 // ============================================================
 
 import React, { useState } from "react";
-import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiMenu } from "react-icons/fi";
+import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiMenu, FiTrendingUp } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import emblemProevent from "./../img/Emblema-Proevent.jpeg";
 
-// Importar los componentes que usará el VAF
+// Importar los componentes que usar├í el VAF
 import DashboardVAF from "./DashboardVAF";
 import PoaAdmin from "./PoaAdmin";
+import GestionPresupuestaria from "./GestionPresupuestaria";
 import EventCalendar from "./Calendario";
 import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
@@ -34,11 +35,12 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
     setUserMenuOpen(!userMenuOpen);
   };
 
-  // --- FUNCIÓN: renderContent ---
+  // --- FUNCI├ôN: renderContent ---
   const renderContent = () => {
     switch (activeTab) {
       case "DashboardVAF": return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
       case "PoaAdmin": return <PoaAdmin usuario={usuario} setActiveTab={setActiveTab} />;
+      case "GestionPresupuestaria": return <GestionPresupuestaria usuario={usuario} setActiveTab={setActiveTab} />;
       case "Calendario": return <EventCalendar usuario={usuario} setActiveTab={setActiveTab} />;
       case "Soporte": return <SoporteHome setActiveTab={setActiveTab} />;
       default: return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
@@ -51,6 +53,8 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
         return "Dashboard Financiero";
       case "PoaAdmin":
         return "Plan Operativo Anual";
+      case "GestionPresupuestaria":
+        return "Gesti├│n Presupuestaria";
       case "Calendario":
         return "Calendario de Eventos";
       case "Soporte":
@@ -71,7 +75,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
               <span className="brand-dash">-</span>
               <span className="brand-proevent">ProEvent</span>
             </span>
-            <span className="brand-subtitle">Sistema de Gestión de Eventos</span>
+            <span className="brand-subtitle">Sistema de Gesti├│n de Eventos</span>
           </div>
         </div>
 
@@ -85,9 +89,14 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
               <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
               Calendario
             </li>
+
             <li className={activeTab === "PoaAdmin" ? "active" : ""} onClick={() => setActiveTab("PoaAdmin")}>
               <FiDollarSign className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
               Presupuesto (POA)
+            </li>
+            <li className={activeTab === "GestionPresupuestaria" ? "active" : ""} onClick={() => setActiveTab("GestionPresupuestaria")}>
+              <FiTrendingUp className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+              Gesti├│n Presupuestaria
             </li>
             <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
               <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
@@ -100,7 +109,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
           <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
             <button className="logout-button" onClick={onLogout}>
               <FiLogOut className="action-icon" aria-hidden="true" />
-              Cerrar sesión
+              Cerrar sesi├│n
             </button>
           </div>
           <div className="user-profile-toggle" onClick={toggleUserMenu}>
@@ -121,7 +130,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
             <button
               className="hamburger-btn"
               onClick={toggleSidebar}
-              title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
+              title={isSidebarOpen ? 'Colapsar men├║' : 'Expandir men├║'}
               aria-label="Toggle sidebar"
             >
               <FiMenu size={22} />
