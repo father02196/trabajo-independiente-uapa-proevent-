@@ -1,7 +1,7 @@
-﻿// ============================================================
-// M├ôDULO POA ADMIN - Administraci├│n del Plan Operativo Anual
-// Pertenece a: M├│dulo de Gesti├│n Administrativa y Financiera (V-A-F)
-// Prop├│sito: Permite al rol Administrador V-A-F definir el
+// ============================================================
+// MÓDULO POA ADMIN - Administración del Plan Operativo Anual
+// Pertenece a: Módulo de Gestión Administrativa y Financiera (V-A-F)
+// Propósito: Permite al rol Administrador V-A-F definir el
 // presupuesto anual para eventos, ver el balance disponible,
 // revisar movimientos (descuentos por eventos aprobados) y 
 // aprobar/rechazar cargos al presupuesto de cada solicitud.
@@ -18,11 +18,10 @@ const API = "http://localhost:8080";
 // COMPONENTE: PoaAdmin
 // Recibe:
 //   - usuario: Objeto del usuario logueado (debe ser admin/VAF)
-//   - searchTerm: T├⌐rmino de b├║squeda global para filtrar movimientos
 // ============================================================
 export default function PoaAdmin({ usuario }) {
   // --- ESTADOS DE DATOS PRINCIPALES ---
-  const [poas, setPoas]               = useState([]); // Arreglo con el POA actual (generalmente uno por a├▒o)
+  const [poas, setPoas]               = useState([]); // Arreglo con el POA actual (generalmente uno por año)
   const [movimientos, setMovimientos] = useState([]); // Historial de cargos y descuentos al POA
   const [loading, setLoading]         = useState(false); // Indicador de carga
   
@@ -38,7 +37,7 @@ export default function PoaAdmin({ usuario }) {
     cargarPoaData();
   }, []);
 
-  // --- FUNCI├ôN: cargarPoaData ---
+  // --- FUNCIÓN: cargarPoaData ---
   // Consulta la API para obtener el resumen del POA y el listado de movimientos
   const cargarPoaData = async () => {
     setLoading(true);
@@ -54,8 +53,8 @@ export default function PoaAdmin({ usuario }) {
     }
   };
 
-  // --- FUNCI├ôN: handleCrearPoa ---
-  // Env├¡a los datos del formulario para aperturar un nuevo POA (A├▒o Fiscal)
+  // --- FUNCIÓN: handleCrearPoa ---
+  // Envía los datos del formulario para aperturar un nuevo POA (Año Fiscal)
   const handleCrearPoa = async (e) => {
     e.preventDefault();
     if (!fechaInicio || !fechaFin || !montoTotal) return;
@@ -66,7 +65,7 @@ export default function PoaAdmin({ usuario }) {
         body: JSON.stringify({ fecha_inicio: fechaInicio, fecha_fin: fechaFin, monto_total: montoTotal })
       });
       if (res.ok) {
-        alert("Presupuesto POA anual guardado con ├⌐xito.");
+        alert("Presupuesto POA anual guardado con éxito.");
         // Limpia el formulario y recarga datos
         setFechaInicio(""); setFechaFin(""); setMontoTotal("");
         cargarPoaData();
@@ -74,12 +73,12 @@ export default function PoaAdmin({ usuario }) {
         alert("Error al crear POA");
       }
     } catch (e) {
-      alert("Error de conexi├│n");
+      alert("Error de conexión");
     }
   };
 
 
-  // --- C├üLCULOS Y FILTROS ---
+  // --- CÁLCULOS Y FILTROS ---
   
   // Extrae el POA actual activo (el primero del array si existe)
   const poaActual = poas.length > 0 ? poas[0] : null;
@@ -93,7 +92,7 @@ export default function PoaAdmin({ usuario }) {
   // --- CONTROL DE ACCESO ---
   // Bloquea render si el usuario no tiene permisos
   if (usuario?.rol !== "Administrador" && usuario?.rol !== "Administrador V-A-F") {
-    return <div style={{ padding: "2rem" }}>No tienes permisos para acceder al m├│dulo POA.</div>;
+    return <div style={{ padding: "2rem" }}>No tienes permisos para acceder al módulo POA.</div>;
   }
 
   return (
@@ -101,20 +100,20 @@ export default function PoaAdmin({ usuario }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
           <h2 style={{fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px'}}>Plan Operativo Anual (POA)</h2>
-          <p style={{color: 'var(--text-muted)', fontSize: '14px'}}>Administraci├│n de fondos y aprobaciones de presupuesto para eventos.</p>
+          <p style={{color: 'var(--text-muted)', fontSize: '14px'}}>Administración de fondos y aprobaciones de presupuesto para eventos.</p>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         <div className="poa-card" style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
-          <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '16px'}}>Aperturar A├▒o Fiscal POA</h3>
+          <h3 style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '16px'}}>Aperturar Año Fiscal POA</h3>
           <form onSubmit={handleCrearPoa} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group">
               <label>Fecha de Inicio</label>
               <input type="date" className="input-base" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} required />
             </div>
             <div className="form-group">
-              <label>Fecha de T├⌐rmino</label>
+              <label>Fecha de Término</label>
               <input type="date" className="input-base" value={fechaFin} onChange={e => setFechaFin(e.target.value)} required />
             </div>
             <div className="form-group">
@@ -150,7 +149,7 @@ export default function PoaAdmin({ usuario }) {
           ) : (
             <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <FiCalendar size={40} style={{ opacity: 0.4, marginBottom: '10px' }} />
-              <p>No hay un a├▒o fiscal registrado a├║n.</p>
+              <p>No hay un año fiscal registrado aún.</p>
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
-﻿// ============================================================
+// ============================================================
 // COMPONENTE: GestionPresupuestaria
-// Pertenece a: M├│dulo de Gesti├│n Administrativa y Financiera (V-A-F)
-// Prop├│sito: Permite gestionar operativamente y auditar los
+// Pertenece a: Módulo de Gestión Administrativa y Financiera (V-A-F)
+// Propósito: Permite gestionar operativamente y auditar los
 // movimientos presupuestarios, filtrando por fecha, estado y solicitante.
 // ============================================================
 
@@ -24,7 +24,7 @@ export default function GestionPresupuestaria({ usuario }) {
   const [fechaHasta, setFechaHasta] = useState("");
   const [ordenFecha, setOrdenFecha] = useState("desc");
 
-  // --- ESTADOS DE PAGINACI├ôN ---
+  // --- ESTADOS DE PAGINACIÓN ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -32,6 +32,11 @@ export default function GestionPresupuestaria({ usuario }) {
   const [modalRechazo, setModalRechazo]     = useState(false);
   const [movRechazoId, setMovRechazoId]     = useState(null);
   const [motivoRechazo, setMotivoRechazo]   = useState("");
+
+  // --- ESTADOS DE MODAL DE OBSERVACIÓN / DEVOLUCIÓN (FASE 2) ---
+  const [modalObservar, setModalObservar]         = useState(false);
+  const [movObservar, setMovObservar]             = useState(null);
+  const [motivoObservacion, setMotivoObservacion] = useState("");
 
   // --- ESTADOS DE MODAL DE DETALLES ---
   const [selectedMovDetails, setSelectedMovDetails] = useState(null);
@@ -49,14 +54,14 @@ export default function GestionPresupuestaria({ usuario }) {
 
   // --- FUNCIONES DE FORMATO ---
   const formatFecha = (fechaStr) => {
-    if (!fechaStr) return "ΓÇö";
+    if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
     fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
   
   const formatHora = (horaStr) => {
-    if (!horaStr) return "ΓÇö";
+    if (!horaStr) return "—";
     const [h, m] = horaStr.split(":");
     return `${h}:${m}`;
   };
@@ -66,7 +71,7 @@ export default function GestionPresupuestaria({ usuario }) {
     cargarMovimientos();
   }, []);
 
-  // --- FUNCI├ôN: cargarMovimientos ---
+  // --- FUNCIÓN: cargarMovimientos ---
   const cargarMovimientos = async () => {
     setLoading(true);
     try {
@@ -80,7 +85,9 @@ export default function GestionPresupuestaria({ usuario }) {
     }
   };
 
-  // --- FUNCI├ôN: handleCambiarEstado ---
+  // --- FUNCIÓN: handleCambiarEstado ---
+  // Aprueba o rechaza un movimiento específico.
+  // Si se rechaza, el backend devolverá el monto descontado al balance disponible.
   const handleCambiarEstado = async (id, estado, motivo = null) => {
     try {
       const res = await fetch(`${API}/poa/movimiento/${id}/estado`, {
@@ -97,7 +104,32 @@ export default function GestionPresupuestaria({ usuario }) {
         }
       }
     } catch (e) {
-      alert("Error de conexi├│n");
+      alert("Error de conexión");
+    }
+  };
+
+  // --- FUNCIÓN: handleObservarEvento (Fase 2) ---
+  // Devuelve el evento al solicitante con observaciones presupuestarias.
+  // Llama al endpoint PUT /api/eventos/:id/observar-presupuesto
+  const handleObservarEvento = async () => {
+    if (!motivoObservacion.trim() || !movObservar) return;
+    try {
+      const res = await fetch(`${API}/api/eventos/${movObservar.id_evento}/observar-presupuesto`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_usuario: usuario.id_usuario, comentario: motivoObservacion })
+      });
+      if (res.ok) {
+        alert("Evento devuelto para subsanación con éxito.");
+        setModalObservar(false);
+        setMovObservar(null);
+        setMotivoObservacion("");
+        cargarMovimientos();
+      } else {
+        alert("Error al observar evento.");
+      }
+    } catch (e) {
+      alert("Error de conexión");
     }
   };
 
@@ -111,10 +143,10 @@ export default function GestionPresupuestaria({ usuario }) {
     setCurrentPage(1);
   };
 
-  // --- C├üLCULOS Y FILTROS ---
+  // --- CÁLCULOS Y FILTROS ---
   const filteredMovimientos = useMemo(() => {
     return movimientos.filter(m => {
-      // Filtro de b├║squeda global
+      // Filtro de búsqueda global
       const matchSearch = searchTerm === "" || 
         m.nombre_evento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         `#EVT-${m.id_evento}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,7 +179,7 @@ export default function GestionPresupuestaria({ usuario }) {
 
   const totalPages = Math.ceil(sortedMovimientos.length / itemsPerPage);
 
-  // Estad├¡sticas R├ípidas
+  // Estadísticas Rápidas
   const stats = useMemo(() => {
     const total = movimientos.length;
     const aprobados = movimientos.filter(m => m.estado === 'Aprobado');
@@ -167,7 +199,7 @@ export default function GestionPresupuestaria({ usuario }) {
     };
   }, [movimientos]);
 
-  // Restablecer la p├ígina si los filtros cambian y exceden las p├íginas
+  // Restablecer la página si los filtros cambian y exceden las páginas
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
@@ -176,15 +208,15 @@ export default function GestionPresupuestaria({ usuario }) {
 
 
   if (usuario?.rol !== "Administrador" && usuario?.rol !== "Administrador V-A-F") {
-    return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a la gesti├│n presupuestaria.</div>;
+    return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a la gestión presupuestaria.</div>;
   }
 
   return (
     <div className="animate-fade">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
-          <h2 style={{fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px'}}>Gesti├│n Presupuestaria</h2>
-          <p style={{color: 'var(--text-muted)', fontSize: '14px', margin: 0}}>Auditor├¡a, filtros y seguimiento de todos los movimientos de presupuesto.</p>
+          <h2 style={{fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px'}}>Gestión Presupuestaria</h2>
+          <p style={{color: 'var(--text-muted)', fontSize: '14px', margin: 0}}>Auditoría, filtros y seguimiento de todos los movimientos de presupuesto.</p>
         </div>
         <button 
           type="button" 
@@ -198,7 +230,7 @@ export default function GestionPresupuestaria({ usuario }) {
         </button>
       </div>
 
-      {/* Tarjetas de Estad├¡sticas R├ípidas */}
+      {/* Tarjetas de Estadísticas Rápidas */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--color-primary-light)', color: 'var(--color-uapa-navy)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -236,7 +268,7 @@ export default function GestionPresupuestaria({ usuario }) {
         <div style={{ padding: '16px', borderBottom: '1px solid var(--color-border)', background: '#F8FAFC', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <FiFilter size={16} color="var(--color-primary)" />
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>Filtros de B├║squeda</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>Filtros de Búsqueda</h3>
             <button onClick={limpiarFiltros} style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--color-uapa-navy)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
               <FiX size={14} /> Limpiar Filtros
             </button>
@@ -281,8 +313,8 @@ export default function GestionPresupuestaria({ usuario }) {
             <div className="form-group" style={{ margin: 0 }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' }}>Orden por Fecha</label>
               <select className="input-base" value={ordenFecha} onChange={(e) => {setOrdenFecha(e.target.value); setCurrentPage(1);}} style={{ margin: 0, height: '36px', fontSize: '13px' }}>
-                <option value="desc">M├ís recientes (Desc)</option>
-                <option value="asc">M├ís antiguos (Asc)</option>
+                <option value="desc">Más recientes (Desc)</option>
+                <option value="asc">Más antiguos (Asc)</option>
               </select>
             </div>
           </div>
@@ -344,6 +376,14 @@ export default function GestionPresupuestaria({ usuario }) {
                     >
                       <FiXCircle size={15} />
                     </button>
+                    <button 
+                      onClick={() => { setMovObservar(mov); setModalObservar(true); }} 
+                      className="action-icon-btn"
+                      style={{ color: '#d97706' }}
+                      title="Devolver para Subsanación (Observar)"
+                    >
+                      <FiRefreshCw size={15} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -363,7 +403,7 @@ export default function GestionPresupuestaria({ usuario }) {
             >
               Anterior
             </button>
-            <span style={{ padding: '5px 14px', fontWeight: '700', color: 'var(--color-uapa-navy)', fontSize: '14px' }}>P├íg. {currentPage} de {totalPages}</span>
+            <span style={{ padding: '5px 14px', fontWeight: '700', color: 'var(--color-uapa-navy)', fontSize: '14px' }}>Pág. {currentPage} de {totalPages}</span>
             <button 
               className="btn btn-secondary btn-sm"
               disabled={currentPage >= totalPages} 
@@ -375,19 +415,20 @@ export default function GestionPresupuestaria({ usuario }) {
         )}
       </div>
 
+      {/* MODAL DE RECHAZO */}
       {modalRechazo && (
         <div className="modal-overlay" onClick={() => setModalRechazo(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
             <div className="modal-header"><h2>Motivo de Rechazo</h2></div>
             <div className="modal-body" style={{ display: "block", textAlign: "left" }}>
-              <p style={{ marginBottom: "12px", color: "var(--text-light)", lineHeight: "1.6", fontSize: "14px" }}>Por favor, indica la raz├│n por la cual se rechaza este presupuesto (el monto descontado de la solicitud se devolver├í al balance disponible del a├▒o fiscal en este momento).</p>
+              <p style={{ marginBottom: "12px", color: "var(--text-light)", lineHeight: "1.6", fontSize: "14px" }}>Por favor, indica la razón por la cual se rechaza este presupuesto (el monto descontado de la solicitud se devolverá al balance disponible del año fiscal en este momento).</p>
               <textarea 
                 value={motivoRechazo} 
                 onChange={e => setMotivoRechazo(e.target.value)} 
                 rows="4" 
                 className="input-base"
                 style={{ resize: "none" }}
-                placeholder="Escribe la raz├│n del rechazo aqu├¡..."
+                placeholder="Escribe la razón del rechazo aquí..."
               ></textarea>
             </div>
             <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "15px", paddingTop: "15px", borderTop: "1px solid var(--color-border)" }}>
@@ -411,6 +452,46 @@ export default function GestionPresupuestaria({ usuario }) {
         </div>
       )}
 
+      {/* MODAL DE DEVOLUCIÓN PARA SUBSANACIÓN (FASE 2) */}
+      {modalObservar && (
+        <div className="modal-overlay" onClick={() => setModalObservar(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+            <div className="modal-header">
+              <h2 style={{color: '#d97706'}}>Devolver para Subsanación</h2>
+            </div>
+            <div className="modal-body" style={{ display: "block", textAlign: "left" }}>
+              <p style={{ marginBottom: "12px", color: "var(--text-light)", lineHeight: "1.6", fontSize: "14px" }}>
+                Describe las observaciones presupuestarias para que el solicitante corrija el evento{" "}
+                <strong>#EVT-{movObservar?.id_evento}</strong>. El estado cambiará a Observado/Devuelto.
+              </p>
+              <textarea 
+                value={motivoObservacion} 
+                onChange={e => setMotivoObservacion(e.target.value)} 
+                rows="4" 
+                className="input-base"
+                style={{ resize: "none" }}
+                placeholder="Escribe la observación detallada aquí..."
+              ></textarea>
+            </div>
+            <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "15px", paddingTop: "15px", borderTop: "1px solid var(--color-border)" }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setModalObservar(false)}>
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                style={{backgroundColor: '#d97706'}} 
+                onClick={handleObservarEvento} 
+                disabled={!motivoObservacion.trim()}
+              >
+                Confirmar Observación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE DETALLES */}
       {modalDetallesOpen && selectedMovDetails && (
         <div className="modal-overlay" onClick={closeModalDetalles}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
@@ -429,19 +510,19 @@ export default function GestionPresupuestaria({ usuario }) {
                 </div>
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Solicitante</label>
-                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.solicitante || "ΓÇö"}</p>
+                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.solicitante || "—"}</p>
                 </div>
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Recinto</label>
-                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.recinto || "ΓÇö"}</p>
+                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.recinto || "—"}</p>
                 </div>
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Modalidad</label>
-                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.modalidad || "ΓÇö"}</p>
+                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.modalidad || "—"}</p>
                 </div>
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Tipo de Evento</label>
-                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.tipo_evento || "ΓÇö"}</p>
+                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.tipo_evento || "—"}</p>
                 </div>
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Fechas</label>
@@ -453,13 +534,13 @@ export default function GestionPresupuestaria({ usuario }) {
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Horario</label>
                   <p style={{ margin: '5px 0 10px 0' }}>
-                    {selectedMovDetails.hora_inicio ? formatHora(selectedMovDetails.hora_inicio) : "ΓÇö"} 
+                    {selectedMovDetails.hora_inicio ? formatHora(selectedMovDetails.hora_inicio) : "—"} 
                     {selectedMovDetails.hora_fin ? ` a ${formatHora(selectedMovDetails.hora_fin)}` : ""}
                   </p>
                 </div>
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Asistentes</label>
-                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.cantidad_asistentes || "ΓÇö"}</p>
+                  <p style={{ margin: '5px 0 10px 0' }}>{selectedMovDetails.cantidad_asistentes || "—"}</p>
                 </div>
                 <div className="detail-group">
                   <label style={{ fontWeight: 'bold', fontSize: '13px', color: '#64748b', display: 'block' }}>Presupuesto Original</label>
