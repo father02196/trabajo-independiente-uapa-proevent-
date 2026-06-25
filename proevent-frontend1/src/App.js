@@ -16,6 +16,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PortalProveedoresLogin from "./pages/PortalProveedoresLogin";
 import PortalProveedoresDashboard from "./pages/PortalProveedoresDashboard";
+import PortalProveedoresForgotPassword from "./pages/PortalProveedoresForgotPassword";
+import PortalProveedoresResetPassword from "./pages/PortalProveedoresResetPassword";
 
 function App() {
   // --- ESTADOS GLOBALES ---
@@ -80,12 +82,16 @@ function App() {
   }, [proveedor]);
 
   useEffect(() => {
-    // Detectar token en la URL (ej: /reset-password/TOKEN)
+    // Detectar token en la URL (ej: /reset-password/TOKEN o /proveedor/reset-password/TOKEN)
     const path = window.location.pathname;
     if (path.startsWith("/reset-password/")) {
       const token = path.split("/")[2];
       setResetToken(token);
       setPage("reset-password");
+    } else if (path.startsWith("/proveedor/reset-password/")) {
+      const token = path.split("/")[3];
+      setResetToken(token);
+      setPage("proveedores-reset-password");
     } else if (path === "/portal-proveedores") {
       if (proveedor) setPage("proveedores-dashboard");
       else setPage("proveedores-login");
@@ -141,6 +147,19 @@ function App() {
             window.history.pushState({}, "", "/");
             setPage("welcome");
           }}
+          onForgotPasswordClick={() => setPage("proveedores-forgot-password")}
+        />
+      ) : page === "proveedores-forgot-password" ? (
+        <PortalProveedoresForgotPassword 
+          onBackClick={() => setPage("proveedores-login")} 
+        />
+      ) : page === "proveedores-reset-password" ? (
+        <PortalProveedoresResetPassword 
+          token={resetToken} 
+          onBackClick={() => {
+            window.history.pushState({}, "", "/portal-proveedores");
+            setPage("proveedores-login");
+          }} 
         />
       ) : page === "proveedores-dashboard" ? (
         <PortalProveedoresDashboard 

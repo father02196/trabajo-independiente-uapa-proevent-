@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import './../css/PortalProveedores.css';
-import { FiLogOut, FiUploadCloud, FiRefreshCw, FiEye, FiFileText, FiGrid } from 'react-icons/fi';
+import { FiLogOut, FiUploadCloud, FiRefreshCw, FiEye, FiFileText, FiGrid, FiBriefcase, FiSend, FiClock, FiAward } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 // ============================================================
@@ -20,6 +20,7 @@ import { toast } from 'react-hot-toast';
 function PortalProveedoresDashboard({ proveedor, onLogout }) {
   // --- ESTADOS DE DATOS ---
   const [solicitudes, setSolicitudes] = useState([]); // Lista de licitaciones (eventos en cotización)
+  const [metricas, setMetricas] = useState({ enviadas: 0, pendientes: 0, ganadas: 0 }); // Métricas B2B
   const [loading, setLoading]         = useState(false); // Spinner
 
   // --- ESTADOS DEL MODAL DE COTIZACIÓN ---
@@ -36,10 +37,16 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
   const [fechaVigencia, setFechaVigencia] = useState('');    // Límite de validez de la oferta
   const [comentarios, setComentarios]     = useState('');    // Notas extras del proveedor
 
-  // --- EFECTO INICIAL ---
-  useEffect(() => {
-    fetchSolicitudes(false);
-  }, []);
+  // --- FUNCIÓN: fetchMetricas ---
+  const fetchMetricas = async () => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/proveedor/${proveedor.id}/metricas`);
+      const data = await res.json();
+      setMetricas(data);
+    } catch (err) {
+      console.error("Error al obtener métricas", err);
+    }
+  };
 
   // --- FUNCIÓN: fetchSolicitudes ---
   // Obtiene las licitaciones activas asignadas a la categoría de este proveedor
@@ -50,6 +57,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       const res = await fetch(`http://localhost:8080/api/proveedor/${proveedor.id_tipo}/solicitudes`);
       const data = await res.json();
       setSolicitudes(data);
+      fetchMetricas();
       if (showAlert) alert("Lista actualizada");
     } catch (err) {
       console.error(err);
@@ -58,6 +66,12 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       setLoading(false);
     }
   };
+
+  // --- EFECTO INICIAL ---
+  useEffect(() => {
+    fetchSolicitudes(false);
+    fetchMetricas();
+  }, []);
 
   // --- FUNCIONES APERTURA DE MODALES ---
   // Abre el modal para enviar una oferta a una licitación
@@ -119,6 +133,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
         setModalOpen(false);
         setFile(null);
         setComentarios('');
+        fetchMetricas(); // Actualizar las tarjetas automáticamente
       } else {
         alert('Error: ' + data.error);
       }
@@ -133,8 +148,9 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       <header className="portal-header" style={{ background: '#ffffff', color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px', borderBottom: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#0F172A' }}>Portal B2B UAPA-Proevent</h2>
-          <span style={{ fontSize: '15px', color: '#64748B', borderLeft: '2px solid #E2E8F0', paddingLeft: '16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Bienvenido al portal de proveedores, <strong style={{ color: '#0F172A' }}>{proveedor.nombre}</strong>
+          <span style={{ fontSize: '15px', color: '#64748B', borderLeft: '2px solid #E2E8F0', paddingLeft: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="b2b-avatar">{proveedor.nombre ? proveedor.nombre.charAt(0).toUpperCase() : 'P'}</div>
+            Bienvenido, <strong style={{ color: '#0F172A' }}>{proveedor.nombre}</strong>
           </span>
         </div>
         <button className="btn btn-secondary btn-sm" onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -143,6 +159,39 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       </header>
       
       <main className="portal-content">
+        
+        {/* --- TARJETAS DE MÉTRICAS B2B --- */}
+        <div className="b2b-metrics-grid">
+          <div className="b2b-metric-card">
+            <div className="b2b-metric-icon blue"><FiBriefcase /></div>
+            <div className="b2b-metric-info">
+              <span className="b2b-metric-value">{solicitudes.length}</span>
+              <span className="b2b-metric-label">Licitaciones Abiertas</span>
+            </div>
+          </div>
+          <div className="b2b-metric-card">
+            <div className="b2b-metric-icon orange"><FiSend /></div>
+            <div className="b2b-metric-info">
+              <span className="b2b-metric-value">{metricas.enviadas}</span>
+              <span className="b2b-metric-label">Cotizaciones Enviadas</span>
+            </div>
+          </div>
+          <div className="b2b-metric-card">
+            <div className="b2b-metric-icon purple"><FiClock /></div>
+            <div className="b2b-metric-info">
+              <span className="b2b-metric-value">{metricas.pendientes}</span>
+              <span className="b2b-metric-label">Pendientes de Respuesta</span>
+            </div>
+          </div>
+          <div className="b2b-metric-card">
+            <div className="b2b-metric-icon green"><FiAward /></div>
+            <div className="b2b-metric-info">
+              <span className="b2b-metric-value">{metricas.ganadas}</span>
+              <span className="b2b-metric-label">Licitaciones Ganadas</span>
+            </div>
+          </div>
+        </div>
+
         <div className="header-card">
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginBottom: '6px' }}>Licitaciones Abiertas para tu Categoría</h1>
@@ -164,7 +213,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
               <p style={{ fontWeight: '600' }}>No hay licitaciones abiertas en este momento.</p>
             </div>
           ) : (
-            <table className="modern-table">
+            <table className="b2b-modern-table">
               <thead>
                 <tr>
                   <th>EVENTO</th>
@@ -175,30 +224,26 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
               </thead>
               <tbody>
                 {solicitudes.map(sol => (
-                  <tr key={sol.id_solicitud} className="table-hover-row">
-                    <td style={{ fontWeight: '600', color: '#0F172A' }}>
-                      <div className="event-name-cell">
-                        {sol.nombre_evento}
-                        <div style={{ marginTop: '6px' }}>
-                          <span className="badge badge-blue" style={{ fontSize: '11px', padding: '4px 8px' }}>#EVT-{sol.id_evento}</span>
-                        </div>
-                      </div>
+                  <tr key={sol.id_solicitud}>
+                    <td>
+                      <div className="b2b-event-title">{sol.nombre_evento}</div>
+                      <div className="b2b-event-id">#EVT-{sol.id_evento}</div>
                     </td>
-                    <td style={{ color: '#475569', fontSize: '14px', maxWidth: '300px' }}>
+                    <td style={{ color: '#475569', fontSize: '14px', maxWidth: '300px', lineHeight: '1.4' }}>
                       {sol.descripcion_requerimientos}
                     </td>
                     <td>
-                      <span className="badge badge-blue">
+                      <span className="b2b-badge-date">
                         {new Date(sol.fecha_limite).toLocaleDateString()}
                       </span>
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <div className="actions-cell" style={{ justifyContent: 'center' }}>
-                        <button className="details-btn" onClick={() => openDetalles(sol)} title="Ver detalles del evento">
-                          <FiEye /> Detalles
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                        <button className="b2b-btn-outline" onClick={() => openDetalles(sol)} title="Ver detalles del evento">
+                          <FiEye size={14} /> Detalles
                         </button>
-                        <button className="btn btn-primary btn-sm" onClick={() => openCotizar(sol)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <FiUploadCloud size={14} /> Subir Cotización
+                        <button className="b2b-btn-primary" onClick={() => openCotizar(sol)} title="Enviar oferta">
+                          <FiUploadCloud size={14} /> Cotizar
                         </button>
                       </div>
                     </td>

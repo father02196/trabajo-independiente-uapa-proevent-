@@ -14,7 +14,7 @@ import userIcon from "./../img/user.png";
 import lockIcon from "./../img/lock.png";
 import logoProevent from "./../img/logo-proevent.jpeg";
 
-function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
+function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordClick }) {
   // --- ESTADOS ---
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -96,7 +96,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick }) {
               <button
                 type="button"
                 className="lc-forgot"
-                onClick={(e) => e.preventDefault()}
+                onClick={onForgotPasswordClick}
               >
                 ¿Olvidaste tu contraseña?
               </button>

@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const { OpenAI } = require('openai');
@@ -174,6 +175,97 @@ module.exports = (db, transporter) => {
     });
   });
 
+  // --- RESTABLECIMIENTO DE CONTRASEÑA DE PROVEEDOR ---
+
+  router.post('/proveedor/solicitar-restablecimiento', (req, res) => {
+    const { correo } = req.body;
+    db.query('SELECT id_proveedor FROM proveedor_externo WHERE correo = ?', [correo], (err, results) => {
+      if (err) return res.status(500).json({ mensaje: 'Error de base de datos' });
+      if (results.length === 0) return res.status(404).json({ mensaje: 'El correo no está registrado como proveedor' });
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiracion = new Date(Date.now() + 3600000); // 1 hora
+
+      db.query(
+        'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, ?)',
+        [correo, token, expiracion],
+        (errInsert) => {
+          if (errInsert) return res.status(500).json({ mensaje: 'Error al generar el token' });
+
+          const link = `http://localhost:3000/proveedor/reset-password/${token}`;
+
+          const mailOptions = {
+            from: `"ProEvent Suplidores" <${process.env.GMAIL_USER}>`,
+            to: correo,
+            subject: 'Restablecer tu contraseña de Proveedor - ProEvent UAPA',
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
+                <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña (Suplidores)</h2>
+                <p>Estimado/a Proveedor,</p>
+                <p>Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en el Portal de Suplidores de <strong>UAPA-PROEVENT</strong>.</p>
+                <p>Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora.</strong></p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
+                    Restablecer Contraseña
+                  </a>
+                </div>
+                <p>Si no realizaste esta solicitud, puedes ignorar este correo de manera segura.</p>
+              </div>
+            `
+          };
+
+          transporter.sendMail(mailOptions, (errMail, info) => {
+            if (errMail) {
+              console.error('Error enviando correo a proveedor:', errMail.message);
+              return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
+            }
+            res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
+          });
+        }
+      );
+    });
+  });
+
+  router.get('/proveedor/validar-token/:token', (req, res) => {
+    const { token } = req.params;
+    db.query(
+      'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()',
+      [token],
+      (err, results) => {
+        if (err) return res.status(500).json({ mensaje: 'Error al validar el token' });
+        if (results.length === 0) return res.status(400).json({ mensaje: 'Token inválido o expirado' });
+        res.json({ mensaje: 'Token válido', correo: results[0].correo });
+      }
+    );
+  });
+
+  router.post('/proveedor/restablecer-contrasena', async (req, res) => {
+    const { token, nuevaContrasena } = req.body;
+
+    db.query(
+      'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()',
+      [token],
+      async (err, results) => {
+        if (err) return res.status(500).json({ mensaje: 'Error al validar el token' });
+        if (results.length === 0) return res.status(400).json({ mensaje: 'Token inválido o expirado' });
+
+        const correo = results[0].correo;
+        const hashedPassword = await bcrypt.hash(nuevaContrasena, 10);
+
+        db.query(
+          'UPDATE proveedor_externo SET contrasena_hash = ? WHERE correo = ?',
+          [hashedPassword, correo],
+          (errUpdate) => {
+            if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' });
+
+            db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => {});
+            res.json({ mensaje: 'Contraseña actualizada con éxito' });
+          }
+        );
+      }
+    );
+  });
+
   // 4. Ver solicitudes abiertas para su categoría
   router.get('/proveedor/:id_tipo/solicitudes', (req, res) => {
     const id_tipo = req.params.id_tipo;
@@ -184,6 +276,27 @@ module.exports = (db, transporter) => {
       WHERE s.id_tipo_servicio = ? AND s.estado = 'Abierta'`, [id_tipo], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(results);
+    });
+  });
+
+  // 4.5 Obtener métricas del proveedor (Dashboard B2B)
+  router.get('/proveedor/:id_proveedor/metricas', (req, res) => {
+    const { id_proveedor } = req.params;
+    db.query(`
+      SELECT 
+        COUNT(*) as enviadas,
+        SUM(CASE WHEN estado IN ('Subida', 'Evaluada') THEN 1 ELSE 0 END) as pendientes,
+        SUM(CASE WHEN estado = 'Seleccionada' THEN 1 ELSE 0 END) as ganadas
+      FROM cotizacion_recibida
+      WHERE id_proveedor = ?
+    `, [id_proveedor], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const row = results[0];
+      res.json({
+        enviadas: row.enviadas || 0,
+        pendientes: row.pendientes || 0,
+        ganadas: row.ganadas || 0
+      });
     });
   });
 
