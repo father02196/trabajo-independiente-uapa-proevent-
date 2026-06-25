@@ -261,6 +261,12 @@ export default function FlujoAdministrativo({ usuario }) {
         });
         if (res.ok) {
            toast.success('Evento devuelto a solicitante (Observado)');
+           setEventoSeleccionado(null);
+           // Recargar la lista de eventos para remover el observado de la bandeja
+           const evtRes = await fetch(`${API}/eventos`);
+           const evtData = await evtRes.json();
+           const eventosPermitidos = Array.isArray(evtData) ? evtData.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") : [];
+           setEventos(eventosPermitidos);
         } else {
            toast.error('Error al observar el evento');
         }

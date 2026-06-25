@@ -23,10 +23,18 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
 
   // --- VARIABLES DERIVADAS ---
   // Secciones extra para modo edición (cronograma y licitaciones)
-  const showExtraTabs = Boolean(editingEvent);
+  const showExtraTabs = Boolean(editingEvent) && usuario?.rol !== "Solicitante";
 
   const extraSecciones = ["Cronograma Logístico"];
-  const activeExtraTab = extraSecciones.includes(activeSection) ? activeSection : null;
+  
+  // Efecto para destrabar si quedó pegado en el localstorage un tab al que no tiene acceso
+  React.useEffect(() => {
+      if (!showExtraTabs && extraSecciones.includes(activeSection)) {
+          setActiveSection("Información General");
+      }
+  }, [showExtraTabs, activeSection]);
+
+  const activeExtraTab = (showExtraTabs && extraSecciones.includes(activeSection)) ? activeSection : null;
 
   // Si se seleccionó una sección extra, renderizar esos componentes
   if (activeExtraTab === "Cronograma Logístico") {

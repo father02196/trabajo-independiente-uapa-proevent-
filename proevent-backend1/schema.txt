@@ -1,0 +1,252 @@
+
+Table: actividad_cronograma
+- id_actividad (int(11))
+- id_evento (int(11))
+- nombre_actividad (varchar(255))
+- id_usuario_responsable (int(11))
+- fecha_cumplimiento (date)
+- estado (enum('Pendiente','En progreso','Completada','Retrasada'))
+- fecha_creacion (datetime)
+
+Table: alimento
+- id_alimento (int(11))
+- nombre (varchar(100))
+
+Table: analisis_ia_comparativo
+- id_analisis (int(11))
+- id_solicitud (int(11))
+- proveedor_recomendado_id (int(11))
+- justificacion_ia (text)
+- matriz_comparativa_json (longtext)
+- fecha_analisis (datetime)
+
+Table: bitacora_movimiento
+- id_bitacora (int(11))
+- id_usuario (int(11))
+- id_rol (int(11))
+- accion (varchar(150))
+- detalles (text)
+- fecha (datetime)
+
+Table: cotizacion_recibida
+- id_cotizacion (int(11))
+- id_solicitud (int(11))
+- id_proveedor (int(11))
+- moneda (enum('DOP','USD','EUR'))
+- fecha_vigencia (date)
+- comentarios (text)
+- ruta_documento_pdf (varchar(500))
+- monto_total_detectado (decimal(10,2))
+- estado (enum('Subida','Evaluada','Seleccionada','Rechazada'))
+- fecha_subida (datetime)
+
+Table: dependencia
+- id_dependencia (int(11))
+- nombre (varchar(150))
+- responsable (varchar(100))
+
+Table: detalle_corporativo
+- id_detalle_corporativo (int(11))
+- id_evento (int(11))
+- tipo (enum('Bultos','T-shirt','Editoriales UAPA','Lapiceros','Llaveros','Vasos','Libreta','Otros','No aplica'))
+- descripcion_otro (varchar(255))
+
+Table: detalle_montaje
+- id_detalle_montaje (int(11))
+- id_evento (int(11))
+- descripcion (text)
+
+Table: detalle_presupuesto
+- id_detalle (int(11))
+- id_presupuesto (int(11))
+- concepto (varchar(150))
+- proveedor (varchar(150))
+- cantidad (int(11))
+- precio_unitario (decimal(12,2))
+- subtotal (decimal(15,2))
+
+Table: documento_evento
+- id_documento (int(11))
+- id_evento (int(11))
+- tipo_documento (enum('Cotización','Certificación Presupuestaria','Orden de Compra','Contrato','Factura','Otro'))
+- nombre_archivo (varchar(255))
+- ruta_archivo (varchar(500))
+- id_usuario_subio (int(11))
+- estado (enum('Activo','Archivado'))
+- fecha_subida (datetime)
+
+Table: equipo_audiovisual
+- id_equipo (int(11))
+- nombre (varchar(150))
+- icono (varchar(50))
+- cantidad_total (int(11))
+
+Table: evaluacion
+- id_evaluacion (int(11))
+- id_evento (int(11))
+- respuesta_solicitud (enum('Si','No'))
+- recinto (enum('Cibao Oriental','Nagua','Santo Domingo Oriental','Santiago'))
+- valoracion_respuesta (enum('Muy eficiente','Excelente','Eficiente','Deficiente'))
+- satisfaccion (int(11))
+- comentario (text)
+- fecha (datetime)
+
+Table: evento
+- id_evento (int(11))
+- nombre (varchar(150))
+- modalidad (enum('Virtual','Presencial','Hibrido'))
+- fecha_inicio (date)
+- fecha_fin (date)
+- hora_inicio (time)
+- hora_fin (time)
+- cantidad_asistentes (int(11))
+- tipo_evento (varchar(100))
+- monto_poa (decimal(15,2))
+- moneda (enum('USD','EUR','DOP'))
+- estado (enum('Pendiente','Aprobado','Rechazado','Finalizado'))
+- id_usuario (int(11))
+- id_dependencia (int(11))
+- id_recinto (int(11))
+- fecha_creacion (datetime)
+
+Table: evento_alimento
+- id_evento (int(11))
+- id_alimento (int(11))
+
+Table: evento_organizador
+- id_evento_org (int(11))
+- id_evento (int(11))
+- id_usuario (int(11))
+- rol_organizacion (enum('Responsable','Coordinador','Apoyo'))
+
+Table: flujo_aprobacion_legal
+- id_flujo_legal (int(11))
+- id_evento (int(11))
+- estado_legal (enum('Pendiente','En revisión','Observado','Aprobado','Rechazado'))
+- observacion_legal (text)
+- id_usuario_revisor (int(11))
+- fecha_actualizacion (datetime)
+
+Table: notificacion_sistema
+- id_notificacion (int(11))
+- id_usuario_destino (int(11))
+- rol_destino (varchar(100))
+- titulo (varchar(255))
+- cuerpo (text)
+- leido (tinyint(1))
+- fecha (datetime)
+- enlace_accion (varchar(50))
+
+Table: poa_fiscal
+- id_poa (int(11))
+- fecha_inicio (date)
+- fecha_fin (date)
+- monto_total (decimal(15,2))
+- monto_disponible (decimal(15,2))
+- creado_por (int(11))
+- fecha_creacion (datetime)
+
+Table: poa_movimiento
+- id_movimiento (int(11))
+- id_poa (int(11))
+- id_evento (int(11))
+- monto_solicitado_original (decimal(15,2))
+- moneda_original (varchar(10))
+- tasa_cambio (decimal(10,4))
+- monto_descontado_dop (decimal(15,2))
+- estado (enum('Pendiente','Aprobado','Rechazado'))
+- motivo_rechazo (text)
+- fecha_movimiento (datetime)
+
+Table: presupuesto
+- id_presupuesto (int(11))
+- id_evento (int(11))
+- total (decimal(15,2))
+- estado (enum('Pendiente','Asignado','Aprobado','Rechazado'))
+- fecha_creacion (datetime)
+
+Table: proveedor_externo
+- id_proveedor (int(11))
+- nombre_empresa (varchar(255))
+- rnc_cedula (varchar(50))
+- id_tipo_servicio (int(11))
+- persona_contacto (varchar(255))
+- correo (varchar(255))
+- telefono (varchar(50))
+- contrasena_hash (varchar(255))
+- estado (enum('Activo','Inactivo','Suspendido'))
+- fecha_registro (datetime)
+
+Table: recinto
+- id_recinto (int(11))
+- nombre (varchar(100))
+
+Table: restablecimiento_token
+- id_token (int(11))
+- correo (varchar(120))
+- token (varchar(255))
+- expiracion (datetime)
+
+Table: rol
+- id_rol (int(11))
+- nombre (varchar(50))
+
+Table: servicio_audiovisual
+- id_servicio (int(11))
+- id_evento (int(11))
+- tipo_servicio (varchar(150))
+- estado (enum('Pendiente','Aprobado','Rechazado'))
+- cantidad (int(11))
+- ubicacion (varchar(255))
+- observaciones (text)
+
+Table: servicio_externo
+- id_servicio_ext (int(11))
+- id_evento (int(11))
+- id_tipo_servicio (int(11))
+- estado (enum('Pendiente','En revisión','Aprobado','Rechazado','Completado'))
+- detalles (text)
+- cantidad (int(11))
+- fecha_solicitud (datetime)
+- fecha_envio_proveedor (datetime)
+- fecha_recepcion (datetime)
+- estado_recepcion (enum('Pendiente','Recibido','Con Incidencias'))
+- incidencias (text)
+- estado_pago (enum('Pendiente','En revisión','Procesado','Completado'))
+- id_proveedor (int(11))
+- numero_orden_compra (varchar(50))
+- requiere_contrato (tinyint(1))
+
+Table: solicitud_cotizacion
+- id_solicitud (int(11))
+- id_evento (int(11))
+- id_tipo_servicio (int(11))
+- descripcion_requerimientos (text)
+- fecha_limite (datetime)
+- estado (enum('Abierta','Cerrada','Adjudicada'))
+- fecha_creacion (datetime)
+
+Table: tipo_detalle_corporativo
+- id_detalle_corp (int(11))
+- nombre (varchar(150))
+
+Table: tipo_evento_master
+- id_tipo_evento (int(11))
+- nombre (varchar(150))
+
+Table: tipo_servicio_externo
+- id_tipo_servicio (int(11))
+- nombre (varchar(100))
+- clasificacion (enum('Corriente','Especializado'))
+- estado (enum('Activo','Inactivo'))
+
+Table: usuario
+- id_usuario (int(11))
+- nombre (varchar(100))
+- correo (varchar(120))
+- contrasena (varchar(255))
+- id_rol (int(11))
+- estado (enum('activo','inactivo'))
+- token_acceso_rapido (varchar(255))
+- ultimo_login (datetime)
+- fecha_creacion (datetime)
