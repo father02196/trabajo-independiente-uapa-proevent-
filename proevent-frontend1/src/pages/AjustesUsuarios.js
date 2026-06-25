@@ -1,9 +1,9 @@
 ﻿// ============================================================
-// AJUSTES USUARIOS - Gesti├│n de Usuarios del Sistema
-// Pertenece a: M├│dulo de Administraci├│n (ProEvent)
-// Prop├│sito: Permite al Administrador crear, editar y
+// AJUSTES USUARIOS - Gestión de Usuarios del Sistema
+// Pertenece a: Módulo de Administración (ProEvent)
+// Propósito: Permite al Administrador crear, editar y
 // desactivar/activar usuarios del sistema. Incluye tabla
-// paginada con b├║squeda, filtro por estado y ordenamiento.
+// paginada con búsqueda, filtro por estado y ordenamiento.
 // Solo accesible para el rol "Administrador".
 // ============================================================
 
@@ -13,11 +13,11 @@ import React, { useState, useEffect } from 'react';
 // Hook personalizado para ordenar columnas de la tabla (removido)
 // Componente de encabezado de tabla con soporte de ordenamiento (removido)
 
-// Estilos espec├¡ficos del m├│dulo y estilos compartidos del dashboard
+// Estilos específicos del módulo y estilos compartidos del dashboard
 import './../css/AjustesUsuarios.css';
 import './../css/Dashboard.css';
 
-// Iconos de acci├│n para los botones de la tabla
+// Iconos de acción para los botones de la tabla
 import { FiEdit2, FiCheck, FiSlash, FiSearch } from 'react-icons/fi';
 
 // URL base de la API del backend (Node.js/Express en XAMPP)
@@ -26,29 +26,29 @@ const API = 'http://localhost:8080';
 // ============================================================
 // COMPONENTE: AjustesUsuarios
 // Recibe: usuario (objeto del administrador logueado, usado
-// para el token de autorizaci├│n en las peticiones al backend).
+// para el token de autorización en las peticiones al backend).
 // ============================================================
 function AjustesUsuarios({ usuario }) {
 
     // --- ESTADOS DEL FORMULARIO ---
     const [nombre, setNombre]     = useState('');  // Campo nombre del nuevo usuario
-    const [email, setEmail]       = useState('');  // Campo correo electr├│nico
-    const [password, setPassword] = useState('');  // Campo contrase├▒a (provisional o actualizaci├│n)
+    const [email, setEmail]       = useState('');  // Campo CORREO ELECTRÓNICO
+    const [password, setPassword] = useState('');  // Campo contraseña (provisional o actualización)
     const [idRol, setIdRol]       = useState('');  // ID del rol seleccionado en el selector
     const [roles, setRoles]       = useState([]);  // Lista de roles disponibles (cargada del backend)
-    const [editingId, setEditingId] = useState(null); // ID del usuario en edici├│n (null = modo crear)
+    const [editingId, setEditingId] = useState(null); // ID del usuario en edición (null = modo crear)
 
     // --- ESTADOS DE LA TABLA ---
-    const [searchTerm, setSearchTerm]     = useState('');      // T├⌐rmino de b├║squeda en tiempo real
+    const [searchTerm, setSearchTerm]     = useState('');      // Término de búsqueda en tiempo real
     const [usuarios, setUsuarios]         = useState([]);      // Lista completa de usuarios del sistema
     const [loading, setLoading]           = useState(false);   // Indicador de carga al guardar
-    const [validandoCorreo, setValidandoCorreo] = useState(false); // Indicador de validaci├│n de correo
+    const [validandoCorreo, setValidandoCorreo] = useState(false); // Indicador de VALIDACIÓN de correo
     const [error, setError]               = useState('');      // Mensaje de error del formulario
     const [filterStatus, setFilterStatus] = useState('todos'); // Filtro de estado: todos/activo/inactivo
     
     // --- PAGINACI├ôN ---
-    const [currentPage, setCurrentPage] = useState(1); // P├ígina actual de la tabla
-    const itemsPerPage = 10;                           // Cantidad de usuarios por p├ígina
+    const [currentPage, setCurrentPage] = useState(1); // Página actual de la tabla
+    const itemsPerPage = 10;                           // Cantidad de usuarios por página
 
     // --- EFECTO: Carga inicial ---
     // Al montar el componente carga la lista de usuarios y los roles
@@ -88,9 +88,9 @@ function AjustesUsuarios({ usuario }) {
     };
 
     // --- FUNCI├ôN: handleAddOrUpdateUser ---
-    // Maneja el env├¡o del formulario: diferencia entre crear (POST) y editar (PUT)
-    // seg├║n si hay un `editingId` activo.
-    // Env├¡a el token de autorizaci├│n en cada petici├│n para validaci├│n en el backend.
+    // Maneja el envío del formulario: diferencia entre crear (POST) y editar (PUT)
+    // según si hay un `editingId` activo.
+    // Envía el token de autorización en cada petición para VALIDACIÓN en el backend.
     const handleAddOrUpdateUser = async (e) => {
         e.preventDefault();
         setError('');
@@ -98,12 +98,12 @@ function AjustesUsuarios({ usuario }) {
         // --- VALIDACI├ôN AVANZADA DE CORREO ---
         if (email) {
             setValidandoCorreo(true);
-            const validacion = await validarCorreoAvanzado(email);
+            const VALIDACIÓN = await validarCorreoAvanzado(email);
             setValidandoCorreo(false);
             
-            if (!validacion.valid) {
-                setError(validacion.message || "El correo electr├│nico ingresado no pudo ser validado o parece no existir. Verifique la direcci├│n e intente nuevamente.");
-                return; // Bloquea el guardado si el correo es inv├ílido
+            if (!VALIDACIÓN.valid) {
+                setError(VALIDACIÓN.message || "El CORREO ELECTRÓNICO ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente.");
+                return; // Bloquea el guardado si el correo es inválido
             }
         }
         // -------------------------------------
@@ -125,7 +125,7 @@ function AjustesUsuarios({ usuario }) {
                 if (!res.ok) {
                     setError(data.mensaje || 'Error al actualizar usuario');
                 } else {
-                    alert(`Usuario ${nombre} actualizado con ├⌐xito.`);
+                    alert(`Usuario ${nombre} actualizado con éxito.`);
                     cargarUsuarios(); // Recarga la tabla con el usuario actualizado
                     resetForm();      // Limpia el formulario
                 }
@@ -143,7 +143,7 @@ function AjustesUsuarios({ usuario }) {
                 if (!res.ok) {
                     setError(data.mensaje || 'Error al crear usuario');
                 } else {
-                    alert(`Usuario ${nombre} agregado con ├⌐xito.`);
+                    alert(`Usuario ${nombre} agregado con éxito.`);
                     cargarUsuarios(); // Recarga la tabla con el nuevo usuario
                     resetForm();
                 }
@@ -159,7 +159,7 @@ function AjustesUsuarios({ usuario }) {
     const validarCorreoAvanzado = async (email) => {
         // 1. Regex Estricto
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(email)) return { valid: false, message: "El formato del correo es inv├ílido." };
+        if (!emailRegex.test(email)) return { valid: false, message: "El formato del correo es inválido." };
 
         const domain = email.split('@')[1].toLowerCase();
 
@@ -167,7 +167,7 @@ function AjustesUsuarios({ usuario }) {
         const blacklist = ['yopmail.com', 'mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'sharklasers.com', 'dispostable.com'];
         if (blacklist.includes(domain)) return { valid: false, message: "No se permiten proveedores de correo temporal o desechable." };
 
-        // 3. Verificaci├│n de DNS MX
+        // 3. Verificación de DNS MX
         try {
             const controllerMX = new AbortController();
             const timeoutMX = setTimeout(() => controllerMX.abort(), 3500);
@@ -176,7 +176,7 @@ function AjustesUsuarios({ usuario }) {
             if (resMX.ok) {
                 const dataMX = await resMX.json();
                 if (dataMX.Status !== 0 || !dataMX.Answer) {
-                    return { valid: false, message: "El dominio del correo no existe o no puede recibir mensajes (DNS Inv├ílido)." };
+                    return { valid: false, message: "El dominio del correo no existe o no puede recibir mensajes (DNS Inválido)." };
                 }
             }
         } catch (error) {
@@ -191,24 +191,24 @@ function AjustesUsuarios({ usuario }) {
             clearTimeout(timeoutId);
             const data = await res.json();
             if (data.disposable === "true") {
-                return { valid: false, message: "El dominio ingresado fue identificado como temporal o inv├ílido por los servidores globales." };
+                return { valid: false, message: "El dominio ingresado fue identificado como temporal o inválido por los servidores globales." };
             }
         } catch (error) {
-            console.warn("API de debounce fall├│:", error);
+            console.warn("API de debounce falló:", error);
         }
 
         return { valid: true };
     };
 
     // --- FUNCI├ôN: resetForm ---
-    // Limpia todos los campos del formulario y cancela el modo edici├│n.
-    // Se llama tras guardar con ├⌐xito o al hacer clic en "Cancelar".
+    // Limpia todos los campos del formulario y cancela el modo edición.
+    // Se llama tras guardar con éxito o al hacer clic en "Cancelar".
     const resetForm = () => {
         setNombre('');
         setEmail('');
         setPassword('');
         setIdRol(roles.length > 0 ? roles[0].id_rol : ''); // Vuelve al primer rol
-        setEditingId(null); // Sale del modo edici├│n
+        setEditingId(null); // Sale del modo edición
         setError('');
     };
 
@@ -219,22 +219,22 @@ function AjustesUsuarios({ usuario }) {
     const handleEdit = (usuario) => {
         setNombre(usuario.nombre);
         setEmail(usuario.correo);
-        setPassword('');  // Se deja en blanco al editar (no se re-muestra la contrase├▒a)
+        setPassword('');  // Se deja en blanco al editar (no se re-muestra la contraseña)
         // Busca el id_rol que corresponde al nombre del rol del usuario seleccionado
         const rolEncontrado = roles.find(r => r.nombre === usuario.rol);
         setIdRol(rolEncontrado ? rolEncontrado.id_rol : roles[0]?.id_rol);
         setEditingId(usuario.id_usuario);
         setError('');
         
-        // Scroll hacia el formulario (utiliza scrollIntoView por si est├í en un contenedor con overflow)
+        // Scroll hacia el formulario (utiliza scrollIntoView por si está en un contenedor con overflow)
         setTimeout(() => {
             document.querySelector('.ajustes-page-header')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 50);
     };
 
     // --- FUNCI├ôN: filteredUsuarios ---
-    // Aplica el filtro de b├║squeda (nombre, correo o rol) y el filtro de estado
-    // (todos, activo, inactivo) para determinar qu├⌐ usuarios se muestran en la tabla.
+    // Aplica el filtro de búsqueda (nombre, correo o rol) y el filtro de estado
+    // (todos, activo, inactivo) para determinar qué usuarios se muestran en la tabla.
     const filteredUsuarios = usuarios.filter(usuario => {
         const nombreMatch = (usuario.nombre || "").toLowerCase().includes(searchTerm.toLowerCase());
         const correoMatch = (usuario.correo || "").toLowerCase().includes(searchTerm.toLowerCase());
@@ -248,15 +248,15 @@ function AjustesUsuarios({ usuario }) {
 
     // --- FUNCI├ôN: handleToggleEstado ---
     // Activa o desactiva un usuario en el sistema (no elimina, solo cambia el estado).
-    // - Inactivo: el usuario no puede iniciar sesi├│n pero sus datos se conservan.
+    // - Inactivo: el usuario no puede iniciar sesión pero sus datos se conservan.
     // - Activo: el usuario recupera el acceso normal al sistema.
-    // Solicita confirmaci├│n al administrador antes de ejecutar el cambio.
+    // Solicita confirmación al administrador antes de ejecutar el cambio.
     const handleToggleEstado = async (usuarioToToggle) => {
         const estadoActual = usuarioToToggle.estado || 'activo';
         const nuevoEstado  = estadoActual === 'inactivo' ? 'activo' : 'inactivo';
         const mensajeConfirmacion = nuevoEstado === 'inactivo' 
-            ? `┬┐Est├ís seguro de que deseas desactivar al usuario ${usuarioToToggle.nombre}? No podr├í iniciar sesi├│n en el sistema.`
-            : `┬┐Est├ís seguro de que deseas activar al usuario ${usuarioToToggle.nombre}? Recuperar├í el acceso al sistema.`;
+            ? `┬┐Estás seguro de que deseas desactivar al usuario ${usuarioToToggle.nombre}? No podrá iniciar sesión en el sistema.`
+            : `┬┐Estás seguro de que deseas activar al usuario ${usuarioToToggle.nombre}? Recuperará el acceso al sistema.`;
 
         if (!window.confirm(mensajeConfirmacion)) return; // Aborta si el admin cancela
 
@@ -282,15 +282,15 @@ function AjustesUsuarios({ usuario }) {
     };
 
     // --- L├ôGICA DE PAGINACI├ôN Y ORDENAMIENTO ---
-    // (Ordenamiento por columna removido por petici├│n. Se usa la lista filtrada)
+    // (Ordenamiento por columna removido por petición. Se usa la lista filtrada)
     const sortedUsuarios = filteredUsuarios;
 
-    const totalPages        = Math.ceil(sortedUsuarios.length / itemsPerPage); // Total de p├íginas
-    const indexOfLastItem   = currentPage * itemsPerPage;                      // ├ìndice del ├║ltimo elemento
+    const totalPages        = Math.ceil(sortedUsuarios.length / itemsPerPage); // Total de páginas
+    const indexOfLastItem   = currentPage * itemsPerPage;                      // ├ìndice del úúltimo elemento
     const indexOfFirstItem  = indexOfLastItem - itemsPerPage;                  // ├ìndice del primer elemento
-    const currentItems      = sortedUsuarios.slice(indexOfFirstItem, indexOfLastItem); // Slice de la p├ígina
+    const currentItems      = sortedUsuarios.slice(indexOfFirstItem, indexOfLastItem); // Slice de la página
 
-    // Resetear a p├íg 1 si cambia el t├⌐rmino de b├║squeda (evita p├ígina vac├¡a)
+    // Resetear a pág 1 si cambia el término de búsqueda (evita página vacía)
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm]);
@@ -298,14 +298,14 @@ function AjustesUsuarios({ usuario }) {
     return (
         <div className="ajustes-page fade-in">
             <div className="ajustes-page-header">
-                <h1>Gesti├│n de Usuarios</h1>
+                <h1>Gestión de Usuarios</h1>
                 <p>Agrega, edita o elimina usuarios del sistema. Solo para administradores.</p>
             </div>
 
             <div className="ajustes-form-card" style={{ marginBottom: '24px' }}>
                 <div className="ajustes-form-section">
                     <h3 className="ajustes-section-title">{editingId ? 'Editar Usuario' : 'Agregar Nuevo Usuario'}</h3>
-                    <p className="ajustes-section-desc">Ingresa la informaci├│n del usuario a registrar en la plataforma.</p>
+                    <p className="ajustes-section-desc">Ingresa la información del usuario a registrar en la plataforma.</p>
                     
                     {error && <p style={{ color: '#EF4444', fontSize: '13.5px', marginBottom: '14px', fontWeight: '600' }}>{error}</p>}
 
@@ -315,7 +315,7 @@ function AjustesUsuarios({ usuario }) {
                                 <label>Nombre Completo</label>
                                 <input
                                     type="text"
-                                    placeholder="Ej. Juan P├⌐rez"
+                                    placeholder="Ej. Juan Pérez"
                                     value={nombre}
                                     onChange={(e) => setNombre(e.target.value)}
                                     required
@@ -323,7 +323,7 @@ function AjustesUsuarios({ usuario }) {
                             </div>
 
                             <div className="ajustes-form-group">
-                                <label>Correo Electr├│nico (UAPA)</label>
+                                <label>CORREO ELECTRÓNICO (UAPA)</label>
                                 <input
                                     type="email"
                                     placeholder="ejemplo@uapa.edu.do"
@@ -336,10 +336,10 @@ function AjustesUsuarios({ usuario }) {
 
                         <div className="ajustes-form-row" style={{ marginTop: '16px' }}>
                             <div className="ajustes-form-group">
-                                <label>Contrase├▒a {editingId ? '(Opcional al editar)' : 'Provisional'}</label>
+                                <label>Contraseña {editingId ? '(Opcional al editar)' : 'Provisional'}</label>
                                 <input
                                     type="password"
-                                    placeholder={editingId ? 'Dejar en blanco para mantener' : 'M├¡nimo 8 caracteres'}
+                                    placeholder={editingId ? 'Dejar en blanco para mantener' : 'Mínimo 8 caracteres'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required={!editingId}
@@ -436,7 +436,7 @@ function AjustesUsuarios({ usuario }) {
                             {filteredUsuarios.length === 0 && (
                                 <tr>
                                     <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
-                                        No hay usuarios registrados que coincidan con la b├║squeda.
+                                        No hay usuarios registrados que coincidan con la búsqueda.
                                     </td>
                                 </tr>
                             )}
@@ -458,7 +458,7 @@ function AjustesUsuarios({ usuario }) {
                                 Anterior
                             </button>
                             <span className="page-number">
-                                P├ígina {currentPage} de {totalPages || 1}
+                                Página {currentPage} de {totalPages || 1}
                             </span>
                             <button 
                                 className="page-btn" 

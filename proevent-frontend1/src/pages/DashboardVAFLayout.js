@@ -1,8 +1,8 @@
 ﻿// ============================================================
 // COMPONENTE: DashboardVAFLayout
-// Pertenece a: M├│dulo Financiero (VAF) / Layout
-// Prop├│sito: Contenedor principal (Layout) para el administrador
-// de Presupuesto (VAF). Maneja la navegaci├│n lateral y el 
+// Pertenece a: Módulo Financiero (VAF) / Layout
+// Propósito: Contenedor principal (Layout) para el administrador
+// de Presupuesto (VAF). Maneja la navegación lateral y el 
 // renderizado de las vistas financieras.
 // ============================================================
 
@@ -12,7 +12,7 @@ import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import emblemProevent from "./../img/Emblema-Proevent.jpeg";
 
-// Importar los componentes que usar├í el VAF
+// Importar los componentes que usará el VAF
 import DashboardVAF from "./DashboardVAF";
 import PoaAdmin from "./PoaAdmin";
 import GestionPresupuestaria from "./GestionPresupuestaria";
@@ -26,7 +26,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // --- FUNCIONES DE INTERFAZ ---
+  // --- FUNCIÓNES DE INTERFAZ ---
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -54,7 +54,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
       case "PoaAdmin":
         return "Plan Operativo Anual";
       case "GestionPresupuestaria":
-        return "Gesti├│n Presupuestaria";
+        return "Gestión Presupuestaria";
       case "Calendario":
         return "Calendario de Eventos";
       case "Soporte":
@@ -75,7 +75,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
               <span className="brand-dash">-</span>
               <span className="brand-proevent">ProEvent</span>
             </span>
-            <span className="brand-subtitle">Sistema de Gesti├│n de Eventos</span>
+            <span className="brand-subtitle">Sistema de Gestión de Eventos</span>
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
             </li>
             <li className={activeTab === "GestionPresupuestaria" ? "active" : ""} onClick={() => setActiveTab("GestionPresupuestaria")}>
               <FiTrendingUp className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-              Gesti├│n Presupuestaria
+              Gestión Presupuestaria
             </li>
             <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
               <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
@@ -109,7 +109,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
           <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
             <button className="logout-button" onClick={onLogout}>
               <FiLogOut className="action-icon" aria-hidden="true" />
-              Cerrar sesi├│n
+              Cerrar sesión
             </button>
           </div>
           <div className="user-profile-toggle" onClick={toggleUserMenu}>
@@ -130,7 +130,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
             <button
               className="hamburger-btn"
               onClick={toggleSidebar}
-              title={isSidebarOpen ? 'Colapsar men├║' : 'Expandir men├║'}
+              title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
               aria-label="Toggle sidebar"
             >
               <FiMenu size={22} />

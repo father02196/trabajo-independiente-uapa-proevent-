@@ -1,9 +1,9 @@
 ﻿// ============================================================
 // COMPONENTE: DashboardVAF
-// Pertenece a: M├│dulo Financiero / VAF
-// Prop├│sito: Panel global del presupuesto (Plan Operativo Anual).
+// Pertenece a: Módulo Financiero / VAF
+// Propósito: Panel global del presupuesto (Plan Operativo Anual).
 // Resume los fondos totales, disponibles, y retenidos.
-// Redise├▒ado con un estilo SaaS minimalista, moderno y profesional.
+// Rediseñado con un estilo SaaS minimalista, moderno y profesional.
 // ============================================================
 
 import React, { useState, useEffect } from "react";
@@ -32,7 +32,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
         const poa = data.poas && data.poas.length > 0 ? data.poas[0] : { monto_total: 0, monto_disponible: 0 };
         const movs = data.movimientos || [];
         
-        // Calcular estad├¡sticas
+        // Calcular estadísticas
         const pendientes = movs.filter(m => m.estado === 'Pendiente').length;
         const rechazados = movs.filter(m => m.estado === 'Rechazado').reduce((sum, m) => sum + Number(m.monto_descontado_dop), 0);
         
@@ -47,10 +47,10 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
         const listPendientes = movs
           .filter(m => m.estado === 'Pendiente')
           .sort((a, b) => new Date(b.fecha_movimiento) - new Date(a.fecha_movimiento))
-          .slice(0, 5); // Tomar solo los ├║ltimos 5
+          .slice(0, 5); // Tomar solo los úúúltimos 5
           
         setPendientesList(listPendientes);
-        setMovimientos(movs.slice(0, 5)); // ├Ültimos 5 movimientos generales
+        setMovimientos(movs.slice(0, 5)); // ├Üúúltimos 5 movimientos generales
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
@@ -71,7 +71,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
 
   const getStatusBadge = (estado) => {
     const baseStyle = { padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', display: 'inline-block' };
-    if (estado === 'Pendiente') return <span style={{ ...baseStyle, background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>En Evaluaci├│n</span>;
+    if (estado === 'Pendiente') return <span style={{ ...baseStyle, background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>En Evaluación</span>;
     if (estado === 'Aprobado') return <span style={{ ...baseStyle, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }}>Aprobado</span>;
     if (estado === 'Rechazado') return <span style={{ ...baseStyle, background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>Rechazado</span>;
     return <span style={{ ...baseStyle, background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0' }}>{estado}</span>;
@@ -128,14 +128,14 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
 
             <div className="saas-stat-card warning-glow">
               <div className="card-top">
-                <span className="card-label">Pendientes de Evaluaci├│n</span>
+                <span className="card-label">Pendientes de Evaluación</span>
                 <div className="card-icon-container bg-warning-light">
                   <FiClock className="card-icon text-warning" />
                 </div>
               </div>
               <div className="card-bottom">
                 <h3>{poaSummary.eventos_pendientes}</h3>
-                <span className="card-trend text-orange">Solicitudes esperando revisi├│n</span>
+                <span className="card-trend text-orange">Solicitudes esperando revisión</span>
               </div>
             </div>
 
@@ -162,8 +162,8 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <FiClock className="panel-icon" />
                   <div>
-                    <h4>Pendientes de Evaluaci├│n</h4>
-                    <p>├Ültimos movimientos del POA que esperan revisi├│n</p>
+                    <h4>Pendientes de Evaluación</h4>
+                    <p>├Üúúltimos movimientos del POA que esperan revisión</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -195,7 +195,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                           <tr key={i} style={{ borderBottom: i === pendientesList.length - 1 ? 'none' : '1px solid #f8fafc', transition: 'background 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                             <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
                               Evento #{mov.id_evento}
-                              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '400', marginTop: '4px' }}>{mov.concepto || 'Deducci├│n POA'}</div>
+                              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '400', marginTop: '4px' }}>{mov.concepto || 'Deducción POA'}</div>
                             </td>
                             <td style={{ padding: '16px 24px', fontSize: '14px', color: '#475569' }}>{formatFecha(mov.fecha_movimiento)}</td>
                             <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{formatMoneda(mov.monto_descontado_dop)}</td>
@@ -209,12 +209,12 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
               </div>
             </div>
 
-            {/* Panel Derecho: Acciones R├ípidas */}
+            {/* Panel Derecho: Acciones Rápidas */}
             <div className="saas-panel-card">
               <div className="panel-header">
                 <FiActivity className="panel-icon" />
                 <div>
-                  <h4>Acciones R├ípidas</h4>
+                  <h4>Acciones Rápidas</h4>
                   <p>Accesos directos del VAF</p>
                 </div>
               </div>
@@ -231,7 +231,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                   <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("GestionPresupuestaria")}>
                     <div className="icon-wrapper"><FiTrendingUp /></div>
                     <div className="btn-text">
-                      <strong>Gesti├│n Presupuestaria</strong>
+                      <strong>Gestión Presupuestaria</strong>
                       <span>Historial y control de movimientos financieros</span>
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                     <div className="icon-wrapper"><FiAlertCircle /></div>
                     <div className="btn-text">
                       <strong>Centro de Soporte</strong>
-                      <span>Ayuda t├⌐cnica o financiera</span>
+                      <span>Ayuda técnica o financiera</span>
                     </div>
                   </div>
                 </div>

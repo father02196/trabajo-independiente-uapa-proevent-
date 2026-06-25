@@ -566,7 +566,7 @@
   .btn-ajustes-primary,
   .btn-ajustes-secondary { width: 100%; text-align: center; justify-content: center; height: 44px; }
 
-  /* Avatar upload ΓÇö columna en m├│vil */
+  /* Avatar upload ΓÇö columna en móvil */
   .ajustes-avatar-upload { flex-direction: column; text-align: center; }
 }
 
