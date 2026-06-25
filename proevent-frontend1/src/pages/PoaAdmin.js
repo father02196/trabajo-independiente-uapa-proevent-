@@ -18,7 +18,6 @@ const API = "http://localhost:8080";
 // COMPONENTE: PoaAdmin
 // Recibe:
 //   - usuario: Objeto del usuario logueado (debe ser admin/VAF)
-//   - searchTerm: Término de búsqueda global para filtrar movimientos
 // ============================================================
 export default function PoaAdmin({ usuario }) {
   // --- ESTADOS DE DATOS PRINCIPALES ---

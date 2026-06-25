@@ -33,6 +33,11 @@ export default function GestionPresupuestaria({ usuario }) {
   const [movRechazoId, setMovRechazoId]     = useState(null);
   const [motivoRechazo, setMotivoRechazo]   = useState("");
 
+  // --- ESTADOS DE MODAL DE OBSERVACIÓN / DEVOLUCIÓN (FASE 2) ---
+  const [modalObservar, setModalObservar]         = useState(false);
+  const [movObservar, setMovObservar]             = useState(null);
+  const [motivoObservacion, setMotivoObservacion] = useState("");
+
   // --- ESTADOS DE MODAL DE DETALLES ---
   const [selectedMovDetails, setSelectedMovDetails] = useState(null);
   const [modalDetallesOpen, setModalDetallesOpen]   = useState(false);
@@ -81,6 +86,8 @@ export default function GestionPresupuestaria({ usuario }) {
   };
 
   // --- FUNCIÓN: handleCambiarEstado ---
+  // Aprueba o rechaza un movimiento específico.
+  // Si se rechaza, el backend devolverá el monto descontado al balance disponible.
   const handleCambiarEstado = async (id, estado, motivo = null) => {
     try {
       const res = await fetch(`${API}/poa/movimiento/${id}/estado`, {
@@ -95,6 +102,31 @@ export default function GestionPresupuestaria({ usuario }) {
           setMovRechazoId(null);
           setMotivoRechazo("");
         }
+      }
+    } catch (e) {
+      alert("Error de conexión");
+    }
+  };
+
+  // --- FUNCIÓN: handleObservarEvento (Fase 2) ---
+  // Devuelve el evento al solicitante con observaciones presupuestarias.
+  // Llama al endpoint PUT /api/eventos/:id/observar-presupuesto
+  const handleObservarEvento = async () => {
+    if (!motivoObservacion.trim() || !movObservar) return;
+    try {
+      const res = await fetch(`${API}/api/eventos/${movObservar.id_evento}/observar-presupuesto`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_usuario: usuario.id_usuario, comentario: motivoObservacion })
+      });
+      if (res.ok) {
+        alert("Evento devuelto para subsanación con éxito.");
+        setModalObservar(false);
+        setMovObservar(null);
+        setMotivoObservacion("");
+        cargarMovimientos();
+      } else {
+        alert("Error al observar evento.");
       }
     } catch (e) {
       alert("Error de conexión");
@@ -344,6 +376,14 @@ export default function GestionPresupuestaria({ usuario }) {
                     >
                       <FiXCircle size={15} />
                     </button>
+                    <button 
+                      onClick={() => { setMovObservar(mov); setModalObservar(true); }} 
+                      className="action-icon-btn"
+                      style={{ color: '#d97706' }}
+                      title="Devolver para Subsanación (Observar)"
+                    >
+                      <FiRefreshCw size={15} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -375,6 +415,7 @@ export default function GestionPresupuestaria({ usuario }) {
         )}
       </div>
 
+      {/* MODAL DE RECHAZO */}
       {modalRechazo && (
         <div className="modal-overlay" onClick={() => setModalRechazo(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
@@ -411,6 +452,46 @@ export default function GestionPresupuestaria({ usuario }) {
         </div>
       )}
 
+      {/* MODAL DE DEVOLUCIÓN PARA SUBSANACIÓN (FASE 2) */}
+      {modalObservar && (
+        <div className="modal-overlay" onClick={() => setModalObservar(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+            <div className="modal-header">
+              <h2 style={{color: '#d97706'}}>Devolver para Subsanación</h2>
+            </div>
+            <div className="modal-body" style={{ display: "block", textAlign: "left" }}>
+              <p style={{ marginBottom: "12px", color: "var(--text-light)", lineHeight: "1.6", fontSize: "14px" }}>
+                Describe las observaciones presupuestarias para que el solicitante corrija el evento{" "}
+                <strong>#EVT-{movObservar?.id_evento}</strong>. El estado cambiará a Observado/Devuelto.
+              </p>
+              <textarea 
+                value={motivoObservacion} 
+                onChange={e => setMotivoObservacion(e.target.value)} 
+                rows="4" 
+                className="input-base"
+                style={{ resize: "none" }}
+                placeholder="Escribe la observación detallada aquí..."
+              ></textarea>
+            </div>
+            <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "15px", paddingTop: "15px", borderTop: "1px solid var(--color-border)" }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setModalObservar(false)}>
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                style={{backgroundColor: '#d97706'}} 
+                onClick={handleObservarEvento} 
+                disabled={!motivoObservacion.trim()}
+              >
+                Confirmar Observación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE DETALLES */}
       {modalDetallesOpen && selectedMovDetails && (
         <div className="modal-overlay" onClick={closeModalDetalles}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>

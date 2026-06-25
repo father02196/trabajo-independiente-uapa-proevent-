@@ -1,6 +1,6 @@
-/* ═══════════════════════════════════════════════════════════
-   AjustesUsuarios.css — ProEvent UAPA Premium
-   ═══════════════════════════════════════════════════════════ */
+﻿/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   AjustesUsuarios.css ΓÇö ProEvent UAPA Premium
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 @import './typography.css';
 
 .ajustes-page {
@@ -18,7 +18,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Page header ─── */
+/* ΓöÇΓöÇΓöÇ Page header ΓöÇΓöÇΓöÇ */
 .ajustes-page-header {
   margin-bottom: 28px;
 }
@@ -37,7 +37,7 @@
   font-weight: var(--font-regular);
 }
 
-/* ─── Layout tabs ─── */
+/* ΓöÇΓöÇΓöÇ Layout tabs ΓöÇΓöÇΓöÇ */
 .ajustes-tabs {
   display: flex;
   gap: 4px;
@@ -69,7 +69,7 @@
 
 .ajustes-tab:hover:not(.active) { color: #334155; }
 
-/* ─── Tabla de usuarios ─── */
+/* ΓöÇΓöÇΓöÇ Tabla de usuarios ΓöÇΓöÇΓöÇ */
 .ajustes-table-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -301,7 +301,7 @@
 .ajustes-action-btn.toggle-state.to-activate:hover { background: #ECFDF5; border-color: #A7F3D0; color: #10B981; }
 .ajustes-action-btn.toggle-state.to-deactivate:hover { background: #FFF7ED; border-color: #FED7AA; color: #F97316; }
 
-/* ─── Formulario de ajustes (perfil/config) ─── */
+/* ΓöÇΓöÇΓöÇ Formulario de ajustes (perfil/config) ΓöÇΓöÇΓöÇ */
 .ajustes-form-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -482,7 +482,7 @@
   transform: translateX(18px);
 }
 
-/* ─── Form Actions Row ─── */
+/* ΓöÇΓöÇΓöÇ Form Actions Row ΓöÇΓöÇΓöÇ */
 .ajustes-form-actions-row {
   display: flex;
   justify-content: flex-end;
@@ -566,7 +566,7 @@
   .btn-ajustes-primary,
   .btn-ajustes-secondary { width: 100%; text-align: center; justify-content: center; height: 44px; }
 
-  /* Avatar upload — columna en móvil */
+  /* Avatar upload ΓÇö columna en móvil */
   .ajustes-avatar-upload { flex-direction: column; text-align: center; }
 }
 

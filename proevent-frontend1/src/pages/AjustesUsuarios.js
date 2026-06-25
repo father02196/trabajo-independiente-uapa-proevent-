@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // AJUSTES USUARIOS - Gestión de Usuarios del Sistema
 // Pertenece a: Módulo de Administración (ProEvent)
 // Propósito: Permite al Administrador crear, editar y
@@ -32,7 +32,7 @@ function AjustesUsuarios({ usuario }) {
 
     // --- ESTADOS DEL FORMULARIO ---
     const [nombre, setNombre]     = useState('');  // Campo nombre del nuevo usuario
-    const [email, setEmail]       = useState('');  // Campo correo electrónico
+    const [email, setEmail]       = useState('');  // Campo CORREO ELECTRÓNICO
     const [password, setPassword] = useState('');  // Campo contraseña (provisional o actualización)
     const [idRol, setIdRol]       = useState('');  // ID del rol seleccionado en el selector
     const [roles, setRoles]       = useState([]);  // Lista de roles disponibles (cargada del backend)
@@ -42,11 +42,11 @@ function AjustesUsuarios({ usuario }) {
     const [searchTerm, setSearchTerm]     = useState('');      // Término de búsqueda en tiempo real
     const [usuarios, setUsuarios]         = useState([]);      // Lista completa de usuarios del sistema
     const [loading, setLoading]           = useState(false);   // Indicador de carga al guardar
-    const [validandoCorreo, setValidandoCorreo] = useState(false); // Indicador de validación de correo
+    const [validandoCorreo, setValidandoCorreo] = useState(false); // Indicador de VALIDACIÓN de correo
     const [error, setError]               = useState('');      // Mensaje de error del formulario
     const [filterStatus, setFilterStatus] = useState('todos'); // Filtro de estado: todos/activo/inactivo
     
-    // --- PAGINACIÓN ---
+    // --- PAGINACI├ôN ---
     const [currentPage, setCurrentPage] = useState(1); // Página actual de la tabla
     const itemsPerPage = 10;                           // Cantidad de usuarios por página
 
@@ -58,7 +58,7 @@ function AjustesUsuarios({ usuario }) {
         cargarRoles();
     }, []);
 
-    // --- FUNCIÓN: cargarUsuarios ---
+    // --- FUNCI├ôN: cargarUsuarios ---
     // Obtiene la lista completa de usuarios del sistema desde el backend.
     // Actualiza el estado `usuarios` que alimenta la tabla paginada.
     const cargarUsuarios = async () => {
@@ -71,7 +71,7 @@ function AjustesUsuarios({ usuario }) {
         }
     };
 
-    // --- FUNCIÓN: cargarRoles ---
+    // --- FUNCI├ôN: cargarRoles ---
     // Obtiene los roles disponibles del sistema para poblar el selector
     // del formulario. Se carga una sola vez al montar el componente.
     const cargarRoles = async () => {
@@ -87,22 +87,22 @@ function AjustesUsuarios({ usuario }) {
         }
     };
 
-    // --- FUNCIÓN: handleAddOrUpdateUser ---
+    // --- FUNCI├ôN: handleAddOrUpdateUser ---
     // Maneja el envío del formulario: diferencia entre crear (POST) y editar (PUT)
     // según si hay un `editingId` activo.
-    // Envía el token de autorización en cada petición para validación en el backend.
+    // Envía el token de autorización en cada petición para VALIDACIÓN en el backend.
     const handleAddOrUpdateUser = async (e) => {
         e.preventDefault();
         setError('');
         
-        // --- VALIDACIÓN AVANZADA DE CORREO ---
+        // --- VALIDACI├ôN AVANZADA DE CORREO ---
         if (email) {
             setValidandoCorreo(true);
-            const validacion = await validarCorreoAvanzado(email);
+            const VALIDACIÓN = await validarCorreoAvanzado(email);
             setValidandoCorreo(false);
             
-            if (!validacion.valid) {
-                setError(validacion.message || "El correo electrónico ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente.");
+            if (!VALIDACIÓN.valid) {
+                setError(VALIDACIÓN.message || "El CORREO ELECTRÓNICO ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente.");
                 return; // Bloquea el guardado si el correo es inválido
             }
         }
@@ -155,7 +155,7 @@ function AjustesUsuarios({ usuario }) {
         }
     };
 
-    // --- FUNCIÓN: validarCorreoAvanzado ---
+    // --- FUNCI├ôN: validarCorreoAvanzado ---
     const validarCorreoAvanzado = async (email) => {
         // 1. Regex Estricto
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -200,7 +200,7 @@ function AjustesUsuarios({ usuario }) {
         return { valid: true };
     };
 
-    // --- FUNCIÓN: resetForm ---
+    // --- FUNCI├ôN: resetForm ---
     // Limpia todos los campos del formulario y cancela el modo edición.
     // Se llama tras guardar con éxito o al hacer clic en "Cancelar".
     const resetForm = () => {
@@ -212,7 +212,7 @@ function AjustesUsuarios({ usuario }) {
         setError('');
     };
 
-    // --- FUNCIÓN: handleEdit ---
+    // --- FUNCI├ôN: handleEdit ---
     // Precarga los datos del usuario en el formulario para editarlos.
     // Asigna `editingId` para que handleAddOrUpdateUser use PUT en lugar de POST.
     // Hace scroll al formulario para que el usuario lo vea.
@@ -232,7 +232,7 @@ function AjustesUsuarios({ usuario }) {
         }, 50);
     };
 
-    // --- FUNCIÓN: filteredUsuarios ---
+    // --- FUNCI├ôN: filteredUsuarios ---
     // Aplica el filtro de búsqueda (nombre, correo o rol) y el filtro de estado
     // (todos, activo, inactivo) para determinar qué usuarios se muestran en la tabla.
     const filteredUsuarios = usuarios.filter(usuario => {
@@ -246,7 +246,7 @@ function AjustesUsuarios({ usuario }) {
         return searchMatch && estadoActual === filterStatus;
     });
 
-    // --- FUNCIÓN: handleToggleEstado ---
+    // --- FUNCI├ôN: handleToggleEstado ---
     // Activa o desactiva un usuario en el sistema (no elimina, solo cambia el estado).
     // - Inactivo: el usuario no puede iniciar sesión pero sus datos se conservan.
     // - Activo: el usuario recupera el acceso normal al sistema.
@@ -255,8 +255,8 @@ function AjustesUsuarios({ usuario }) {
         const estadoActual = usuarioToToggle.estado || 'activo';
         const nuevoEstado  = estadoActual === 'inactivo' ? 'activo' : 'inactivo';
         const mensajeConfirmacion = nuevoEstado === 'inactivo' 
-            ? `¿Estás seguro de que deseas desactivar al usuario ${usuarioToToggle.nombre}? No podrá iniciar sesión en el sistema.`
-            : `¿Estás seguro de que deseas activar al usuario ${usuarioToToggle.nombre}? Recuperará el acceso al sistema.`;
+            ? `┬┐Estás seguro de que deseas desactivar al usuario ${usuarioToToggle.nombre}? No podrá iniciar sesión en el sistema.`
+            : `┬┐Estás seguro de que deseas activar al usuario ${usuarioToToggle.nombre}? Recuperará el acceso al sistema.`;
 
         if (!window.confirm(mensajeConfirmacion)) return; // Aborta si el admin cancela
 
@@ -281,13 +281,13 @@ function AjustesUsuarios({ usuario }) {
         }
     };
 
-    // --- LÓGICA DE PAGINACIÓN Y ORDENAMIENTO ---
+    // --- L├ôGICA DE PAGINACI├ôN Y ORDENAMIENTO ---
     // (Ordenamiento por columna removido por petición. Se usa la lista filtrada)
     const sortedUsuarios = filteredUsuarios;
 
     const totalPages        = Math.ceil(sortedUsuarios.length / itemsPerPage); // Total de páginas
-    const indexOfLastItem   = currentPage * itemsPerPage;                      // Índice del último elemento
-    const indexOfFirstItem  = indexOfLastItem - itemsPerPage;                  // Índice del primer elemento
+    const indexOfLastItem   = currentPage * itemsPerPage;                      // ├ìndice del úúltimo elemento
+    const indexOfFirstItem  = indexOfLastItem - itemsPerPage;                  // ├ìndice del primer elemento
     const currentItems      = sortedUsuarios.slice(indexOfFirstItem, indexOfLastItem); // Slice de la página
 
     // Resetear a pág 1 si cambia el término de búsqueda (evita página vacía)
@@ -323,7 +323,7 @@ function AjustesUsuarios({ usuario }) {
                             </div>
 
                             <div className="ajustes-form-group">
-                                <label>Correo Electrónico (UAPA)</label>
+                                <label>CORREO ELECTRÓNICO (UAPA)</label>
                                 <input
                                     type="email"
                                     placeholder="ejemplo@uapa.edu.do"
@@ -393,7 +393,7 @@ function AjustesUsuarios({ usuario }) {
                         <thead>
                             <tr>
                                 <th>USUARIO</th>
-                                <th>CORREO ELECTRÓNICO</th>
+                                <th>CORREO ELECTR├ôNICO</th>
                                 <th>ROL</th>
                                 <th>ESTADO</th>
                                 <th style={{textAlign: 'center'}}>ACCIONES</th>

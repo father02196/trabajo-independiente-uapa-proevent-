@@ -1067,7 +1067,24 @@ app.put('/eventos/:id/estado', (req, res) => {
           return res.status(400).json({ mensaje: `No se puede finalizar el evento porque hay ${resultsB2B[0].pendientes_pago} factura(s) de proveedores sin pagar o subir comprobante.` });
         }
 
-        procederUpdate(); // Si pasa las validaciones, procede a actualizar
+        // Validación Fase 2: Incidencias logísticas abiertas o evidencias de contabilidad faltantes
+        db.query(`SELECT COUNT(*) as incidencias FROM servicio_externo WHERE id_evento=? AND estado_recepcion='Con Incidencias'`, [id], (errInc, resInc) => {
+          if (errInc) return res.status(500).json({ error: errInc.message });
+          if (resInc[0].incidencias > 0) return res.status(400).json({ mensaje: `No se puede finalizar el evento porque hay ${resInc[0].incidencias} servicio(s) logístico(s) con incidencias abiertas.` });
+          
+          db.query(`
+            SELECT COUNT(*) as faltantes_evidencia 
+            FROM servicio_externo s
+            JOIN solicitud_cotizacion sc ON s.id_servicio_ext = sc.id_tipo_servicio AND sc.id_evento = s.id_evento
+            JOIN cotizacion_recibida c ON sc.id_solicitud = c.id_solicitud
+            WHERE s.id_evento=? AND c.estado='Seleccionada' AND s.evidencia_contabilidad_ruta IS NULL
+          `, [id], (errEvi, resEvi) => {
+            if (errEvi) return res.status(500).json({ error: errEvi.message });
+            if (resEvi[0].faltantes_evidencia > 0) return res.status(400).json({ mensaje: `No se puede finalizar el evento porque faltan subir las evidencias de envío a contabilidad.` });
+
+            procederUpdate(); // Si pasa TODAS las validaciones, procede a actualizar
+          });
+        });
       });
     });
   } else {
@@ -2199,6 +2216,106 @@ const rutasFase4 = require('./rutas_fase4')(db, transporter);
 app.use('/api', rutasFase4);
 
 // INSTANCIACIÓN DE SERVIDOR EXPRESS JS AL PUERTO ESPECIFICADO LEYENDO VARIABLES DOTENV Y ARRANCANDO CICLO HOST NODE
+// ── FASE 2: APIS DE SUBSANACIÓN, EVIDENCIA CONTABLE E INCIDENCIAS ──
+
+// 1. VAF/Presupuesto Observa el Evento
+app.put('/api/eventos/:id/observar-presupuesto', (req, res) => {
+  const { id } = req.params;
+  const { id_usuario, comentario } = req.body;
+  if(!comentario) return res.status(400).json({error: 'Comentario obligatorio'});
+
+  db.query(`UPDATE evento SET estado='Observado' WHERE id_evento=?`, [id], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    
+    db.query(`UPDATE presupuesto SET estado='Devuelto' WHERE id_evento=?`, [id], (e2) => {
+      db.query(`INSERT INTO historial_observaciones (id_evento, id_usuario, departamento, comentario) VALUES (?, ?, 'VAF-Presupuesto', ?)`, 
+      [id, id_usuario, comentario], (e3) => {
+        if(e3) return res.status(500).json({error: e3.message});
+        
+        db.query(`SELECT id_usuario FROM evento WHERE id_evento=?`, [id], (e4, r) => {
+          if(!e4 && r.length > 0) {
+            crearNotificacion({ id_usuario_destino: r[0].id_usuario, titulo: '⚠️ Evento Observado por Presupuesto', cuerpo: `Tu evento (#EVT-${id}) fue devuelto con observaciones: ${comentario}`, enlace_accion: 'mis-eventos' });
+          }
+          res.json({mensaje: 'Evento observado por presupuesto'});
+        });
+      });
+    });
+  });
+});
+
+// 2. Legal Observa el Evento
+app.put('/api/legal/:id/observar', (req, res) => {
+  const { id } = req.params; 
+  const { id_usuario, comentario } = req.body;
+  if(!comentario) return res.status(400).json({error: 'Comentario obligatorio'});
+
+  db.query(`UPDATE evento SET estado='Observado' WHERE id_evento=?`, [id], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    
+    db.query(`UPDATE flujo_aprobacion_legal SET estado_legal='Observado', observacion_legal=? WHERE id_evento=?`, [comentario, id], (e2) => {
+      db.query(`INSERT INTO historial_observaciones (id_evento, id_usuario, departamento, comentario) VALUES (?, ?, 'Legal', ?)`, 
+      [id, id_usuario, comentario], (e3) => {
+        if(e3) return res.status(500).json({error: e3.message});
+        
+        db.query(`SELECT id_usuario FROM evento WHERE id_evento=?`, [id], (e4, r) => {
+          if(!e4 && r.length > 0) {
+            crearNotificacion({ id_usuario_destino: r[0].id_usuario, titulo: '⚠️ Evento Observado por Legal', cuerpo: `Tu evento (#EVT-${id}) tiene observaciones legales: ${comentario}`, enlace_accion: 'mis-eventos' });
+          }
+          res.json({mensaje: 'Evento observado por legal'});
+        });
+      });
+    });
+  });
+});
+
+// 3. Solicitante Subsana el Evento
+app.put('/api/eventos/:id/subsanar', (req, res) => {
+  const { id } = req.params;
+  db.query(`UPDATE evento SET estado='Pendiente' WHERE id_evento=? AND estado='Observado'`, [id], (e1, r) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    if(r.affectedRows === 0) return res.status(400).json({error: 'Evento no está en estado observado'});
+    
+    crearNotificacion({ rol_destino: 'Presupuesto', titulo: '🔄 Evento Subsanado', cuerpo: `El evento (#EVT-${id}) ha sido corregido por el solicitante.`, enlace_accion: 'poa-admin' });
+    crearNotificacion({ rol_destino: 'Legal', titulo: '🔄 Evento Subsanado', cuerpo: `El evento (#EVT-${id}) ha sido corregido por el solicitante.`, enlace_accion: 'flujo-administrativo' });
+    
+    res.json({mensaje: 'Evento subsanado y reenviado'});
+  });
+});
+
+// 4. Subir Evidencia Contabilidad (Paso 16)
+app.post('/api/logistica/:id_servicio/evidencia-contabilidad', upload.single('archivo_evidencia'), (req, res) => {
+  const { id_servicio } = req.params;
+  if (!req.file) return res.status(400).json({ error: 'Falta archivo de evidencia' });
+  const rutaRelativa = `/uploads/${req.file.filename}`;
+  
+  db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=? WHERE id_servicio_ext=?`, [rutaRelativa, id_servicio], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    res.json({mensaje: 'Evidencia subida correctamente', ruta: rutaRelativa});
+  });
+});
+
+// 5. Resolver Incidencia de Logística (Compras)
+app.put('/api/logistica/:id_servicio/resolver-incidencia', (req, res) => {
+  const { id_servicio } = req.params;
+  const { id_usuario, comentario_resolucion } = req.body;
+  if(!comentario_resolucion) return res.status(400).json({error: 'Comentario requerido'});
+  
+  db.query(`UPDATE servicio_externo SET estado_recepcion='Recibido', usuario_resolucion_incidencia=?, comentario_resolucion=? WHERE id_servicio_ext=?`, 
+  [id_usuario, comentario_resolucion, id_servicio], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    res.json({mensaje: 'Incidencia resuelta satisfactoriamente'});
+  });
+});
+
+// 6. Obtener Historial de Observaciones
+app.get('/api/eventos/:id/historial-observaciones', (req, res) => {
+  const { id } = req.params;
+  db.query(`SELECT h.*, u.nombre as revisor FROM historial_observaciones h JOIN usuario u ON h.id_usuario = u.id_usuario WHERE h.id_evento = ? ORDER BY h.fecha DESC`, [id], (err, rows) => {
+    if(err) return res.status(500).json({error: err.message});
+    res.json(rows);
+  });
+});
+
 app.listen(8080, () => { // Bucle infinito Server Boot Initialization process process.env.PORT || 8080 Start Listen TCP Socket Interface Binding Local Network Address Loopback Loop Listen Loop Cycle
   console.log('🚀â Servidor corriendo en http://localhost:8080'); // Terminal Print Output Message Banner Ready System OK Green Light Go Online Broadcast Network Server JS Master
 });

@@ -105,12 +105,16 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       const resOrg = await fetch(`${API}/eventos/${req.id_evento}/personal`);
       const dataOrg = await resOrg.json();
 
+      const resObs = await fetch(`${API}/api/eventos/${req.id_evento}/historial-observaciones`);
+      const dataObs = await resObs.json();
+
       // Almacena todos los datos en el estado pdfData para el componente FichaTecnicaPDF
       setPdfData({
         presupuesto: dataAdmin.presupuesto,
         legal: dataAdmin.legal,
         servicios,
-        organizadores: Array.isArray(dataOrg) ? dataOrg : []
+        organizadores: Array.isArray(dataOrg) ? dataOrg : [],
+        observaciones: Array.isArray(dataObs) ? dataObs : []
       });
     } catch (e) {
       console.error("Error pre-cargando datos del PDF", e);
@@ -138,7 +142,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   // --- ESTADOS DE LA FICHA TÉCNICA PDF ---
   // Controlan si se muestra el componente FichaTecnicaPDF y los datos que alimenta
   const [showFichaPDF, setShowFichaPDF] = useState(false);
-  const [pdfData, setPdfData] = useState({ presupuesto: null, legal: null, servicios: [], organizadores: [] });
+  const [pdfData, setPdfData] = useState({ presupuesto: null, legal: null, servicios: [], organizadores: [], observaciones: [] });
   const [enviandoServicio, setEnviandoServicio] = useState(false); // Bloquea el botón mientras se guarda un servicio
 
   // --- FUNCIÓN: openAsignarServicioModal ---
@@ -932,6 +936,26 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     )}
                   </div>
                 )}
+                
+                {/* Historial de Observaciones FASE 2 */}
+                {pdfData.observaciones && pdfData.observaciones.length > 0 && (
+                  <div className="info-card" style={{ marginTop: '24px' }}>
+                    <div className="info-card-title">
+                      <FiAlertTriangle size={14} /> Historial de Observaciones (Auditoría)
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {pdfData.observaciones.map((obs, idx) => (
+                        <div key={idx} style={{ padding: '12px', background: '#fef3c7', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#92400e', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <span>Dpto: {obs.departamento}</span>
+                            <span>{new Date(obs.fecha).toLocaleDateString()}</span>
+                          </div>
+                          <p style={{ color: '#78350f', fontSize: '14px', margin: 0 }}>{obs.comentario}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -967,6 +991,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           legal={pdfData.legal}
           servicios={pdfData.servicios}
           organizadores={pdfData.organizadores}
+          observaciones={pdfData.observaciones}
           onClose={() => setShowFichaPDF(false)}
         />
       )}

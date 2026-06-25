@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiEye, FiEdit2, FiSearch, FiFilter, FiCalendar, FiList, FiFileText, FiGrid, FiArrowLeft, FiMonitor, FiClock, FiStar, FiActivity } from "react-icons/fi";
+import { FiEye, FiEdit2, FiSearch, FiFilter, FiCalendar, FiList, FiFileText, FiGrid, FiArrowLeft, FiMonitor, FiClock, FiStar, FiActivity, FiRefreshCw } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 import { toast } from "react-hot-toast";
@@ -22,6 +22,11 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
   const [filtroFecha, setFiltroFecha] = useState("");
   const [selectedViewEvent, setSelectedViewEvent] = useState(null);
   
+  // Subsanar
+  const [modalSubsanar, setModalSubsanar] = useState(false);
+  const [eventoSubsanar, setEventoSubsanar] = useState(null);
+  const [historialObs, setHistorialObs] = useState([]);
+
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -50,6 +55,7 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
       case "Aprobado": return "badge-blue";
       case "Rechazado": return "badge-red";
       case "Finalizado": return "badge-green";
+      case "Observado": return "badge-orange"; // Add style if needed, default is fine
       default: return "badge-gray";
     }
   };
@@ -89,9 +95,34 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
     setSelectedViewEvent(evt);
   };
 
+  const openSubsanar = async (evt) => {
+    setEventoSubsanar(evt);
+    setHistorialObs([]);
+    try {
+      const res = await fetch(`${API}/api/eventos/${evt.id_evento}/historial-observaciones`);
+      const data = await res.json();
+      setHistorialObs(data);
+    } catch (e) {
+      console.error(e);
+    }
+    setModalSubsanar(true);
+  };
 
-
-  const indexOfFirstItemForDisplay = currentItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const confirmSubsanar = async () => {
+    try {
+      const res = await fetch(`${API}/api/eventos/${eventoSubsanar.id_evento}/subsanar`, { method: 'PUT' });
+      if (res.ok) {
+        toast.success("Evento subsanado y reenviado a revisión.");
+        setModalSubsanar(false);
+        setEventoSubsanar(null);
+        cargarHistorial();
+      } else {
+        toast.error("Error al subsanar evento.");
+      }
+    } catch (e) {
+      toast.error("Error de conexión");
+    }
+  };  const indexOfFirstItemForDisplay = currentItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const indexOfLastItemForDisplay = Math.min(currentPage * itemsPerPage, filteredData.length);
 
   return (
@@ -132,6 +163,7 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
               <option value="Aprobado">Aprobado</option>
               <option value="Rechazado">Rechazado</option>
               <option value="En Progreso">En Progreso</option>
+              <option value="Observado">Observado</option>
               <option value="Finalizado">Finalizado</option>
             </select>
           </div>
@@ -236,6 +268,10 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
                         {sol.estado === 'Pendiente' ? (
                           <button className="action-icon-btn edit" onClick={() => handleEdit(sol)} title="Editar Solicitud">
                             <FiEdit2 />
+                          </button>
+                        ) : sol.estado === 'Observado' ? (
+                          <button className="action-icon-btn" onClick={() => openSubsanar(sol)} title="Ver Observaciones y Subsanar" style={{ color: '#d97706', backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}>
+                            <FiRefreshCw />
                           </button>
                         ) : (
                           <div style={{ width: '32px', height: '32px' }}></div>
@@ -367,6 +403,45 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
                 onClick={() => setSelectedViewEvent(null)}
               >
                 <FiArrowLeft /> Regresar a mi historial
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL SUBSANAR EVENTO (FASE 2) */}
+      {modalSubsanar && eventoSubsanar && createPortal(
+        <div className="modal-overlay" onClick={() => setModalSubsanar(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h2 style={{color: '#d97706'}}>Observaciones del Evento #EVT-{eventoSubsanar.id_evento}</h2>
+            </div>
+            <div className="modal-body" style={{ display: 'block', textAlign: 'left', maxHeight: '60vh', overflowY: 'auto' }}>
+              <p style={{color: 'var(--text-light)', marginBottom: '15px', fontSize: '14px'}}>
+                Tu evento tiene las siguientes observaciones. Por favor, realiza las correcciones necesarias y luego presiona "Confirmar Subsanación" para que el evento vuelva a revisión.
+              </p>
+              
+              {historialObs.length === 0 ? (
+                <p>Cargando observaciones...</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {historialObs.map(obs => (
+                    <div key={obs.id_observacion} style={{ padding: '12px', background: '#fef3c7', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#92400e', marginBottom: '8px', fontWeight: 'bold' }}>
+                        <span>Dpto: {obs.departamento}</span>
+                        <span>{new Date(obs.fecha).toLocaleDateString()}</span>
+                      </div>
+                      <p style={{ color: '#78350f', fontSize: '14px', margin: 0 }}>{obs.comentario}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '15px' }}>
+              <button className="btn btn-secondary" onClick={() => setModalSubsanar(false)}>Cerrar</button>
+              <button className="btn btn-primary" onClick={confirmSubsanar} style={{background: '#d97706', borderColor: '#d97706'}}>
+                Confirmar Subsanación
               </button>
             </div>
           </div>

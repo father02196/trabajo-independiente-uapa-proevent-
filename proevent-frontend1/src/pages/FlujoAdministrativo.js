@@ -245,20 +245,46 @@ export default function FlujoAdministrativo({ usuario }) {
   // y las observaciones jurídicas escritas por el abogado.
   // Solo visible y ejecutable por el rol "Administrador de Legal".
   const guardarLegal = async () => {
+    if (legal.estado_legal === 'Observado' && !legal.observacion_legal.trim()) {
+      return toast.error('Debes escribir un comentario/observación para devolver el evento.');
+    }
+    
     try {
-      const res = await fetch(`${API}/api/flujo_legal/${eventoSeleccionado.id_evento}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-usuario-id': usuario?.id_usuario || '' // Auditoría del abogado revisor
-        },
-        body: JSON.stringify({ 
-          estado_legal: legal.estado_legal,           // Estado del dictamen
-          observacion_legal: legal.observacion_legal, // Notas jurídicas del abogado
-          id_usuario_revisor: usuario?.id_usuario     // Registro de quién dictó el fallo
-        })
-      });
-      if (res.ok) toast.success('Flujo legal actualizado');
+      if (legal.estado_legal === 'Observado') {
+        const res = await fetch(`${API}/api/legal/${eventoSeleccionado.id_evento}/observar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            id_usuario: usuario?.id_usuario, 
+            comentario: legal.observacion_legal 
+          })
+        });
+        if (res.ok) {
+           toast.success('Evento devuelto a solicitante (Observado)');
+           setEventoSeleccionado(null);
+           // Recargar la lista de eventos para remover el observado de la bandeja
+           const evtRes = await fetch(`${API}/eventos`);
+           const evtData = await evtRes.json();
+           const eventosPermitidos = Array.isArray(evtData) ? evtData.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") : [];
+           setEventos(eventosPermitidos);
+        } else {
+           toast.error('Error al observar el evento');
+        }
+      } else {
+        const res = await fetch(`${API}/api/flujo_legal/${eventoSeleccionado.id_evento}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-usuario-id': usuario?.id_usuario || '' // Auditoría del abogado revisor
+          },
+          body: JSON.stringify({ 
+            estado_legal: legal.estado_legal,           // Estado del dictamen
+            observacion_legal: legal.observacion_legal, // Notas jurídicas del abogado
+            id_usuario_revisor: usuario?.id_usuario     // Registro de quién dictó el fallo
+          })
+        });
+        if (res.ok) toast.success('Flujo legal actualizado');
+      }
     } catch (err) {
       toast.error('Error de conexión');
     }

@@ -23,7 +23,7 @@ import './../css/Dashboard.css';
  * - organizadores: Personal asignado al evento
  * - onClose: función para cerrar la vista modal.
  */
-export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios, organizadores, onClose }) {
+export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios, organizadores, observaciones, onClose }) {
   const componentRef = useRef();
 
   // --- FUNCIÓN: handlePrint ---
@@ -181,6 +181,26 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                 </table>
               ) : (
                 <p style={{ fontSize: '14px', color: '#64748b' }}>El evento no requiere servicios externos registrados.</p>
+              )}
+            </section>
+
+            {/* 5. Historial de Observaciones */}
+            <section style={{ marginBottom: '30px' }}>
+              <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>5. Historial de Observaciones</h2>
+              {observaciones && observaciones.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {observaciones.map((obs, index) => (
+                    <div key={index} style={{ background: '#fef3c7', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #f59e0b', fontSize: '13px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', color: '#92400e', fontWeight: 'bold' }}>
+                        <span>Departamento: {obs.departamento}</span>
+                        <span>{new Date(obs.fecha).toLocaleDateString()}</span>
+                      </div>
+                      <div style={{ color: '#78350f', margin: 0 }}>{obs.comentario}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '14px', color: '#64748b' }}>No hay observaciones registradas para este evento.</p>
               )}
             </section>
 

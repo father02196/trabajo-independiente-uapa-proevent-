@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // COMPONENTE: DashboardVAF
 // Pertenece a: Módulo Financiero / VAF
 // Propósito: Panel global del presupuesto (Plan Operativo Anual).
@@ -47,10 +47,10 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
         const listPendientes = movs
           .filter(m => m.estado === 'Pendiente')
           .sort((a, b) => new Date(b.fecha_movimiento) - new Date(a.fecha_movimiento))
-          .slice(0, 5); // Tomar solo los últimos 5
+          .slice(0, 5); // Tomar solo los úúúltimos 5
           
         setPendientesList(listPendientes);
-        setMovimientos(movs.slice(0, 5)); // Últimos 5 movimientos generales
+        setMovimientos(movs.slice(0, 5)); // ├Üúúltimos 5 movimientos generales
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
@@ -64,7 +64,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
   };
 
   const formatFecha = (fechaStr) => {
-    if (!fechaStr) return "—";
+    if (!fechaStr) return "ΓÇö";
     const fecha = new Date(fechaStr);
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
@@ -163,7 +163,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                   <FiClock className="panel-icon" />
                   <div>
                     <h4>Pendientes de Evaluación</h4>
-                    <p>Últimos movimientos del POA que esperan revisión</p>
+                    <p>├Üúúltimos movimientos del POA que esperan revisión</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -285,7 +285,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                         </div>
                         <div>
                           <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>Reserva para Evento #{mov.id_evento}</p>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>{formatFecha(mov.fecha_movimiento)} · {mov.concepto || 'Sin concepto'}</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>{formatFecha(mov.fecha_movimiento)} ┬╖ {mov.concepto || 'Sin concepto'}</p>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>

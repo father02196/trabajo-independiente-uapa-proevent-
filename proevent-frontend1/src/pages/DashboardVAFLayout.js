@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // COMPONENTE: DashboardVAFLayout
 // Pertenece a: Módulo Financiero (VAF) / Layout
 // Propósito: Contenedor principal (Layout) para el administrador
@@ -26,7 +26,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // --- FUNCIONES DE INTERFAZ ---
+  // --- FUNCIÓNES DE INTERFAZ ---
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -35,7 +35,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
     setUserMenuOpen(!userMenuOpen);
   };
 
-  // --- FUNCIÓN: renderContent ---
+  // --- FUNCI├ôN: renderContent ---
   const renderContent = () => {
     switch (activeTab) {
       case "DashboardVAF": return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
