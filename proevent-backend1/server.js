@@ -60,13 +60,13 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Endpoint genérico para subir documentos
 app.post('/api/documentos/upload', upload.single('archivo'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
-  const { id_evento, tipo_documento, id_usuario_subio } = req.body;
+  const { id_evento, tipo_documento, id_usuario_subio, numero_orden_compra } = req.body;
   if (!id_evento || !tipo_documento) return res.status(400).json({ error: 'Faltan datos obligatorios' });
 
   const ruta_archivo = `/uploads/${req.file.filename}`;
 
-  db.query('INSERT INTO documento_evento (id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?)',
-    [id_evento, tipo_documento, req.file.originalname, ruta_archivo, id_usuario_subio || null], (err, result) => {
+  db.query('INSERT INTO documento_evento (id_evento, tipo_documento, numero_orden_compra, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?, ?)',
+    [id_evento, tipo_documento, numero_orden_compra || null, req.file.originalname, ruta_archivo, id_usuario_subio || null], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ mensaje: 'Documento subido con éxito', id_documento: result.insertId, ruta_archivo });
     });
