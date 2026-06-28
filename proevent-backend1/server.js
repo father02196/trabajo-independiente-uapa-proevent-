@@ -1870,7 +1870,7 @@ app.put('/servicios-externos/:id/proveedor', (req, res) => {
                 // Enviar correo si el transporter está disponible
                 try {
                   const nodemailer = require('nodemailer');
-                  const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: 'uapaproeventstmdeevento@gmail.com', pass: 'zhusbixlqltrkfoh' } });
+                  const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS } });
                   transporter.sendMail({
                     from: 'uapaproeventstmdeevento@gmail.com',
                     to: prov.correo,
@@ -2207,10 +2207,10 @@ app.get('/api/aprobaciones-evento/:id_evento', (req, res) => {
 });
 
 // --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
-// Transportador configurado con GMail App Password
+// Transportador configurado con GMail App Password desde variables de entorno
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  auth: { user: 'uapaproeventstmdeevento@gmail.com', pass: 'zhusbixlqltrkfoh' }
+  auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
 });
 const rutasFase4 = require('./rutas_fase4')(db, transporter);
 app.use('/api', rutasFase4);
