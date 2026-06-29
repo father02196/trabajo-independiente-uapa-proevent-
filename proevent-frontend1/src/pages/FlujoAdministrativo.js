@@ -12,7 +12,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Iconos de Feather Icons usados en la UI de los paneles y botones
-import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye, FiRefreshCw } from 'react-icons/fi';
 
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from 'react-hot-toast';
@@ -56,22 +56,35 @@ export default function FlujoAdministrativo({ usuario }) {
     return 'compras';                          // Por defecto, pestaña de Compras
   });
   const [loading, setLoading] = useState(false); // Indicador de carga al cambiar de evento
+  const [recargandoEventos, setRecargandoEventos] = useState(false); // Indicador de recarga del selector
+
+  // --- FUNCIÓN: cargarEventos ---
+  // Obtiene los eventos del backend relevantes para el flujo administrativo.
+  // Para el rol Legal: incluye también "Observado" (eventos devueltos para corrección).
+  // Para Compras y VAF: solo "Aprobado" y "En Progreso".
+  // Se puede llamar manualmente con el botón de recarga.
+  const cargarEventos = async () => {
+    setRecargandoEventos(true);
+    try {
+      const res = await fetch(`${API}/eventos`);
+      const data = await res.json();
+      if (!Array.isArray(data)) { setEventos([]); return; }
+
+      // Los estados base siempre visibles para todos los roles administrativos
+      const estadosBase = ["Aprobado", "En Progreso", "Observado"];
+      const eventosPermitidos = data.filter(e => estadosBase.includes(e.estado));
+      setEventos(eventosPermitidos);
+    } catch (err) {
+      console.error(err);
+      toast.error('No se pudo actualizar la lista de eventos.');
+    } finally {
+      setRecargandoEventos(false);
+    }
+  };
 
   // --- EFECTO: Carga inicial de eventos operativos ---
-  // Al montar el componente, obtiene todos los eventos del sistema
-  // y filtra solo los que están en estado "Aprobado" o "En Progreso",
-  // ya que el flujo administrativo solo aplica a esos estados.
   useEffect(() => {
-    fetch(`${API}/eventos`)
-      .then(res => res.json())
-      .then(data => {
-        // Solo eventos activos (Aprobado o En Progreso) pueden ser administrados
-        const eventosPermitidos = Array.isArray(data) 
-          ? data.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") 
-          : [];
-        setEventos(eventosPermitidos);
-      })
-      .catch(err => console.error(err));
+    cargarEventos();
   }, []);
 
   // --- FUNCIÓN: handleSelectEvent ---
@@ -137,10 +150,9 @@ export default function FlujoAdministrativo({ usuario }) {
 
   // --- FUNCIÓN: handleUpload ---
   // Sube un documento a la Bóveda Digital del evento.
-  // Recibe el evento de cambio del input file y el tipo de documento (ej: "Cotizacion", "Contrato").
-  // Valida que el archivo no supere 15MB, luego hace un POST multipart/form-data
-  // al endpoint de subida. Al completarse, recarga la lista de documentos.
-  const handleUpload = async (e, tipo_documento) => {
+  // Recibe el evento de cambio del input file, el tipo de documento (ej: "Cotizacion", "Contrato")
+  // y opcionalmente el numero de orden de compra si está asociado a un servicio.
+  const handleUpload = async (e, tipo_documento, numero_orden_compra = null) => {
     const file = e.target.files[0];
     if (!file) return; // Si no hay archivo seleccionado, no hace nada
 
@@ -156,6 +168,9 @@ export default function FlujoAdministrativo({ usuario }) {
     formData.append('id_evento', eventoSeleccionado.id_evento); // ID del evento al que pertenece
     formData.append('tipo_documento', tipo_documento);           // Tipo: Cotizacion, Contrato, OC, etc.
     formData.append('id_usuario_subio', usuario?.id_usuario);   // Auditoría: quién subió el archivo
+    if (numero_orden_compra) {
+      formData.append('numero_orden_compra', numero_orden_compra); // Asociar a una OC específica
+    }
 
     const loadToast = toast.loading(`Subiendo ${tipo_documento}...`); // Toast de carga mientras sube
     try {
@@ -472,11 +487,11 @@ export default function FlujoAdministrativo({ usuario }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <label className="btn btn-secondary" style={{ margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <FiUpload /> Cotización
-                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Cotizacion')} />
+                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Cotizacion', s.numero_orden_compra)} />
                       </label>
                       <label className="btn btn-primary" style={{ margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#10b981', borderColor: '#10b981' }}>
                         <FiUpload /> OC Firmada
-                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Orden de Compra')} />
+                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Orden de Compra', s.numero_orden_compra)} />
                       </label>
                     </div>
                   </div>
@@ -664,6 +679,7 @@ export default function FlujoAdministrativo({ usuario }) {
                 <thead>
                   <tr>
                     <th>TIPO DE DOCUMENTO</th>
+                    <th>Nº OC</th>
                     <th>NOMBRE DEL ARCHIVO</th>
                     <th>SUBIDO POR</th>
                     <th>FECHA</th>
@@ -677,6 +693,15 @@ export default function FlujoAdministrativo({ usuario }) {
                         <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: '600', backgroundColor: '#e0e7ff', color: '#4338ca' }}>
                           {doc.tipo_documento}
                         </span>
+                      </td>
+                      <td>
+                        {doc.numero_orden_compra ? (
+                          <span style={{ fontWeight: '600', color: '#0369a1', fontSize: '13px', background: '#e0f2fe', padding: '2px 8px', borderRadius: '6px' }}>
+                            {doc.numero_orden_compra}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
+                        )}
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#334155', fontWeight: '500' }}>
@@ -735,7 +760,37 @@ export default function FlujoAdministrativo({ usuario }) {
         </div>
 
         <div style={{ padding: '20px 22px', borderBottom: '1px solid #f1f5f9' }}>
-          <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Seleccionar Evento Operativo</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', margin: 0 }}>Seleccionar Evento Operativo</label>
+            <button
+              onClick={cargarEventos}
+              disabled={recargandoEventos}
+              title="Recargar lista de eventos"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: recargandoEventos ? '#94a3b8' : '#3b82f6',
+                background: recargandoEventos ? '#f8fafc' : '#eff6ff',
+                border: '1px solid',
+                borderColor: recargandoEventos ? '#e2e8f0' : '#bfdbfe',
+                borderRadius: '8px',
+                cursor: recargandoEventos ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <FiRefreshCw
+                size={13}
+                style={{
+                  animation: recargandoEventos ? 'spin 0.8s linear infinite' : 'none',
+                }}
+              />
+              {recargandoEventos ? 'Actualizando...' : 'Recargar'}
+            </button>
+          </div>
           <select onChange={handleSelectEvent} className="table-select-premium" style={{ width: '100%', padding: '10px 14px', fontSize: '13.5px' }}>
             <option value="">-- Elige un evento para administrar --</option>
             {eventos.map((ev) => (
