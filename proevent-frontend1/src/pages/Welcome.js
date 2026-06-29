@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import './../css/Welcome.css';
 import uapaLogo from './../img/Logo-blanco-UAPA.png';
 import logoProevent from './../img/logo-proevent.jpeg';
@@ -578,7 +579,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, on
       </footer>
 
       {/* ══════════════════════ HELP MODAL ══════════════════════ */}
-      {showHelpModal && (
+      {showHelpModal && createPortal(
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeHelpModal()}>
           <div className="modal-content help-modal">
             <button className="modal-close" onClick={closeHelpModal}>×</button>
@@ -603,7 +604,8 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick, onDashboardClick, on
             </div>
             <button className="primary-btn" onClick={closeHelpModal}>Cerrar</button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

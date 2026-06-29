@@ -7,6 +7,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './../css/PortalProveedores.css';
 import { FiLogOut, FiUploadCloud, FiRefreshCw, FiEye, FiFileText, FiGrid, FiBriefcase, FiSend, FiClock, FiAward } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
@@ -256,7 +257,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       </main>
 
       {/* Modal de Detalles del Evento (Ficha Técnica B2B) */}
-      {detailsModalOpen && solicitudDetalles && (
+      {detailsModalOpen && solicitudDetalles && createPortal(
         <div className="modal-overlay" onClick={() => setDetailsModalOpen(false)}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
             <div className="modal-header">
@@ -309,11 +310,12 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
               <button className="btn btn-secondary" onClick={() => setDetailsModalOpen(false)}>Cerrar Ficha Técnica</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Carga de Cotización (Formulario de 7 campos) - Estilo Premium */}
-      {modalOpen && solicitudSeleccionada && (
+      {modalOpen && solicitudSeleccionada && createPortal(
         <div className="modal-overlay" onClick={() => setModalOpen(false)}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
@@ -385,7 +387,8 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

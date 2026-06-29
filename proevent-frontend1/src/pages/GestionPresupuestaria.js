@@ -6,6 +6,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import "./../css/Dashboard.css";
 import { FiCheckCircle, FiXCircle, FiRefreshCw, FiEye, FiFilter, FiSearch, FiTrendingUp, FiActivity, FiX } from "react-icons/fi";
 
@@ -416,7 +417,7 @@ export default function GestionPresupuestaria({ usuario }) {
       </div>
 
       {/* MODAL DE RECHAZO */}
-      {modalRechazo && (
+      {modalRechazo && createPortal(
         <div className="modal-overlay" onClick={() => setModalRechazo(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
             <div className="modal-header"><h2>Motivo de Rechazo</h2></div>
@@ -449,11 +450,12 @@ export default function GestionPresupuestaria({ usuario }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL DE DEVOLUCIÓN PARA SUBSANACIÓN (FASE 2) */}
-      {modalObservar && (
+      {modalObservar && createPortal(
         <div className="modal-overlay" onClick={() => setModalObservar(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
             <div className="modal-header">
@@ -488,11 +490,12 @@ export default function GestionPresupuestaria({ usuario }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL DE DETALLES */}
-      {modalDetallesOpen && selectedMovDetails && (
+      {modalDetallesOpen && selectedMovDetails && createPortal(
         <div className="modal-overlay" onClick={closeModalDetalles}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
@@ -563,7 +566,8 @@ export default function GestionPresupuestaria({ usuario }) {
               <button className="btn btn-secondary" onClick={closeModalDetalles}>Cerrar</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
