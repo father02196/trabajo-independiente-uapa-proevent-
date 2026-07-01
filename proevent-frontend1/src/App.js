@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import axios from "./api/axios"; // Nuestra instancia global
 
 // Componente de Seguridad
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,31 +40,35 @@ import DashboardVAFLayout from "./pages/DashboardVAFLayout";
 
 function App() {
   // --- ESTADOS GLOBALES DE AUTENTICACIÓN ---
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return sessionStorage.getItem("isLoggedIn") === "true";
-  });
-  const [usuario, setUsuario] = useState(() => {
-    const savedUser = sessionStorage.getItem("usuario");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [usuario, setUsuario] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true); // Evita parpadeos mientras valida
+  
   const [proveedor, setProveedor] = useState(() => {
     const saved = sessionStorage.getItem("proveedor");
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Sincronización con Session Storage
+  // Validar sesión con JWT (HttpOnly Cookie) al iniciar
   useEffect(() => {
-    sessionStorage.setItem("isLoggedIn", isLoggedIn);
-  }, [isLoggedIn]);
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get('/api/auth/me');
+        if (response.data.usuario) {
+          setIsLoggedIn(true);
+          setUsuario(response.data.usuario);
+        }
+      } catch (error) {
+        setIsLoggedIn(false);
+        setUsuario(null);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
-  useEffect(() => {
-    if (usuario) {
-      sessionStorage.setItem("usuario", JSON.stringify(usuario));
-    } else {
-      sessionStorage.removeItem("usuario");
-    }
-  }, [usuario]);
-
+  // Sincronización legacy de proveedor (fuera del alcance JWT por ahora)
   useEffect(() => {
     if (proveedor) {
       sessionStorage.setItem("proveedor", JSON.stringify(proveedor));
@@ -73,12 +78,24 @@ function App() {
   }, [proveedor]);
 
   // Manejo de Logout centralizado
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
+    }
     setIsLoggedIn(false);
     setUsuario(null);
     setProveedor(null);
     sessionStorage.removeItem("dashboard_activeTab"); // Limpiar estado legacy
   };
+
+  // Escuchar eventos de deslogueo forzado (ej. Token expirado en Axios)
+  useEffect(() => {
+    const forcedLogout = () => handleLogout();
+    window.addEventListener('auth:logout', forcedLogout);
+    return () => window.removeEventListener('auth:logout', forcedLogout);
+  }, []);
 
   // Función para determinar el inicio del usuario logueado según su rol
   const getDashboardPath = (rol) => {
@@ -100,6 +117,14 @@ function App() {
       default: return "/solicitante"; // Fallback
     }
   };
+
+  if (isAuthLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' }}>
+        <p>Verificando sesión segura...</p>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>

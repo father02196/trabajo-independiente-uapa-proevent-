@@ -13,6 +13,7 @@ import hideIcon  from "./../img/hide.png";
 import userIcon  from "./../img/user.png";
 import lockIcon  from "./../img/lock.png";
 import logoProevent from "./../img/logo-proevent.jpeg";
+import axios from "../api/axios"; // Usamos la instancia configurada con credentials
 
 function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const [email,        setEmail]        = useState("");
@@ -29,19 +30,12 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
     setLoading(true);
     setError("");
     try {
-      const res  = await fetch("http://localhost:8080/login-google", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ credential: response.credential }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        onLogin({ ...data.usuario, token: data.token });
-      } else {
-        setError(data.mensaje || "Error al iniciar sesión con Google.");
+      const res = await axios.post('/login-google', { credential: response.credential });
+      if (res.data && res.data.usuario) {
+        onLogin(res.data.usuario); // JWT tokens se guardan solos vía HttpOnly cookies
       }
-    } catch {
-      setError("No se pudo conectar al servidor.");
+    } catch (err) {
+      setError(err.response?.data?.mensaje || "Error al conectar con el servidor.");
     } finally {
       setLoading(false);
     }
@@ -79,19 +73,12 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
 
     setLoading(true);
     try {
-      const res  = await fetch("http://localhost:8080/login", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ correo: email, contrasena: password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        onLogin({ ...data.usuario, token: data.token });
-      } else {
-        setError(data.mensaje || "Correo o contraseña incorrectos.");
+      const res = await axios.post('/login', { correo: email, contrasena: password });
+      if (res.data && res.data.usuario) {
+        onLogin(res.data.usuario); // JWT tokens se guardan solos vía HttpOnly cookies
       }
-    } catch {
-      setError("No se pudo conectar al servidor. Verifique que el backend esté activo.");
+    } catch (err) {
+      setError(err.response?.data?.mensaje || "No se pudo conectar al servidor. Verifique que el backend esté activo.");
     } finally {
       setLoading(false);
     }
