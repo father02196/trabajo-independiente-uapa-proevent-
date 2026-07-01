@@ -2,11 +2,13 @@
 const express = require('express'); // Framework web minimalista para crear el servidor HTTP en Node.js
 const mysql = require('mysql2'); // Driver para establecer y manejar conexiones con la base de datos MySQL
 const cors = require('cors'); // Middleware que habilita CORS permitiendo que el Frontend (React) haga peticiones al Backend
+const cookieParser = require('cookie-parser'); // Middleware para parsear cookies (JWT)
 const crypto = require('crypto'); // Módulo de criptografía nativo de Node (usado para generar tokens de contraseña)
 const nodemailer = require('nodemailer'); // Librería estándar para el transporte y envío de correos electrónicos
 const { OAuth2Client } = require('google-auth-library'); // SDK de Google para verificar tokens de sesión OAuth2
 const multer = require('multer'); // Middleware para el manejo de subida de archivos (multipart/form-data)
 const path = require('path'); // Módulo de Node para trabajar con rutas de archivos
+const { generateAccessToken, generateRefreshToken, verificarToken } = require('./utils/jwtUtils'); // JWT Utils
 require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env
 
 // --- CONFIGURACIÓN DE GOOGLE OAUTH ---
@@ -15,8 +17,9 @@ const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID); // Inicializa el client
 
 // --- CONFIGURACIÓN DEL SERVIDOR EXPRESS ---
 const app = express(); // Instancia un nuevo servidor Express
-app.use(cors()); // Se añade el middleware global CORS a todas las rutas
+app.use(cors({ origin: 'http://localhost:3000', credentials: true })); // Habilitar CORS con envío de cookies
 app.use(express.json()); // Middleware global que parsea cualquier body JSON recibido en las peticiones entrantes
+app.use(cookieParser()); // Middleware para extraer cookies fácilmente en req.cookies
 
 // --- MANEJO DE ERRORES DE JSON INVíLIDO (adoptado de RM-fronters/BackendPROEVENT) ---
 // Captura errores de sintaxis JSON antes de que lleguen a los manejadores de rutas
@@ -58,7 +61,7 @@ const upload = multer({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Endpoint genérico para subir documentos
-app.post('/api/documentos/upload', upload.single('archivo'), (req, res) => {
+app.post('/api/documentos/upload', verificarToken, upload.single('archivo'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
   const { id_evento, tipo_documento, id_usuario_subio, numero_orden_compra } = req.body;
   if (!id_evento || !tipo_documento) return res.status(400).json({ error: 'Faltan datos obligatorios' });
@@ -73,14 +76,14 @@ app.post('/api/documentos/upload', upload.single('archivo'), (req, res) => {
 });
 
 // Endpoint para listar documentos de un evento
-app.get('/api/documentos/:id_evento', (req, res) => {
+app.get('/api/documentos/:id_evento', verificarToken, (req, res) => {
   db.query('SELECT d.*, u.nombre as usuario_nombre FROM documento_evento d LEFT JOIN usuario u ON d.id_usuario_subio = u.id_usuario WHERE d.id_evento = ? AND d.estado = "Activo" ORDER BY d.fecha_subida DESC', [req.params.id_evento], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
 });
 
-app.delete('/api/documentos/:id_documento', (req, res) => {
+app.delete('/api/documentos/:id_documento', verificarToken, (req, res) => {
   // En lugar de borrar físicamente (por auditoría), marcamos como Archivado
   db.query('UPDATE documento_evento SET estado = "Archivado" WHERE id_documento = ?', [req.params.id_documento], (err) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -278,6 +281,10 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
       if (usuarioData.estado === 'inactivo') {
         return res.status(403).json({ mensaje: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
       }
+      const accessToken = generateAccessToken(usuarioData);
+      const refreshToken = generateRefreshToken(usuarioData);
+      res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+      res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); // Entrega alegremente el payload (Datos permitidos) al framework frontend
       // Ejecuta asincrónicamente el guardado del incidente al libro de auditorías (Bitácora)
       registrarMovimiento(usuarioData.id_usuario, usuarioData.id_rol, 'LOGIN', `Sesión Inicada (Manual). Autenticado como ${usuarioData.nombre} (${correo}) bajo el rol de ${usuarioData.rol}.`);
@@ -319,6 +326,10 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
         if (usuarioData.estado === 'inactivo') {
           return res.status(403).json({ mensaje: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
         }
+        const accessToken = generateAccessToken(usuarioData);
+        const refreshToken = generateRefreshToken(usuarioData);
+        res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); // Permite entrada pasiva y le dispensa paralelamente su información de acceso interior en estructura JSON al app cliente reactivo
         // Emplaza y archiva operativamente este acceso exterior exitoso de manera singular en el reporte histórico imborrable del sistema corporativo (Bitácora) 
         registrarMovimiento(usuarioData.id_usuario, usuarioData.id_rol, 'LOGIN_GOOGLE', `Sesión Inicada (Google OAuth). Autenticado como ${usuarioData.nombre} (${correo}) bajo el rol de ${usuarioData.rol}.`);
@@ -329,6 +340,44 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
     res.status(401).json({ mensaje: 'Token de Google inválido' }); // Emite y fináliza oficialmente devolviendo el evento de veto directo por Token corrompido, falso o flagrantemente vencido
   }
 });
+
+// --- RUTAS JWT ---
+app.post('/api/auth/refresh', (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.status(401).json({ mensaje: 'No hay refresh token' });
+  const jwt = require('jsonwebtoken');
+  const { JWT_REFRESH_SECRET } = require('./utils/jwtUtils');
+  try {
+    const decodificado = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    const nuevoAccessToken = generateAccessToken(decodificado);
+    res.cookie('accessToken', nuevoAccessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+    res.json({ mensaje: 'Token renovado' });
+  } catch (err) {
+    res.status(401).json({ mensaje: 'Refresh token inválido o expirado' });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+  res.json({ mensaje: 'Sesión cerrada exitosamente' });
+});
+
+app.get('/api/auth/me', verificarToken, (req, res) => {
+  db.query(
+    'SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol, u.estado FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE u.id_usuario = ?',
+    [req.user.id_usuario],
+    (err, results) => {
+      if (err || results.length === 0) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      const u = results[0];
+      if (u.estado === 'inactivo') return res.status(403).json({ mensaje: 'Cuenta inactiva' });
+      res.json({ usuario: u });
+    }
+  );
+});
+
+// Proteger todas las rutas a partir de aquí
+app.use(verificarToken);
 
 // --- RUTAS DE LECTURA GET (MÓDULO DE ADMINISTRACIÓN) ---
 // OBTENER la lista completa de TODOS LOS USUARIOS adjuntando su denominación de Rol (Join)
