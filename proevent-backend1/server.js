@@ -9,7 +9,20 @@ const { OAuth2Client } = require('google-auth-library'); // SDK de Google para v
 const multer = require('multer'); // Middleware para el manejo de subida de archivos (multipart/form-data)
 const path = require('path'); // Módulo de Node para trabajar con rutas de archivos
 const { generateAccessToken, generateRefreshToken, verificarToken } = require('./utils/jwtUtils'); // JWT Utils
+const bcrypt = require('bcryptjs'); // Librería de encriptación segura para contraseñas
 require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env
+
+// --- FUNCIÓN DE UTILIDAD ---
+// Elimina datos sensibles del objeto de usuario antes de enviarlo al cliente mediante construcción estricta
+function sanitizeUser(user) {
+    return {
+        id_usuario: user.id_usuario,
+        nombre: user.nombre,
+        correo: user.correo,
+        rol: user.rol || user.id_rol,
+        estado: user.estado
+    };
+}
 
 // --- CONFIGURACIÓN DE GOOGLE OAUTH ---
 const GOOGLE_CLIENT_ID = '426335318098-v39ood0lcapc22lgoq3lons62hbf507m.apps.googleusercontent.com'; // Credencial pública de la App en Google Cloud
@@ -103,6 +116,7 @@ const db = mysql.createPool({ // El Pool mantiene las conexiones vivas y las reu
   connectionLimit: 10, // Define el número máximo de conexiones para no saturar la base de datos
   queueLimit: 0 // Sin límite en la cola de peticiones en espera (0 = infinito)
 });
+app.locals.db = db; // Exponer pool a los middlewares externos
 
 // Prueba de la conexión inicial extrayendo un worker del pool de MySQL
 db.getConnection((err, connection) => {
@@ -260,34 +274,75 @@ function autoFinalizarEventos() {
 autoFinalizarEventos(); // Efectúa una auto-revisión instintivamente una sola vez de inmediato en el preciso microsegundo donde se habilita en RAM el servidor backend Node
 setInterval(autoFinalizarEventos, 60 * 60 * 1000); // Dispara sub-rutina permanente a repetirse circular iterativamente eternamente con un plazo intermedio de 1 hora o 3600 segundos calculados matemáticamente
 
-
 // --- RUTAS DE AUTENTICACIÓN ---
 // INICIO DE SESIÓN TRADICIONAL (Email y Contraseña)
 app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar credenciales nativas bajo la ruta '/login'
-  const { correo, contrasena } = req.body; // Extrae descriptivamente (Desestructuración) los campos 'correo' y 'contrasena' del cuerpo JSON enviado por el cliente
-  // Prepara la consulta para buscar en la base de datos si existe el usuario con ambos campos coincidentes
+  const { correo, contrasena } = req.body; 
+  if (!correo || !contrasena) return res.status(400).json({ mensaje: 'Faltan credenciales' });
+
   db.query(
-    `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol, u.estado
+    `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol, u.estado, u.contrasena, u.password_hash, u.locked_until, u.failed_login_attempts, u.token_version
      FROM usuario u
      JOIN rol r ON u.id_rol = r.id_rol
-     WHERE u.correo = ? AND u.contrasena = ?`, // Filtra los resultados usando placeholders seguros '(?)'
-    [correo, contrasena], // Inyecta las variables limpias de usuario a la validación de base de datos
-    (err, results) => { // Función flecha de callback (Callback) de llamada tras la ejecución MySQL
-      if (err) return res.status(500).json({ mensaje: 'Error del servidor' }); // Retorna fallo HTTP 500 si la base de datos arrojó una excepción técnica 
-      if (results.length === 0) { // Si el Array de resultados viene vacío significa que las credenciales no hacen "Match" (No existe el par correo/clave)
-        return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' }); // Emite explícitamente Rechazo de Autorización (HTTP 401 Unauthorized)
+     WHERE u.correo = ?`, 
+    [correo], 
+    async (err, results) => { 
+      if (err) return res.status(500).json({ mensaje: 'Error del servidor' }); 
+      if (results.length === 0) { 
+        return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' }); 
       }
-      const usuarioData = results[0]; // Extrae el primer (y esperado único) registro validado desde la matriz del query
-      if (usuarioData.estado === 'inactivo') {
+      
+      const user = results[0]; 
+
+      if (user.estado === 'inactivo') {
         return res.status(403).json({ mensaje: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
       }
+
+      // Bloqueo de Seguridad Brute-Force
+      if (user.locked_until && new Date() < new Date(user.locked_until)) {
+        return res.status(423).json({ mensaje: 'Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intente más tarde.' });
+      }
+
+      let passwordIsValid = false;
+
+      // Migración Progresiva (Legacy Login)
+      if (!user.password_hash && user.contrasena && user.contrasena.trim() !== '') {
+        if (user.contrasena === contrasena) {
+          passwordIsValid = true;
+          try {
+            const passwordHash = await bcrypt.hash(contrasena, 12);
+            db.query('UPDATE usuario SET password_hash = ?, contrasena = NULL, password_changed_at = NOW() WHERE id_usuario = ?', [passwordHash, user.id_usuario]);
+          } catch (err) {
+            console.error('Error migrando password en legacy login:', err);
+          }
+        }
+      } else if (user.password_hash) {
+        // Login Moderno
+        passwordIsValid = await bcrypt.compare(contrasena, user.password_hash);
+      }
+
+      if (!passwordIsValid) {
+        const attempts = user.failed_login_attempts + 1;
+        let queryUpdate = 'UPDATE usuario SET failed_login_attempts = ? WHERE id_usuario = ?';
+        let paramsUpdate = [attempts, user.id_usuario];
+        if (attempts >= 5) {
+           queryUpdate = 'UPDATE usuario SET failed_login_attempts = ?, locked_until = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE id_usuario = ?';
+        }
+        db.query(queryUpdate, paramsUpdate);
+        return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' });
+      }
+
+      // Login exitoso, resetear intentos fallidos
+      db.query('UPDATE usuario SET failed_login_attempts = 0, locked_until = NULL WHERE id_usuario = ?', [user.id_usuario]);
+
+      const usuarioData = sanitizeUser(user);
       const accessToken = generateAccessToken(usuarioData);
       const refreshToken = generateRefreshToken(usuarioData);
       res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
       res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
-      res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); // Entrega alegremente el payload (Datos permitidos) al framework frontend
-      // Ejecuta asincrónicamente el guardado del incidente al libro de auditorías (Bitácora)
-      registrarMovimiento(usuarioData.id_usuario, usuarioData.id_rol, 'LOGIN', `Sesión Inicada (Manual). Autenticado como ${usuarioData.nombre} (${correo}) bajo el rol de ${usuarioData.rol}.`);
+      res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); 
+      
+      registrarMovimiento(user.id_usuario, null, 'LOGIN', `Sesión Inicada (Manual). Autenticado como ${user.nombre} (${correo}) bajo el rol de ${user.rol}.`);
     }
   );
 });
@@ -425,45 +480,60 @@ app.get('/roles', (req, res) => { // Asignación de Ruta simple universal '/role
 
 // --- RUTAS DE ESCRITURA Y MUTACIÓN ACTIVA (CRUD USUARIOS) ---
 // CREAR UN NUEVO USUARIO EN PANEL ADMINISTRATIVO (Método POST de inyección)
-app.post('/usuarios', (req, res) => { // Asigna protocolo procedimental POST apuntado explícitamente a '/usuarios'
-  const { nombre, correo, contrasena, id_rol } = req.body; // Cosecha las especificaciones emitidas por el frontend a raíz del formulario modal orgánico rellenado
-  if (!nombre || !correo || !contrasena || !id_rol) { // Mecanismo encriptado de control interno validacional previo estructural para proteger la BD de peticiones erróneamente vacías o de origen nulo dudoso (Filtro Anti-Nulls)
-    return res.status(400).json({ mensaje: 'Todos los campos son obligatorios' }); // Rechaza procedencia terminantemente ante la imperativa escasez detectada de alguno de los 4 pilares informativos primordiales
+app.post('/usuarios', async (req, res) => { // Asigna protocolo procedimental POST apuntado explícitamente a '/usuarios'
+  const { nombre, correo, contrasena, id_rol } = req.body; 
+  if (!nombre || !correo || !contrasena || !id_rol) { 
+    return res.status(400).json({ mensaje: 'Todos los campos son obligatorios' }); 
   }
-  db.query( // Realiza transaccionalmente un intento forzado de insercion relacional MySQL blindado asimétricamente con prepare-statement posicional ("?") para contrarrestar ataques cibernéticos elementales
-    'INSERT INTO usuario (nombre, correo, contrasena, id_rol) VALUES (?, ?, ?, ?)',
-    [nombre, correo, contrasena, id_rol], // Despliega e imbrica iterativamente la matriz natural emparejada correspondientemente a los placeholders huecos variables de la sentencia final en cadena generada
-    (err, result) => {
-      if (err) { // Manejador condicional iterativo estricto ramificado en base a la respuesta literal del servidor MySQL
-        if (err.code === 'ER_DUP_ENTRY') { // Constata y sub-analiza comparativamente de manera explícita interna si el gestor MySQL flagrantemente detectó rebotando que el índice físico fue violado en pura duplicidad prohibitiva (UNIQUE KEY interpuesta artificialmente en correo)
-          return res.status(409).json({ mensaje: 'El correo ya está registrado' }); // Traduce diplomáticamente el tecnicismo de backend a una respuesta cliente frontend 100% amigable y legible etiquetada con código de bloqueo '409 Conflict'
-        }
-        return res.status(500).json({ mensaje: 'Error al crear usuario', error: err }); // Redundancia y Falla genérica genérica absoluta no relacionada en esencia a factores obvios controlables (duplicados lógicos u ausencias de rellenado)
-      }
-      res.status(201).json({ mensaje: 'Usuario creado con éxito', id: result.insertId }); // Manifiesta veredicta positivamente Éxito absoluto final emitiendo estatus de entidad forjada HTTP 201 (Created), transmitiéndole correlativamente el nuevo numérico nominal de llave primaria autogenerada MySQL finalizada satisfactoriamente (insertId referenciado)
 
-      const adminId = req.headers['x-usuario-id']; // Lee proactivamente el metadato encajado Header silencioso adicional de la petición inyectada enviado para averiguar y destripar inteligentemente de facto a quién (A qué UUID específico administrador) someter forzosamente a responsiva e identificar auditablemente
-      if (adminId) registrarMovimiento(adminId, null, 'CREACION_USUARIO', `Registro de nuevo usuario. ID asignado: ${result.insertId}, Nombre: ${nombre}, Correo: ${correo}, Nivel de Rol ID: ${id_rol}.`); // Log histórico automático si hay autor rastreable
-    }
-  );
+  try {
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(contrasena, saltRounds);
+
+    db.query( 
+      'INSERT INTO usuario (nombre, correo, contrasena, password_hash, id_rol) VALUES (?, ?, ?, ?, ?)',
+      [nombre, correo, null, passwordHash, id_rol], 
+      (err, result) => {
+        if (err) { 
+          if (err.code === 'ER_DUP_ENTRY') { 
+            return res.status(409).json({ mensaje: 'El correo ya está registrado' }); 
+          }
+          return res.status(500).json({ mensaje: 'Error al crear usuario', error: err }); 
+        }
+        res.status(201).json({ mensaje: 'Usuario creado con éxito', id: result.insertId }); 
+
+        const adminId = req.headers['x-usuario-id']; 
+        if (adminId) registrarMovimiento(adminId, null, 'CREACION_USUARIO', `Registro de nuevo usuario. ID asignado: ${result.insertId}, Nombre: ${nombre}, Correo: ${correo}, Nivel de Rol ID: ${id_rol}.`); 
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error interno encriptando contraseña' });
+  }
 });
 
 // ACTUALIZAR LOS METADATOS Y VARIABLES ATRIBUIBLES DE UN USUARIO EXISTENTE EXTERNO (Método PUT dinámico multi-factor)
-app.put('/usuarios/:id', (req, res) => { // Genera la Ruta PUT hacia URI interna /usuarios portando y enlazando conjuntivamente un componente de parámetro referencial subyacente wildcard paramétrico literal '/:id' para constatar individualizada y unitariamente inequívocamente a cual único usuario existente se le va a castigar mutando su realidad relacional
-  const { id } = req.params; // Saca, extrae e individualiza nominalmente el parámetro puro indexado integral literal forzado dentro de la URl misma HTTP enrutada al resolver la expresión estática
-  const { nombre, correo, contrasena, id_rol } = req.body; // Cosecha e interpreta descriptivamente la envoltura útil desde adentro profundo del cuerpo adjuntado original (body form JSON inyectado)
+app.put('/usuarios/:id', async (req, res) => { 
+  const { id } = req.params; 
+  const { nombre, correo, contrasena, id_rol } = req.body; 
 
-  if (contrasena && contrasena.trim() !== '') { // Verifica e inspecciona transversal y activamente si viajó información nueva textual verídica procesable subyacente alojada intencionadamente en el espacio crudo de "contraseña", descalificando programaticamente y evadiendo de antemano el hipotético cruce de strings artificialmente elaborados pero funcionalmente inútiles no vacíos (Ej. puros espacios inertes)
-    db.query( // Procede a ejecutar contundentemente macro-tarea UPDATE de reemplazo incombustible en todos unificadamente y cada uno de los campos expuestos de control sistémico (Incluyendo radical y unilateralmente por ende la sobreescritura estricta sin compasión criptográfica pre-hasheada en claro de la contraseña vital relacional del objetivo humano asignado en el wildcard base fundamental identificable indexadamente)
-      'UPDATE usuario SET nombre = ?, correo = ?, contrasena = ?, id_rol = ? WHERE id_usuario = ?', // Plantilla query string forjada
-      [nombre, correo, contrasena, id_rol, id], // Distribuye ordenadamente las facetas mutadas e íntegras en conjunto al identificativo que asienta la métrica limitante en conjunción resolutoria posicional a un único respectivo sufijo unitario originario paramétrico id final de línea base condicional limitativo condicionado restrictivamente que encaja herméticamente la ineludible condición inquebrantable de parada de scope operativo limitrofe totalitario (Clausula fundamental WHERE restrictiva)
-      (err) => { // Funcion manejadora subyacente lambda callback
-        if (err) return res.status(500).json({ mensaje: 'Error al actualizar usuario', error: err }); // Escape prematuro por default e interrupción forzada natural ante eventual manifestación física no controlable a eventual avería catastrofíla MySQL local (Status 500 Code)
-        res.json({ mensaje: 'Usuario actualizado con éxito' }); // Suministra luz verde y autorización moral afirmativa generalizada con estatus 200 resolutivo estático exitoso pleno definitivo hacia el entorno espectral del marco renderizado componente del front end cliente terminal UI
-        const adminId = req.headers['x-usuario-id']; // Inspecciona el encabezado encubierto Header intrínseco inyectado artificialmente previamenten por interceptor Intercept-Like frontend para recuperar al autor admin verazmente
-        if (adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Contraseña modificada)`); // Bitácora y libro log operativo incuestionable explícito auditado internamente en formato legible texto libre natural alertando y delatando intencionalmente cambios drásticos inmiscuibles profundamente intrusivos e invasivos vitalmente operacionales a la infraestructura original ajena incluyendo recambio rotacional directo de credenciales de seguridad limitantes claves (contraseñas mutantes reseteadas autoritariamente)
-      }
-    );
+  if (contrasena && contrasena.trim() !== '') { 
+    try {
+      const saltRounds = 12;
+      const passwordHash = await bcrypt.hash(contrasena, saltRounds);
+
+      db.query( 
+        'UPDATE usuario SET nombre = ?, correo = ?, contrasena = ?, password_hash = ?, token_version = token_version + 1, password_changed_at = NOW(), id_rol = ? WHERE id_usuario = ?', 
+        [nombre, correo, null, passwordHash, id_rol, id], 
+        (err) => { 
+          if (err) return res.status(500).json({ mensaje: 'Error al actualizar usuario', error: err }); 
+          res.json({ mensaje: 'Usuario actualizado con éxito' }); 
+          const adminId = req.headers['x-usuario-id']; 
+          if (adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Contraseña modificada)`); 
+        }
+      );
+    } catch (error) {
+      res.status(500).json({ mensaje: 'Error interno encriptando contraseña' });
+    }
   } else {
     db.query(
       'UPDATE usuario SET nombre = ?, correo = ?, id_rol = ? WHERE id_usuario = ?',
@@ -1413,7 +1483,7 @@ app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutad
   db.query(
     'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Mismo chequeo de caducidad temporal anti-latencia
     [token],
-    (err, results) => {
+    async (err, results) => {
       if (err) return res.status(500).json({ mensaje: 'Error al validar el token' }); // Fallo Try Catch like
       if (results.length === 0) { // Timeout confirmacion reaccion tardia usuario o inyeccion delay ataque
         return res.status(400).json({ mensaje: 'Token inválido o expirado' });
@@ -1421,19 +1491,25 @@ app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutad
 
       const correo = results[0].correo; // Pinpoint selectivo estricto de la cuenta víctima objetiva a actualizar segun el token
 
-      // 2. Actualizar contraseña oficial (Idealmente aquí se usaría un Bcrypt Hash gen salt, pero ProEvent iteración Mvp usa Plaintext local en db SQL Base table usuario provisorio por ahora para prueba simple académica de flujo login basico)
-      db.query(
-        'UPDATE usuario SET contrasena = ? WHERE correo = ?', // Exec Update query basico relacional root string modify setter
-        [nuevaContrasena, correo],
-        (errUpdate) => {
-          if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' }); // Fallo MySQL Update query parse
+      try {
+        const passwordHash = await bcrypt.hash(nuevaContrasena, 12);
+        
+        // 2. Actualizar contraseña oficial y forzar invalidación de sesiones previas
+        db.query(
+          'UPDATE usuario SET password_hash = ?, contrasena = NULL, password_changed_at = NOW(), token_version = token_version + 1, failed_login_attempts = 0, locked_until = NULL WHERE correo = ?', 
+          [passwordHash, correo],
+          (errUpdate) => {
+            if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' }); 
 
-          // 3. Destruir e incinerar el token usado para asegurar su condición "Uso Único Desechable Limitado" o (One Time Use - Burn after read single use ticket policy enforcer mechanism destructor)
-          db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => { }); // Purga silenciada sin catch back alert trigger
+            // 3. Destruir e incinerar el token usado para asegurar su condición "Uso Único Desechable Limitado"
+            db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => { }); 
 
-          res.json({ mensaje: 'Contraseña actualizada con éxito' }); // Respuesta Ok Verde HTTP 200 Exito UI Router App PWA React Redirect logic flag return
-        }
-      );
+            res.json({ mensaje: 'Contraseña actualizada con éxito' }); 
+          }
+        );
+      } catch (hashError) {
+        return res.status(500).json({ mensaje: 'Error interno encriptando contraseña' });
+      }
     }
   );
 });
