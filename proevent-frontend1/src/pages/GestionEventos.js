@@ -11,7 +11,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
 // Iconos de Feather Icons usados en la UI de la tabla y modales
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity, FiPlay, FiLock, FiAlertCircle, FiXCircle, FiInfo } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity, FiPlay, FiLock, FiAlertCircle, FiXCircle, FiInfo, FiAlertTriangle } from "react-icons/fi";
 
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from "react-hot-toast";
