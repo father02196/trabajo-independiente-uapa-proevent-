@@ -121,7 +121,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
         </div>
 
         {/* Formulario */}
-        <form className="lc-form" onSubmit={handleSubmit} noValidate>
+        <form className="lc-form" onSubmit={handleSubmit} noValidate autoComplete="off">
 
           {/* Campo correo */}
           <div className="lc-field">
@@ -135,7 +135,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 placeholder="usuario@uapa.edu.do"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                autoComplete="off"
               />
             </div>
           </div>
@@ -161,7 +161,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
+                autoComplete="new-password"
               />
               <button
                 type="button"

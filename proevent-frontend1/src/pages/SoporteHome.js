@@ -171,7 +171,7 @@ function SoporteHome() {
                         </section>
 
                         <section className="soporte-section additional-info" style={{ marginTop: '40px' }}>
-                            <div className="info-card">
+                            <div className="soporte-info-card">
                                 <div className="info-icon-wrapper">
                                     <FiInfo className="info-icon" />
                                 </div>

@@ -466,7 +466,7 @@
 /* =========================================
    Información Adicional
    ========================================= */
-.info-card {
+.soporte-info-card {
   background: #e5f0ff;
   border-radius: var(--soporte-radius);
   padding: 40px;
@@ -565,7 +565,7 @@
     font-size: 0.95rem;
   }
   
-  .info-card {
+  .soporte-info-card {
     flex-direction: column;
     align-items: center;
     text-align: center;
