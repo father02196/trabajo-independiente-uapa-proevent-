@@ -1,78 +1,74 @@
 // ============================================================
 // COMPONENTE: App
 // Pertenece a: Raíz de la Aplicación
-// Propósito: Controla el enrutamiento principal, el estado global 
-// de autenticación y renderiza el Layout adecuado según el rol.
+// Propósito: Controla el enrutamiento principal con React Router,
+// gestiona la seguridad mediante rutas protegidas y renderiza 
+// el Layout adecuado (aislado) según el rol del usuario.
 // ============================================================
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import axios from "./api/axios"; // Nuestra instancia global
+
+// Componente de Seguridad
+import ProtectedRoute from "./components/ProtectedRoute";
+
+// Páginas Públicas
 import Login from "./pages/Login";
 import Welcome from "./pages/Welcome";
-import Dashboard from "./pages/Dashboard";
-import DashboardComprasLayout from "./pages/DashboardComprasLayout";
-import DashboardLegalLayout from "./pages/DashboardLegalLayout";
-import DashboardVAFLayout from "./pages/DashboardVAFLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+
+// Portal Proveedores
 import PortalProveedoresLogin from "./pages/PortalProveedoresLogin";
 import PortalProveedoresDashboard from "./pages/PortalProveedoresDashboard";
 import PortalProveedoresForgotPassword from "./pages/PortalProveedoresForgotPassword";
 import PortalProveedoresResetPassword from "./pages/PortalProveedoresResetPassword";
 
+// Layouts Exclusivos por Rol
+import DashboardAdminLayout from "./pages/DashboardAdminLayout";
+import DashboardSolicitanteLayout from "./pages/DashboardSolicitanteLayout";
+import DashboardApoyoLayout from "./pages/DashboardApoyoLayout";
+import DashboardAdminEventosLayout from "./pages/DashboardAdminEventosLayout";
+import DashboardAudiovisualLayout from "./pages/DashboardAudiovisualLayout";
+import DashboardResponsableLayout from "./pages/DashboardResponsableLayout";
+
+// Layouts Tradicionales
+import DashboardComprasLayout from "./pages/DashboardComprasLayout";
+import DashboardLegalLayout from "./pages/DashboardLegalLayout";
+import DashboardVAFLayout from "./pages/DashboardVAFLayout";
+
 function App() {
-  // --- ESTADOS GLOBALES ---
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return sessionStorage.getItem("isLoggedIn") === "true";
-  });
+  // --- ESTADOS GLOBALES DE AUTENTICACIÓN ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [usuario, setUsuario] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true); // Evita parpadeos mientras valida
+  
   const [proveedor, setProveedor] = useState(() => {
     const saved = sessionStorage.getItem("proveedor");
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [page, setPage] = useState(() => {
-    const savedPage = sessionStorage.getItem("page");
-    const isLogged = sessionStorage.getItem("isLoggedIn") === "true";
-    const hasProveedor = sessionStorage.getItem("proveedor") !== null;
-
-    // Si es un usuario administrativo/solicitante logueado y recarga, forzar al dashboard
-    if (isLogged) {
-      if (!savedPage || savedPage === "welcome" || savedPage === "login") return "dashboard";
-      return savedPage;
-    }
-    
-    // Si es un proveedor logueado y recarga, forzar al dashboard de proveedores
-    if (hasProveedor) {
-      if (!savedPage || savedPage === "welcome" || savedPage === "proveedores-login") return "proveedores-dashboard";
-      return savedPage;
-    }
-
-    // Si no está logueado, mostrar landing page por defecto o la página guardada
-    return savedPage || "welcome";
-  });
-
-  const [usuario, setUsuario] = useState(() => {
-    const savedUser = sessionStorage.getItem("usuario");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  const [resetToken, setResetToken] = useState(null);
-
-  // --- EFECTOS: Sincronización con Session Storage ---
+  // Validar sesión con JWT (HttpOnly Cookie) al iniciar
   useEffect(() => {
-    sessionStorage.setItem("page", page);
-  }, [page]);
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get('/api/auth/me');
+        if (response.data.usuario) {
+          setIsLoggedIn(true);
+          setUsuario(response.data.usuario);
+        }
+      } catch (error) {
+        setIsLoggedIn(false);
+        setUsuario(null);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
-  useEffect(() => {
-    sessionStorage.setItem("isLoggedIn", isLoggedIn);
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    if (usuario) {
-      sessionStorage.setItem("usuario", JSON.stringify(usuario));
-    } else {
-      sessionStorage.removeItem("usuario");
-    }
-  }, [usuario]);
-
+  // Sincronización legacy de proveedor (fuera del alcance JWT por ahora)
   useEffect(() => {
     if (proveedor) {
       sessionStorage.setItem("proveedor", JSON.stringify(proveedor));
@@ -81,135 +77,155 @@ function App() {
     }
   }, [proveedor]);
 
-  useEffect(() => {
-    // Detectar token en la URL (ej: /reset-password/TOKEN o /proveedor/reset-password/TOKEN)
-    const path = window.location.pathname;
-    if (path.startsWith("/reset-password/")) {
-      const token = path.split("/")[2];
-      setResetToken(token);
-      setPage("reset-password");
-    } else if (path.startsWith("/proveedor/reset-password/")) {
-      const token = path.split("/")[3];
-      setResetToken(token);
-      setPage("proveedores-reset-password");
-    } else if (path === "/portal-proveedores") {
-      if (proveedor) setPage("proveedores-dashboard");
-      else setPage("proveedores-login");
+  // Manejo de Logout centralizado
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
     }
-  }, [proveedor]);
+    setIsLoggedIn(false);
+    setUsuario(null);
+    setProveedor(null);
+    sessionStorage.removeItem("dashboard_activeTab"); // Limpiar estado legacy
+  };
+
+  // Escuchar eventos de deslogueo forzado (ej. Token expirado en Axios)
+  useEffect(() => {
+    const forcedLogout = () => handleLogout();
+    window.addEventListener('auth:logout', forcedLogout);
+    return () => window.removeEventListener('auth:logout', forcedLogout);
+  }, []);
+
+  // Función para determinar el inicio del usuario logueado según su rol
+  const getDashboardPath = (rol) => {
+    switch (rol) {
+      case "Administrador": return "/admin";
+      case "Solicitante": return "/solicitante";
+      case "Personal de Apoyo": return "/apoyo";
+      case "Administrador de Eventos": return "/admin-eventos";
+      case "Especialista de eventos": return "/admin-eventos";
+      case "Administrador de Audiovisual": return "/audiovisual";
+      case "Responsable de área audiovisual": return "/audiovisual";
+      case "Responsable": return "/responsable";
+      case "Compras": return "/compras";
+      case "Administrador de Compras": return "/compras";
+      case "Legal": return "/legal";
+      case "Administrador de Legal": return "/legal";
+      case "Administrador Legal": return "/legal";
+      case "Administrador V-A-F": return "/vaf";
+      default: return "/solicitante"; // Fallback
+    }
+  };
+
+  if (isAuthLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' }}>
+        <p>Verificando sesión segura...</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      {page === "reset-password" ? (
-        <ResetPassword 
-          token={resetToken} 
-          onBackClick={() => {
-            window.history.pushState({}, "", "/");
-            setPage("login");
-          }} 
-        />
-      ) : page === "login" ? (
-        <Login
-          onLogin={(usuarioData) => {
-            setIsLoggedIn(true);
-            setUsuario(usuarioData);
-            // Asegurar que inicie siempre en la pantalla "Dashboard" principal
-            sessionStorage.removeItem("dashboard_activeTab");
-            localStorage.removeItem("dashboard_activeTab"); // por compatibilidad legacy
-            setPage("dashboard");
-          }}
-          onBackClick={() => setPage("welcome")}
-          onForgotPasswordClick={() => setPage("forgot-password")}
-        />
-      ) : page === "forgot-password" ? (
-        <ForgotPassword 
-          onBackClick={() => setPage("login")} 
-        />
-      ) : page === "welcome" ? (
-        <Welcome
-          isLoggedIn={isLoggedIn}
-          onLoginClick={() => setPage("login")}
-          onLogoutClick={() => {
-            setIsLoggedIn(false);
-            setUsuario(null);
-          }}
-          onDashboardClick={() => setPage("dashboard")}
-          onPortalProveedores={() => setPage("proveedores-login")}
-        />
-      ) : page === "proveedores-login" ? (
-        <PortalProveedoresLogin 
-          onLoginSuccess={(provData) => {
-            setProveedor(provData);
-            setPage("proveedores-dashboard");
-            window.history.pushState({}, "", "/portal-proveedores");
-          }}
-          onBackClick={() => {
-            window.history.pushState({}, "", "/");
-            setPage("welcome");
-          }}
-          onForgotPasswordClick={() => setPage("proveedores-forgot-password")}
-        />
-      ) : page === "proveedores-forgot-password" ? (
-        <PortalProveedoresForgotPassword 
-          onBackClick={() => setPage("proveedores-login")} 
-        />
-      ) : page === "proveedores-reset-password" ? (
-        <PortalProveedoresResetPassword 
-          token={resetToken} 
-          onBackClick={() => {
-            window.history.pushState({}, "", "/portal-proveedores");
-            setPage("proveedores-login");
-          }} 
-        />
-      ) : page === "proveedores-dashboard" ? (
-        <PortalProveedoresDashboard 
-          proveedor={proveedor}
-          onLogout={() => {
-            setProveedor(null);
-            setPage("welcome");
-            window.history.pushState({}, "", "/");
-          }}
-        />
-      ) : (
-        (usuario?.rol === "Compras" || usuario?.rol === "Administrador de Compras") ? (
-          <DashboardComprasLayout
-            usuario={usuario}
-            onLogoutClick={() => {
-              setIsLoggedIn(false);
-              setUsuario(null);
-              setPage("welcome");
+    <BrowserRouter>
+      <Routes>
+        {/* --- RUTAS PÚBLICAS --- */}
+        <Route path="/" element={
+          isLoggedIn && usuario ? <Navigate to={getDashboardPath(usuario.rol)} replace /> : 
+          <Welcome 
+            isLoggedIn={isLoggedIn}
+            onLogoutClick={handleLogout}
+          />
+        } />
+        
+        <Route path="/login" element={
+          isLoggedIn && usuario ? <Navigate to={getDashboardPath(usuario.rol)} replace /> : 
+          <Login 
+            onLogin={(usuarioData) => {
+              setIsLoggedIn(true);
+              setUsuario(usuarioData);
+              sessionStorage.removeItem("dashboard_activeTab");
             }}
           />
-        ) : (usuario?.rol === "Legal" || usuario?.rol === "Administrador de Legal" || usuario?.rol === "Administrador Legal") ? (
-          <DashboardLegalLayout
-            usuario={usuario}
-            onLogoutClick={() => {
-              setIsLoggedIn(false);
-              setUsuario(null);
-              setPage("welcome");
-            }}
+        } />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+        {/* --- RUTAS PORTAL PROVEEDORES --- */}
+        <Route path="/portal-proveedores" element={
+          proveedor ? <Navigate to="/portal-proveedores/dashboard" replace /> : 
+          <PortalProveedoresLogin 
+            onLoginSuccess={(provData) => setProveedor(provData)}
           />
-        ) : (usuario?.rol === "Administrador V-A-F") ? (
-          <DashboardVAFLayout
-            usuario={usuario}
-            onLogout={() => {
-              setIsLoggedIn(false);
-              setUsuario(null);
-              setPage("welcome");
-            }}
-          />
-        ) : (
-          <Dashboard
-            usuario={usuario}
-            onLogoutClick={() => {
-              setIsLoggedIn(false);
-              setUsuario(null);
-              setPage("welcome");
-            }}
-          />
-        )
-      )}
-    </div>
+        } />
+        <Route path="/portal-proveedores/forgot-password" element={<PortalProveedoresForgotPassword />} />
+        <Route path="/proveedor/reset-password/:token" element={<PortalProveedoresResetPassword />} />
+
+        <Route path="/portal-proveedores/dashboard/*" element={
+          proveedor ? <PortalProveedoresDashboard proveedor={proveedor} onLogout={handleLogout} /> : <Navigate to="/portal-proveedores" replace />
+        } />
+
+        {/* --- RUTAS PROTEGIDAS POR ROL (Code Splitting y Aislamiento) --- */}
+        <Route path="/admin/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Administrador"]}>
+            <DashboardAdminLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/solicitante/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Solicitante"]}>
+            <DashboardSolicitanteLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/apoyo/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Personal de Apoyo"]}>
+            <DashboardApoyoLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin-eventos/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Administrador de Eventos", "Especialista de eventos"]}>
+            <DashboardAdminEventosLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/audiovisual/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Administrador de Audiovisual", "Responsable de área audiovisual"]}>
+            <DashboardAudiovisualLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/responsable/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Responsable"]}>
+            <DashboardResponsableLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Layouts Tradicionales (Legacy compat mode) */}
+        <Route path="/compras/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Compras", "Administrador de Compras"]}>
+            <DashboardComprasLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/legal/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Legal", "Administrador de Legal", "Administrador Legal"]}>
+            <DashboardLegalLayout usuario={usuario} onLogoutClick={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/vaf/*" element={
+          <ProtectedRoute usuario={usuario} allowedRoles={["Administrador V-A-F"]}>
+            <DashboardVAFLayout usuario={usuario} onLogout={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Catch-all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
