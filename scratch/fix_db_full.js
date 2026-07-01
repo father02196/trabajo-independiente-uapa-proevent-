@@ -1,4 +1,4 @@
-const mysql = require('c:/xampp/htdocs/cd/proevent-backend1/node_modules/mysql2/promise');
+const mysql = require('c:/xampp/htdocs/cp/proevent-backend1/node_modules/mysql2/promise');
 
 // Mapeos de corrección para caracteres rotos (UTF-8 roto en latin1)
 const utf8Replacements = [
@@ -33,7 +33,12 @@ const utf8Replacements = [
   { bad: '├Х', good: 'ë' },
   { bad: '├Ц', good: 'Ö' },
   { bad: '├Ь', good: 'Ü' },
-  { bad: '├о', good: 'î' }
+  { bad: '├о', good: 'î' },
+  { bad: '≡ƒôà', good: '📅' },
+  { bad: '≡ƒÆ░', good: '💰' },
+  { bad: 'âœ?', good: '✅' },
+  { bad: '?', good: '📅' },
+  { bad: 't?cnico', good: 'técnico' }
 ];
 
 // Mapeos de caracteres corruptos de UTF-16LE interpretados incorrectamente
