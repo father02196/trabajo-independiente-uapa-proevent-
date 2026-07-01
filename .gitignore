@@ -19,3 +19,7 @@ proevent-frontend1/src/pages/img/logo-proevent.jpg.jpeg
 *.zip
 
 # node_modules/
+
+# Backups de Base de Datos
+proevent-backend1/backup_emergencia_junio30_utf8.sql
+proevent-backend1/backup_emergencia_junio30.sql
