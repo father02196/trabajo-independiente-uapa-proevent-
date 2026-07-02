@@ -4,7 +4,7 @@ const mysql = require('mysql2'); // Driver para establecer y manejar conexiones 
 const cors = require('cors'); // Middleware que habilita CORS permitiendo que el Frontend (React) haga peticiones al Backend
 const cookieParser = require('cookie-parser'); // Middleware para parsear cookies (JWT)
 const crypto = require('crypto'); // Módulo de criptografía nativo de Node (usado para generar tokens de contraseña)
-const nodemailer = require('nodemailer'); // Librería estándar para el transporte y envío de correos electrónicos
+const { sendMailCentralizado, getTransporter } = require('./config/mailer'); // Servicio centralizado de correo
 const { OAuth2Client } = require('google-auth-library'); // SDK de Google para verificar tokens de sesión OAuth2
 const multer = require('multer'); // Middleware para el manejo de subida de archivos (multipart/form-data)
 const path = require('path'); // Módulo de Node para trabajar con rutas de archivos
@@ -1402,16 +1402,10 @@ app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo i
         const link = `http://localhost:3000/reset-password/${token}`; // Concatena el hipervínculo físico mágico inyectando el Hash como segmento URL Dinámico
 
         // Configuración de Transportador SMTP Gmail (Nodemailer Middleware Module)
-        const transporter = nodemailer.createTransport({ // Instancia la conexión transaccional
-          service: 'gmail', // Target OAuth/BasicAuth G Suite/Google Mail Service Cloud Provider
-          auth: { // Autenticación del sender server backoffice bot origin source account
-            user: process.env.GMAIL_USER, // Credencial Segura Oculta `.env` String
-            pass: process.env.GMAIL_PASS, // App Password Autenticado Google Security `.env`
-          },
-        });
+        // [REFAC] Se elimina la instanciación local de nodemailer aquí, delegando a config/mailer.js
 
         const mailOptions = { // Objeto estructurado Diccionario de Parametros SendMail Base HTML/Texto
-          from: `"ProEvent UAPA" <${process.env.GMAIL_USER}>`, // Máscara spoof de remitente alias
+          // from se omite para usar el valor por defecto centralizado en mailer.js
           to: correo, // Target endpoint receptor (Cliente)
           subject: 'Restablecer tu contraseña - ProEvent UAPA', // Título Subject header tag
           text: `Recuperación de Contraseña\n\nEstimado/a usuario/a,\n\nHemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en UAPA-PROEVENT.\n\nPara continuar con el proceso de recuperación, visita el siguiente enlace (válido por 1 hora):\n${link}\n\nSi no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.\n\nAtentamente,\n\nSistema UAPA-PROEVENT\nPlataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos\nUniversidad Abierta para Adultos (UAPA)`, // Fallback plaintext puro si cliente correo NO admite HTML Render
@@ -1448,13 +1442,12 @@ app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo i
           ]
         };
 
-        transporter.sendMail(mailOptions, (errMail, info) => { // Disparo real TCP del socket hacia SMTP Servers remotos en red con payload compilado base64 content type multipart
-          if (errMail) { // Fracaso de conexión o credenciales erróneas banneadas por google policies o bad TLS Handshake protocol mismatch port 465 587 block
-            console.error('❌ Error enviando correo:', errMail.message); // Consola verbose local log failure
-            return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' }); // Avisa fallo
-          }
+        sendMailCentralizado(mailOptions).then(info => {
           console.log(`✅ Correo enviado a: ${correo} (ID: ${info.messageId})`); // Rastreo feliz Server Node Terminal log monitor process trace uid ID messageid
           res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' }); // Respuesta final HTTP STATUS 200 al UI solicitante de paciencia para revisión Inbox
+        }).catch(errMail => {
+          console.error('❌ Error enviando correo:', errMail.message); // Consola verbose local log failure
+          return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' }); // Avisa fallo
         });
       }
     );
@@ -1994,10 +1987,8 @@ app.put('/servicios-externos/:id/proveedor', (req, res) => {
                 const prov = provRows[0];
                 // Enviar correo si el transporter está disponible
                 try {
-                  const nodemailer = require('nodemailer');
-                  const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS } });
-                  transporter.sendMail({
-                    from: 'uapaproeventstmdeevento@gmail.com',
+                  // [REFAC] Usando sendMailCentralizado de config/mailer.js
+                  sendMailCentralizado({
                     to: prov.correo,
                     subject: `Nueva Solicitud de Servicio - UAPA ProEvent`,
                     html: `<h3>Hola ${prov.nombre_empresa},</h3>
@@ -2332,12 +2323,8 @@ app.get('/api/aprobaciones-evento/:id_evento', (req, res) => {
 });
 
 // --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
-// Transportador configurado con GMail App Password desde variables de entorno
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
-});
-const rutasFase4 = require('./rutas_fase4')(db, transporter);
+// [REFAC] Transporter eliminado de aquí; rutas_fase4 importa el mailer directamente
+const rutasFase4 = require('./rutas_fase4')(db);
 app.use('/api', rutasFase4);
 
 // INSTANCIACIÓN DE SERVIDOR EXPRESS JS AL PUERTO ESPECIFICADO LEYENDO VARIABLES DOTENV Y ARRANCANDO CICLO HOST NODE

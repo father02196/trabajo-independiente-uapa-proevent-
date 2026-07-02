@@ -13,6 +13,7 @@ import hideIcon from "./../img/hide.png";
 import userIcon from "./../img/user.png";
 import lockIcon from "./../img/lock.png";
 import logoProevent from "./../img/logo-proevent.jpeg";
+import { useNavigate } from "react-router-dom";
 
 function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordClick }) {
   // --- ESTADOS ---
@@ -21,6 +22,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordC
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,7 +98,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordC
               <button
                 type="button"
                 className="lc-forgot"
-                onClick={onForgotPasswordClick}
+                onClick={onForgotPasswordClick || (() => navigate('/portal-proveedores/forgot-password'))}
               >
                 ¿Olvidaste tu contraseña?
               </button>
