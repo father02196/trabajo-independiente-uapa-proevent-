@@ -14,6 +14,7 @@ import userIcon  from "./../img/user.png";
 import lockIcon  from "./../img/lock.png";
 import logoProevent from "./../img/logo-proevent.jpeg";
 import axios from "../api/axios"; // Usamos la instancia configurada con credentials
+import { useNavigate } from "react-router-dom";
 
 function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const [email,        setEmail]        = useState("");
@@ -22,6 +23,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const [error,        setError]        = useState("");
   const [loading,      setLoading]      = useState(false);
   const googleButtonRef = useRef(null);
+  const navigate = useNavigate();
 
   /* ── Google Sign-In ──────────────────────────────────── */
   // Función de callback que procesa el token JWT devuelto por Google
@@ -134,7 +136,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
               <button
                 type="button"
                 className="lc-forgot"
-                onClick={onForgotPasswordClick}
+                onClick={onForgotPasswordClick || (() => navigate('/forgot-password'))}
               >
                 ¿Olvidaste tu contraseña?
               </button>
