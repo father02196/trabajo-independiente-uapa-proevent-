@@ -6,6 +6,7 @@ const pdfParse = require('pdf-parse');
 const { OpenAI } = require('openai');
 const multer = require('multer');
 const router = express.Router();
+const { sendMailCentralizado } = require('./config/mailer');
 
 // Configuración de Multer para aceptar PDFs hasta 10MB
 const upload = multer({
@@ -20,7 +21,8 @@ const upload = multer({
   }
 });
 
-module.exports = (db, transporter) => {
+// [REFAC] transporter removido de los parámetros, ahora usa sendMailCentralizado
+module.exports = (db) => {
 
   // --- RUTAS DEL ADMINISTRADOR ---
 
@@ -114,9 +116,9 @@ module.exports = (db, transporter) => {
               const eventoNombre = evRes[0].nombre;
               
               provRes.forEach(proveedor => {
-                if (transporter && proveedor.correo) {
-                  transporter.sendMail({
-                    from: 'uapaproeventstmdeevento@gmail.com', // Usar la misma cuenta
+                if (proveedor.correo) {
+                  // [REFAC] Usando sendMailCentralizado de config/mailer.js
+                  sendMailCentralizado({
                     to: proveedor.correo,
                     subject: `Nueva Oportunidad de Negocio - UAPA ProEvent`,
                     html: `
@@ -128,7 +130,7 @@ module.exports = (db, transporter) => {
                       <p>Puedes enviar tu cotización a través de nuestro <a href="http://localhost:3000/licitaciones">Portal de Proveedores B2B</a>.</p>
                       <br><p>Atentamente,<br>Departamento de Compras UAPA</p>
                     `
-                  }).catch(console.error);
+                  }).catch(err => console.error('Error enviando notificación B2B:', err));
                 }
               });
             }
