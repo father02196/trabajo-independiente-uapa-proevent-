@@ -9,6 +9,7 @@ import audiovisualIcon from "./../img/audiovisual.png";
 
 import DashboardAudiovisual from "./dashboards/DashboardAudiovisual";
 import Eventos from "./Eventos";
+import Audiovisual from "./Audiovisual";
 import AdminAudiovisual from "./AdminAudiovisual";
 import InventarioAudiovisual from "./InventarioAudiovisual";
 import GestionSolicitudesAV from "./GestionSolicitudesAV";
@@ -153,7 +154,7 @@ function DashboardAudiovisualLayout({ usuario, onLogoutClick }) {
                         <Route path="/" element={<DashboardAudiovisual usuario={usuario} setActiveTab={mockSetActiveTab} />} />
                         <Route path="calendario" element={<Calendario usuario={usuario} />} />
                         
-                        <Route path="solicitud" element={<Eventos usuario={usuario} />} />
+                        <Route path="solicitud" element={<Audiovisual usuario={usuario} />} />
                         <Route path="gestion" element={<GestionSolicitudesAV usuario={usuario} />} />
                         <Route path="catalogo" element={<AdminAudiovisual usuario={usuario} />} />
                         <Route path="inventario" element={<InventarioAudiovisual usuario={usuario} />} />

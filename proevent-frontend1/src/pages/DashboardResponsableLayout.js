@@ -10,6 +10,7 @@ import audiovisualIcon from "./../img/audiovisual.png";
 
 import DashboardResponsable from "./dashboards/DashboardResponsable";
 import Eventos from "./Eventos";
+import Audiovisual from "./Audiovisual";
 import Calendario from "./Calendario";
 import SoporteHome from "./SoporteHome";
 import VisualizarEvaluaciones from "./VisualizarEvaluaciones";
@@ -129,7 +130,7 @@ function DashboardResponsableLayout({ usuario, onLogoutClick }) {
                         <Route path="/" element={<DashboardResponsable usuario={usuario} setActiveTab={mockSetActiveTab} />} />
                         <Route path="calendario" element={<Calendario usuario={usuario} />} />
                         <Route path="eventos" element={<Eventos usuario={usuario} />} />
-                        <Route path="audiovisual" element={<Eventos usuario={usuario} />} />
+                        <Route path="audiovisual" element={<Audiovisual usuario={usuario} />} />
                         <Route path="soporte" element={<SoporteHome usuario={usuario} />} />
                         <Route path="evaluaciones" element={<VisualizarEvaluaciones />} />
 

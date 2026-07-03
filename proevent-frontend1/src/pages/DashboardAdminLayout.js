@@ -10,6 +10,7 @@ import audiovisualIcon from "./../img/audiovisual.png";
 
 import DashboardAdmin from "./dashboards/DashboardAdmin";
 import Eventos from "./Eventos";
+import Audiovisual from "./Audiovisual";
 import AjustesUsuarios from "./AjustesUsuarios";
 import Bitacora from "./Bitacora";
 import SoporteHome from "./SoporteHome";
@@ -238,7 +239,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                         <Route path="eventos/catalogos" element={<AdminEvento usuario={usuario} />} />
                         <Route path="eventos/gestion" element={<GestionEventos usuario={usuario} />} />
                         
-                        <Route path="audiovisual/solicitud" element={<Eventos usuario={usuario} />} />
+                        <Route path="audiovisual/solicitud" element={<Audiovisual usuario={usuario} />} />
                         <Route path="audiovisual/gestion" element={<GestionSolicitudesAV usuario={usuario} />} />
                         <Route path="audiovisual/catalogo" element={<AdminAudiovisual usuario={usuario} />} />
                         <Route path="audiovisual/inventario" element={<InventarioAudiovisual usuario={usuario} />} />
