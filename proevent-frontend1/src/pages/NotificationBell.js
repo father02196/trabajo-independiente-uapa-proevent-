@@ -116,6 +116,7 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
   return (
     <div className="nbell-wrapper" ref={ref}>
       <button
+        type="button"
         className="nbell-btn"
         onClick={() => {
           setOpen(o => !o);
@@ -134,7 +135,7 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
           <div className="nbell-drop-header">
             <span className="nbell-drop-title">Notificaciones</span>
             {unreadCount > 0 && (
-              <button className="nbell-mark-all" onClick={markAllRead}>
+              <button type="button" className="nbell-mark-all" onClick={markAllRead}>
                 Marcar todas
               </button>
             )}
