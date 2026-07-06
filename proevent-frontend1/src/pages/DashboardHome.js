@@ -353,7 +353,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
               <h4>Presupuesto POA Aprobado por Recinto</h4>
               <p>Inversión financiera en eventos por campus de la UAPA (en DOP)</p>
             </div>
-            <button className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos"><FiRefreshCw /></button>
+            <button type="button" className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos"><FiRefreshCw /></button>
           </div>
           
           <div className="budget-chart-layout">
@@ -508,7 +508,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -562,7 +562,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                       </div>
                       
                       <div className="modern-event-footer">
-                        <button className="modern-view-btn" title="Ver detalles del evento">
+                        <button type="button" className="modern-view-btn" title="Ver detalles del evento">
                           <span>Ver Ficha Técnica</span>
                           <FiArrowUpRight className="modern-btn-icon" />
                         </button>
@@ -751,12 +751,12 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
-                  <button className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiEdit2 /> Editar Evento
                   </button>
                 )}
               </div>
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,
