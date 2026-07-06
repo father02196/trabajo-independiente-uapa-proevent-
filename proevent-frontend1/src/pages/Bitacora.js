@@ -237,6 +237,7 @@ export default function Bitacora() {
                     </div>
                     <div className="pagination-controls">
                         <button 
+                            type="button"
                             className="page-btn" 
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
@@ -247,6 +248,7 @@ export default function Bitacora() {
                             Página {currentPage} de {totalPages || 1}
                         </span>
                         <button 
+                            type="button"
                             className="page-btn" 
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages || totalPages === 0}
