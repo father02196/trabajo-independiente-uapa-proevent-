@@ -241,6 +241,7 @@ export default function Bitacora() {
                             className="page-btn" 
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
+                            aria-label="Página anterior"
                         >
                             Anterior
                         </button>
@@ -252,6 +253,7 @@ export default function Bitacora() {
                             className="page-btn" 
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages || totalPages === 0}
+                            aria-label="Página siguiente"
                         >
                             Siguiente
                         </button>
