@@ -28,11 +28,13 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
   const extraSecciones = ["Cronograma Logístico"];
   
   // Efecto para destrabar si quedó pegado en el localstorage un tab al que no tiene acceso
-  React.useEffect(() => {
+  const [prevShowExtraTabs, setPrevShowExtraTabs] = useState(showExtraTabs);
+  if (showExtraTabs !== prevShowExtraTabs) {
+      setPrevShowExtraTabs(showExtraTabs);
       if (!showExtraTabs && extraSecciones.includes(activeSection)) {
           setActiveSection("Información General");
       }
-  }, [showExtraTabs, activeSection]);
+  }
 
   const activeExtraTab = (showExtraTabs && extraSecciones.includes(activeSection)) ? activeSection : null;
 
@@ -42,10 +44,10 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {showExtraTabs && (
           <div className="modern-tabs" style={{ marginBottom: '0' }}>
-            <button onClick={() => setActiveSection("Información General")}>
+            <button type="button" onClick={() => setActiveSection("Información General")}>
               ← Solicitud de Evento
             </button>
-            <button className="active">Cronograma Logístico</button>
+            <button type="button" className="active">Cronograma Logístico</button>
           </div>
         )}
         <CronogramaLogistico evento={editingEvent} usuario={usuario} />
@@ -59,8 +61,8 @@ function Eventos({ usuario, editingEvent, setEditingEvent }) {
       {/* Extra tabs solo en modo edición */}
       {showExtraTabs && (
         <div className="modern-tabs" style={{ marginBottom: '0' }}>
-          <button className="active">Solicitud de Evento</button>
-          <button onClick={() => setActiveSection("Cronograma Logístico")}>Cronograma Logístico</button>
+          <button type="button" className="active">Solicitud de Evento</button>
+          <button type="button" onClick={() => setActiveSection("Cronograma Logístico")}>Cronograma Logístico</button>
         </div>
       )}
 
