@@ -159,7 +159,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -205,7 +205,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
                     </div>
                     
                     <div className="modern-event-footer">
-                      <button className="modern-view-btn" title="Ir al Flujo de Compras">
+                      <button type="button" className="modern-view-btn" title="Ir al Flujo de Compras">
                         <span>Ir a Analizar Cotizaciones</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>
