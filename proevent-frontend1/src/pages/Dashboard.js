@@ -464,7 +464,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             className="hamburger-btn"
                             onClick={toggleSidebar}
                             title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
-                            aria-label={isSidebarOpen ? 'Colapsar menú de navegación' : 'Expandir menú de navegación'}
+                            aria-label={isSidebarOpen ? 'Colapsar menú lateral' : 'Expandir menú lateral'}
                         >
                             <FiMenu size={22} />
                         </button>
