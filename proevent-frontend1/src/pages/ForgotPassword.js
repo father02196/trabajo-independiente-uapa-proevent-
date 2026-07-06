@@ -56,7 +56,7 @@ function ForgotPassword({ onBackClick }) {
 
         <div className="lc-header">
           {onBackClick && (
-            <button className="lc-back" onClick={onBackClick}>← Volver al login</button>
+            <button type="button" className="lc-back" onClick={onBackClick}>← Volver al login</button>
           )}
 
           {/* Espacio para el nuevo logo proporcionado */}
