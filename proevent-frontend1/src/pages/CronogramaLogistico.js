@@ -189,6 +189,7 @@ function CronogramaLogistico({ evento, usuario }) {
                     <td>
                       {t.estado !== 'Completada' ? (
                         <button 
+                          type="button"
                           className="action-btn success" 
                           onClick={() => handleCompletarTarea(t.id_actividad, 'Completada')} 
                           style={{ padding: '4px 10px', fontSize: '0.85rem' }}
