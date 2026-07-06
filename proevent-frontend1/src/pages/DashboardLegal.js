@@ -151,7 +151,7 @@ function DashboardLegal({ usuario, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           
@@ -202,7 +202,7 @@ function DashboardLegal({ usuario, setActiveTab }) {
                     </div>
                     
                     <div className="modern-event-footer">
-                      <button className="modern-view-btn" title="Ir al Expediente">
+                      <button type="button" className="modern-view-btn" title="Ir al Expediente">
                         <span>Revisar Expediente y Dictaminar</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>
