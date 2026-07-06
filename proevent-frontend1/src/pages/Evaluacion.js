@@ -131,7 +131,7 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
           <FiCheckCircle size={64} style={{ color: '#10B981', margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>¡Evaluación enviada!</h2>
           <p style={{ color: '#64748B', marginBottom: '24px' }}>Gracias por tu valoración. Tu opinión nos ayuda a mejorar los servicios del Departamento de Protocolo y Eventos.</p>
-          <button className="btn btn-primary" onClick={resetForm} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}>
+          <button type="button" className="btn btn-primary" onClick={resetForm} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}>
             <FiRefreshCw /> Enviar otra evaluación
           </button>
         </div>
