@@ -97,7 +97,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
 
         <div className="lc-header">
           {onBackClick && (
-            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+            <button type="button" className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
           )}
           
           {/* Espacio para el nuevo logo proporcionado */}
