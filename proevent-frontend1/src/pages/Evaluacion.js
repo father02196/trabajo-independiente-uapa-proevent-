@@ -131,7 +131,7 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
           <FiCheckCircle size={64} style={{ color: '#10B981', margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>¡Evaluación enviada!</h2>
           <p style={{ color: '#64748B', marginBottom: '24px' }}>Gracias por tu valoración. Tu opinión nos ayuda a mejorar los servicios del Departamento de Protocolo y Eventos.</p>
-          <button type="button" className="btn btn-primary" onClick={resetForm} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}>
+          <button type="button" className="btn btn-primary" onClick={resetForm} aria-label="Enviar otra evaluación" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}>
             <FiRefreshCw /> Enviar otra evaluación
           </button>
         </div>
@@ -233,7 +233,7 @@ function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
               <span style={{ fontSize: '13px', fontWeight: '700', color: '#64748B' }}>Poco satisfecho</span>
               <div style={{ display: 'flex', gap: '12px' }}>
                 {[1, 2, 3, 4, 5].map(n => (
-                  <button key={n} type="button" onClick={() => setSatisfaccion(n)} style={{
+                  <button key={n} type="button" onClick={() => setSatisfaccion(n)} aria-label={`Calificar con ${n} estrella${n === 1 ? '' : 's'}`} style={{
                     width: '48px', height: '48px', borderRadius: '50%', fontSize: '18px', fontWeight: '800', transition: 'all 0.2s', cursor: 'pointer',
                     backgroundColor: satisfaccion === n ? '#3B82F6' : satisfaccion > 0 && n <= satisfaccion ? '#EFF6FF' : '#F8FAFC',
                     color: satisfaccion === n ? 'white' : satisfaccion > 0 && n <= satisfaccion ? '#3B82F6' : '#64748B',
