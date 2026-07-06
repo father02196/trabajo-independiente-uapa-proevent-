@@ -123,6 +123,7 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
           if (!open) fetchNotifications(); // Refresca al abrir
         }}
         title="Notificaciones"
+        aria-label="Notificaciones"
       >
         <FiBell />
         {unreadCount > 0 && (
