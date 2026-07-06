@@ -11,7 +11,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
 // Iconos de Feather Icons usados en la UI de la tabla y modales
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity, FiPlay, FiLock, FiAlertCircle, FiXCircle, FiInfo, FiAlertTriangle } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity, FiPlay, FiLock, FiAlertCircle, FiXCircle, FiInfo, FiAlertTriangle, FiList } from "react-icons/fi";
 
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from "react-hot-toast";
@@ -462,7 +462,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             </div>
           </div>
           <div className="header-actions-group">
-            <button className="btn btn-secondary btn-sm" onClick={cargarEventos} title="Recargar lista">
+            <button type="button" className="btn btn-secondary btn-sm" onClick={cargarEventos} title="Recargar lista">
               <FiRefreshCw /> Recargar
             </button>
           </div>
@@ -498,6 +498,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               &#8645; Ordenar por Fecha
             </label>
             <button
+              type="button"
               onClick={() => requestSort('fecha_inicio')}
               title={sortConfig?.direction === 'ascending' ? 'Click: más recientes primero' : 'Click: más antiguos primero'}
               style={{
@@ -537,7 +538,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           ) : error ? (
             <div className="table-state-error">
               <p>{error}</p>
-              <button className="retry-btn" onClick={cargarEventos}>Reintentar conexión</button>
+              <button type="button" className="retry-btn" onClick={cargarEventos}>Reintentar conexión</button>
             </div>
           ) : filteredRequests.length === 0 ? (
             <div className="table-state-empty">
@@ -600,7 +601,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       </span>
                     </td>
                     <td>
-                      <button className="details-btn" onClick={() => handleVerDetalles(req)}>
+                      <button type="button" className="details-btn" onClick={() => handleVerDetalles(req)}>
                         <FiEye /> Ver detalles
                       </button>
                     </td>
@@ -610,6 +611,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                           {usuario?.rol === "Solicitante" ? (
                             <div style={{ display: 'flex', gap: '8px' }}>
                               <button 
+                                type="button"
                                 className="action-icon-btn edit" 
                                 onClick={() => onEditEvent(req)}
                                 disabled={req.estado !== "Pendiente"}
@@ -618,6 +620,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                 <FiEdit2 />
                               </button>
                               <button 
+                                type="button"
                                 className="action-icon-btn delete" 
                                 onClick={() => handleEliminarEvento(req.id_evento)}
                                 disabled={req.estado !== "Pendiente"}
@@ -630,10 +633,10 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {(!req.estado || req.estado === "Pendiente") && (
                                 <>
-                                  <button className="btn btn-primary btn-sm" onClick={() => handleCambiarEstado(req.id_evento, "Aprobado")} style={{ padding: '6px 12px', width: '100%' }}>
+                                  <button type="button" className="btn btn-primary btn-sm" onClick={() => handleCambiarEstado(req.id_evento, "Aprobado")} style={{ padding: '6px 12px', width: '100%' }}>
                                     <FiCheckCircle /> Aprobar
                                   </button>
-                                  <button className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', width: '100%', color: '#ef4444', borderColor: '#fca5a5', backgroundColor: '#fef2f2' }} onClick={() => handleCambiarEstado(req.id_evento, "Rechazado")}>
+                                  <button type="button" className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', width: '100%', color: '#ef4444', borderColor: '#fca5a5', backgroundColor: '#fef2f2' }} onClick={() => handleCambiarEstado(req.id_evento, "Rechazado")}>
                                     <FiXCircle /> Rechazar
                                   </button>
                                 </>
@@ -646,6 +649,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                 return (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                     <button 
+                                      type="button"
                                       className={`btn btn-sm ${ puedeIniciar ? '' : 'btn-secondary'}`}
                                       style={{
                                         padding: '6px 12px', width: '100%',
@@ -673,6 +677,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                     {/* Mini badge de estado de aprobaciones */}
                                     {aprobInfo && !puedeIniciar && (
                                       <button
+                                        type="button"
                                         onClick={() => setModalAprobaciones({ id_evento: req.id_evento, ...aprobInfo })}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'center', padding: '2px', textDecoration: 'underline' }}
                                       >
@@ -683,7 +688,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                 );
                               })()}
                               {req.estado === "En Progreso" && (
-                                <button className="btn btn-primary btn-sm" style={{ backgroundColor: '#10b981', border: 'none', padding: '6px 12px', width: '100%' }} onClick={() => handleCambiarEstado(req.id_evento, "Finalizado")}>
+                                <button type="button" className="btn btn-primary btn-sm" style={{ backgroundColor: '#10b981', border: 'none', padding: '6px 12px', width: '100%' }} onClick={() => handleCambiarEstado(req.id_evento, "Finalizado")}>
                                   Finalizar
                                 </button>
                               )}
@@ -710,6 +715,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             </div>
             <div className="pagination-controls" style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
               <button 
+                type="button"
                 className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
@@ -720,6 +726,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 Pág. {currentPage} de {totalPages || 1}
               </span>
               <button 
+                type="button"
                 className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
@@ -961,22 +968,22 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {usuario?.rol !== "Solicitante" && (
-                  <button className="btn btn-secondary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiSend /> Asignar Servicio Externo
                   </button>
                 )}
                 {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
-                  <button className="btn btn-secondary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiEdit2 /> Editar Evento
                   </button>
                 )}
                 {usuario?.rol !== "Solicitante" && (
-                  <button className="btn btn-secondary" onClick={() => setShowFichaPDF(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowFichaPDF(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiFileText /> Generar PDF
                   </button>
                 )}
               </div>
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,
@@ -1005,7 +1012,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 <h3 className="modal-title">Asignar Servicio Externo</h3>
                 <span className="modal-subtitle">Enviar requerimiento a Logística Operativa</span>
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={closeAsignarServicioModal}>X</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={closeAsignarServicioModal}>X</button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleSubmitServicio} className="space-y-4">
@@ -1077,7 +1084,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   </span>
                 </div>
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModalAprobaciones(null)}>X</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setModalAprobaciones(null)}>X</button>
             </div>
             
             <div className="modal-body" style={{ padding: '24px' }}>
@@ -1121,6 +1128,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
               {modalAprobaciones.puede_iniciar ? (
                 <button 
+                  type="button"
                   className="btn btn-primary" 
                   onClick={() => {
                     handleCambiarEstado(modalAprobaciones.id_evento, 'En Progreso');
@@ -1131,7 +1139,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   <FiPlay /> Iniciar Evento Ahora
                 </button>
               ) : (
-                <button className="btn btn-secondary" onClick={() => setModalAprobaciones(null)}>Entendido</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setModalAprobaciones(null)}>Entendido</button>
               )}
             </div>
           </div>
