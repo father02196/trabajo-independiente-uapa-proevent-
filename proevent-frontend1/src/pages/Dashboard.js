@@ -433,7 +433,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
 
                 <div className="sidebar-user-section">
                     <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
-                        <button type="button" className="logout-button" onClick={onLogoutClick}>
+                        <button type="button" className="logout-button" onClick={onLogoutClick} aria-label="Cerrar sesión">
                             <FiLogOut className="action-icon" aria-hidden="true" />
                             Cerrar sesión
                         </button>
@@ -464,7 +464,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             className="hamburger-btn"
                             onClick={toggleSidebar}
                             title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
-                            aria-label="Toggle sidebar"
+                            aria-label={isSidebarOpen ? 'Colapsar menú de navegación' : 'Expandir menú de navegación'}
                         >
                             <FiMenu size={22} />
                         </button>
