@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiChevronLeft, FiEye, FiEdit2, FiFilter, FiSearch, FiTrash2, FiTrendingUp } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
@@ -433,7 +433,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
 
                 <div className="sidebar-user-section">
                     <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
-                        <button className="logout-button" onClick={onLogoutClick}>
+                        <button type="button" className="logout-button" onClick={onLogoutClick}>
                             <FiLogOut className="action-icon" aria-hidden="true" />
                             Cerrar sesión
                         </button>
@@ -460,6 +460,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                     <div className="header-left">
                         {/* Botón hamburguesa para colapsar/expandir el sidebar (adoptado de RM-fronters) */}
                         <button
+                            type="button"
                             className="hamburger-btn"
                             onClick={toggleSidebar}
                             title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
