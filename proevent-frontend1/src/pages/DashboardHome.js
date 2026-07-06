@@ -13,7 +13,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 // Iconos de Feather Icons para tarjetas, gráficos y acciones
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiEdit2 } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEdit2 } from "react-icons/fi";
 
 // Estilos del panel principal compartidos
 import './../css/Dashboard.css';
