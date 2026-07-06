@@ -271,7 +271,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar estado de solicitudes"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -325,7 +325,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                       </div>
                       
                       <div className="modern-event-footer">
-                        <button type="button" className="modern-view-btn" title="Ver detalles del evento">
+                        <button type="button" className="modern-view-btn" title="Ver detalles del evento" aria-label="Ver ficha de mi solicitud">
                           <span>Ver Ficha Técnica</span>
                           <FiArrowUpRight className="modern-btn-icon" />
                         </button>
@@ -482,7 +482,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
               </div>
 
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar modal">Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,
