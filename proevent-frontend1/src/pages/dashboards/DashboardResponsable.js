@@ -207,6 +207,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => cargarDatos()}
           style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600', transition: 'background 0.2s' }}
           onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.25)'}
@@ -344,7 +345,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -389,7 +390,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                     </div>
 
                     <div className="modern-event-footer">
-                      <button className="modern-view-btn" title="Ver ficha técnica">
+                      <button type="button" className="modern-view-btn" title="Ver ficha técnica">
                         <span>Ver Ficha Técnica</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>
@@ -683,8 +684,8 @@ function DashboardResponsable({ usuario, setActiveTab }) {
             </div>
 
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
-              <button className="btn btn-primary" onClick={() => { closeModal(); setActiveTab && setActiveTab("Calendario"); }}>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-primary" onClick={() => { closeModal(); setActiveTab && setActiveTab("Calendario"); }}>
                 <FiCalendar style={{ marginRight: '6px' }} /> Ver en Calendario
               </button>
             </div>
