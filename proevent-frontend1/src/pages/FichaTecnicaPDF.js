@@ -62,13 +62,13 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             <FiDownload /> Generador de Ficha Técnica
           </h3>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn btn-secondary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+            <button type="button" className="btn btn-secondary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
               <FiPrinter /> Imprimir
             </button>
-            <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+            <button type="button" className="btn btn-secondary" onClick={handleDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
               <FiDownload /> Guardar PDF
             </button>
-            <button className="btn btn-secondary" onClick={onClose} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
               Cerrar
             </button>
           </div>
