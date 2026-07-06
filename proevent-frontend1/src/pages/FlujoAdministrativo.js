@@ -380,7 +380,7 @@ export default function FlujoAdministrativo({ usuario }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <strong style={{ color: '#1e293b', fontSize: '14.5px' }}>Solicitud de Cotización #{id_solicitud}</strong>
                   {cotList.length >= 2 && (
-                    <button onClick={() => evaluarCotizacionesIA(id_solicitud)} className="btn btn-primary btn-sm" style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <button type="button" onClick={() => evaluarCotizacionesIA(id_solicitud)} className="btn btn-primary btn-sm" style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', gap: '6px', alignItems: 'center' }}>
                       ✨ Análisis Comparativo con IA
                     </button>
                   )}
@@ -536,7 +536,7 @@ export default function FlujoAdministrativo({ usuario }) {
                   <option value="Aprobado">Aprobado (Definitivo)</option>
                   <option value="Rechazado">Rechazado (Sin Fondos)</option>
                 </select>
-                <button className="btn btn-primary" onClick={guardarPresupuesto} style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '12px 20px', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
+                <button type="submit" className="btn btn-primary" onClick={guardarPresupuesto} style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '12px 20px', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
                   <FiCheckCircle /> Guardar Estado
                 </button>
               </div>
@@ -600,7 +600,7 @@ export default function FlujoAdministrativo({ usuario }) {
               placeholder="Ingrese cualquier observación, enmienda requerida o nota jurídica para el solicitante..."
               style={{ width: '100%', marginBottom: '20px', resize: 'vertical' }}
             />
-            <button className="btn btn-primary" onClick={guardarLegal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button type="submit" className="btn btn-primary" onClick={guardarLegal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FiShield /> Guardar Dictamen Legal
             </button>
           </div>
@@ -730,7 +730,7 @@ export default function FlujoAdministrativo({ usuario }) {
                           <a href={`${API}${doc.ruta_archivo}`} download target="_blank" rel="noreferrer" className="action-icon-btn" style={{ color: '#3b82f6' }} title="Descargar documento">
                             <FiDownload />
                           </a>
-                          <button className="action-icon-btn delete" onClick={() => archivarDocumento(doc.id_documento)} title="Eliminar / Archivar">
+                          <button type="button" className="action-icon-btn delete" onClick={() => archivarDocumento(doc.id_documento)} title="Eliminar / Archivar">
                             <FiTrash2 />
                           </button>
                         </div>
@@ -763,6 +763,7 @@ export default function FlujoAdministrativo({ usuario }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', margin: 0 }}>Seleccionar Evento Operativo</label>
             <button
+              type="button"
               onClick={cargarEventos}
               disabled={recargandoEventos}
               title="Recargar lista de eventos"
@@ -807,6 +808,7 @@ export default function FlujoAdministrativo({ usuario }) {
             <div className="flujo-tabs-nav">
               {(isComprasRole || isGeneralRole) && (
                 <button 
+                  type="button"
                   className={`flujo-tab-btn${tab === 'compras' ? ' active' : ''}`}
                   onClick={() => setTab('compras')} 
                 >
@@ -815,6 +817,7 @@ export default function FlujoAdministrativo({ usuario }) {
               )}
               {(isVAFRole || isGeneralRole) && (
                 <button 
+                  type="button"
                   className={`flujo-tab-btn${tab === 'presupuesto' ? ' active' : ''}`}
                   onClick={() => setTab('presupuesto')} 
                 >
@@ -823,6 +826,7 @@ export default function FlujoAdministrativo({ usuario }) {
               )}
               {(isLegalRole || isGeneralRole) && (
                 <button 
+                  type="button"
                   className={`flujo-tab-btn${tab === 'legal' ? ' active' : ''}`}
                   onClick={() => setTab('legal')} 
                 >
@@ -830,6 +834,7 @@ export default function FlujoAdministrativo({ usuario }) {
                 </button>
               )}
               <button 
+                type="button"
                 className={`flujo-tab-btn${tab === 'documentos' ? ' active' : ''}`}
                 onClick={() => setTab('documentos')}
                 style={{ marginLeft: 'auto' }}
