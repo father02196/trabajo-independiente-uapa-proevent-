@@ -193,7 +193,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
 
                 <div className="sidebar-user-section">
                     <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
-                        <button className="logout-button" onClick={onLogoutClick}>
+                        <button type="button" className="logout-button" onClick={onLogoutClick}>
                             <FiLogOut className="action-icon" aria-hidden="true" />
                             Cerrar sesión
                         </button>
@@ -214,6 +214,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                 <header className="dashboard-header">
                     <div className="header-left">
                         <button
+                            type="button"
                             className="hamburger-btn"
                             onClick={toggleSidebar}
                             title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
