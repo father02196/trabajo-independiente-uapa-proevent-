@@ -126,7 +126,7 @@ function InventarioAudiovisual({ usuario }) {
               style={{ paddingLeft: '36px', width: '260px' }}
             />
           </div>
-          <button className="btn btn-secondary" onClick={cargarDatos}>Actualizar</button>
+          <button type="button" className="btn btn-secondary" onClick={cargarDatos}>Actualizar</button>
         </div>
       </div>
 
@@ -189,6 +189,7 @@ function InventarioAudiovisual({ usuario }) {
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <button 
+                        type="button"
                         className="btn btn-secondary btn-sm" 
                         onClick={() => openModal(eq)}
                         disabled={eq.enUso === 0}
@@ -286,7 +287,7 @@ function InventarioAudiovisual({ usuario }) {
             </div>
             
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Detalles</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Detalles</button>
             </div>
           </div>
         </div>,
