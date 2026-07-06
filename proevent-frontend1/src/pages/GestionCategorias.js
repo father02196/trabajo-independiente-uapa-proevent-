@@ -103,7 +103,7 @@ function GestionCategorias({ usuario }) {
                             Administra los tipos de servicios que los suplidores pueden ofrecer en la plataforma.
                         </p>
                     </div>
-                    <button className="btn btn-primary" onClick={() => openModal('nueva', null)}>
+                    <button type="button" className="btn btn-primary" onClick={() => openModal('nueva', null)}>
                         <FiPlusCircle /> Nueva Categoría
                     </button>
                 </div>
@@ -138,6 +138,7 @@ function GestionCategorias({ usuario }) {
                                 <td>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                         <button 
+                                            type="button"
                                             onClick={() => openModal('editar', cat)}
                                             className="action-icon-btn edit"
                                             title="Editar Categoría"
@@ -145,6 +146,7 @@ function GestionCategorias({ usuario }) {
                                             <FiEdit />
                                         </button>
                                         <button 
+                                            type="button"
                                             onClick={() => handleToggleEstado(cat)}
                                             className={`action-icon-btn ${cat.estado === 'Activo' ? 'reject' : 'approve'}`}
                                             title={cat.estado === 'Activo' ? "Desactivar Categoría" : "Activar Categoría"}
