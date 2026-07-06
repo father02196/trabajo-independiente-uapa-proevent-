@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import './../css/Welcome.css';
 import uapaLogo from './../img/Logo-blanco-UAPA.png';
-import logoProevent from './../img/logo-proevent.jpeg';
+
 import emblemProevent from './../img/Emblema-Proevent.jpeg';
 
 const API = "http://localhost:8080";
@@ -97,12 +97,7 @@ const POLICIES = [
   },
 ];
 
-/* ── Checkmark SVG ── */
-const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="2.5 8.5 6 12 13.5 4" />
-  </svg>
-);
+
 
 function Welcome({ isLoggedIn, onLogoutClick }) {
   const navigate = useNavigate();
