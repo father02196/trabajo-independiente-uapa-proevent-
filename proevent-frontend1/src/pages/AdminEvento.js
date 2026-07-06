@@ -155,11 +155,11 @@ export default function AdminEvento({ usuario }) {
 
       {/* TABS */}
       <div className="modern-tabs">
-        <button className={activeTab === "tipos" ? "active" : ""} onClick={() => setActiveTab("tipos")}>Tipos de Evento</button>
-        <button className={activeTab === "corporativo" ? "active" : ""} onClick={() => setActiveTab("corporativo")}>Detalles Corporativos</button>
-        <button className={activeTab === "alimentos" ? "active" : ""} onClick={() => setActiveTab("alimentos")}>Opciones de Alimentos</button>
-        <button className={activeTab === "recintos" ? "active" : ""} onClick={() => setActiveTab("recintos")}>Recintos</button>
-        <button className={activeTab === "dependencias" ? "active" : ""} onClick={() => setActiveTab("dependencias")}>Dependencias</button>
+        <button type="button" className={activeTab === "tipos" ? "active" : ""} onClick={() => setActiveTab("tipos")}>Tipos de Evento</button>
+        <button type="button" className={activeTab === "corporativo" ? "active" : ""} onClick={() => setActiveTab("corporativo")}>Detalles Corporativos</button>
+        <button type="button" className={activeTab === "alimentos" ? "active" : ""} onClick={() => setActiveTab("alimentos")}>Opciones de Alimentos</button>
+        <button type="button" className={activeTab === "recintos" ? "active" : ""} onClick={() => setActiveTab("recintos")}>Recintos</button>
+        <button type="button" className={activeTab === "dependencias" ? "active" : ""} onClick={() => setActiveTab("dependencias")}>Dependencias</button>
       </div>
 
       <div className="saas-panel-card" style={{ marginBottom: '24px', padding: '24px' }}>
@@ -244,8 +244,8 @@ export default function AdminEvento({ usuario }) {
                 )}
                 <td style={{textAlign: 'right'}}>
                   <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
-                    <button className="action-icon-btn edit" onClick={() => handleEditar(item)} title="Editar"><FiEdit2 /></button>
-                    <button className="action-icon-btn delete" onClick={() => handleEliminar(item[idField])} title="Eliminar"><FiTrash2 /></button>
+                    <button type="button" className="action-icon-btn edit" onClick={() => handleEditar(item)} title="Editar"><FiEdit2 /></button>
+                    <button type="button" className="action-icon-btn delete" onClick={() => handleEliminar(item[idField])} title="Eliminar"><FiTrash2 /></button>
                   </div>
                 </td>
               </tr>
@@ -264,6 +264,7 @@ export default function AdminEvento({ usuario }) {
             </div>
             <div className="pagination-controls" style={{ display: 'flex', gap: '10px' }}>
               <button 
+                type="button"
                 className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
@@ -274,6 +275,7 @@ export default function AdminEvento({ usuario }) {
                 Página {currentPage} de {totalPages || 1}
               </span>
               <button 
+                type="button"
                 className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
