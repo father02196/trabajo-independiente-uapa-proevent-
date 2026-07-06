@@ -141,7 +141,7 @@ function CronogramaLogistico({ evento, usuario }) {
             style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
           />
         </div>
-        <button type="submit" className="action-btn positive" style={{ padding: '8px 15px', height: '37px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button type="submit" className="action-btn positive" style={{ padding: '8px 15px', height: '37px', display: 'flex', alignItems: 'center', gap: '8px' }} aria-label="Programar nueva tarea">
           <FiPlus /> Programar Tarea
         </button>
       </form>
@@ -193,6 +193,7 @@ function CronogramaLogistico({ evento, usuario }) {
                           className="action-btn success" 
                           onClick={() => handleCompletarTarea(t.id_actividad, 'Completada')} 
                           style={{ padding: '4px 10px', fontSize: '0.85rem' }}
+                          aria-label="Marcar tarea como completada"
                         >
                           <FiCheck /> Marcar
                         </button>
