@@ -419,15 +419,15 @@ function ModuloProveedores({ usuario }) {
 
             {/* Premium Pill Tabs */}
             <div className="modern-tabs">
-                <button className={activeTab === 'logistica' ? 'active' : ''} onClick={() => setActiveTab('logistica')}>
+                <button type="button" className={activeTab === 'logistica' ? 'active' : ''} onClick={() => setActiveTab('logistica')}>
                     <FiPackage style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
                     Logística Operativa
                 </button>
-                <button className={activeTab === 'directorio' ? 'active' : ''} onClick={() => setActiveTab('directorio')}>
+                <button type="button" className={activeTab === 'directorio' ? 'active' : ''} onClick={() => setActiveTab('directorio')}>
                     <FiFileText style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
                     Directorio de Suplidores
                 </button>
-                <button className={activeTab === 'ia' ? 'active' : ''} onClick={() => setActiveTab('ia')}>
+                <button type="button" className={activeTab === 'ia' ? 'active' : ''} onClick={() => setActiveTab('ia')}>
                     <FiCpu style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
                     Licitaciones (IA)
                 </button>
@@ -447,7 +447,7 @@ function ModuloProveedores({ usuario }) {
                             </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'flex-end', marginLeft: 'auto' }}>
-                            <button className="btn btn-secondary btn-sm" onClick={fetchServicios} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={fetchServicios} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <FiRefreshCw size={13} /> Actualizar
                             </button>
                         </div>
@@ -522,6 +522,7 @@ function ModuloProveedores({ usuario }) {
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                                                         {!s.fecha_envio_proveedor && (
                                                             <button 
+                                                                type="button"
                                                                 className="btn btn-primary btn-sm" 
                                                                 onClick={() => openModalEnvio(s)}
                                                             >
@@ -530,6 +531,7 @@ function ModuloProveedores({ usuario }) {
                                                         )}
                                                         {s.estado_incidencia === 'En Proceso' && (
                                                             <button 
+                                                                type="button"
                                                                 className="btn btn-sm" 
                                                                 style={{ backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fde68a' }}
                                                                 onClick={() => setModalIncidencia({ open: true, servicio: s })}
@@ -538,6 +540,7 @@ function ModuloProveedores({ usuario }) {
                                                             </button>
                                                         )}
                                                         <button 
+                                                            type="button"
                                                             className="btn btn-secondary btn-sm" 
                                                             onClick={() => setModalEvidencia({ open: true, eventoId: s.id_evento })}
                                                             title="Subir evidencia de envío a CxP"
@@ -585,6 +588,7 @@ function ModuloProveedores({ usuario }) {
                             </div>
                         </div>
                         <button 
+                            type="button"
                             className="btn btn-primary" 
                             onClick={() => openModal('nuevo_proveedor', null)}
                             style={{ whiteSpace: 'nowrap', marginLeft: '12px', flexShrink: 0 }}
@@ -649,6 +653,7 @@ function ModuloProveedores({ usuario }) {
                                                 <td>
                                                     <div className="acciones-celda">
                                                         <button 
+                                                            type="button"
                                                             onClick={() => openModal('editar_proveedor', p)}
                                                             className="btn-icon-action"
                                                             title="Editar Suplidor"
@@ -656,6 +661,7 @@ function ModuloProveedores({ usuario }) {
                                                             <FiEdit />
                                                         </button>
                                                         <button 
+                                                            type="button"
                                                             onClick={() => handleToggleEstado(p)}
                                                             className={`btn-icon-action ${p.estado === 'Activo' ? 'danger' : ''}`}
                                                             title={p.estado === 'Activo' ? "Desactivar Suplidor" : "Activar Suplidor"}
@@ -771,6 +777,7 @@ function ModuloProveedores({ usuario }) {
                                                         />
                                                     </label>
                                                     <button 
+                                                        type="button"
                                                         className="btn btn-primary btn-sm"
                                                         disabled={!fileFactura}
                                                         onClick={async () => {
@@ -1064,6 +1071,7 @@ function ModuloProveedores({ usuario }) {
                             {mensajeErrorCorreo || "El correo electrónico ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente."}
                         </p>
                         <button 
+                            type="button"
                             className="btn btn-primary" 
                             style={{ 
                                 width: '100%', 
