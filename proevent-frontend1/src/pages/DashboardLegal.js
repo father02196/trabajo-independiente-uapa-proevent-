@@ -188,7 +188,10 @@ function DashboardLegal({ usuario, setActiveTab }) {
                     </div>
                     
                     <div className="modern-event-body">
-                      <h5 className="modern-event-title">{evt.nombre}</h5>
+                      <h5 className="modern-event-title">
+                        <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
+                        {evt.nombre}
+                      </h5>
                       <div className="modern-event-meta-info" style={{ marginTop: '10px' }}>
                         <div className="modern-meta-item">
                           <FiShield className="modern-meta-icon" />
