@@ -546,7 +546,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                       
                       <div className="modern-event-body">
                         <h5 className="modern-event-title">
-                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
                           {evt.nombre}
                         </h5>
                         <div className="modern-event-meta-info">
