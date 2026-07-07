@@ -745,93 +745,95 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
       {/* MODAL DETALLES */}
       {isModalOpen && selectedRequest && createPortal(
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(4px)' }} onClick={closeModal}>
+          <div className="modal-content modal-premium" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '24px 32px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to right, #f8fafc, #ffffff)' }}>
               <div>
-                <h3 className="modal-title">Ficha Técnica del Evento</h3>
-                <span className="modal-subtitle">Revisión exhaustiva y logística completa</span>
+                <h3 className="modal-title" style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <FiFileText className="text-primary" /> Ficha Técnica del Evento
+                </h3>
+                <span className="modal-subtitle" style={{ color: '#64748b', fontSize: '15px' }}>Revisión exhaustiva y logística completa</span>
               </div>
-              <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
+              <span className="badge badge-blue" style={{ fontSize: '15px', padding: '8px 16px', fontWeight: '700', letterSpacing: '0.5px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
             
-            <div className="modal-body">
-              <div className="modal-grid-3">
+            <div className="modal-body" style={{ padding: '32px', flex: 1 }}>
+              <div className="modal-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
                 {/* Columna 1: Info General */}
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiFileText size={14} /> Información General
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiFileText size={16} /> Información General
                   </div>
-                  <div className="info-row">
-                    <span className="info-label">Nombre del Evento</span>
-                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>{selectedRequest.nombre}</span>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Nombre del Evento</span>
+                    <span className="info-value" style={{ display: 'block', color: '#0f172a', fontSize: '16px', fontWeight: '600' }}>{selectedRequest.nombre}</span>
                   </div>
-                  <div className="info-row">
-                    <span className="info-label">Solicitante</span>
-                    <span className="info-value">{selectedRequest.solicitante || "—"}</span>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Solicitante</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.solicitante || "—"}</span>
                   </div>
-                  <div className="info-row">
-                    <span className="info-label">Dependencia</span>
-                    <span className="info-value">{selectedRequest.dependencia || "—"}</span>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Dependencia</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.dependencia || "—"}</span>
                   </div>
-                  <div className="info-row">
-                    <span className="info-label">Fechas</span>
-                    <span className="info-value">
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Fechas</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>
                       {formatFecha(selectedRequest.fecha_inicio)} 
                       {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
                     </span>
                   </div>
                   <div className="info-row">
-                    <span className="info-label">Horario</span>
-                    <span className="info-value">
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Horario</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>
                       {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} 
                       {selectedRequest.hora_fin ? ` a ${formatHora(selectedRequest.hora_fin)}` : ""}
                     </span>
                   </div>
                 </div>
                 {/* Columna 2: Logística y Asistencia */}
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiGrid size={14} /> Logística y Asistencia
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiGrid size={16} /> Logística y Asistencia
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Recinto</span>
+                    <span className="info-value" style={{ display: 'block', color: '#0f172a', fontSize: '15px', fontWeight: '500' }}>{selectedRequest.recinto || "—"}</span>
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Modalidad</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.modalidad || "—"}</span>
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Tipo de Evento</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.tipo_evento || "—"}</span>
                   </div>
                   <div className="info-row">
-                    <span className="info-label">Recinto</span>
-                    <span className="info-value">{selectedRequest.recinto || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Modalidad</span>
-                    <span className="info-value">{selectedRequest.modalidad || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Tipo de Evento</span>
-                    <span className="info-value">{selectedRequest.tipo_evento || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Asistentes Esperados</span>
-                    <span className="info-value">{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</span>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Asistentes Esperados</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</span>
                   </div>
                 </div>
 
                 {/* Columna 3: Finanzas y Estado */}
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiDollarSign size={14} /> Presupuesto y Estado
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiDollarSign size={16} /> Presupuesto y Estado
                   </div>
-                  <div className="info-row">
-                    <span className="info-label">Presupuesto POA Solicitado</span>
-                    <span className="info-value" style={{ color: '#10B981' }}>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Presupuesto POA Solicitado</span>
+                    <span className="info-value" style={{ display: 'block', color: '#10b981', fontSize: '15px', fontWeight: '600' }}>
                       {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
                     </span>
                   </div>
-                  <div className="info-row" style={{ marginTop: '12px' }}>
-                    <span className="info-label">Estado de la Solicitud</span>
-                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Estado de la Solicitud</span>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
                       {selectedRequest.estado || "Pendiente"}
                     </span>
                   </div>
-                  <div className="info-row" style={{ marginTop: '12px' }}>
-                    <span className="info-label">Estado Presupuesto (POA)</span>
-                    <span className={`badge ${selectedRequest.estado_poa === 'Aprobado' ? 'badge-green' : selectedRequest.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                  <div className="info-row">
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Estado Presupuesto (POA)</span>
+                    <span className={`badge ${selectedRequest.estado_poa === 'Aprobado' ? 'badge-green' : selectedRequest.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
                       {selectedRequest.estado_poa || "Pendiente"}
                     </span>
                   </div>
@@ -840,21 +842,21 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
               {/* Tracking Administrativo a Ancho Completo */}
               <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiActivity size={14} /> Tracking Administrativo (Lectura)
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiActivity size={16} /> Tracking Administrativo (Lectura)
                   </div>
-                  <div className="modal-grid-3">
+                  <div className="modal-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px' }}>
 
                     <div className="info-row">
-                      <span className="info-label">Revisión Legal</span>
-                      <span className={`badge ${pdfData.legal?.estado_contrato === 'Vigente' ? 'badge-green' : pdfData.legal?.estado_contrato === 'Vencido' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                      <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Revisión Legal</span>
+                      <span className={`badge ${pdfData.legal?.estado_contrato === 'Vigente' ? 'badge-green' : pdfData.legal?.estado_contrato === 'Vencido' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
                         {pdfData.legal?.estado_contrato || "Pendiente"}
                       </span>
                     </div>
                     <div className="info-row">
-                      <span className="info-label">Compras y Logística (B2B)</span>
-                      <span className="info-value" style={{ fontSize: '13.5px', color: '#475569', marginTop: '4px', fontWeight: 'bold' }}>
+                      <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Compras y Logística (B2B)</span>
+                      <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '14px', fontWeight: '600' }}>
                         {pdfData.servicios?.length > 0 
                           ? `${pdfData.servicios.length} servicio(s) gestionado(s)` 
                           : "Ninguno en proceso"}
@@ -866,13 +868,13 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
               {/* === Sección Expandible: Asignación de Personal === */}
               <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '0' }}>
-                <div className="info-card" style={{ cursor: 'pointer' }} onClick={() => setShowPersonal(!showPersonal)}>
-                  <div className="info-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FiPlay size={14} style={{ transform: showPersonal ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} /> Asignación de Personal Operativo</span>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>{showPersonal ? 'Ocultar' : 'Expandir'}</span>
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', cursor: 'pointer' }} onClick={() => setShowPersonal(!showPersonal)}>
+                  <div className="info-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><FiPlay size={16} style={{ transform: showPersonal ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} /> Asignación de Personal Operativo</span>
+                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>{showPersonal ? 'Ocultar' : 'Expandir'}</span>
                   </div>
                   {showPersonal && (
-                    <div style={{ marginTop: '16px' }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }} onClick={(e) => e.stopPropagation()}>
                       <AsignacionPersonal usuario={usuario} eventoPreseleccionado={selectedRequest} />
                     </div>
                   )}
@@ -881,13 +883,13 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
               {/* === Sección Expandible: Cronograma Logístico === */}
               <div className="modal-grid-1" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '0' }}>
-                <div className="info-card" style={{ cursor: 'pointer' }} onClick={() => setShowCronograma(!showCronograma)}>
-                  <div className="info-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FiPlay size={14} style={{ transform: showCronograma ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} /> Cronograma Logístico</span>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>{showCronograma ? 'Ocultar' : 'Expandir'}</span>
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', cursor: 'pointer' }} onClick={() => setShowCronograma(!showCronograma)}>
+                  <div className="info-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><FiPlay size={16} style={{ transform: showCronograma ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} /> Cronograma Logístico</span>
+                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>{showCronograma ? 'Ocultar' : 'Expandir'}</span>
                   </div>
                   {showCronograma && (
-                    <div style={{ marginTop: '16px' }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }} onClick={(e) => e.stopPropagation()}>
                       <CronogramaGlobal usuario={usuario} eventoPreseleccionado={selectedRequest} />
                     </div>
                   )}
@@ -896,26 +898,26 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
               {/* Requerimientos Adicionales a Ancho Completo */}
               <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiCheckCircle size={14} /> Requerimientos Adicionales
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiCheckCircle size={16} /> Requerimientos Adicionales
                   </div>
-                  <div className="modal-grid-3">
+                  <div className="modal-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px' }}>
                     {selectedRequest.detalles_corporativos && (
                       <div className="info-row">
-                        <span className="info-label">Montaje Corporativo</span>
-                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.detalles_corporativos}</span>
+                        <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Montaje Corporativo</span>
+                        <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '13.5px' }}>{selectedRequest.detalles_corporativos}</span>
                       </div>
                     )}
                     {selectedRequest.alimentos && (
                       <div className="info-row">
-                        <span className="info-label">Alimentos (Catering)</span>
-                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.alimentos}</span>
+                        <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Alimentos (Catering)</span>
+                        <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '13.5px' }}>{selectedRequest.alimentos}</span>
                       </div>
                     )}
                     <div className="info-row">
-                      <span className="info-label">Equipos Audiovisuales</span>
-                      <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>
+                      <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Equipos Audiovisuales</span>
+                      <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '13.5px' }}>
                         {selectedRequest.necesita_audiovisual 
                           ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
                           : "Ninguno"}
@@ -970,25 +972,27 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 )}
               </div>
             </div>
-            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="modal-footer" style={{ padding: '24px 32px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {usuario?.rol !== "Solicitante" && (
-                  <button type="button" className="btn btn-secondary" onClick={openAsignarServicioModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={openAsignarServicioModal} style={{ padding: '10px 16px', fontWeight: '600', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#475569', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiSend /> Asignar Servicio Externo
                   </button>
                 )}
                 {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
-                  <button type="button" className="btn btn-secondary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ padding: '10px 16px', fontWeight: '600', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#475569', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiEdit2 /> Editar Evento
                   </button>
                 )}
                 {usuario?.rol !== "Solicitante" && (
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowFichaPDF(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowFichaPDF(true)} style={{ padding: '10px 16px', fontWeight: '600', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#475569', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiFileText /> Generar PDF
                   </button>
                 )}
               </div>
-              <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar modal de detalles">Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" style={{ padding: '10px 24px', fontWeight: '600', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#475569', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={closeModal} aria-label="Cerrar modal de detalles">
+                Cerrar Ficha Técnica
+              </button>
             </div>
           </div>
         </div>,
