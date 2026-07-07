@@ -215,6 +215,7 @@ function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
                           onClick={() => eliminarRol(org.id_evento_org, eventoSeleccionado.id_evento)}
                           style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center' }}
                           title="Remover asignación"
+                          aria-label="Eliminar personal asignado"
                         >
                           <FiTrash2 size={18} />
                         </button>

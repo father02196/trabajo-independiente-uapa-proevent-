@@ -462,7 +462,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             </div>
           </div>
           <div className="header-actions-group">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={cargarEventos} title="Recargar lista">
+            <button type="button" className="btn btn-secondary btn-sm" onClick={cargarEventos} title="Recargar lista" aria-label="Recargar lista de eventos">
               <FiRefreshCw /> Recargar
             </button>
           </div>
@@ -538,7 +538,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           ) : error ? (
             <div className="table-state-error">
               <p>{error}</p>
-              <button type="button" className="retry-btn" onClick={cargarEventos}>Reintentar conexión</button>
+              <button type="button" className="retry-btn" onClick={cargarEventos} aria-label="Reintentar conexión con el servidor">Reintentar conexión</button>
             </div>
           ) : filteredRequests.length === 0 ? (
             <div className="table-state-empty">
@@ -601,7 +601,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       </span>
                     </td>
                     <td>
-                      <button type="button" className="details-btn" onClick={() => handleVerDetalles(req)}>
+                      <button type="button" className="details-btn" onClick={() => handleVerDetalles(req)} aria-label="Ver detalles de la solicitud">
                         <FiEye /> Ver detalles
                       </button>
                     </td>
@@ -616,6 +616,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                 onClick={() => onEditEvent(req)}
                                 disabled={req.estado !== "Pendiente"}
                                 title={req.estado !== "Pendiente" ? "Solo puedes editar solicitudes pendientes" : "Editar solicitud"}
+                                aria-label="Editar solicitud"
                               >
                                 <FiEdit2 />
                               </button>
@@ -625,6 +626,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                 onClick={() => handleEliminarEvento(req.id_evento)}
                                 disabled={req.estado !== "Pendiente"}
                                 title={req.estado !== "Pendiente" ? "Solo puedes eliminar solicitudes pendientes" : "Eliminar solicitud"}
+                                aria-label="Eliminar solicitud"
                               >
                                 <FiTrash2 />
                               </button>
@@ -680,6 +682,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                         type="button"
                                         onClick={() => setModalAprobaciones({ id_evento: req.id_evento, ...aprobInfo })}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'center', padding: '2px', textDecoration: 'underline' }}
+                                        aria-label="Ver estado de aprobaciones previas"
                                       >
                                         <FiInfo size={11} /> Ver aprobaciones
                                       </button>
@@ -719,6 +722,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
+                aria-label="Ir a la página anterior"
               >
                 <FiChevronLeft /> Anterior
               </button>
@@ -730,6 +734,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 className="btn btn-secondary btn-sm" 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
+                aria-label="Ir a la página siguiente"
               >
                 Siguiente <FiChevronRight />
               </button>
@@ -983,7 +988,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   </button>
                 )}
               </div>
-              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar modal de detalles">Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,
@@ -1012,7 +1017,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 <h3 className="modal-title">Asignar Servicio Externo</h3>
                 <span className="modal-subtitle">Enviar requerimiento a Logística Operativa</span>
               </div>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={closeAsignarServicioModal}>X</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={closeAsignarServicioModal} aria-label="Cerrar asignación de servicio">X</button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleSubmitServicio} className="space-y-4">
@@ -1052,7 +1057,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   />
                 </div>
                 <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                  <button type="button" className="btn btn-secondary" onClick={closeAsignarServicioModal}>Cancelar</button>
+                  <button type="button" className="btn btn-secondary" onClick={closeAsignarServicioModal} aria-label="Cancelar asignación de servicio">Cancelar</button>
                   <button type="submit" className="btn btn-success" disabled={enviandoServicio}>
                     {enviandoServicio ? "Asignando..." : "Asignar Servicio"}
                   </button>
@@ -1084,7 +1089,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   </span>
                 </div>
               </div>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setModalAprobaciones(null)}>X</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setModalAprobaciones(null)} aria-label="Cerrar estado de aprobaciones">X</button>
             </div>
             
             <div className="modal-body" style={{ padding: '24px' }}>
@@ -1139,7 +1144,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   <FiPlay /> Iniciar Evento Ahora
                 </button>
               ) : (
-                <button type="button" className="btn btn-secondary" onClick={() => setModalAprobaciones(null)}>Entendido</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setModalAprobaciones(null)} aria-label="Cerrar estado de aprobaciones">Entendido</button>
               )}
             </div>
           </div>
