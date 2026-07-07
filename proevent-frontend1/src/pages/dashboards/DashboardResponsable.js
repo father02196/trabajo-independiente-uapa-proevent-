@@ -207,10 +207,12 @@ function DashboardResponsable({ usuario, setActiveTab }) {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => cargarDatos()}
           style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600', transition: 'background 0.2s' }}
           onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.25)'}
           onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.15)'}
+          aria-label="Actualizar datos del panel"
         >
           <FiRefreshCw size={14} /> Actualizar
         </button>
@@ -344,7 +346,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar agenda de eventos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -375,7 +377,10 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                     </div>
 
                     <div className="modern-event-body">
-                      <h5 className="modern-event-title">{evt.nombre}</h5>
+                      <h5 className="modern-event-title">
+                        <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
+                        {evt.nombre}
+                      </h5>
                       <div className="modern-event-meta-info">
                         <div className="modern-meta-item">
                           <FiGrid className="modern-meta-icon" />
@@ -389,7 +394,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                     </div>
 
                     <div className="modern-event-footer">
-                      <button className="modern-view-btn" title="Ver ficha técnica">
+                      <button type="button" className="modern-view-btn" title="Ver ficha técnica" aria-label="Ver ficha técnica del evento">
                         <span>Ver Ficha Técnica</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>
@@ -683,8 +688,8 @@ function DashboardResponsable({ usuario, setActiveTab }) {
             </div>
 
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
-              <button className="btn btn-primary" onClick={() => { closeModal(); setActiveTab && setActiveTab("Calendario"); }}>
+              <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar ficha técnica">Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-primary" onClick={() => { closeModal(); setActiveTab && setActiveTab("Calendario"); }} aria-label="Ver evento en el calendario">
                 <FiCalendar style={{ marginRight: '6px' }} /> Ver en Calendario
               </button>
             </div>

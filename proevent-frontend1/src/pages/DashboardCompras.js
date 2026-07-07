@@ -159,7 +159,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -189,7 +189,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
                     
                     <div className="modern-event-body">
                       <h5 className="modern-event-title">
-                        <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                        <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
                         {evt.nombre}
                       </h5>
                       <div className="modern-event-meta-info" style={{ marginTop: '8px' }}>
@@ -205,7 +205,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
                     </div>
                     
                     <div className="modern-event-footer">
-                      <button className="modern-view-btn" title="Ir al Flujo de Compras">
+                      <button type="button" className="modern-view-btn" title="Ir al Flujo de Compras" aria-label="Ir al flujo de compras">
                         <span>Ir a Analizar Cotizaciones</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>

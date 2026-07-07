@@ -312,7 +312,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
               <h4>Presupuesto POA Aprobado por Recinto</h4>
               <p>Inversión financiera en eventos por campus de la UAPA (en DOP)</p>
             </div>
-            <button className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos"><FiRefreshCw /></button>
+            <button type="button" className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos" aria-label="Actualizar datos del panel"><FiRefreshCw /></button>
           </div>
           
           <div className="budget-chart-layout">
@@ -453,7 +453,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar datos del panel"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -491,7 +491,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                       
                       <div className="modern-event-body">
                         <h5 className="modern-event-title">
-                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
                           {evt.nombre}
                         </h5>
                         <div className="modern-event-meta-info">
@@ -507,7 +507,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                       </div>
                       
                       <div className="modern-event-footer">
-                        <button className="modern-view-btn" title="Ver detalles del evento">
+                        <button type="button" className="modern-view-btn" title="Ver detalles del evento" aria-label="Ver detalles del evento">
                           <span>Ver Ficha Técnica</span>
                           <FiArrowUpRight className="modern-btn-icon" />
                         </button>
@@ -575,38 +575,40 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
       </div>
 
       {isModalOpen && selectedRequest && ReactDOM.createPortal(
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(4px)' }} onClick={closeModal}>
+          <div className="modal-content modal-premium" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '24px 32px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to right, #f8fafc, #ffffff)' }}>
               <div>
-                <h3 className="modal-title">Ficha Técnica del Evento</h3>
-                <span className="modal-subtitle">Revisión general de la solicitud y logística</span>
+                <h3 className="modal-title" style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <FiFileText className="text-primary" /> Ficha Técnica del Evento
+                </h3>
+                <span className="modal-subtitle" style={{ color: '#64748b', fontSize: '15px' }}>Revisión general de la solicitud y logística</span>
               </div>
-              <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
+              <span className="badge badge-blue" style={{ fontSize: '15px', padding: '8px 16px', fontWeight: '700', letterSpacing: '0.5px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
             
-            <div className="modal-body">
-              <div className="modal-grid-3">
+            <div className="modal-body" style={{ padding: '32px', flex: 1 }}>
+              <div className="modal-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px' }}>
                 {/* Columna 1: Info General */}
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiFileText size={14} /> Información General
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiFileText size={16} /> Información General
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Nombre del Evento</span>
+                    <span className="info-value" style={{ display: 'block', color: '#0f172a', fontSize: '16px', fontWeight: '600' }}>{selectedRequest.nombre}</span>
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Solicitante</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.solicitante || "—"}</span>
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Dependencia</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.dependencia || "—"}</span>
                   </div>
                   <div className="info-row">
-                    <span className="info-label">Nombre del Evento</span>
-                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>{selectedRequest.nombre}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Solicitante</span>
-                    <span className="info-value">{selectedRequest.solicitante || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Dependencia</span>
-                    <span className="info-value">{selectedRequest.dependencia || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Fechas</span>
-                    <span className="info-value">
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Fechas</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>
                       {formatFecha(selectedRequest.fecha_inicio)} 
                       {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
                     </span>
@@ -614,48 +616,48 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                 </div>
 
                 {/* Columna 2: Logística y Asistencia */}
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiGrid size={14} /> Logística y Asistencia
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiGrid size={16} /> Logística y Asistencia
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Recinto</span>
+                    <span className="info-value" style={{ display: 'block', color: '#0f172a', fontSize: '15px', fontWeight: '500' }}>{selectedRequest.recinto || "—"}</span>
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Modalidad</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.modalidad || "—"}</span>
+                  </div>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Tipo de Evento</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.tipo_evento || "—"}</span>
                   </div>
                   <div className="info-row">
-                    <span className="info-label">Recinto</span>
-                    <span className="info-value">{selectedRequest.recinto || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Modalidad</span>
-                    <span className="info-value">{selectedRequest.modalidad || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Tipo de Evento</span>
-                    <span className="info-value">{selectedRequest.tipo_evento || "—"}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Asistentes Esperados</span>
-                    <span className="info-value">{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</span>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Asistentes Esperados</span>
+                    <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : "—"}</span>
                   </div>
                 </div>
 
                 {/* Columna 3: Finanzas y Estado */}
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiDollarSign size={14} /> Presupuesto y Estado
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiDollarSign size={16} /> Presupuesto y Estado
                   </div>
-                  <div className="info-row">
-                    <span className="info-label">Presupuesto POA Solicitado</span>
-                    <span className="info-value" style={{ color: '#10B981' }}>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Presupuesto POA Solicitado</span>
+                    <span className="info-value" style={{ display: 'block', color: '#10b981', fontSize: '15px', fontWeight: '600' }}>
                       {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
                     </span>
                   </div>
-                  <div className="info-row" style={{ marginTop: '12px' }}>
-                    <span className="info-label">Estado de la Solicitud</span>
-                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                  <div className="info-row" style={{ marginBottom: '12px' }}>
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Estado de la Solicitud</span>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
                       {selectedRequest.estado || "Pendiente"}
                     </span>
                   </div>
-                  <div className="info-row" style={{ marginTop: '12px' }}>
-                    <span className="info-label">Estado Presupuesto (POA)</span>
-                    <span className={`badge ${selectedRequest.estado_poa === 'Aprobado' ? 'badge-green' : selectedRequest.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                  <div className="info-row">
+                    <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Estado Presupuesto (POA)</span>
+                    <span className={`badge ${selectedRequest.estado_poa === 'Aprobado' ? 'badge-green' : selectedRequest.estado_poa === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
                       {selectedRequest.estado_poa || "Pendiente"}
                     </span>
                   </div>
@@ -664,26 +666,26 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
 
               {/* Requerimientos Adicionales a Ancho Completo */}
               <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div className="info-card">
-                  <div className="info-card-title">
-                    <FiCheckCircle size={14} /> Requerimientos Adicionales
+                <div className="info-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div className="info-card-title" style={{ fontSize: '14px', fontWeight: '700', color: '#475569', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiCheckCircle size={16} /> Requerimientos Adicionales
                   </div>
-                  <div className="modal-grid-3">
+                  <div className="modal-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px' }}>
                     {selectedRequest.detalles_corporativos && (
                       <div className="info-row">
-                        <span className="info-label">Montaje Corporativo</span>
-                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.detalles_corporativos}</span>
+                        <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Montaje Corporativo</span>
+                        <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '13.5px' }}>{selectedRequest.detalles_corporativos}</span>
                       </div>
                     )}
                     {selectedRequest.alimentos && (
                       <div className="info-row">
-                        <span className="info-label">Alimentos (Catering)</span>
-                        <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>{selectedRequest.alimentos}</span>
+                        <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Alimentos (Catering)</span>
+                        <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '13.5px' }}>{selectedRequest.alimentos}</span>
                       </div>
                     )}
                     <div className="info-row">
-                      <span className="info-label">Equipos Audiovisuales</span>
-                      <span className="info-value" style={{ fontSize: '13.5px', color: '#475569' }}>
+                      <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Equipos Audiovisuales</span>
+                      <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '13.5px' }}>
                         {selectedRequest.necesita_audiovisual 
                           ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
                           : "Ninguno"}
@@ -694,8 +696,10 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
               </div>
             </div>
             
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+            <div className="modal-footer" style={{ padding: '24px 32px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', background: '#f8fafc', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
+              <button type="button" className="btn btn-secondary" style={{ padding: '10px 24px', fontWeight: '600', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#475569', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={closeModal} aria-label="Cerrar modal">
+                Cerrar Ficha Técnica
+              </button>
             </div>
           </div>
         </div>,

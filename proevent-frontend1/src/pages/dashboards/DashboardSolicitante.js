@@ -271,7 +271,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar estado de solicitudes"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -309,7 +309,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                       
                       <div className="modern-event-body">
                         <h5 className="modern-event-title">
-                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
                           {evt.nombre}
                         </h5>
                         <div className="modern-event-meta-info">
@@ -325,7 +325,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                       </div>
                       
                       <div className="modern-event-footer">
-                        <button className="modern-view-btn" title="Ver detalles del evento">
+                        <button type="button" className="modern-view-btn" title="Ver detalles del evento" aria-label="Ver ficha de mi solicitud">
                           <span>Ver Ficha Técnica</span>
                           <FiArrowUpRight className="modern-btn-icon" />
                         </button>
@@ -482,7 +482,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
               </div>
 
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar modal">Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,

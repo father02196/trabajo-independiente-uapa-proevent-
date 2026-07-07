@@ -211,9 +211,11 @@ function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
                       <li key={org.id_evento_org} style={{ background: '#e0f2fe', padding: '10px 15px', borderRadius: '6px', marginBottom: '8px', fontSize: '0.95rem', color: '#0369a1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span><strong>{org.nombre}</strong> <span style={{opacity: 0.8, fontSize: '0.85rem', marginLeft: '8px'}}>({org.rol_organizacion})</span></span>
                         <button 
+                          type="button"
                           onClick={() => eliminarRol(org.id_evento_org, eventoSeleccionado.id_evento)}
                           style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center' }}
                           title="Remover asignación"
+                          aria-label="Eliminar personal asignado"
                         >
                           <FiTrash2 size={18} />
                         </button>

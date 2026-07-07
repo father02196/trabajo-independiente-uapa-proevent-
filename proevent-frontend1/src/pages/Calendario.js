@@ -141,8 +141,8 @@ function Calendario({ usuario }) {
             {currentDate.toLocaleString('es-DO', { month: 'long', year: 'numeric' })}
           </h3>
           <div style={{ display: 'flex', gap: '6px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={handlePrevMonth}><FiChevronLeft /> Anterior</button>
-            <button className="btn btn-secondary btn-sm" onClick={handleNextMonth}>Siguiente <FiChevronRight /></button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={handlePrevMonth} aria-label="Mes anterior"><FiChevronLeft /> Anterior</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={handleNextMonth} aria-label="Mes siguiente">Siguiente <FiChevronRight /></button>
           </div>
         </div>
 

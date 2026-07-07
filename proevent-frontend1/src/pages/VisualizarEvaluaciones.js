@@ -192,7 +192,7 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
           <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>Análisis de Evaluaciones</h1>
           <p style={{ color: '#64748B', fontSize: '13.5px' }}>Monitorea el nivel de satisfacción y respuesta de los eventos realizados.</p>
         </div>
-        <button className="btn btn-secondary" onClick={cargar} disabled={loading}>
+        <button type="button" className="btn btn-secondary" onClick={cargar} disabled={loading} aria-label="Actualizar datos de evaluaciones">
           <FiRefreshCw /> Actualizar Datos
         </button>
       </div>
@@ -268,6 +268,7 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
                           {CHART_TYPES.map(ct => (
                             <button
+                              type="button"
                               key={ct.id}
                               style={{
                                 width: '32px', height: '32px', borderRadius: '8px', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s',
@@ -277,6 +278,7 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
                               }}
                               onClick={() => toggleChart(ev.id_evaluacion, ct.id)}
                               title={`Ver gráfico de ${ct.label}`}
+                              aria-label={`Ver gráfico de ${ct.label}`}
                             >
                               {ct.icon}
                             </button>
@@ -312,13 +314,13 @@ export default function VisualizarEvaluaciones({ searchTerm = '' }) {
             Resultados: {filtered.length} evaluación(es)
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1} aria-label="Página anterior">
               <FiChevronLeft /> Anterior
             </button>
             <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
               Página {pagina} de {totalPages}
             </span>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPagina(p => Math.min(totalPages, p + 1))} disabled={pagina === totalPages}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPagina(p => Math.min(totalPages, p + 1))} disabled={pagina === totalPages} aria-label="Página siguiente">
               Siguiente <FiChevronRight />
             </button>
           </div>

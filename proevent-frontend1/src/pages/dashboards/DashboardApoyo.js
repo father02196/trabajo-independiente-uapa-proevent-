@@ -189,10 +189,12 @@ function DashboardApoyo({ usuario, setActiveTab }) {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => cargarDatos()}
           style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600', transition: 'background 0.2s' }}
           onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.25)'}
           onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.15)'}
+          aria-label="Actualizar datos del panel"
         >
           <FiRefreshCw size={14} /> Actualizar
         </button>
@@ -360,6 +362,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => completarTarea(t.id_actividad)}
                         disabled={isCompleting}
                         style={{
@@ -378,6 +381,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                           flexShrink: 0,
                           transition: 'background 0.2s'
                         }}
+                        aria-label="Marcar tarea como completada"
                       >
                         <FiCheck size={13} />
                         {isCompleting ? 'Guardando...' : 'Marcar lista'}
@@ -387,8 +391,10 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                 })}
                 {tareasPendientesSorted.length >= 5 && (
                   <button
+                    type="button"
                     onClick={() => setActiveTab && setActiveTab("CronogramaGlobal")}
                     style={{ background: 'transparent', border: '1px dashed #cbd5e1', color: '#64748b', borderRadius: '8px', padding: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    aria-label="Ver todas mis tareas"
                   >
                     Ver todas mis tareas <FiChevronRight size={14} />
                   </button>
@@ -651,8 +657,8 @@ function DashboardApoyo({ usuario, setActiveTab }) {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setModalEvento(null)}>Cerrar</button>
-              <button className="btn btn-primary" onClick={() => { setModalEvento(null); setActiveTab && setActiveTab("Calendario"); }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setModalEvento(null)} aria-label="Cerrar modal">Cerrar</button>
+              <button type="button" className="btn btn-primary" onClick={() => { setModalEvento(null); setActiveTab && setActiveTab("Calendario"); }} aria-label="Ver evento en el calendario">
                 <FiCalendar style={{ marginRight: '6px' }} /> Ver en Calendario
               </button>
             </div>

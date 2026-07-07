@@ -61,7 +61,7 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordC
         {/* Header de la card */}
         <div className="lc-header">
           {onBackClick && (
-            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+            <button type="button" className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
           )}
           {/* Espacio para el nuevo logo proporcionado */}
           <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '220px', height: 'auto', margin: '0 auto 15px', display: 'block' }} />

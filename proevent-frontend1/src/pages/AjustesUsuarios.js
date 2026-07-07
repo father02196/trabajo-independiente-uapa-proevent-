@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // AJUSTES USUARIOS - Gestión de Usuarios del Sistema
 // Pertenece a: Módulo de Administración (ProEvent)
 // Propósito: Permite al Administrador crear, editar y
@@ -372,9 +372,9 @@ function AjustesUsuarios({ usuario }) {
                     <h2>Usuarios Registrados</h2>
                     <div className="ajustes-toolbar-right" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                         <div className="ajustes-filter-group" style={{ display: 'flex', background: '#F1F5F9', borderRadius: '8px', padding: '4px' }}>
-                            <button className={`filter-tab ${filterStatus === 'todos' ? 'active' : ''}`} onClick={() => setFilterStatus('todos')}>Todos</button>
-                            <button className={`filter-tab ${filterStatus === 'activo' ? 'active' : ''}`} onClick={() => setFilterStatus('activo')}>Activos</button>
-                            <button className={`filter-tab ${filterStatus === 'inactivo' ? 'active' : ''}`} onClick={() => setFilterStatus('inactivo')}>Inactivos</button>
+                            <button type="button" className={`filter-tab ${filterStatus === 'todos' ? 'active' : ''}`} onClick={() => setFilterStatus('todos')}>Todos</button>
+                            <button type="button" className={`filter-tab ${filterStatus === 'activo' ? 'active' : ''}`} onClick={() => setFilterStatus('activo')}>Activos</button>
+                            <button type="button" className={`filter-tab ${filterStatus === 'inactivo' ? 'active' : ''}`} onClick={() => setFilterStatus('inactivo')}>Inactivos</button>
                         </div>
                         <div className="ajustes-search">
                             <FiSearch size={15} className="ajustes-search-icon" />
@@ -420,8 +420,9 @@ function AjustesUsuarios({ usuario }) {
                                     </td>
                                     <td>
                                         <div className="ajustes-actions" style={{ justifyContent: 'center' }}>
-                                            <button className="action-icon-btn edit" onClick={() => handleEdit(usuario)} title="Editar"><FiEdit2 /></button>
+                                            <button type="button" className="action-icon-btn edit" onClick={() => handleEdit(usuario)} title="Editar"><FiEdit2 /></button>
                                             <button 
+                                                type="button"
                                                 className={`action-icon-btn ${usuario.estado === 'inactivo' ? 'approve' : 'reject'}`} 
                                                 onClick={() => handleToggleEstado(usuario)} 
                                                 title={usuario.estado === 'inactivo' ? 'Activar Usuario' : 'Desactivar Usuario'}
@@ -451,6 +452,7 @@ function AjustesUsuarios({ usuario }) {
                         </div>
                         <div className="pagination-controls">
                             <button 
+                                type="button"
                                 className="page-btn" 
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
@@ -461,6 +463,7 @@ function AjustesUsuarios({ usuario }) {
                                 Página {currentPage} de {totalPages || 1}
                             </span>
                             <button 
+                                type="button"
                                 className="page-btn" 
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages || totalPages === 0}

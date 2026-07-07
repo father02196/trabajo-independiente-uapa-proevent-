@@ -77,7 +77,7 @@ function MisTareasApoyo({ usuario }) {
               </td>
               <td>
                 {t.estado !== 'Completada' ? (
-                  <button onClick={() => handleCompletarTarea(t.id_actividad)} style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <button type="button" onClick={() => handleCompletarTarea(t.id_actividad)} aria-label="Marcar tarea como completada" style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <FiCheck /> Listo
                   </button>
                 ) : (

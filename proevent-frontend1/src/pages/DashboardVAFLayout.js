@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // COMPONENTE: DashboardVAFLayout
 // Pertenece a: Módulo Financiero (VAF) / Layout
 // Propósito: Contenedor principal (Layout) para el administrador
@@ -107,7 +107,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
 
         <div className="sidebar-user-section">
           <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
-            <button className="logout-button" onClick={onLogout}>
+            <button type="button" className="logout-button" onClick={onLogout}>
               <FiLogOut className="action-icon" aria-hidden="true" />
               Cerrar sesión
             </button>
@@ -128,6 +128,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
         <header className="dashboard-header">
           <div className="header-left">
             <button
+              type="button"
               className="hamburger-btn"
               onClick={toggleSidebar}
               title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}

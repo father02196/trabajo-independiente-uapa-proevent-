@@ -92,7 +92,7 @@ function ResetPassword({ token, onBackClick }) {
         
         <div className="lc-header">
           {onBackClick && (
-            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+            <button type="button" className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
           )}
 
           {/* Espacio para el nuevo logo proporcionado */}
@@ -157,7 +157,7 @@ function ResetPassword({ token, onBackClick }) {
 
         {success && (
           <div className="lc-form">
-            <button className="lc-btn-primary" onClick={onBackClick}>
+            <button type="button" className="lc-btn-primary" onClick={onBackClick}>
               Ir al Inicio
             </button>
           </div>

@@ -270,7 +270,7 @@ export default function GestionPresupuestaria({ usuario }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <FiFilter size={16} color="var(--color-primary)" />
             <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>Filtros de Búsqueda</h3>
-            <button onClick={limpiarFiltros} style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--color-uapa-navy)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+            <button type="button" onClick={limpiarFiltros} style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--color-uapa-navy)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
               <FiX size={14} /> Limpiar Filtros
             </button>
           </div>
@@ -357,6 +357,7 @@ export default function GestionPresupuestaria({ usuario }) {
                 <td style={{ padding: '12px', textAlign: 'center' }}>
                   <div className="saas-action-group">
                     <button 
+                      type="button"
                       className="action-icon-btn view" 
                       onClick={() => openModalDetalles(mov)}
                       title="Ver Detalles"
@@ -364,6 +365,7 @@ export default function GestionPresupuestaria({ usuario }) {
                       <FiEye size={15} />
                     </button>
                     <button 
+                      type="button"
                       onClick={() => handleCambiarEstado(mov.id_movimiento, 'Aprobado')} 
                       className={`action-icon-btn approve ${mov.estado === 'Aprobado' ? 'is-active' : ''}`}
                       title="Aprobar Presupuesto"
@@ -371,6 +373,7 @@ export default function GestionPresupuestaria({ usuario }) {
                       <FiCheckCircle size={15} />
                     </button>
                     <button 
+                      type="button"
                       onClick={() => {setMovRechazoId(mov.id_movimiento); setModalRechazo(true);}} 
                       className={`action-icon-btn reject ${mov.estado === 'Rechazado' ? 'is-active' : ''}`}
                       title="Rechazar Presupuesto"
@@ -378,6 +381,7 @@ export default function GestionPresupuestaria({ usuario }) {
                       <FiXCircle size={15} />
                     </button>
                     <button 
+                      type="button"
                       onClick={() => { setMovObservar(mov); setModalObservar(true); }} 
                       className="action-icon-btn"
                       style={{ color: '#d97706' }}
@@ -398,6 +402,7 @@ export default function GestionPresupuestaria({ usuario }) {
         {sortedMovimientos.length > itemsPerPage && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', padding: '10px 10px 20px 10px', alignItems: 'center' }}>
             <button 
+              type="button"
               className="btn btn-secondary btn-sm"
               disabled={currentPage === 1} 
               onClick={() => setCurrentPage(prev => prev - 1)}
@@ -406,6 +411,7 @@ export default function GestionPresupuestaria({ usuario }) {
             </button>
             <span style={{ padding: '5px 14px', fontWeight: '700', color: 'var(--color-uapa-navy)', fontSize: '14px' }}>Pág. {currentPage} de {totalPages}</span>
             <button 
+              type="button"
               className="btn btn-secondary btn-sm"
               disabled={currentPage >= totalPages} 
               onClick={() => setCurrentPage(prev => prev + 1)}
@@ -563,7 +569,7 @@ export default function GestionPresupuestaria({ usuario }) {
               </div>
             </div>
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '15px' }}>
-              <button className="btn btn-secondary" onClick={closeModalDetalles}>Cerrar</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModalDetalles}>Cerrar</button>
             </div>
           </div>
         </div>,

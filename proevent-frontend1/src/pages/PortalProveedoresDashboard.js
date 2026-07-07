@@ -154,7 +154,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
             Bienvenido, <strong style={{ color: '#0F172A' }}>{proveedor.nombre}</strong>
           </span>
         </div>
-        <button className="btn btn-secondary btn-sm" onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FiLogOut /> Salir
         </button>
       </header>
@@ -199,6 +199,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
             <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>A continuación se muestran las solicitudes de servicios de la UAPA que coinciden con tu perfil.</p>
           </div>
           <button 
+            type="button"
             className="btn btn-secondary btn-sm" 
             onClick={() => fetchSolicitudes(true)} 
             title="Recargar lista" 
@@ -240,10 +241,10 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                        <button className="b2b-btn-outline" onClick={() => openDetalles(sol)} title="Ver detalles del evento">
+                        <button type="button" className="b2b-btn-outline" onClick={() => openDetalles(sol)} title="Ver detalles del evento">
                           <FiEye size={14} /> Detalles
                         </button>
-                        <button className="b2b-btn-primary" onClick={() => openCotizar(sol)} title="Enviar oferta">
+                        <button type="button" className="b2b-btn-primary" onClick={() => openCotizar(sol)} title="Enviar oferta">
                           <FiUploadCloud size={14} /> Cotizar
                         </button>
                       </div>
@@ -307,7 +308,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
             </div>
 
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button className="btn btn-secondary" onClick={() => setDetailsModalOpen(false)}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setDetailsModalOpen(false)}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,
@@ -323,7 +324,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
                 <h3 className="modal-title">Someter Oferta Oficial</h3>
                 <span className="modal-subtitle">Recepción de cotizaciones B2B para UAPA</span>
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={() => setModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748B', fontSize: '18px', padding: '4px' }}>X</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748B', fontSize: '18px', padding: '4px' }}>X</button>
             </div>
             
             <form onSubmit={handleSubmit}>
