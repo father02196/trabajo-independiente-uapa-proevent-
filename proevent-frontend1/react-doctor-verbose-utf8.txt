@@ -1,0 +1,2167 @@
+﻿[1mReact Doctor[22m [2mv0.7.1[22m
+
+[90m  [39m
+
+  [33mΓÜá[39m [33mBugs: Missing effect dependencies[39m [90m├ù12[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/exhaustive-deps[39m
+    `useEffect` can run with a stale `cargarDatos` & show your
+    users old data.
+[2m    ΓåÆ Don't blindly add missing dependencies. Read the hook[22m
+[2m    callback first.[22m
+[2m    [22m
+[2m    Bad:[22m
+[2m    useEffect(() => {[22m
+[2m      setCount(count + 1);[22m
+[2m    }, [count]);[22m
+[2m    [22m
+[2m    Better:[22m
+[2m    useEffect(() => {[22m
+[2m      setCount((currentCount) => currentCount + 1);[22m
+[2m    }, []);[22m
+[2m    [22m
+[2m    If the missing value is recreated every render, move it[22m
+[2m    inside the hook or stabilize it before adding it to deps.[22m
+
+[90m    src/pages/AdminEvento.js:52[39m
+
+[90m    src/pages/AsignacionPersonal.js:35[39m
+
+[90m    src/pages/Calendario.js:23[39m
+
+[90m    src/pages/CronogramaGlobal.js:29[39m
+
+[90m    src/pages/CronogramaLogistico.js:27[39m
+
+[90m    src/pages/DashboardHome.js:62[39m
+
+[90m    src/pages/DashboardHome.js:69[39m
+
+[90m    src/pages/GestionEventos.js:273[39m
+
+[90m    src/pages/HistorialSolicitudes.js:36[39m
+
+[90m    src/pages/MisTareasApoyo.js:22[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:75[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:59[39m
+
+  [33mΓÜá[39m [33mBugs: Array index used as a key[39m [90m├ù19[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-array-index-as-key[39m
+    Your users can see & submit the wrong data when this list
+    reorders or filters, so use a stable id like
+    `key={item.id}`, not the array index "idx".
+[2m    ΓåÆ Use a stable id from the item, like `key={item.id}` or[22m
+[2m    `key={item.slug}`. Index keys break when the list reorders[22m
+[2m    or filters.[22m
+
+[90m    src/pages/Calendario.js:80[39m
+
+[90m    src/pages/DashboardHome.js:336[39m
+
+[90m    src/pages/DashboardHome.js:368[39m
+
+[90m    src/pages/DashboardVAF.js:195[39m
+
+[90m    src/pages/DashboardVAF.js:277[39m
+
+[90m    src/pages/FichaTecnicaPDF.js:145[39m
+
+[90m    src/pages/FichaTecnicaPDF.js:173[39m
+
+[90m    src/pages/FichaTecnicaPDF.js:193[39m
+
+[90m    src/pages/FlujoAdministrativo.js:432[39m
+
+[90m    src/pages/GestionEventos.js:960[39m
+
+[90m    src/pages/GestionEventos.js:1098[39m
+
+[90m    src/pages/SoporteHome.js:123[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:155[39m
+
+[90m    src/pages/Welcome.js:510[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:296[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:326[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:246[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:245[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:240[39m
+
+  [33mΓÜá[39m [33mBugs: Time or random value in JSX[39m [90m├ù4[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/rendering-hydration-mismatch-time[39m
+    This can cause a hydration mismatch because new Date()
+    reached from JSX gives a different value on the server than
+    in the browser. Move it into useEffect+useState to run only
+    in the browser, or add suppressHydrationWarning to the
+    parent if it's on purpose.
+[2m    ΓåÆ Move time or random values into useEffect+useState so[22m
+[2m    they only run in the browser, or add[22m
+[2m    suppressHydrationWarning to the parent if it's intentional[22m
+
+[90m    src/pages/FichaTecnicaPDF.js:101[39m
+
+[90m    src/pages/HistorialSolicitudes.js:387[39m
+
+[90m    src/pages/SoporteHome.js:196[39m
+
+[90m    src/pages/Welcome.js:574[39m
+
+  [33mΓÜá[39m [33mAccessibility: Label missing associated control[39m [90m├ù92[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/label-has-associated-control[39m
+    Screen reader users can't tell which input this label names
+    because it's tied to none, so add `htmlFor` or wrap the
+    input inside it.
+[2m    ΓåÆ Tie every label to a control with `htmlFor`, or by[22m
+[2m    nesting the input.[22m
+
+[90m    src/pages/AdminAudiovisual.js:133[39m
+
+[90m    src/pages/AdminAudiovisual.js:144[39m
+
+[90m    src/pages/AdminAudiovisual.js:156[39m
+
+[90m    src/pages/AjustesUsuarios.js:315[39m
+
+[90m    src/pages/AjustesUsuarios.js:326[39m
+
+[90m    src/pages/AjustesUsuarios.js:350[39m
+
+[90m    src/pages/AsignacionPersonal.js:147[39m
+
+[90m    src/pages/AsignacionPersonal.js:180[39m
+
+[90m    src/pages/AsignacionPersonal.js:208[39m
+
+[90m    src/pages/Audiovisual.js:283[39m
+
+[90m    src/pages/Audiovisual.js:351[39m
+
+[90m    src/pages/Audiovisual.js:355[39m
+
+[90m    src/pages/Audiovisual.js:367[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:124[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:136[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:157[39m
+
+[90m    src/pages/CronogramaGlobal.js:80[39m
+
+[90m    src/pages/CronogramaLogistico.js:115[39m
+
+[90m    src/pages/CronogramaLogistico.js:125[39m
+
+[90m    src/pages/CronogramaLogistico.js:136[39m
+
+[90m    src/pages/Evaluacion.js:161[39m
+
+[90m    src/pages/Evaluacion.js:174[39m
+
+[90m    src/pages/Evaluacion.js:193[39m
+
+[90m    src/pages/Evaluacion.js:210[39m
+
+[90m    src/pages/Evaluacion.js:229[39m
+
+[90m    src/pages/Evaluacion.js:253[39m
+
+[90m    src/pages/FlujoAdministrativo.js:478[39m
+
+[90m    src/pages/FlujoAdministrativo.js:524[39m
+
+[90m    src/pages/FlujoAdministrativo.js:578[39m
+
+[90m    src/pages/FlujoAdministrativo.js:594[39m
+
+[90m    src/pages/FlujoAdministrativo.js:625[39m
+
+[90m    src/pages/FlujoAdministrativo.js:764[39m
+
+[90m    src/pages/GestionCategorias.js:187[39m
+
+[90m    src/pages/GestionCategorias.js:198[39m
+
+[90m    src/pages/GestionEventos.js:473[39m
+
+[90m    src/pages/GestionEventos.js:485[39m
+
+[90m    src/pages/GestionEventos.js:492[39m
+
+[90m    src/pages/GestionEventos.js:497[39m
+
+[90m    src/pages/GestionEventos.js:1025[39m
+
+[90m    src/pages/GestionEventos.js:1039[39m
+
+[90m    src/pages/GestionEventos.js:1049[39m
+
+[90m    src/pages/GestionPresupuestaria.js:280[39m
+
+[90m    src/pages/GestionPresupuestaria.js:295[39m
+
+[90m    src/pages/GestionPresupuestaria.js:305[39m
+
+[90m    src/pages/GestionPresupuestaria.js:310[39m
+
+[90m    src/pages/GestionPresupuestaria.js:315[39m
+
+[90m    src/pages/GestionPresupuestaria.js:513[39m
+
+[90m    src/pages/GestionPresupuestaria.js:517[39m
+
+[90m    src/pages/GestionPresupuestaria.js:521[39m
+
+[90m    src/pages/GestionPresupuestaria.js:525[39m
+
+[90m    src/pages/GestionPresupuestaria.js:529[39m
+
+[90m    src/pages/GestionPresupuestaria.js:533[39m
+
+[90m    src/pages/GestionPresupuestaria.js:537[39m
+
+[90m    src/pages/GestionPresupuestaria.js:544[39m
+
+[90m    src/pages/GestionPresupuestaria.js:551[39m
+
+[90m    src/pages/GestionPresupuestaria.js:555[39m
+
+[90m    src/pages/GestionPresupuestaria.js:559[39m
+
+[90m    src/pages/GestionPresupuestaria.js:565[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:297[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:308[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:324[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:335[39m
+
+[90m    src/pages/HistorialSolicitudes.js:157[39m
+
+[90m    src/pages/HistorialSolicitudes.js:172[39m
+
+[90m    src/pages/HistorialSolicitudes.js:179[39m
+
+[90m    src/pages/ModalidadLugar.js:47[39m
+
+[90m    src/pages/ModuloProveedores.js:441[39m
+
+[90m    src/pages/ModuloProveedores.js:567[39m
+
+[90m    src/pages/ModuloProveedores.js:577[39m
+
+[90m    src/pages/ModuloProveedores.js:835[39m
+
+[90m    src/pages/ModuloProveedores.js:855[39m
+
+[90m    src/pages/ModuloProveedores.js:865[39m
+
+[90m    src/pages/ModuloProveedores.js:919[39m
+
+[90m    src/pages/ModuloProveedores.js:929[39m
+
+[90m    src/pages/ModuloProveedores.js:939[39m
+
+[90m    src/pages/ModuloProveedores.js:955[39m
+
+[90m    src/pages/ModuloProveedores.js:965[39m
+
+[90m    src/pages/ModuloProveedores.js:975[39m
+
+[90m    src/pages/ModuloProveedores.js:988[39m
+
+[90m    src/pages/PoaAdmin.js:112[39m
+
+[90m    src/pages/PoaAdmin.js:116[39m
+
+[90m    src/pages/PoaAdmin.js:120[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:344[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:361[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:371[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:377[39m
+
+[90m    src/pages/PresupuestoPOA.js:23[39m
+
+[90m    src/pages/PresupuestoPOA.js:54[39m
+
+[90m    src/pages/PresupuestoPOA.js:72[39m
+
+[90m    src/pages/ServiciosCatering.js:53[39m
+
+[90m    src/pages/ServiciosCatering.js:93[39m
+
+[90m    src/pages/ServiciosCatering.js:133[39m
+
+  [33mΓÜá[39m [33mBugs: Derived state stored in an effect[39m [90m├ù2[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-derived-state-effect[39m
+    Your users briefly see stale state on every prop change.
+[2m    ΓåÆ Work out derived values while rendering: `const x =[22m
+[2m    fn(dep)`. To reset a component's state when a prop changes,[22m
+[2m    give it a key prop: `<Component key={prop} />`. See[22m
+[2m    https://react.dev/learn/you-might-not-need-an-effect[22m
+
+[90m    src/pages/AjustesUsuarios.js:294[39m
+
+[90m    src/pages/Bitacora.js:122[39m
+
+  [33mΓÜá[39m [33mPerformance: Independent awaits run sequentially[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/async-parallel[39m
+    These 3 sequential await statements run one after another
+    even though they look independent, so the page waits longer
+    than it needs to. Run them together with Promise.all()
+    instead
+[2m    ΓåÆ Use `const [a, b] = await Promise.all([fetchA(),[22m
+[2m    fetchB()])` so independent calls run at the same time[22m
+
+[90m    src/pages/InventarioAudiovisual.js:37[39m
+
+  [33mΓÜá[39m [33mMaintainability: Component rendered by inline function call[39m [90m├ù13[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-render-in-render[39m
+    "renderCalendar()" hides a component behind an inline call,
+    so pull it into its own component and render it as JSX so
+    React can track it.
+[2m    ΓåÆ Make it a named component rendered as JSX so React can[22m
+[2m    track it and preserve its state.[22m
+
+[90m    src/pages/Calendario.js:167[39m
+
+[90m    src/pages/Dashboard.js:489[39m
+
+[90m    src/pages/DashboardComprasLayout.js:191[39m
+
+[90m    src/pages/DashboardLegalLayout.js:151[39m
+
+[90m    src/pages/DashboardVAFLayout.js:147[39m
+
+[90m    src/pages/InformacionGeneral.js:196[39m
+
+[90m    src/pages/InformacionGeneral.js:210[39m
+
+[90m    src/pages/InformacionGeneral.js:228[39m
+
+[90m    src/pages/InformacionGeneral.js:246[39m
+
+[90m    src/pages/InformacionGeneral.js:261[39m
+
+[90m    src/pages/InformacionGeneral.js:273[39m
+
+[90m    src/pages/InformacionGeneral.js:288[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:298[39m
+
+  [33mΓÜá[39m [33mPerformance: Heavy library loaded eagerly[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/prefer-dynamic-import[39m
+    "recharts" ships extra code to your users up front & slows
+    page load. Load it on demand with React.lazy() or
+    next/dynamic.
+[2m    ΓåÆ Load it only when needed: `const Component = dynamic(()[22m
+[2m    => import('library'), { ssr: false })` from next/dynamic,[22m
+[2m    or React.lazy().[22m
+
+[90m    src/pages/VisualizarEvaluaciones.js:11[39m
+
+  [33mΓÜá[39m [33mPerformance: Non-passive scroll listener[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/client-passive-event-listeners[39m
+    "scroll" listener without { passive: true } makes scrolling
+    janky for your users. Only add it if the handler doesn't
+    call event.preventDefault(), since passive listeners
+    silently ignore preventDefault().
+[2m    ΓåÆ Add `{ passive: true }` as the third argument:[22m
+[2m    `addEventListener('scroll', handler, { passive: true })`.[22m
+[2m    Only do this if the handler doesn't call[22m
+[2m    `event.preventDefault()`, since passive listeners ignore it[22m
+[2m    (which breaks pull-to-refresh, custom gestures, and nested[22m
+[2m    scrolling).[22m
+
+[90m    src/pages/Welcome.js:136[39m
+
+  [33mΓÜá[39m [33mBugs: Data fetching inside an effect[39m [90m├ù14[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-fetch-in-effect[39m
+    fetch() inside useEffect can race, double-fire, or leak.
+    Use a data-fetching layer or Server Component instead.
+[2m    ΓåÆ Use a data-fetching layer or Server Component so fetches[22m
+[2m    do not race, double-fire, or leak from `useEffect`.[22m
+
+[90m    src/App.js:53[39m
+
+[90m    src/pages/AsignacionPersonal.js:24[39m
+
+[90m    src/pages/Audiovisual.js:64[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:22[39m
+
+[90m    src/pages/DashboardVAF.js:28[39m
+
+[90m    src/pages/Evaluacion.js:51[39m
+
+[90m    src/pages/GestionEventos.js:78[39m
+
+[90m    src/pages/InformacionGeneral.js:112[39m
+
+[90m    src/pages/ModalidadLugar.js:18[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:75[39m
+
+[90m    src/pages/PortalProveedoresResetPassword.js:24[39m
+
+[90m    src/pages/ResetPassword.js:26[39m
+
+[90m    src/pages/ServiciosCatering.js:20[39m
+
+[90m    src/pages/Welcome.js:113[39m
+
+  [33mΓÜá[39m [33mAccessibility: Control missing accessible label[39m [90m├ù62[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/control-has-associated-label[39m
+    Blind users can't tell what this control does because
+    screen readers find no label, so add visible text,
+    `aria-label`, or `aria-labelledby`.
+[2m    ΓåÆ Give every interactive control a label screen readers can[22m
+[2m    read.[22m
+
+[90m    src/pages/AdminAudiovisual.js:134[39m
+
+[90m    src/pages/AdminAudiovisual.js:157[39m
+
+[90m    src/pages/AdminEvento.js:184[39m
+
+[90m    src/pages/AdminEvento.js:203[39m
+
+[90m    src/pages/AjustesUsuarios.js:316[39m
+
+[90m    src/pages/AjustesUsuarios.js:327[39m
+
+[90m    src/pages/AjustesUsuarios.js:340[39m
+
+[90m    src/pages/AjustesUsuarios.js:381[39m
+
+[90m    src/pages/Audiovisual.js:352[39m
+
+[90m    src/pages/Audiovisual.js:356[39m
+
+[90m    src/pages/Audiovisual.js:368[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:127[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:139[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:161[39m
+
+[90m    src/pages/Bitacora.js:138[39m
+
+[90m    src/pages/CronogramaLogistico.js:116[39m
+
+[90m    src/pages/CronogramaLogistico.js:137[39m
+
+[90m    src/pages/Evaluacion.js:254[39m
+
+[90m    src/pages/FlujoAdministrativo.js:479[39m
+
+[90m    src/pages/FlujoAdministrativo.js:595[39m
+
+[90m    src/pages/FlujoAdministrativo.js:626[39m
+
+[90m    src/pages/GestionCategorias.js:188[39m
+
+[90m    src/pages/GestionEventos.js:493[39m
+
+[90m    src/pages/GestionEventos.js:1040[39m
+
+[90m    src/pages/GestionEventos.js:1050[39m
+
+[90m    src/pages/GestionPresupuestaria.js:283[39m
+
+[90m    src/pages/GestionPresupuestaria.js:306[39m
+
+[90m    src/pages/GestionPresupuestaria.js:311[39m
+
+[90m    src/pages/GestionPresupuestaria.js:432[39m
+
+[90m    src/pages/GestionPresupuestaria.js:475[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:298[39m
+
+[90m    src/pages/HistorialSolicitudes.js:145[39m
+
+[90m    src/pages/HistorialSolicitudes.js:175[39m
+
+[90m    src/pages/InformacionGeneral.js:197[39m
+
+[90m    src/pages/InformacionGeneral.js:247[39m
+
+[90m    src/pages/InformacionGeneral.js:274[39m
+
+[90m    src/pages/InventarioAudiovisual.js:120[39m
+
+[90m    src/pages/ModuloProveedores.js:568[39m
+
+[90m    src/pages/ModuloProveedores.js:856[39m
+
+[90m    src/pages/ModuloProveedores.js:866[39m
+
+[90m    src/pages/ModuloProveedores.js:920[39m
+
+[90m    src/pages/ModuloProveedores.js:930[39m
+
+[90m    src/pages/ModuloProveedores.js:956[39m
+
+[90m    src/pages/ModuloProveedores.js:966[39m
+
+[90m    src/pages/ModuloProveedores.js:976[39m
+
+[90m    src/pages/ModuloProveedores.js:990[39m
+
+[90m    src/pages/ModuloProveedores.js:1110[39m
+
+[90m    src/pages/ModuloProveedores.js:1139[39m
+
+[90m    src/pages/PoaAdmin.js:113[39m
+
+[90m    src/pages/PoaAdmin.js:117[39m
+
+[90m    src/pages/PoaAdmin.js:121[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:352[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:372[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:378[39m
+
+[90m    src/pages/PortalProveedoresResetPassword.js:108[39m
+
+[90m    src/pages/PortalProveedoresResetPassword.js:128[39m
+
+[90m    src/pages/PresupuestoPOA.js:40[39m
+
+[90m    src/pages/PresupuestoPOA.js:60[39m
+
+[90m    src/pages/PresupuestoPOA.js:81[39m
+
+[90m    src/pages/ResetPassword.js:115[39m
+
+[90m    src/pages/ResetPassword.js:135[39m
+
+[90m    src/pages/ServiciosCatering.js:142[39m
+
+  [33mΓÜá[39m [33mAccessibility: outline:none removes focus ring[39m [90m├ù12[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-outline-none[39m
+    Your keyboard users can't tell where they are because
+    outline: none hides the focus ring, so style :focus-visible
+    instead, or add a box-shadow focus ring.
+[2m    ΓåÆ Style `:focus-visible { outline: 2px solid[22m
+[2m    var(--color-accent); outline-offset: 2px }` so the focus[22m
+[2m    ring shows for keyboard users but not mouse clicks.[22m
+
+[90m    src/pages/AdminEvento.js:189[39m
+
+[90m    src/pages/AdminEvento.js:207[39m
+
+[90m    src/pages/DashboardCompras.js:155[39m
+
+[90m    src/pages/DashboardHome.js:504[39m
+
+[90m    src/pages/DashboardLegal.js:149[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:449[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:273[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:505[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:272[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:342[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:528[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:267[39m
+
+  [33mΓÜá[39m [33mBugs: Multiple setState calls in one effect[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-cascading-set-state[39m
+    4 setState calls in one useEffect redraw your screen each
+    time they run together.
+[2m    ΓåÆ Combine related updates in `useReducer` so one effect[22m
+[2m    does not redraw the screen once per `setState` call.[22m
+
+[90m    src/pages/AdminEvento.js:46[39m
+
+  [33mΓÜá[39m [33mBugs: Derived value copied into state[39m [90m├ù4[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-derived-state[39m
+    Storing "eventoSeleccionado" in state when you can derive
+    it from other values costs an extra render.
+[2m    ΓåÆ Work out the value while rendering (or with useMemo if[22m
+[2m    it's expensive) instead of copying it into useState through[22m
+[2m    a useEffect. See[22m
+[2m    https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state[22m
+
+[90m    src/pages/AsignacionPersonal.js:26[39m
+
+[90m    src/pages/CronogramaGlobal.js:25[39m
+
+[90m    src/pages/Evaluacion.js:42[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:38[39m
+
+  [33mΓÜá[39m [33mBugs: preventDefault on a form or link[39m [90m├ù2[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-prevent-default[39m
+    Your users click this <a> & nothing navigates because
+    onClick calls preventDefault(), so use a <button> or a
+    routing component instead.
+[2m    ΓåÆ Use `<form action>` where your framework supports it (it[22m
+[2m    works without JS), or use a `<button>` instead of an `<a>`[22m
+[2m    with preventDefault.[22m
+
+[90m    src/pages/Login.js:206[39m
+
+[90m    src/pages/PortalProveedoresLogin.js:163[39m
+
+  [33mΓÜá[39m [33mMaintainability: deslop/unused-file[39m [90m├ù6[39m
+    Unused file is not reachable from any entry point, so it
+    adds maintenance surface without shipping any code.
+[2m    ΓåÆ Delete the file if it is truly unreachable, or import it[22m
+[2m    from an entry point.[22m
+
+[90m    fix_hora.js[39m
+
+[90m    src/components/Card.js[39m
+
+[90m    src/components/StatCard.js[39m
+
+[90m    src/pages/Dashboard.js[39m
+
+[90m    src/pages/DashboardHome.js[39m
+
+[90m    src/supabaseClient.js[39m
+
+  [33mΓÜá[39m [33mAccessibility: Interaction on static element[39m [90m├ù92[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-static-element-interactions[39m
+    Screen reader users can't tell this click handler is
+    interactive because it has no `role`, so add a `role` or
+    use a button or link.
+[2m    ΓåÆ Give clickable static elements a `role`, or use a button[22m
+[2m    or link.[22m
+
+[90m    src/pages/Audiovisual.js:341[39m
+
+[90m    src/pages/Audiovisual.js:453[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:70[39m
+
+[90m    src/pages/Dashboard.js:441[39m
+
+[90m    src/pages/Dashboard.js:450[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:119[39m
+
+[90m    src/pages/DashboardAdminLayout.js:201[39m
+
+[90m    src/pages/DashboardApoyoLayout.js:88[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:121[39m
+
+[90m    src/pages/DashboardCompras.js:179[39m
+
+[90m    src/pages/DashboardCompras.js:232[39m
+
+[90m    src/pages/DashboardCompras.js:239[39m
+
+[90m    src/pages/DashboardCompras.js:246[39m
+
+[90m    src/pages/DashboardComprasLayout.js:156[39m
+
+[90m    src/pages/DashboardHome.js:529[39m
+
+[90m    src/pages/DashboardHome.js:591[39m
+
+[90m    src/pages/DashboardHome.js:598[39m
+
+[90m    src/pages/DashboardHome.js:605[39m
+
+[90m    src/pages/DashboardHome.js:612[39m
+
+[90m    src/pages/DashboardHome.js:638[39m
+
+[90m    src/pages/DashboardLegal.js:172[39m
+
+[90m    src/pages/DashboardLegal.js:229[39m
+
+[90m    src/pages/DashboardLegal.js:236[39m
+
+[90m    src/pages/DashboardLegalLayout.js:119[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:97[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:97[39m
+
+[90m    src/pages/DashboardVAF.js:170[39m
+
+[90m    src/pages/DashboardVAF.js:223[39m
+
+[90m    src/pages/DashboardVAF.js:231[39m
+
+[90m    src/pages/DashboardVAF.js:239[39m
+
+[90m    src/pages/DashboardVAF.js:247[39m
+
+[90m    src/pages/DashboardVAFLayout.js:115[39m
+
+[90m    src/pages/GestionEventos.js:748[39m
+
+[90m    src/pages/GestionEventos.js:869[39m
+
+[90m    src/pages/GestionEventos.js:884[39m
+
+[90m    src/pages/GestionEventos.js:1013[39m
+
+[90m    src/pages/GestionEventos.js:1074[39m
+
+[90m    src/pages/GestionPresupuestaria.js:427[39m
+
+[90m    src/pages/GestionPresupuestaria.js:465[39m
+
+[90m    src/pages/GestionPresupuestaria.js:505[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:83[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:435[39m
+
+[90m    src/pages/HistorialSolicitudes.js:322[39m
+
+[90m    src/pages/HistorialSolicitudes.js:419[39m
+
+[90m    src/pages/InformacionGeneral.js:74[39m
+
+[90m    src/pages/InformacionGeneral.js:89[39m
+
+[90m    src/pages/InventarioAudiovisual.js:217[39m
+
+[90m    src/pages/ModuloProveedores.js:825[39m
+
+[90m    src/pages/ModuloProveedores.js:890[39m
+
+[90m    src/pages/ModuloProveedores.js:1100[39m
+
+[90m    src/pages/ModuloProveedores.js:1129[39m
+
+[90m    src/pages/NotificationBell.js:152[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:385[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:262[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:320[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:345[39m
+
+[90m    src/pages/SoporteHome.js:96[39m
+
+[90m    src/pages/Welcome.js:188[39m
+
+[90m    src/pages/Welcome.js:580[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:474[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:533[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:540[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:547[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:554[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:578[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:297[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:352[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:359[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:366[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:373[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:386[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:421[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:431[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:441[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:588[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:297[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:356[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:363[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:370[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:383[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:361[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:420[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:427[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:434[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:441[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:610[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:292[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:351[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:358[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:365[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:372[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:385[39m
+
+  [33mΓÜá[39m [33mAccessibility: Text is too small[39m [90m├ù55[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-tiny-text[39m
+    Your users strain to read 11px text, so use at least 12px
+    for body text, & 16px is best.
+[2m    ΓåÆ Use at least 12px for body text, and 16px is best. Small[22m
+[2m    text is hard to read, especially on phones.[22m
+
+[90m    src/pages/Audiovisual.js:301[39m
+
+[90m    src/pages/Audiovisual.js:305[39m
+
+[90m    src/pages/Audiovisual.js:309[39m
+
+[90m    src/pages/Audiovisual.js:313[39m
+
+[90m    src/pages/Audiovisual.js:351[39m
+
+[90m    src/pages/Audiovisual.js:355[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:92[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:112[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:124[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:136[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:159[39m
+
+[90m    src/pages/Bitacora.js:200[39m
+
+[90m    src/pages/Bitacora.js:211[39m
+
+[90m    src/pages/Calendario.js:81[39m
+
+[90m    src/pages/Calendario.js:155[39m
+
+[90m    src/pages/DashboardHome.js:330[39m
+
+[90m    src/pages/DashboardHome.js:338[39m
+
+[90m    src/pages/DashboardHome.js:471[39m
+
+[90m    src/pages/FlujoAdministrativo.js:406[39m
+
+[90m    src/pages/FlujoAdministrativo.js:713[39m
+
+[90m    src/pages/GestionEventos.js:684[39m
+
+[90m    src/pages/GestionEventos.js:1108[39m
+
+[90m    src/pages/GestionPresupuestaria.js:280[39m
+
+[90m    src/pages/GestionPresupuestaria.js:295[39m
+
+[90m    src/pages/GestionPresupuestaria.js:305[39m
+
+[90m    src/pages/GestionPresupuestaria.js:310[39m
+
+[90m    src/pages/GestionPresupuestaria.js:315[39m
+
+[90m    src/pages/GestionPresupuestaria.js:343[39m
+
+[90m    src/pages/GestionPresupuestaria.js:354[39m
+
+[90m    src/pages/GestionPresupuestaria.js:561[39m
+
+[90m    src/pages/ModuloProveedores.js:505[39m
+
+[90m    src/pages/ModuloProveedores.js:735[39m
+
+[90m    src/pages/PoaAdmin.js:136[39m
+
+[90m    src/pages/PoaAdmin.js:140[39m
+
+[90m    src/pages/PoaAdmin.js:144[39m
+
+[90m    src/pages/PresupuestoPOA.js:75[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:290[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:298[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:419[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:240[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:248[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:346[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:350[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:359[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:478[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:552[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:568[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:239[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:247[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:492-494[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:568[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:584[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:234[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:242[39m
+
+  [31mΓ£û[39m [31mBugs: State synced to a prop inside an effect[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-adjust-state-on-prop-change[39m
+    This effect adjusts state after a prop changes, so users
+    briefly see the stale value.
+[2m    ΓåÆ Adjust the state inline during render with a `prev`-prop[22m
+[2m    comparison (`if (prop !== prevProp) { setPrevProp(prop);[22m
+[2m    setX(...); }`), or refactor to remove the duplicated state.[22m
+[2m    Routing the adjustment through a useEffect forces an extra[22m
+[2m    render with a stale UI between the two commits. See[22m
+[2m    https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes[22m
+
+[90m    src/pages/GestionEventos.js:272[39m
+    [2mΓöî[22m[2mΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[22m[2mΓöÉ[22m
+    [2mΓöé[22m [0m [90m 271 |[39m     cargarEventos()[33m;[39m                                 [2mΓöé[22m
+    [2mΓöé[22m [31m[1m>[22m[39m[90m 272 |[39m     setCurrentPage([35m1[39m)[33m;[39m [90m// Siempre vuelve a la p├ígin[0mΓÇª [2mΓöé[22m
+    [2mΓöé[22m  [90m     |[39m     [31m[1m^[22m[39m                                                [2mΓöé[22m
+    [2mΓöé[22m  [90m 273 |[39m   }[33m,[39m [usuario])[33m;[39m[0m                                     [2mΓöé[22m
+    [2mΓöö[22m[2mΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[22m[2mΓöÿ[22m
+
+  [33mΓÜá[39m [33mPerformance: State only used in handlers[39m [90m├ù19[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/rerender-state-only-in-handlers[39m
+    Each update to "currentId" redraws your component for
+    nothing because this useState is set but never shown on
+    screen.
+[2m    ΓåÆ Use useRef instead of useState when the value is only set[22m
+[2m    and never shown on screen. `ref.current = ...` updates it[22m
+[2m    without redrawing the component.[22m
+
+[90m    src/pages/AdminAudiovisual.js:27[39m
+
+[90m    src/pages/AdminEvento.js:28[39m
+
+[90m    src/pages/AsignacionPersonal.js:20[39m
+
+[90m    src/pages/CronogramaGlobal.js:20[39m
+
+[90m    src/pages/DashboardCompras.js:19[39m
+
+[90m    src/pages/DashboardHome.js:36-38[39m
+
+[90m    src/pages/DashboardLegal.js:19[39m
+
+[90m    src/pages/GestionEventos.js:61[39m
+
+[90m    src/pages/GestionEventos.js:210[39m
+
+[90m    src/pages/GestionPresupuestaria.js:34[39m
+
+[90m    src/pages/ModuloProveedores.js:64[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:73[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:25[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:35-37[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:35[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:35[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:35[39m
+
+  [33mΓÜá[39m [33mBugs: State updates chained through effects[39m [90m├ù8[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-chain-state-updates[39m
+    Chaining state updates triggers an extra render each step.
+[2m    ΓåÆ Set all the related state together in the event handler[22m
+[2m    that starts it, instead of having one useEffect react to a[22m
+[2m    state change and set more state. See[22m
+[2m    https://react.dev/learn/you-might-not-need-an-effect#chains-of-computations[22m
+
+[90m    src/pages/AdminEvento.js:47-51[39m
+
+[90m    src/pages/AjustesUsuarios.js:295[39m
+
+[90m    src/pages/Bitacora.js:123[39m
+
+[90m    src/pages/GestionPresupuestaria.js:206[39m
+
+  [33mΓÜá[39m [33mBugs: Event logic handled in an effect[39m [90m├ù17[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-event-handler[39m
+    Faking an event handler with a prop plus a useEffect costs
+    an extra render & runs late.
+[2m    ΓåÆ Run the side effect in the event handler that triggers[22m
+[2m    it, instead of watching its state from a useEffect. See[22m
+[2m    https://react.dev/learn/you-might-not-need-an-effect#sharing-logic-between-event-handlers[22m
+
+[90m    src/pages/Audiovisual.js:83[39m
+
+[90m    src/pages/CronogramaLogistico.js:23[39m
+
+[90m    src/pages/Evaluacion.js:41-43[39m
+
+[90m    src/pages/GestionPresupuestaria.js:149-151[39m
+
+[90m    src/pages/GestionPresupuestaria.js:157[39m
+
+[90m    src/pages/GestionPresupuestaria.js:162-165[39m
+
+[90m    src/pages/GestionPresupuestaria.js:177[39m
+
+[90m    src/pages/GestionPresupuestaria.js:205[39m
+
+[90m    src/pages/MisTareasApoyo.js:19[39m
+
+[90m    src/pages/ModuloProveedores.js:68[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:37[39m
+
+[90m    src/pages/PortalProveedoresResetPassword.js:27[39m
+
+[90m    src/pages/ResetPassword.js:31[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:56[39m
+
+  [33mΓÜá[39m [33mPerformance: Animating layout properties[39m [90m├ù2[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-layout-transition-inline[39m
+    Your users see janky, stuttering animation because "width"
+    relayouts the page every frame, so animate transform &
+    opacity instead.
+[2m    ΓåÆ Animate `transform` and `opacity` instead, since they're[22m
+[2m    cheap for the browser. For height, animate[22m
+[2m    `grid-template-rows` from `0fr` to `1fr`.[22m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:296[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:317[39m
+
+  [33mΓÜá[39m [33mBugs: State initialized from a mount effect[39m [90m├ù2[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-initialize-state[39m
+    Your users see an extra render with empty "loading" because
+    a useEffect sets its starting value.
+[2m    ΓåÆ Pass the initial value directly to useState() instead of[22m
+[2m    setting it from a mount-only useEffect. For SSR hydration,[22m
+[2m    prefer useSyncExternalStore().[22m
+
+[90m    src/pages/AdminAudiovisual.js:34[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:41[39m
+
+  [33mΓÜá[39m [33mAccessibility: Click handler missing keyboard handler[39m [90m├ù205[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/click-events-have-key-events[39m
+    Keyboard users can't trigger this click handler because
+    there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or
+    `onKeyPress`.
+[2m    ΓåÆ Pair `onClick` with a key handler so keyboard users can[22m
+[2m    trigger it.[22m
+
+[90m    src/pages/Audiovisual.js:341[39m
+
+[90m    src/pages/Audiovisual.js:453[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:70[39m
+
+[90m    src/pages/Dashboard.js:223[39m
+
+[90m    src/pages/Dashboard.js:227[39m
+
+[90m    src/pages/Dashboard.js:233[39m
+
+[90m    src/pages/Dashboard.js:242[39m
+
+[90m    src/pages/Dashboard.js:252[39m
+
+[90m    src/pages/Dashboard.js:256[39m
+
+[90m    src/pages/Dashboard.js:262[39m
+
+[90m    src/pages/Dashboard.js:268[39m
+
+[90m    src/pages/Dashboard.js:273[39m
+
+[90m    src/pages/Dashboard.js:279[39m
+
+[90m    src/pages/Dashboard.js:283[39m
+
+[90m    src/pages/Dashboard.js:298[39m
+
+[90m    src/pages/Dashboard.js:304[39m
+
+[90m    src/pages/Dashboard.js:311[39m
+
+[90m    src/pages/Dashboard.js:318[39m
+
+[90m    src/pages/Dashboard.js:322[39m
+
+[90m    src/pages/Dashboard.js:326[39m
+
+[90m    src/pages/Dashboard.js:339[39m
+
+[90m    src/pages/Dashboard.js:344[39m
+
+[90m    src/pages/Dashboard.js:348[39m
+
+[90m    src/pages/Dashboard.js:358[39m
+
+[90m    src/pages/Dashboard.js:362[39m
+
+[90m    src/pages/Dashboard.js:369[39m
+
+[90m    src/pages/Dashboard.js:373[39m
+
+[90m    src/pages/Dashboard.js:380[39m
+
+[90m    src/pages/Dashboard.js:387[39m
+
+[90m    src/pages/Dashboard.js:393[39m
+
+[90m    src/pages/Dashboard.js:398[39m
+
+[90m    src/pages/Dashboard.js:405[39m
+
+[90m    src/pages/Dashboard.js:409[39m
+
+[90m    src/pages/Dashboard.js:418[39m
+
+[90m    src/pages/Dashboard.js:422[39m
+
+[90m    src/pages/Dashboard.js:441[39m
+
+[90m    src/pages/Dashboard.js:450[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:69-72[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:77[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:82-88[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:94[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:99-105[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:119[39m
+
+[90m    src/pages/DashboardAdminLayout.js:102-108[39m
+
+[90m    src/pages/DashboardAdminLayout.js:113[39m
+
+[90m    src/pages/DashboardAdminLayout.js:118-124[39m
+
+[90m    src/pages/DashboardAdminLayout.js:130[39m
+
+[90m    src/pages/DashboardAdminLayout.js:135-144[39m
+
+[90m    src/pages/DashboardAdminLayout.js:150[39m
+
+[90m    src/pages/DashboardAdminLayout.js:155-158[39m
+
+[90m    src/pages/DashboardAdminLayout.js:164[39m
+
+[90m    src/pages/DashboardAdminLayout.js:169-187[39m
+
+[90m    src/pages/DashboardAdminLayout.js:201[39m
+
+[90m    src/pages/DashboardApoyoLayout.js:63-75[39m
+
+[90m    src/pages/DashboardApoyoLayout.js:88[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:71-74[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:79[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:84-93[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:99[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:104-107[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:121[39m
+
+[90m    src/pages/DashboardCompras.js:179[39m
+
+[90m    src/pages/DashboardCompras.js:232[39m
+
+[90m    src/pages/DashboardCompras.js:239[39m
+
+[90m    src/pages/DashboardCompras.js:246[39m
+
+[90m    src/pages/DashboardComprasLayout.js:116[39m
+
+[90m    src/pages/DashboardComprasLayout.js:120[39m
+
+[90m    src/pages/DashboardComprasLayout.js:124[39m
+
+[90m    src/pages/DashboardComprasLayout.js:128[39m
+
+[90m    src/pages/DashboardComprasLayout.js:133[39m
+
+[90m    src/pages/DashboardComprasLayout.js:137[39m
+
+[90m    src/pages/DashboardComprasLayout.js:142[39m
+
+[90m    src/pages/DashboardComprasLayout.js:156[39m
+
+[90m    src/pages/DashboardHome.js:529[39m
+
+[90m    src/pages/DashboardHome.js:591[39m
+
+[90m    src/pages/DashboardHome.js:598[39m
+
+[90m    src/pages/DashboardHome.js:605[39m
+
+[90m    src/pages/DashboardHome.js:612[39m
+
+[90m    src/pages/DashboardHome.js:638[39m
+
+[90m    src/pages/DashboardLegal.js:172[39m
+
+[90m    src/pages/DashboardLegal.js:229[39m
+
+[90m    src/pages/DashboardLegal.js:236[39m
+
+[90m    src/pages/DashboardLegalLayout.js:93[39m
+
+[90m    src/pages/DashboardLegalLayout.js:97[39m
+
+[90m    src/pages/DashboardLegalLayout.js:101[39m
+
+[90m    src/pages/DashboardLegalLayout.js:105[39m
+
+[90m    src/pages/DashboardLegalLayout.js:119[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:66-69[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:73[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:77[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:81-84[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:97[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:67-70[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:74-77[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:81-84[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:97[39m
+
+[90m    src/pages/DashboardVAF.js:170[39m
+
+[90m    src/pages/DashboardVAF.js:223[39m
+
+[90m    src/pages/DashboardVAF.js:231[39m
+
+[90m    src/pages/DashboardVAF.js:239[39m
+
+[90m    src/pages/DashboardVAF.js:247[39m
+
+[90m    src/pages/DashboardVAFLayout.js:84[39m
+
+[90m    src/pages/DashboardVAFLayout.js:88[39m
+
+[90m    src/pages/DashboardVAFLayout.js:93[39m
+
+[90m    src/pages/DashboardVAFLayout.js:97[39m
+
+[90m    src/pages/DashboardVAFLayout.js:101[39m
+
+[90m    src/pages/DashboardVAFLayout.js:115[39m
+
+[90m    src/pages/Evaluacion.js:179[39m
+
+[90m    src/pages/Evaluacion.js:196[39m
+
+[90m    src/pages/Evaluacion.js:215[39m
+
+[90m    src/pages/GestionEventos.js:748[39m
+
+[90m    src/pages/GestionEventos.js:869[39m
+
+[90m    src/pages/GestionEventos.js:884[39m
+
+[90m    src/pages/GestionEventos.js:1013[39m
+
+[90m    src/pages/GestionEventos.js:1074[39m
+
+[90m    src/pages/GestionPresupuestaria.js:427[39m
+
+[90m    src/pages/GestionPresupuestaria.js:465[39m
+
+[90m    src/pages/GestionPresupuestaria.js:505[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:83[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:435[39m
+
+[90m    src/pages/HistorialSolicitudes.js:322[39m
+
+[90m    src/pages/HistorialSolicitudes.js:419[39m
+
+[90m    src/pages/InformacionGeneral.js:74[39m
+
+[90m    src/pages/InformacionGeneral.js:89[39m
+
+[90m    src/pages/InventarioAudiovisual.js:217[39m
+
+[90m    src/pages/ModuloProveedores.js:825[39m
+
+[90m    src/pages/ModuloProveedores.js:890[39m
+
+[90m    src/pages/ModuloProveedores.js:1100[39m
+
+[90m    src/pages/ModuloProveedores.js:1129[39m
+
+[90m    src/pages/NotificationBell.js:152[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:385[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:262[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:320[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:345[39m
+
+[90m    src/pages/PortalProveedoresResetPassword.js:115[39m
+
+[90m    src/pages/ResetPassword.js:122[39m
+
+[90m    src/pages/SoporteHome.js:96[39m
+
+[90m    src/pages/Welcome.js:188[39m
+
+[90m    src/pages/Welcome.js:580[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:474[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:533[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:540[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:547[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:554[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:578[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:297[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:352[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:359[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:366[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:373[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:386[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:421[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:431[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:441[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:588[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:297[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:356[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:363[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:370[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:383[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:361[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:420[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:427[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:434[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:441[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:610[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:292[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:351[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:358[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:365[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:372[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:385[39m
+
+  [33mΓÜá[39m [33mPerformance: transition: all animates everything[39m [90m├ù21[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-transition-all[39m
+    This can stutter because transition: "all" animates every
+    property, even slow layout ones, so list only the
+    properties you actually change
+[2m    ΓåÆ List the specific properties: `transition: "opacity[22m
+[2m    200ms, transform 200ms"`. In Tailwind, use[22m
+[2m    `transition-colors`, `transition-opacity`, or[22m
+[2m    `transition-transform`[22m
+
+[90m    src/pages/Audiovisual.js:341[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:80[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:104[39m
+
+[90m    src/pages/DashboardHome.js:453[39m
+
+[90m    src/pages/Evaluacion.js:180[39m
+
+[90m    src/pages/Evaluacion.js:197[39m
+
+[90m    src/pages/Evaluacion.js:216[39m
+
+[90m    src/pages/Evaluacion.js:237[39m
+
+[90m    src/pages/FlujoAdministrativo.js:469[39m
+
+[90m    src/pages/FlujoAdministrativo.js:783[39m
+
+[90m    src/pages/GestionEventos.js:518[39m
+
+[90m    src/pages/GestionEventos.js:664[39m
+
+[90m    src/pages/GestionPresupuestaria.js:227[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:67[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:356[39m
+
+[90m    src/pages/HistorialSolicitudes.js:200[39m
+
+[90m    src/pages/ModuloProveedores.js:768[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:389[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:348[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:274[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:403[39m
+
+  [33mΓÜá[39m [33mMaintainability: Static value rebuilt every render[39m [90m├ù6[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/prefer-module-scope-static-value[39m
+    `config` inside `CustomBadgeDropdown` uses no local state
+    but is rebuilt every render, so it looks new each time &
+    breaks memoized children. Move it to the top of the file,
+    outside the component.
+[2m    ΓåÆ Move the value above the component, at the top of the[22m
+[2m    file. It doesn't use local state, so rebuilding it each[22m
+[2m    update is wasted and makes it look new every time.[22m
+
+[90m    src/pages/GestionSolicitudesAV.js:32[39m
+
+[90m    src/pages/InformacionGeneral.js:177[39m
+
+[90m    src/pages/ModalidadLugar.js:25[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:152[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:166[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:175[39m
+
+  [33mΓÜá[39m [33mPerformance: Intl formatter rebuilt each call[39m [90m├ù4[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/js-hoist-intl[39m
+    This is slow because new Intl.NumberFormat() rebuilds on
+    every call inside a function, so move it to the top of the
+    file, or wrap it in useMemo
+[2m    ΓåÆ Move `new Intl.NumberFormat(...)` to the top of the file[22m
+[2m    or wrap it in `useMemo`. Building one is slow, so don't[22m
+[2m    redo it on every call[22m
+
+[90m    src/pages/DashboardCompras.js:46[39m
+
+[90m    src/pages/DashboardHome.js:120[39m
+
+[90m    src/pages/DashboardVAF.js:60[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:95[39m
+
+  [33mΓÜá[39m [33mAccessibility: Handler on non-interactive element[39m [90m├ù110[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-noninteractive-element-interactions[39m
+    Keyboard & screen reader users can't trigger this `<li>`
+    because it isn't interactive, so use a button or link or
+    add an interactive role.
+[2m    ΓåÆ Put interactions on a button or link, or add an[22m
+[2m    interactive role.[22m
+
+[90m    src/pages/Dashboard.js:223[39m
+
+[90m    src/pages/Dashboard.js:227[39m
+
+[90m    src/pages/Dashboard.js:233[39m
+
+[90m    src/pages/Dashboard.js:242[39m
+
+[90m    src/pages/Dashboard.js:252[39m
+
+[90m    src/pages/Dashboard.js:256[39m
+
+[90m    src/pages/Dashboard.js:262[39m
+
+[90m    src/pages/Dashboard.js:268[39m
+
+[90m    src/pages/Dashboard.js:273[39m
+
+[90m    src/pages/Dashboard.js:279[39m
+
+[90m    src/pages/Dashboard.js:283[39m
+
+[90m    src/pages/Dashboard.js:298[39m
+
+[90m    src/pages/Dashboard.js:304[39m
+
+[90m    src/pages/Dashboard.js:311[39m
+
+[90m    src/pages/Dashboard.js:318[39m
+
+[90m    src/pages/Dashboard.js:322[39m
+
+[90m    src/pages/Dashboard.js:326[39m
+
+[90m    src/pages/Dashboard.js:339[39m
+
+[90m    src/pages/Dashboard.js:344[39m
+
+[90m    src/pages/Dashboard.js:348[39m
+
+[90m    src/pages/Dashboard.js:358[39m
+
+[90m    src/pages/Dashboard.js:362[39m
+
+[90m    src/pages/Dashboard.js:369[39m
+
+[90m    src/pages/Dashboard.js:373[39m
+
+[90m    src/pages/Dashboard.js:380[39m
+
+[90m    src/pages/Dashboard.js:387[39m
+
+[90m    src/pages/Dashboard.js:393[39m
+
+[90m    src/pages/Dashboard.js:398[39m
+
+[90m    src/pages/Dashboard.js:405[39m
+
+[90m    src/pages/Dashboard.js:409[39m
+
+[90m    src/pages/Dashboard.js:418[39m
+
+[90m    src/pages/Dashboard.js:422[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:69-72[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:77[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:82-88[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:94[39m
+
+[90m    src/pages/DashboardAdminEventosLayout.js:99-105[39m
+
+[90m    src/pages/DashboardAdminLayout.js:102-108[39m
+
+[90m    src/pages/DashboardAdminLayout.js:113[39m
+
+[90m    src/pages/DashboardAdminLayout.js:118-124[39m
+
+[90m    src/pages/DashboardAdminLayout.js:130[39m
+
+[90m    src/pages/DashboardAdminLayout.js:135-144[39m
+
+[90m    src/pages/DashboardAdminLayout.js:150[39m
+
+[90m    src/pages/DashboardAdminLayout.js:155-158[39m
+
+[90m    src/pages/DashboardAdminLayout.js:164[39m
+
+[90m    src/pages/DashboardAdminLayout.js:169-187[39m
+
+[90m    src/pages/DashboardApoyoLayout.js:63-75[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:71-74[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:79[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:84-93[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:99[39m
+
+[90m    src/pages/DashboardAudiovisualLayout.js:104-107[39m
+
+[90m    src/pages/DashboardComprasLayout.js:116[39m
+
+[90m    src/pages/DashboardComprasLayout.js:120[39m
+
+[90m    src/pages/DashboardComprasLayout.js:124[39m
+
+[90m    src/pages/DashboardComprasLayout.js:128[39m
+
+[90m    src/pages/DashboardComprasLayout.js:133[39m
+
+[90m    src/pages/DashboardComprasLayout.js:137[39m
+
+[90m    src/pages/DashboardComprasLayout.js:142[39m
+
+[90m    src/pages/DashboardLegalLayout.js:93[39m
+
+[90m    src/pages/DashboardLegalLayout.js:97[39m
+
+[90m    src/pages/DashboardLegalLayout.js:101[39m
+
+[90m    src/pages/DashboardLegalLayout.js:105[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:66-69[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:73[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:77[39m
+
+[90m    src/pages/DashboardResponsableLayout.js:81-84[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:67-70[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:74-77[39m
+
+[90m    src/pages/DashboardSolicitanteLayout.js:81-84[39m
+
+[90m    src/pages/DashboardVAFLayout.js:84[39m
+
+[90m    src/pages/DashboardVAFLayout.js:88[39m
+
+[90m    src/pages/DashboardVAFLayout.js:93[39m
+
+[90m    src/pages/DashboardVAFLayout.js:97[39m
+
+[90m    src/pages/DashboardVAFLayout.js:101[39m
+
+[90m    src/pages/PortalProveedoresResetPassword.js:115[39m
+
+[90m    src/pages/ResetPassword.js:122[39m
+
+  [33mΓÜá[39m [33mPerformance: Spread copy before sort()[39m [90m├ù10[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/js-tosorted-immutable[39m
+    This wastes work because [...array].sort() copies the array
+    just to sort it, so use array.toSorted() to sort without
+    the extra copy (ES2023)
+[2m    ΓåÆ Use `array.toSorted()` (ES2023) instead of[22m
+[2m    `[...array].sort()` so you sort without copying the array[22m
+[2m    first[22m
+
+[90m    src/pages/Bitacora.js:115[39m
+
+[90m    src/pages/CronogramaLogistico.js:104[39m
+
+[90m    src/pages/GestionPresupuestaria.js:174[39m
+
+[90m    src/pages/InventarioAudiovisual.js:91[39m
+
+[90m    src/pages/MisTareasApoyo.js:51[39m
+
+[90m    src/pages/ModuloProveedores.js:410[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:92[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:140[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:122[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:130[39m
+
+  [33mΓÜá[39m [33mAccessibility: Autofocus on an element[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-autofocus[39m
+    `autoFocus` moves focus on load, which can disrupt screen
+    reader and keyboard users. Remove it and let users choose
+    where to focus.
+[2m    ΓåÆ Do not use `autoFocus`. It disorients users on load.[22m
+
+[90m    src/pages/InformacionGeneral.js:204[39m
+
+  [33mΓÜá[39m [33mMaintainability: Large inline style object rebuilds every render[39m [90m├ù88[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-inline-exhaustive-style[39m
+    This inline style has 8 properties, which is hard to read &
+    rebuilds every render. Move it to a CSS class, CSS module,
+    or styled component.
+[2m    ΓåÆ Move the styles to a CSS class, CSS module, Tailwind[22m
+[2m    utilities, or a styled component. Big inline objects are[22m
+[2m    hard to read and rebuild on every update.[22m
+
+[90m    src/pages/AdminAudiovisual.js:199[39m
+
+[90m    src/pages/AdminEvento.js:180[39m
+
+[90m    src/pages/AdminEvento.js:220[39m
+
+[90m    src/pages/AsignacionPersonal.js:211[39m
+
+[90m    src/pages/Audiovisual.js:263[39m
+
+[90m    src/pages/Audiovisual.js:299[39m
+
+[90m    src/pages/Audiovisual.js:343[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:74[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:87[39m
+
+[90m    src/pages/AudiovisualMiniForm.js:99[39m
+
+[90m    src/pages/Calendario.js:80[39m
+
+[90m    src/pages/Calendario.js:139[39m
+
+[90m    src/pages/CronogramaLogistico.js:113[39m
+
+[90m    src/pages/DashboardCompras.js:155[39m
+
+[90m    src/pages/DashboardHome.js:462[39m
+
+[90m    src/pages/DashboardHome.js:504[39m
+
+[90m    src/pages/DashboardLegal.js:149[39m
+
+[90m    src/pages/DashboardVAF.js:279[39m
+
+[90m    src/pages/Evaluacion.js:154[39m
+
+[90m    src/pages/Evaluacion.js:179[39m
+
+[90m    src/pages/Evaluacion.js:196[39m
+
+[90m    src/pages/Evaluacion.js:200[39m
+
+[90m    src/pages/Evaluacion.js:215[39m
+
+[90m    src/pages/Evaluacion.js:236[39m
+
+[90m    src/pages/FichaTecnicaPDF.js:55-57[39m
+
+[90m    src/pages/FichaTecnicaPDF.js:81[39m
+
+[90m    src/pages/FlujoAdministrativo.js:406[39m
+
+[90m    src/pages/FlujoAdministrativo.js:546[39m
+
+[90m    src/pages/FlujoAdministrativo.js:713[39m
+
+[90m    src/pages/FlujoAdministrativo.js:770[39m
+
+[90m    src/pages/GestionEventos.js:504[39m
+
+[90m    src/pages/GestionEventos.js:656[39m
+
+[90m    src/pages/GestionEventos.js:684[39m
+
+[90m    src/pages/GestionEventos.js:934[39m
+
+[90m    src/pages/GestionEventos.js:945[39m
+
+[90m    src/pages/GestionEventos.js:1098[39m
+
+[90m    src/pages/GestionPresupuestaria.js:236-237[39m
+
+[90m    src/pages/GestionPresupuestaria.js:246-247[39m
+
+[90m    src/pages/GestionPresupuestaria.js:256-257[39m
+
+[90m    src/pages/GestionPresupuestaria.js:273[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:62[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:76[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:86[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:342[39m
+
+[90m    src/pages/HistorialSolicitudes.js:186[39m
+
+[90m    src/pages/HistorialSolicitudes.js:322-323[39m
+
+[90m    src/pages/HistorialSolicitudes.js:342[39m
+
+[90m    src/pages/HistorialSolicitudes.js:357[39m
+
+[90m    src/pages/HistorialSolicitudes.js:380[39m
+
+[90m    src/pages/InformacionGeneral.js:65[39m
+
+[90m    src/pages/InformacionGeneral.js:72[39m
+
+[90m    src/pages/InformacionGeneral.js:87[39m
+
+[90m    src/pages/InventarioAudiovisual.js:157[39m
+
+[90m    src/pages/MisTareasApoyo.js:80[39m
+
+[90m    src/pages/ModuloProveedores.js:729[39m
+
+[90m    src/pages/ModuloProveedores.js:758[39m
+
+[90m    src/pages/ModuloProveedores.js:1003[39m
+
+[90m    src/pages/ModuloProveedores.js:1041[39m
+
+[90m    src/pages/ModuloProveedores.js:1049[39m
+
+[90m    src/pages/ModuloProveedores.js:1060[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:511[39m
+
+[90m    src/pages/PoaAdmin.js:150[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:149[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:202[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:209[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:216[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:273[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:410[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:449[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:273[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:161[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:194[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:204[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:368[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:396[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:443[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:272[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:181[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:212[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:222[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:342[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:443[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:267[39m
+
+  [33mΓÜá[39m [33mMaintainability: Pure function rebuilt every render[39m [90m├ù56[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/prefer-module-scope-pure-function[39m
+    `getDashboardPath` inside `App` uses no local state but is
+    rebuilt on every render, so it wastes work & breaks
+    memoized children. Move it to the top of the file, outside
+    the component.
+[2m    ΓåÆ Move the function above the component, at the top of the[22m
+[2m    file. It doesn't use local state, so rebuilding it each[22m
+[2m    update is wasted work.[22m
+
+[90m    src/App.js:101[39m
+
+[90m    src/pages/AjustesUsuarios.js:159[39m
+
+[90m    src/pages/Audiovisual.js:57[39m
+
+[90m    src/pages/Bitacora.js:65[39m
+
+[90m    src/pages/Calendario.js:49-50[39m
+
+[90m    src/pages/DashboardCompras.js:45[39m
+
+[90m    src/pages/DashboardCompras.js:52[39m
+
+[90m    src/pages/DashboardHome.js:119[39m
+
+[90m    src/pages/DashboardHome.js:129[39m
+
+[90m    src/pages/DashboardHome.js:138[39m
+
+[90m    src/pages/DashboardHome.js:148[39m
+
+[90m    src/pages/DashboardLegal.js:44[39m
+
+[90m    src/pages/DashboardVAF.js:59[39m
+
+[90m    src/pages/DashboardVAF.js:66[39m
+
+[90m    src/pages/DashboardVAF.js:72[39m
+
+[90m    src/pages/FlujoAdministrativo.js:314[39m
+
+[90m    src/pages/GestionEventos.js:394[39m
+
+[90m    src/pages/GestionEventos.js:404[39m
+
+[90m    src/pages/GestionEventos.js:413[39m
+
+[90m    src/pages/GestionPresupuestaria.js:57[39m
+
+[90m    src/pages/GestionPresupuestaria.js:64[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:232[39m
+
+[90m    src/pages/HistorialSolicitudes.js:52[39m
+
+[90m    src/pages/HistorialSolicitudes.js:63[39m
+
+[90m    src/pages/InformacionGeneral.js:155[39m
+
+[90m    src/pages/InformacionGeneral.js:159[39m
+
+[90m    src/pages/InventarioAudiovisual.js:93[39m
+
+[90m    src/pages/ModuloProveedores.js:222[39m
+
+[90m    src/pages/NotificationBell.js:104[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:357[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:111[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:116[39m
+
+[90m    src/pages/VisualizarEvaluaciones.js:184[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:94[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:100[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:108[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:116[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:83[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:91[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:99[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:90[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:97[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:107[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:115[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:83[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:90[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:98[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:78[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:85[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:92[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:102[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:110[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:83[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:90[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:99[39m
+
+  [33mΓÜá[39m [33mMaintainability: deslop/unused-dependency[39m [90m├ù4[39m
+    Unused dependency: `@fullcalendar/daygrid`
+    Unused dependency: `@fullcalendar/interaction`
+    Unused dependency: `@fullcalendar/react`
+    Unused dependency: `@fullcalendar/timegrid`
+[2m    ΓåÆ An unused dependency adds install time and supply-chain[22m
+[2m    surface without being used; remove it from package.json if[22m
+[2m    it is genuinely unused.[22m
+
+  [33mΓÜá[39m [33mMaintainability: Large component is hard to read and change[39m [90m├ù19[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/no-giant-component[39m
+    Component "AjustesUsuarios" is 449 lines long, which is
+    hard to read & change. Split it into a few smaller
+    components.
+[2m    ΓåÆ Pull each section into its own component so the parent is[22m
+[2m    easier to read, test, and change.[22m
+
+[90m    src/pages/AjustesUsuarios.js:31[39m
+
+[90m    src/pages/Audiovisual.js:30[39m
+
+[90m    src/pages/Dashboard.js:44[39m
+
+[90m    src/pages/DashboardHome.js:32[39m
+
+[90m    src/pages/FlujoAdministrativo.js:29[39m
+
+[90m    src/pages/GestionEventos.js:38[39m
+
+[90m    src/pages/GestionPresupuestaria.js:16[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:114[39m
+
+[90m    src/pages/HistorialSolicitudes.js:17[39m
+
+[90m    src/pages/ModuloProveedores.js:20[39m
+
+[90m    src/pages/NuevaSolicitudEvento.js:13[39m
+
+[90m    src/pages/PortalProveedoresDashboard.js:21[39m
+
+[90m    src/pages/Welcome.js:102[39m
+
+[90m    src/pages/dashboards/DashboardAdmin.js:31[39m
+
+[90m    src/pages/dashboards/DashboardAdminEventos.js:30[39m
+
+[90m    src/pages/dashboards/DashboardApoyo.js:26[39m
+
+[90m    src/pages/dashboards/DashboardAudiovisual.js:30[39m
+
+[90m    src/pages/dashboards/DashboardResponsable.js:29[39m
+
+[90m    src/pages/dashboards/DashboardSolicitante.js:30[39m
+
+  [33mΓÜá[39m [33mPerformance: .map().filter(Boolean) loops twice[39m [90m├ù2[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/js-flatmap-filter[39m
+    This loops over your list twice because
+    .map().filter(Boolean) makes two passes, so use .flatMap()
+    to change & drop items in one pass
+[2m    ΓåÆ Use `.flatMap(item => condition ? [value] : [])` to[22m
+[2m    change and drop items in one pass, instead of building a[22m
+[2m    throwaway array in between[22m
+
+[90m    src/pages/GestionEventos.js:423[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:238[39m
+
+  [33mΓÜá[39m [33mBugs: Unversioned localStorage key[39m [90m├ù3[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/client-localstorage-no-version[39m
+    sessionStorage.setItem("proveedor", JSON.stringify(...))
+    has no version, so changing the data shape later crashes
+    your users' saved sessions. Add one to the key (e.g.
+    "proveedor:v1").
+[2m    ΓåÆ Put a version in the storage key (e.g. "myKey:v1"). If[22m
+[2m    you change the data shape later, old saved data can be[22m
+[2m    ignored instead of crashing the app.[22m
+
+[90m    src/App.js:74[39m
+
+[90m    src/pages/Dashboard.js:69[39m
+
+[90m    src/pages/DashboardComprasLayout.js:45[39m
+
+  [33mΓÜá[39m [33mBugs: Many related useState calls[39m [90m├ù7[39m
+    [36mLearn more: https://react.doctor/docs/rules/react-doctor/prefer-useReducer[39m
+    "AdminAudiovisual" updates 5 separate useState values in
+    one place ΓÇö state that changes together is easier to keep
+    consistent as a single useReducer action.
+[2m    ΓåÆ Group state that always changes together into[22m
+[2m    `useReducer` so one dispatched action describes the whole[22m
+[2m    transition instead of a list of setter calls.[22m
+
+[90m    src/pages/AdminAudiovisual.js:18[39m
+
+[90m    src/pages/AjustesUsuarios.js:31[39m
+
+[90m    src/pages/Audiovisual.js:30[39m
+
+[90m    src/pages/Evaluacion.js:24[39m
+
+[90m    src/pages/GestionEventos.js:38[39m
+
+[90m    src/pages/GestionPresupuestaria.js:16[39m
+
+[90m    src/pages/GestionSolicitudesAV.js:114[39m
+
+
+[2m  ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[22m
+
+  [1mAll 978 issues[22m
+
+  [1mBugs[22m [2m>[22m [31m1 error[39m[2m, [22m[33m[2m95 warnings[22m[39m
+  [1mPerformance[22m [2m>[22m [33m[2m61 warnings[22m[39m
+  [1mAccessibility[22m [2m>[22m [33m[2m629 warnings[22m[39m
+  [1mMaintainability[22m [2m>[22m [33m[2m192 warnings[22m[39m
+
+  [31mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m  [31m37[39m [2m/ 100[22m [31mCritical[39m
+  [31mΓöé x x Γöé[39m  [31mΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê[39m[2m[31mΓûôΓûôΓûôΓûôΓûôΓûôΓûô[39m[22m[2mΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæ[22m
+  [31mΓöé  Γû╜  Γöé[39m  React Doctor [2m(https://react.doctor)[22m
+  [31mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+[90m  You could improve [39m[33m+14%[39m[90m by fixing the top 3 issues[39m
+[90m  Full diagnostics written to C:\Users\the_f\AppData\Local\Temp\react-doctor-22331778-8199-4d97-af7c-4ab900f1b7c1[39m
+
+[2m  ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[22m
+
+  [1mShare:[22m [36mhttps://react.doctor/share?p=frontenduapaproevent&s=37&e=1&w=977&f=62[39m
+[2m  Tell others how you did on socials[22m
+
+  [1mDocs:[22m [36mhttps://react.doctor/docs[39m
+[2m  Learn more about fixing issues, setting up CI/CD, and[22m
+[2m  configuring rules with a config file[22m
+
+  [1mGitHub:[22m [36mhttps://github.com/millionco/react-doctor[39m
+[2m  Report issues and star the repository![22m
+

@@ -18,7 +18,8 @@ axiosInstance.interceptors.response.use(
       error.response?.status === 401 && 
       !originalRequest._retry && 
       !originalRequest.url.includes('/login') &&
-      !originalRequest.url.includes('/api/auth/refresh')
+      !originalRequest.url.includes('/api/auth/refresh') &&
+      !originalRequest.url.includes('/solicitar-restablecimiento')
     ) {
       originalRequest._retry = true; 
 
@@ -27,7 +28,7 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         window.dispatchEvent(new Event('auth:logout'));
-        return Promise.reject(refreshError);
+        return Promise.reject(error); // Reject with original error, not the refresh error
       }
     }
     return Promise.reject(error);

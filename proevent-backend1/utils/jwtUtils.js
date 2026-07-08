@@ -40,6 +40,17 @@ const verificarToken = (req, res, next) => {
       return next(); // Fallback temporal en caso de que no haya DB inyectada
     }
 
+    if (decodificado.tipo_usuario === 'proveedor') {
+      db.query('SELECT estado FROM proveedor_externo WHERE id_proveedor = ?', [decodificado.id_proveedor], (err, results) => {
+        if (err || results.length === 0 || results[0].estado !== 'Activo') {
+          return res.status(401).json({ mensaje: 'No autorizado: Proveedor inactivo o no encontrado' });
+        }
+        req.user = decodificado;
+        return next();
+      });
+      return;
+    }
+
     // Validar token_version contra la base de datos para invalidación inmediata
     db.query('SELECT token_version FROM usuario WHERE id_usuario = ?', [decodificado.id_usuario], (err, results) => {
       if (err || results.length === 0) {

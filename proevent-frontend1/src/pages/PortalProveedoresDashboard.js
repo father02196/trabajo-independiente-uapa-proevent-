@@ -57,7 +57,12 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       // API filtra por id_tipo de categoría del proveedor
       const res = await fetch(`http://localhost:8080/api/proveedor/${proveedor.id_tipo}/solicitudes`);
       const data = await res.json();
-      setSolicitudes(data);
+      if (res.ok && Array.isArray(data)) {
+        setSolicitudes(data);
+      } else {
+        setSolicitudes([]);
+        console.error(data?.mensaje || data?.message || data?.error || "Error al cargar solicitudes");
+      }
       fetchMetricas();
       if (showAlert) alert("Lista actualizada");
     } catch (err) {

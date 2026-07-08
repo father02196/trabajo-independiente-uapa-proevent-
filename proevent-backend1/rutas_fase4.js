@@ -22,12 +22,14 @@ const upload = multer({
 });
 
 // [REFAC] transporter removido de los parámetros, ahora usa sendMailCentralizado
+const { verificarToken } = require('./utils/jwtUtils');
+
 module.exports = (db) => {
 
   // --- RUTAS DEL ADMINISTRADOR ---
 
   // 1. Crear un Proveedor (Solo Admin)
-  router.post('/admin/proveedor', async (req, res) => {
+  router.post('/admin/proveedor', verificarToken, async (req, res) => {
     try {
       const { nombre_empresa, rnc_cedula, id_tipo_servicio, persona_contacto, correo, telefono, contrasena } = req.body;
       
@@ -64,7 +66,7 @@ module.exports = (db) => {
   });
 
   // 2. Obtener lista de proveedores (Para Admin y para disparador)
-  router.get('/admin/proveedores', (req, res) => {
+  router.get('/admin/proveedores', verificarToken, (req, res) => {
     db.query('SELECT p.*, t.nombre as categoria FROM proveedor_externo p JOIN tipo_servicio_externo t ON p.id_tipo_servicio = t.id_tipo_servicio ORDER BY p.fecha_registro DESC', (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(results);
@@ -72,7 +74,7 @@ module.exports = (db) => {
   });
 
   // --- Módulo: Directorio de Suplidores | Función: Editar Proveedor ---
-  router.put('/admin/proveedor/:id', (req, res) => {
+  router.put('/admin/proveedor/:id', verificarToken, (req, res) => {
     const { id } = req.params;
     const { nombre_empresa, rnc_cedula, id_tipo_servicio, persona_contacto, correo, telefono } = req.body;
     const query = `
@@ -90,7 +92,7 @@ module.exports = (db) => {
   });
 
   // --- Módulo: Directorio de Suplidores | Función: Cambiar Estado Proveedor ---
-  router.put('/admin/proveedor/:id/estado', (req, res) => {
+  router.put('/admin/proveedor/:id/estado', verificarToken, (req, res) => {
     const { id } = req.params;
     const { estado } = req.body; // 'Activo' o 'Inactivo'
     db.query('UPDATE proveedor_externo SET estado = ? WHERE id_proveedor = ?', [estado, id], (err, results) => {
@@ -101,7 +103,7 @@ module.exports = (db) => {
 
 
   // 2.1 Crear Solicitud de Cotización (RF-22: Envío automatizado a Proveedores)
-  router.post('/admin/solicitud-cotizacion', (req, res) => {
+  router.post('/admin/solicitud-cotizacion', verificarToken, (req, res) => {
     const { id_evento, id_tipo_servicio, descripcion_requerimientos, fecha_limite } = req.body;
     db.query(
       'INSERT INTO solicitud_cotizacion (id_evento, id_tipo_servicio, descripcion_requerimientos, fecha_limite) VALUES (?, ?, ?, ?)',
@@ -172,6 +174,18 @@ module.exports = (db) => {
       
       if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas' });
       if (proveedor.estado !== 'Activo') return res.status(403).json({ error: 'Cuenta inactiva o suspendida.' });
+
+      const jwt = require('jsonwebtoken');
+      const { JWT_SECRET } = require('./utils/jwtUtils');
+      const tokenPayload = {
+        id_proveedor: proveedor.id_proveedor,
+        id_tipo: proveedor.id_tipo_servicio,
+        nombre: proveedor.nombre_empresa,
+        tipo_usuario: 'proveedor'
+      };
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '15m' });
+      
+      res.cookie('accessToken', token, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
 
       res.json({ message: 'Login exitoso', proveedor: { id: proveedor.id_proveedor, nombre: proveedor.nombre_empresa, id_tipo: proveedor.id_tipo_servicio } });
     });
@@ -269,7 +283,10 @@ module.exports = (db) => {
   });
 
   // 4. Ver solicitudes abiertas para su categoría
-  router.get('/proveedor/:id_tipo/solicitudes', (req, res) => {
+  router.get('/proveedor/:id_tipo/solicitudes', verificarToken, (req, res) => {
+    if (req.user.tipo_usuario !== 'proveedor' || req.user.id_tipo.toString() !== req.params.id_tipo.toString()) {
+      return res.status(403).json({ error: 'Acceso denegado a estas solicitudes' });
+    }
     const id_tipo = req.params.id_tipo;
     db.query(`
       SELECT s.*, e.nombre as nombre_evento, e.fecha_inicio
@@ -282,7 +299,10 @@ module.exports = (db) => {
   });
 
   // 4.5 Obtener métricas del proveedor (Dashboard B2B)
-  router.get('/proveedor/:id_proveedor/metricas', (req, res) => {
+  router.get('/proveedor/:id_proveedor/metricas', verificarToken, (req, res) => {
+    if (req.user.tipo_usuario !== 'proveedor' || req.user.id_proveedor.toString() !== req.params.id_proveedor.toString()) {
+      return res.status(403).json({ error: 'Acceso denegado a estas métricas' });
+    }
     const { id_proveedor } = req.params;
     db.query(`
       SELECT 
@@ -378,7 +398,7 @@ module.exports = (db) => {
   // --- RUTAS DE INTELIGENCIA ARTIFICIAL Y LISTADO B2B (ADMIN) ---
 
   // Nueva ruta para obtener licitaciones evaluadas/adjudicadas para mostrar en ModuloProveedores
-  router.get('/admin/licitaciones-adjudicadas', (req, res) => {
+  router.get('/admin/licitaciones-adjudicadas', verificarToken, (req, res) => {
     db.query(`
       SELECT a.id_analisis, a.id_solicitud, a.proveedor_recomendado_id, a.fecha_analisis, 
              s.id_evento, s.requisitos, e.nombre as nombre_evento, 
@@ -400,7 +420,7 @@ module.exports = (db) => {
     apiKey: process.env.OPENAI_API_KEY || 'dummy_key' // Asume que se ha puesto en .env. El dummy evita crasheo al iniciar.
   });
 
-  router.post('/admin/evaluar-cotizaciones/:id_solicitud', async (req, res) => {
+  router.post('/admin/evaluar-cotizaciones/:id_solicitud', verificarToken, async (req, res) => {
     const id_solicitud = req.params.id_solicitud;
 
     // 1. Obtener todas las cotizaciones de esta solicitud
