@@ -25,6 +25,13 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const googleButtonRef = useRef(null);
   const navigate = useNavigate();
 
+  // Forzar campos vacíos al montar: Chrome ignora autoComplete="off"
+  // y pre-rellena con credenciales guardadas. Este efecto los limpia.
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+  }, []);
+
   /* ── Google Sign-In ──────────────────────────────────── */
   // Función de callback que procesa el token JWT devuelto por Google
   // y lo envía al backend para iniciar sesión sin contraseña.
@@ -110,7 +117,11 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
         </div>
 
         {/* Formulario */}
-        <form className="lc-form" onSubmit={handleSubmit} noValidate>
+        <form className="lc-form" onSubmit={handleSubmit} noValidate autoComplete="off">
+
+          {/* Campos señuelo invisibles: evitan que Chrome inyecte el autocompletado en los campos reales */}
+          <input type="text"     name="fake-user"  style={{ display: 'none' }} aria-hidden="true" readOnly />
+          <input type="password" name="fake-pass"  style={{ display: 'none' }} aria-hidden="true" readOnly />
 
           {/* Campo correo */}
           <div className="lc-field">
@@ -124,7 +135,8 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 placeholder="usuario@uapa.edu.do"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                autoComplete="off"
+                name="lc-email-field"
               />
             </div>
           </div>
@@ -150,7 +162,8 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
+                autoComplete="new-password"
+                name="lc-password-field"
               />
               <button
                 type="button"
