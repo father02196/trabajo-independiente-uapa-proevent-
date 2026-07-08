@@ -9,6 +9,7 @@ const { OAuth2Client } = require('google-auth-library'); // SDK de Google para v
 const multer = require('multer'); // Middleware para el manejo de subida de archivos (multipart/form-data)
 const path = require('path'); // Módulo de Node para trabajar con rutas de archivos
 const { generateAccessToken, generateRefreshToken, verificarToken } = require('./utils/jwtUtils'); // JWT Utils
+const { procesarDescuentoPOA, reconciliarDescuentoPOA } = require('./utils/poaService'); // Servicio centralizado de actualización y notificación POA
 const bcrypt = require('bcryptjs'); // Librería de encriptación segura para contraseñas
 require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env
 
@@ -20,7 +21,8 @@ function sanitizeUser(user) {
         nombre: user.nombre,
         correo: user.correo,
         rol: user.rol || user.id_rol,
-        estado: user.estado
+        estado: user.estado,
+        token_version: user.token_version
     };
 }
 
@@ -188,9 +190,12 @@ db.getConnection((err, connection) => {
 // --- FUNCIONES DE APOYO (HELPERS) ---
 // Helper: Crear una notificación dirigida a un usuario específico o a un rol completo
 function crearNotificacion({ id_usuario_destino = null, rol_destino = null, titulo, cuerpo, enlace_accion = null }) {
-  const sql = `INSERT INTO notificacion_sistema (id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion) VALUES (?, ?, ?, ?, ?)`;
-  db.query(sql, [id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion], (err) => {
-    if (err) console.error('Error al crear notificación:', err.message);
+  return new Promise((resolve) => {
+    const sql = `INSERT INTO notificacion_sistema (id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion) VALUES (?, ?, ?, ?, ?)`;
+    db.query(sql, [id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion], (err) => {
+      if (err) console.error('Error al crear notificación:', err.message);
+      resolve(!err);
+    });
   });
 }
 
@@ -219,6 +224,8 @@ function registrarMovimiento(id_usuario, id_rol, accion, detalles = '') {
 
 // --- PROCESOS EN SEGUNDO PLANO (CRON JOBS SIMULADOS) ---
 // ── AUTO-FINALIZACIÓN DE EVENTOS ─────────────────────────
+const { notificarAutoFinalizacion } = require('./utils/notificacionService');
+
 // Tarea automática: Revisa iterativamente si algún evento catalogado actualmente como 'Aprobado'
 // ya dejó atrás su fecha límite esperada (fecha_fin) en el mundo real y lo auto-marca en tabla como 'Finalizado'.
 function autoFinalizarEventos() {
@@ -257,12 +264,14 @@ function autoFinalizarEventos() {
         // Ciclo secuencial interactivo para documentar uno por uno los históricos operados en la base 
         eventos.forEach(e => {
           if (e.id_usuario) { // Garantiza seguridad asegurando que genuinamente existió en el row el ID del originado humano
-            registrarMovimiento(
-              e.id_usuario, // Culpabilidad técnica virtual auto-asignable como creador del originante inicial
-              null, // Rol es null forzando auto-resolver el callback helper db para leer su row 
-              'AUTO_FINALIZACION_EVENTO', // Bandera unívoca clave sobre operación computacional sistemática programada
-              `El evento "${e.nombre}" (ID: ${e.id_evento}) fue finalizado automáticamente al superar su fecha de fin.` // Relato traducido plenamente legible a usuario corriente en la tabla visual de las bitácoras
-            );
+            notificarAutoFinalizacion(db, e.id_evento, e.nombre, e.id_usuario, crearNotificacion).then(count => {
+              registrarMovimiento(
+                e.id_usuario, // Culpabilidad técnica virtual auto-asignable como creador del originante inicial
+                null, // Rol es null forzando auto-resolver el callback helper db para leer su row 
+                'AUTO_FINALIZACION_EVENTO', // Bandera unívoca clave sobre operación computacional sistemática programada
+                `El evento "${e.nombre}" (ID: ${e.id_evento}) fue auto-finalizado. Se generaron ${count} notificaciones para los departamentos y roles correspondientes.` // Relato traducido plenamente legible a usuario corriente en la tabla visual de las bitácoras
+              );
+            });
           }
         });
       }
@@ -713,19 +722,10 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
         db.query('INSERT INTO detalle_montaje (id_evento, descripcion) VALUES (?, ?)', [id_evento, observaciones], () => { }); // Guarda comentario largo atado
       }
 
-      // --- ACTUALIZACIÓN DE ESTADOS CONTABLES DINíMICOS (SUSTRACCIÓN POR RESERVA FINANCIERA POA) ---
-      if (montoPOA > 0 && id_poa_activo) { // Solo si hay monto y se validó exitosamente el id activo subyacente del poa fiscal vivo anual
-        db.query( // Dispara transacción a sub-tabla ledger de historial y log de rastreo financiero poa_movimiento
-          `INSERT INTO poa_movimiento (id_poa, id_evento, monto_solicitado_original, moneda_original, tasa_cambio, monto_descontado_dop, estado)
-           VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')`, // Inyecta datos cambiarios calculados estáticamente en este milisegundo al cambio del día marcado 'Pendiente' hasta decisión de los gestores
-          [id_poa_activo, id_evento, montoPOA, moneda || 'DOP', tasa_cambio, monto_dop],
-          (poaErr) => { // Espera respuesta asíncrona DB
-            if (!poaErr) { // Y solo si no hubo fatal error de insercion en bitacora POA
-              // Realiza el Descuento final FíSICO Y MATEMíTICO REAL de la base central sustrayendo sin compasión el estimado para bloquear el dinero (reserva contable real en caliente UPDATE)
-              db.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, id_poa_activo], () => { }); // Deduce
-            }
-          }
-        );
+      // --- ACTUALIZACIÓN DE ESTADOS CONTABLES DINÁMICOS (SUSTRACCIÓN POR RESERVA FINANCIERA POA) ---
+      // Delegado al poaService centralizado: registra movimiento, deduce saldo y detecta cruce de umbral 20%
+      if (montoPOA > 0 && id_poa_activo) {
+        procesarDescuentoPOA(db, id_poa_activo, id_evento, montoPOA, moneda, tasa_cambio, monto_dop, crearNotificacion);
       }
 
       // CONCLUSIÓN DE MÚLTIPLES HITOS INSERCIONALES EXITOSA (END)
@@ -952,29 +952,9 @@ app.put('/eventos/:id', async (req, res) => { // Asignación de Endpoint dinámi
 
     await dbPromise.query(sql, params);
 
-    // --- APLICACION DE RECONCILIACION CONTABLE (POA) ---
-    if (movPrevio) {
-      if (movPrevio.estado !== 'Rechazado') {
-        await dbPromise.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible + ? WHERE id_poa = ?", [movPrevio.monto_descontado_dop, movPrevio.id_poa]);
-      }
-      if (montoPOA > 0) {
-        await dbPromise.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, movPrevio.id_poa]);
-        await dbPromise.query(
-          "UPDATE poa_movimiento SET monto_solicitado_original = ?, moneda_original = ?, tasa_cambio = ?, monto_descontado_dop = ?, estado = 'Pendiente', motivo_rechazo = NULL WHERE id_movimiento = ?",
-          [montoPOA, moneda || 'DOP', tasa_cambio, monto_dop, movPrevio.id_movimiento]
-        );
-      } else {
-        await dbPromise.query("DELETE FROM poa_movimiento WHERE id_movimiento = ?", [movPrevio.id_movimiento]);
-      }
-    } else {
-      if (montoPOA > 0 && id_poa_activo) {
-        await dbPromise.query(
-          `INSERT INTO poa_movimiento (id_poa, id_evento, monto_solicitado_original, moneda_original, tasa_cambio, monto_descontado_dop, estado) VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')`,
-          [id_poa_activo, id, montoPOA, moneda || 'DOP', tasa_cambio, monto_dop]
-        );
-        await dbPromise.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, id_poa_activo]);
-      }
-    }
+    // --- APLICACIÓN DE RECONCILIACIÓN CONTABLE (POA) ---
+    // Delegado al poaService: reembolsa previo, registra nuevo movimiento, deduce saldo y detecta umbral 20%
+    await reconciliarDescuentoPOA(dbPromise, db, id_poa_activo, id, montoPOA, moneda, tasa_cambio, monto_dop, movPrevio, crearNotificacion);
 
     // --- LIMPIEZA M:N --- 
     // Usamos callbacks normales para operaciones no-bloqueantes de satélites
