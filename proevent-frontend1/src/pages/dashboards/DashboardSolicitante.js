@@ -448,7 +448,6 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   </div>
                 </div>
               </div>
-            </div>
 
               {/* Requerimientos Adicionales a Ancho Completo */}
               <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -480,6 +479,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   </div>
                 </div>
               </div>
+            </div>
 
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar modal">Cerrar Ficha Técnica</button>

@@ -6,7 +6,7 @@
 // manejando el estado de error o carga.
 // ============================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './../css/Login.css';
 import viewIcon from "./../img/view.png";
 import hideIcon from "./../img/hide.png";
@@ -23,6 +23,13 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordC
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Forzar campos vacíos al montar: Chrome ignora autoComplete="off"
+  // y pre-rellena con credenciales guardadas. Este efecto los limpia.
+  useEffect(() => {
+    setCorreo('');
+    setContrasena('');
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,7 +79,11 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordC
         </div>
 
         {/* Formulario */}
-        <form className="lc-form" onSubmit={handleSubmit} noValidate>
+        <form className="lc-form" onSubmit={handleSubmit} noValidate autoComplete="off">
+
+          {/* Campos señuelo invisibles: evitan que Chrome inyecte el autocompletado en los campos reales */}
+          <input type="text"     name="fake-user-prov" style={{ display: 'none' }} aria-hidden="true" readOnly />
+          <input type="password" name="fake-pass-prov" style={{ display: 'none' }} aria-hidden="true" readOnly />
 
           {/* Campo correo */}
           <div className="lc-field">
@@ -86,7 +97,8 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordC
                 placeholder="contacto@empresa.com"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
-                autoComplete="email"
+                autoComplete="off"
+                name="b2b-email-field"
               />
             </div>
           </div>
@@ -112,7 +124,8 @@ function PortalProveedoresLogin({ onLoginSuccess, onBackClick, onForgotPasswordC
                 placeholder="••••••••"
                 value={contrasena}
                 onChange={(e) => setContrasena(e.target.value)}
-                autoComplete="current-password"
+                autoComplete="new-password"
+                name="b2b-password-field"
               />
               <button
                 type="button"

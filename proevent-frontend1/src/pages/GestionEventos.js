@@ -436,7 +436,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       return matchSearch && matchEstado && matchDept && matchFecha;
     });
 
-  const { items: sortedRequests, requestSort, sortConfig } = useSortableData(filteredRequests, { key: 'fecha_inicio', direction: 'descending' });
+  const { items: sortedRequests, requestSort, sortConfig } = useSortableData(filteredRequests, { key: 'id_evento', direction: 'descending' });
 
   // Paginación
   const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);

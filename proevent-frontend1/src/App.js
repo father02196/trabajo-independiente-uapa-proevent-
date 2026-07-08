@@ -7,7 +7,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import axios from "./api/axios"; // Nuestra instancia global
 
 // Componente de Seguridad
@@ -37,6 +37,32 @@ import DashboardResponsableLayout from "./pages/DashboardResponsableLayout";
 import DashboardComprasLayout from "./pages/DashboardComprasLayout";
 import DashboardLegalLayout from "./pages/DashboardLegalLayout";
 import DashboardVAFLayout from "./pages/DashboardVAFLayout";
+
+
+// LoginWrapper: usa useNavigate() que solo funciona dentro del árbol de BrowserRouter.
+// Este componente siempre se renderiza dentro de <Routes> que a su vez está dentro de <BrowserRouter>.
+function LoginWrapper({ onLogin }) {
+  const navigate = useNavigate();
+  return (
+    <Login
+      onLogin={onLogin}
+      onBackClick={() => navigate('/')}
+      onForgotPasswordClick={() => navigate('/forgot-password')}
+    />
+  );
+}
+
+// PortalProveedoresLoginWrapper: mismo patrón para el portal de suplidores
+function PortalProveedoresLoginWrapper({ onLoginSuccess }) {
+  const navigate = useNavigate();
+  return (
+    <PortalProveedoresLogin
+      onLoginSuccess={onLoginSuccess}
+      onBackClick={() => navigate('/')}
+      onForgotPasswordClick={() => navigate('/portal-proveedores/forgot-password')}
+    />
+  );
+}
 
 function App() {
   // --- ESTADOS GLOBALES DE AUTENTICACIÓN ---
@@ -140,7 +166,7 @@ function App() {
         
         <Route path="/login" element={
           isLoggedIn && usuario ? <Navigate to={getDashboardPath(usuario.rol)} replace /> : 
-          <Login 
+          <LoginWrapper
             onLogin={(usuarioData) => {
               setIsLoggedIn(true);
               setUsuario(usuarioData);
@@ -155,7 +181,7 @@ function App() {
         {/* --- RUTAS PORTAL PROVEEDORES --- */}
         <Route path="/portal-proveedores" element={
           proveedor ? <Navigate to="/portal-proveedores/dashboard" replace /> : 
-          <PortalProveedoresLogin 
+          <PortalProveedoresLoginWrapper
             onLoginSuccess={(provData) => setProveedor(provData)}
           />
         } />

@@ -121,7 +121,10 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
                         <h1>{getPageTitle()}</h1>
                     </div>
                     <div className="header-actions">
-                        <NotificationBell usuario={usuario} />
+                        <NotificationBell 
+                            usuario={usuario} 
+                            onGoToEvaluacion={() => handleNavigate('/solicitante/evaluacion')} 
+                        />
                     </div>
                 </header>
 
