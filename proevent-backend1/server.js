@@ -431,6 +431,11 @@ app.get('/api/auth/me', verificarToken, (req, res) => {
   );
 });
 
+// --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
+// [REFAC] Transporter eliminado de aquí; rutas_fase4 importa el mailer directamente
+const rutasFase4 = require('./rutas_fase4')(db);
+app.use('/api', rutasFase4);
+
 // Proteger todas las rutas a partir de aquí
 app.use(verificarToken);
 
@@ -2322,11 +2327,7 @@ app.get('/api/aprobaciones-evento/:id_evento', (req, res) => {
   });
 });
 
-// --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
-// [REFAC] Transporter eliminado de aquí; rutas_fase4 importa el mailer directamente
-const rutasFase4 = require('./rutas_fase4')(db);
-app.use('/api', rutasFase4);
-
+// --- INTEGRACIÓN FASE 4 MOVIDA ARRIBA ---
 // INSTANCIACIÓN DE SERVIDOR EXPRESS JS AL PUERTO ESPECIFICADO LEYENDO VARIABLES DOTENV Y ARRANCANDO CICLO HOST NODE
 // ── FASE 2: APIS DE SUBSANACIÓN, EVIDENCIA CONTABLE E INCIDENCIAS ──
 
