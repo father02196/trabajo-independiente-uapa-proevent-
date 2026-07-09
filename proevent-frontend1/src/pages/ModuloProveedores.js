@@ -60,7 +60,7 @@ function ModuloProveedores({ usuario }) {
     // --- ESTADOS PARA INCIDENCIAS Y EVIDENCIAS ---
     const [modalIncidencia, setModalIncidencia] = useState({ open: false, servicio: null });
     const [resolucionForm, setResolucionForm] = useState("");
-    const [modalEvidencia, setModalEvidencia] = useState({ open: false, eventoId: null });
+    const [modalEvidencia, setModalEvidencia] = useState({ open: false, servicioId: null });
     const [evidenciaFile, setEvidenciaFile] = useState(null);
 
     // --- EFECTOS: Carga dinámica según la pestaña ---
@@ -199,13 +199,13 @@ function ModuloProveedores({ usuario }) {
         formData.append("id_usuario", usuario?.id_usuario || "");
 
         try {
-            const res = await fetch(`${API}/api/eventos/${modalEvidencia.eventoId}/evidencia-contabilidad`, {
+            const res = await fetch(`${API}/api/logistica/${modalEvidencia.servicioId}/evidencia-contabilidad`, {
                 method: 'POST',
                 body: formData
             });
             if (res.ok) {
                 alert("Evidencia subida correctamente.");
-                setModalEvidencia({ open: false, eventoId: null });
+                setModalEvidencia({ open: false, servicioId: null });
                 setEvidenciaFile(null);
             } else {
                 alert("Error al subir evidencia.");
@@ -542,7 +542,7 @@ function ModuloProveedores({ usuario }) {
                                                         <button 
                                                             type="button"
                                                             className="btn btn-secondary btn-sm" 
-                                                            onClick={() => setModalEvidencia({ open: true, eventoId: s.id_evento })}
+                                                            onClick={() => setModalEvidencia({ open: true, servicioId: s.id_servicio_ext })}
                                                             title="Subir evidencia de envío a CxP"
                                                         >
                                                             <FiUpload size={13} /> Evidencia CxP
@@ -1097,7 +1097,7 @@ function ModuloProveedores({ usuario }) {
             `}</style>
             {/* Modal Evidencia CxP */}
             {modalEvidencia.open && createPortal(
-                <div className="modal-overlay" onClick={() => setModalEvidencia({ open: false, eventoId: null })}>
+                <div className="modal-overlay" onClick={() => setModalEvidencia({ open: false, servicioId: null })}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>Subir Evidencia CxP</h2>
@@ -1115,7 +1115,7 @@ function ModuloProveedores({ usuario }) {
                                 />
                             </div>
                             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setModalEvidencia({ open: false, eventoId: null })}>Cancelar</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalEvidencia({ open: false, servicioId: null })}>Cancelar</button>
                                 <button type="submit" className="btn btn-primary">Subir Archivo</button>
                             </div>
                         </form>
