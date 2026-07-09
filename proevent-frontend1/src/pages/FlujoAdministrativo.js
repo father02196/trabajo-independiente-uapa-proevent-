@@ -482,9 +482,9 @@ export default function FlujoAdministrativo({ usuario }) {
                         onChange={(e) => guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, s.requiere_contrato, e.target.value)}
                       >
                         <option value="">-- Seleccionar --</option>
-                        {cotizaciones.filter(c => c.estado === 'Seleccionada').map(c => (
+                        {cotizaciones.map(c => (
                           <option key={c.id_cotizacion} value={c.id_cotizacion}>
-                            ID: {c.id_cotizacion} - {c.moneda} {c.monto_total_detectado}
+                            {c.proveedor_nombre || `ID: ${c.id_cotizacion}`} — {c.moneda || 'DOP'} {c.monto_total_detectado}
                           </option>
                         ))}
                       </select>
