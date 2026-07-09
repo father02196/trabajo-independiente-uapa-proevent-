@@ -2194,7 +2194,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
   db.query('SELECT * FROM presupuesto WHERE id_evento = ?', [id_evento], (e1, r1) => {
     db.query('SELECT * FROM flujo_aprobacion_legal WHERE id_evento = ?', [id_evento], (e2, r2) => {
       db.query(`
-        SELECT cr.*, sc.id_evento, pe.nombre as proveedor_nombre 
+        SELECT cr.*, sc.id_evento, pe.nombre_empresa as proveedor_nombre 
         FROM cotizacion_recibida cr
         JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
         JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
@@ -2211,7 +2211,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
 
 app.get('/api/notificaciones/cotizaciones-vencidas', (req, res) => {
   db.query(`
-    SELECT cr.id_cotizacion, pe.nombre as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
+    SELECT cr.id_cotizacion, pe.nombre_empresa as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
     FROM cotizacion_recibida cr
     JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
     JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor

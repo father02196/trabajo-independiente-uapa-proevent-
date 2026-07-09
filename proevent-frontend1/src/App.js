@@ -7,7 +7,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from "react-router-dom";
 import axios from "./api/axios"; // Nuestra instancia global
 
 // Componente de Seguridad
@@ -63,6 +63,29 @@ function PortalProveedoresLoginWrapper({ onLoginSuccess }) {
     />
   );
 }
+
+function ForgotWrapper() {
+  const navigate = useNavigate();
+  return <ForgotPassword onBackClick={() => navigate('/')} />;
+}
+
+function ResetWrapper() {
+  const navigate = useNavigate();
+  const { token } = useParams();
+  return <ResetPassword token={token} onBackClick={() => navigate('/')} />;
+}
+
+function PortalProveedoresForgotWrapper() {
+  const navigate = useNavigate();
+  return <PortalProveedoresForgotPassword onBackClick={() => navigate('/portal-proveedores')} />;
+}
+
+function PortalProveedoresResetWrapper() {
+  const navigate = useNavigate();
+  const { token } = useParams();
+  return <PortalProveedoresResetPassword token={token} onBackClick={() => navigate('/portal-proveedores')} />;
+}
+
 
 function App() {
   // --- ESTADOS GLOBALES DE AUTENTICACIÓN ---
@@ -175,8 +198,8 @@ function App() {
           />
         } />
 
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotWrapper />} />
+        <Route path="/reset-password/:token" element={<ResetWrapper />} />
 
         {/* --- RUTAS PORTAL PROVEEDORES --- */}
         <Route path="/portal-proveedores" element={
@@ -185,8 +208,8 @@ function App() {
             onLoginSuccess={(provData) => setProveedor(provData)}
           />
         } />
-        <Route path="/portal-proveedores/forgot-password" element={<PortalProveedoresForgotPassword />} />
-        <Route path="/proveedor/reset-password/:token" element={<PortalProveedoresResetPassword />} />
+        <Route path="/portal-proveedores/forgot-password" element={<PortalProveedoresForgotWrapper />} />
+        <Route path="/proveedor/reset-password/:token" element={<PortalProveedoresResetWrapper />} />
 
         <Route path="/portal-proveedores/dashboard/*" element={
           proveedor ? <PortalProveedoresDashboard proveedor={proveedor} onLogout={handleLogout} /> : <Navigate to="/portal-proveedores" replace />

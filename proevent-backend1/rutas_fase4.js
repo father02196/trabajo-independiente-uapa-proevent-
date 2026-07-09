@@ -200,11 +200,10 @@ module.exports = (db) => {
       if (results.length === 0) return res.status(404).json({ mensaje: 'El correo no está registrado como proveedor' });
 
       const token = crypto.randomBytes(32).toString('hex');
-      const expiracion = new Date(Date.now() + 3600000); // 1 hora
 
       db.query(
-        'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, ?)',
-        [correo, token, expiracion],
+        'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))',
+        [correo, token],
         (errInsert) => {
           if (errInsert) return res.status(500).json({ mensaje: 'Error al generar el token' });
 
@@ -230,13 +229,14 @@ module.exports = (db) => {
             `
           };
 
-          transporter.sendMail(mailOptions, (errMail, info) => {
-            if (errMail) {
+          sendMailCentralizado(mailOptions)
+            .then(() => {
+              res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
+            })
+            .catch((errMail) => {
               console.error('Error enviando correo a proveedor:', errMail.message);
-              return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
-            }
-            res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
-          });
+              res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
+            });
         }
       );
     });
