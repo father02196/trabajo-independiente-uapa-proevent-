@@ -2387,6 +2387,16 @@ app.post('/api/logistica/:id_servicio/evidencia-contabilidad', upload.single('ar
   });
 });
 
+// Eliminar Evidencia Contabilidad (Paso 16 - Revertir)
+app.delete('/api/logistica/:id_servicio/evidencia-contabilidad', (req, res) => {
+  const { id_servicio } = req.params;
+  
+  db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=NULL WHERE id_servicio_ext=?`, [id_servicio], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    res.json({mensaje: 'Evidencia eliminada correctamente'});
+  });
+});
+
 // 5. Resolver Incidencia de Logística (Compras)
 app.put('/api/logistica/:id_servicio/resolver-incidencia', (req, res) => {
   const { id_servicio } = req.params;
