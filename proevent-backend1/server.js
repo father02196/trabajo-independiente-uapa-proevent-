@@ -2135,10 +2135,10 @@ app.get('/servicios-externos-all', (req, res) => {
 
 // --- ENDPOINTS ADMINISTRATIVOS FASE 2 ---
 app.put('/api/servicio_externo/:id/admin', (req, res) => {
-  const { numero_orden_compra, requiere_contrato } = req.body;
+  const { numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada } = req.body;
   const id_usuario = req.headers['x-usuario-id'];
-  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ? WHERE id_servicio_ext = ?',
-    [numero_orden_compra, requiere_contrato, req.params.id], (err) => {
+  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ?, id_cotizacion_adjudicada = ? WHERE id_servicio_ext = ?',
+    [numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada, req.params.id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
       if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
       res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
@@ -2194,7 +2194,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
   db.query('SELECT * FROM presupuesto WHERE id_evento = ?', [id_evento], (e1, r1) => {
     db.query('SELECT * FROM flujo_aprobacion_legal WHERE id_evento = ?', [id_evento], (e2, r2) => {
       db.query(`
-        SELECT cr.*, sc.id_evento, pe.nombre as proveedor_nombre 
+        SELECT cr.*, sc.id_evento, pe.nombre_empresa as proveedor_nombre 
         FROM cotizacion_recibida cr
         JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
         JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
@@ -2211,7 +2211,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
 
 app.get('/api/notificaciones/cotizaciones-vencidas', (req, res) => {
   db.query(`
-    SELECT cr.id_cotizacion, pe.nombre as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
+    SELECT cr.id_cotizacion, pe.nombre_empresa as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
     FROM cotizacion_recibida cr
     JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
     JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
@@ -2384,6 +2384,16 @@ app.post('/api/logistica/:id_servicio/evidencia-contabilidad', upload.single('ar
   db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=? WHERE id_servicio_ext=?`, [rutaRelativa, id_servicio], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
     res.json({mensaje: 'Evidencia subida correctamente', ruta: rutaRelativa});
+  });
+});
+
+// Eliminar Evidencia Contabilidad (Paso 16 - Revertir)
+app.delete('/api/logistica/:id_servicio/evidencia-contabilidad', (req, res) => {
+  const { id_servicio } = req.params;
+  
+  db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=NULL WHERE id_servicio_ext=?`, [id_servicio], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    res.json({mensaje: 'Evidencia eliminada correctamente'});
   });
 });
 
