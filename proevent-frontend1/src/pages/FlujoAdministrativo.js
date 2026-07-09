@@ -212,7 +212,7 @@ export default function FlujoAdministrativo({ usuario }) {
   // Actualiza el número de Orden de Compra (OC) y el flag de "requiere contrato"
   // de un servicio externo específico. Se usa en el panel de Compras (pestaña OC).
   // Se ejecuta al hacer blur en el input de OC o al cambiar el toggle de contrato.
-  const guardarCambiosServicio = async (id_servicio_ext, num_oc, req_contrato) => {
+  const guardarCambiosServicio = async (id_servicio_ext, num_oc, req_contrato, id_cot_adj) => {
     try {
       const res = await fetch(`${API}/api/servicio_externo/${id_servicio_ext}/admin`, {
         method: 'PUT',
@@ -222,7 +222,8 @@ export default function FlujoAdministrativo({ usuario }) {
         },
         body: JSON.stringify({ 
           numero_orden_compra: num_oc,           // Número de OC asignado por Compras
-          requiere_contrato: req_contrato ? 1 : 0 // 1=Sí requiere contrato, 0=No
+          requiere_contrato: req_contrato ? 1 : 0, // 1=Sí requiere contrato, 0=No
+          id_cotizacion_adjudicada: id_cot_adj || null
         })
       });
       if (res.ok) {
@@ -475,12 +476,27 @@ export default function FlujoAdministrativo({ usuario }) {
                   </div>
                   <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '250px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Cotización Ganadora:</label>
+                      <select 
+                        className="form-control-premium" 
+                        defaultValue={s.id_cotizacion_adjudicada || ''}
+                        onChange={(e) => guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, s.requiere_contrato, e.target.value)}
+                      >
+                        <option value="">-- Seleccionar --</option>
+                        {cotizaciones.filter(c => c.estado === 'Seleccionada').map(c => (
+                          <option key={c.id_cotizacion} value={c.id_cotizacion}>
+                            ID: {c.id_cotizacion} - {c.moneda} {c.monto_total_detectado}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1, minWidth: '250px' }}>
                       <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Número de Orden de Compra (OC):</label>
                       <input 
                         type="text" 
                         className="form-control-premium" 
                         defaultValue={s.numero_orden_compra || ''}
-                        onBlur={(e) => guardarCambiosServicio(s.id_servicio_ext, e.target.value, s.requiere_contrato)}
+                        onBlur={(e) => guardarCambiosServicio(s.id_servicio_ext, e.target.value, s.requiere_contrato, s.id_cotizacion_adjudicada)}
                         placeholder="Ej: OC-2026-001"
                       />
                     </div>

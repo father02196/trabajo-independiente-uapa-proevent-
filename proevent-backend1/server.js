@@ -2135,10 +2135,10 @@ app.get('/servicios-externos-all', (req, res) => {
 
 // --- ENDPOINTS ADMINISTRATIVOS FASE 2 ---
 app.put('/api/servicio_externo/:id/admin', (req, res) => {
-  const { numero_orden_compra, requiere_contrato } = req.body;
+  const { numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada } = req.body;
   const id_usuario = req.headers['x-usuario-id'];
-  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ? WHERE id_servicio_ext = ?',
-    [numero_orden_compra, requiere_contrato, req.params.id], (err) => {
+  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ?, id_cotizacion_adjudicada = ? WHERE id_servicio_ext = ?',
+    [numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada, req.params.id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
       if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
       res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
