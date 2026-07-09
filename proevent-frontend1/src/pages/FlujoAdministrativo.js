@@ -17,6 +17,8 @@ import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownloa
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from 'react-hot-toast';
 
+import axios from '../api/axios';
+
 // URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
@@ -344,16 +346,13 @@ export default function FlujoAdministrativo({ usuario }) {
   const evaluarCotizacionesIA = async (id_solicitud) => {
     const loadToast = toast.loading('Analizando cotizaciones con Inteligencia Artificial...');
     try {
-      const res = await fetch(`${API}/api/admin/evaluar-cotizaciones/${id_solicitud}`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success('Análisis completado', { id: loadToast });
-        setAnalisisIA(data.veredicto); // Guarda el veredicto de la IA para mostrarlo en la UI
-      } else {
-        toast.error(data.error || 'Error en el análisis', { id: loadToast });
-      }
+      const res = await axios.post(`/api/admin/evaluar-cotizaciones/${id_solicitud}`);
+      const data = res.data;
+      
+      toast.success('Análisis completado', { id: loadToast });
+      setAnalisisIA(data.veredicto); // Guarda el veredicto de la IA para mostrarlo en la UI
     } catch (err) {
-      toast.error('Error de conexión con la IA', { id: loadToast });
+      toast.error(err.response?.data?.error || 'Error de conexión con la IA', { id: loadToast });
     }
   };
 
