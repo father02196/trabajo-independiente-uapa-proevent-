@@ -1,0 +1,22 @@
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+
+# Archivos de bases de datos y volcados SQL
+*.sql
+
+# Archivos generados / JSONs de prueba
+av_results.json
+events_results.json
+test.json
+users.json
+eslint_report.json
+lint3.json
+untyped_buttons.json
+
+# Dependencias
+node_modules/
+
+# Mac / SO
+.DS_Store
