@@ -1,3 +1,4 @@
+require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env — DEBE ir primero
 // --- IMPORTACIONES PRINCIPALES ---
 const express = require('express'); // Framework web minimalista para crear el servidor HTTP en Node.js
 const mysql = require('mysql2'); // Driver para establecer y manejar conexiones con la base de datos MySQL
@@ -11,7 +12,6 @@ const path = require('path'); // Módulo de Node para trabajar con rutas de arch
 const { generateAccessToken, generateRefreshToken, verificarToken } = require('./utils/jwtUtils'); // JWT Utils
 const { procesarDescuentoPOA, reconciliarDescuentoPOA } = require('./utils/poaService'); // Servicio centralizado de actualización y notificación POA
 const bcrypt = require('bcryptjs'); // Librería de encriptación segura para contraseñas
-require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env
 
 // --- FUNCIÓN DE UTILIDAD ---
 // Elimina datos sensibles del objeto de usuario antes de enviarlo al cliente mediante construcción estricta
@@ -1395,27 +1395,78 @@ app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo i
           subject: 'Restablecer tu contraseña - ProEvent UAPA', // Título Subject header tag
           text: `Recuperación de Contraseña\n\nEstimado/a usuario/a,\n\nHemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en UAPA-PROEVENT.\n\nPara continuar con el proceso de recuperación, visita el siguiente enlace (válido por 1 hora):\n${link}\n\nSi no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.\n\nAtentamente,\n\nSistema UAPA-PROEVENT\nPlataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos\nUniversidad Abierta para Adultos (UAPA)`, // Fallback plaintext puro si cliente correo NO admite HTML Render
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
-              <div style="text-align:center; margin-bottom: 20px;">
-                <img src="cid:logoproevent" alt="Logo ProEvent" style="width: 180px; height: auto;" />
-              </div>
-              <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña</h2>
-              <p style="color:#333; font-size:15px; line-height:1.5;">Estimado/a usuario/a,</p>
-              <p style="color:#333; font-size:15px; line-height:1.5;">Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en <strong>UAPA-PROEVENT</strong>.</p>
-              <p style="color:#333; font-size:15px; line-height:1.5;">Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora a partir de la recepción de este mensaje.</strong></p>
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
-                  Presione Para Restablecer Contraseña
-                </a>
-              </div>
-              <p style="color:#555; font-size:14px; line-height:1.5;">Si no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.</p>
-              <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
-              <p style="color:#555; font-size:14px; line-height:1.5; margin-bottom: 5px;">Atentamente,</p>
-              <p style="color:#1e3a5f; font-size:14px; line-height:1.4; margin-top:0;">
-                <strong>Sistema UAPA-PROEVENT</strong><br>
-                <span style="font-size:12px; color:#666;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos<br>
-                Universidad Abierta para Adultos (UAPA)</span>
-              </p>
+            <div style="background-color: #f4f7f6; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333; line-height: 1.6;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                <!-- Logo Section -->
+                <tr>
+                  <td align="center" style="padding: 40px 20px 20px 20px;">
+                    <img src="cid:logoproevent" alt="Logo ProEvent" style="max-width: 200px; height: auto;" />
+                  </td>
+                </tr>
+                <!-- Content Section -->
+                <tr>
+                  <td style="padding: 0 40px 20px 40px;">
+                    <h2 style="color: #1e3a5f; text-align: center; font-size: 24px; font-weight: 700; margin: 0 0 20px 0;">Recuperación de Contraseña</h2>
+                    <p style="font-size: 16px; margin: 0 0 20px 0; color: #4a4a4a;">Hola, hemos recibido una solicitud para restablecer la contraseña de la siguiente cuenta:</p>
+                    
+                    <!-- User Email Highlight -->
+                    <div style="background-color: #f8fafc; border-left: 4px solid #f58220; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+                      <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1e3a5f;">
+                        <span style="font-size: 18px; vertical-align: middle; margin-right: 8px;">📧</span> ${correo}
+                      </p>
+                    </div>
+
+                    <!-- Info Card -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px; background-color: #f8fafc; border-radius: 8px; padding: 20px;">
+                      <tr>
+                        <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Estado:</strong> <span style="color: #28a745;">Solicitud recibida</span></td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Vigencia del enlace:</strong> 1 hora</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 14px;"><strong>&bull; Plataforma:</strong> UAPA-PROEVENT</td>
+                      </tr>
+                    </table>
+
+                    <!-- Reset Button -->
+                    <div style="text-align: center; margin-bottom: 25px;">
+                      <a href="${link}" style="display: inline-block; background-color: #1e3a5f; color: #ffffff; padding: 16px 36px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Restablecer contraseña</a>
+                    </div>
+
+                    <!-- Alternative Link -->
+                    <p style="font-size: 13px; color: #6c757d; text-align: center; margin: 0 0 30px 0; word-break: break-all;">
+                      O copia y pega el siguiente enlace en tu navegador:<br>
+                      <a href="${link}" style="color: #1e3a5f; text-decoration: underline;">${link}</a>
+                    </p>
+
+                    <!-- Warning Box -->
+                    <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; margin-bottom: 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td width="30" valign="top" style="font-size: 18px; padding-right: 10px;">🔒</td>
+                          <td style="font-size: 14px; color: #856404; line-height: 1.5;">Si usted no solicitó este cambio, ignore este correo. Su contraseña permanecerá segura.</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Divider -->
+                <tr>
+                  <td style="padding: 0 40px;">
+                    <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 0;">
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td align="center" style="padding: 30px 40px; background-color: #fdfdfd;">
+                    <p style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold; color: #1e3a5f;">Sistema UAPA-PROEVENT</p>
+                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #6c757d;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos</p>
+                    <p style="margin: 0 0 15px 0; font-size: 12px; color: #6c757d;">Universidad Abierta para Adultos (UAPA)</p>
+                    <p style="margin: 0; font-size: 12px; color: #adb5bd;">&copy; 2026 Todos los derechos reservados.</p>
+                  </td>
+                </tr>
+              </table>
             </div>
           `, // Inyección Inline CSS para bypass de Email Clients restrictivos (Gmail/Outlook safe css render engine compliant code structure rules block table formatting hack fix)
           attachments: [

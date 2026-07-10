@@ -49,14 +49,11 @@ module.exports = (db) => {
         }
         
         // Enviar correo de bienvenida al proveedor (opcional/ideal)
-        if (transporter) {
-          transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: correo,
-            subject: 'Accesos a Portal de Proveedores - UAPA ProEvent',
-            text: `Hola ${persona_contacto},\n\nSe ha creado tu cuenta en el Portal de Proveedores de la UAPA.\nCredenciales:\nCorreo: ${correo}\nContraseña: ${contrasena}\n\nPuedes ingresar en el portal.`
-          }).catch(console.error);
-        }
+        sendMailCentralizado({
+          to: correo,
+          subject: 'Accesos a Portal de Proveedores - UAPA ProEvent',
+          text: `Hola ${persona_contacto},\n\nSe ha creado tu cuenta en el Portal de Proveedores de la UAPA.\nCredenciales:\nCorreo: ${correo}\nContraseña: ${contrasena}\n\nPuedes ingresar en el portal.`
+        }).catch(console.error);
 
         res.json({ message: 'Proveedor creado con éxito', id: results.insertId });
       });
@@ -215,27 +212,95 @@ module.exports = (db) => {
             to: correo,
             subject: 'Restablecer tu contraseña de Proveedor - ProEvent UAPA',
             html: `
-              <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
-                <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña (Suplidores)</h2>
-                <p>Estimado/a Proveedor,</p>
-                <p>Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en el Portal de Suplidores de <strong>UAPA-PROEVENT</strong>.</p>
-                <p>Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora.</strong></p>
-                <div style="text-align: center; margin: 32px 0;">
-                  <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
-                    Restablecer Contraseña
-                  </a>
-                </div>
-                <p>Si no realizaste esta solicitud, puedes ignorar este correo de manera segura.</p>
+              <div style="background-color: #f4f7f6; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333; line-height: 1.6;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                  <!-- Logo Section -->
+                  <tr>
+                    <td align="center" style="padding: 40px 20px 20px 20px;">
+                      <img src="cid:logoproevent" alt="Logo ProEvent" style="max-width: 200px; height: auto;" />
+                    </td>
+                  </tr>
+                  <!-- Content Section -->
+                  <tr>
+                    <td style="padding: 0 40px 20px 40px;">
+                      <h2 style="color: #1e3a5f; text-align: center; font-size: 24px; font-weight: 700; margin: 0 0 20px 0;">Recuperación de Contraseña</h2>
+                      <p style="font-size: 16px; margin: 0 0 20px 0; color: #4a4a4a;">Hola, hemos recibido una solicitud para restablecer la contraseña de la siguiente cuenta:</p>
+                      
+                      <!-- User Email Highlight -->
+                      <div style="background-color: #f8fafc; border-left: 4px solid #f58220; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+                        <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1e3a5f;">
+                          <span style="font-size: 18px; vertical-align: middle; margin-right: 8px;">📧</span> ${correo}
+                        </p>
+                      </div>
+
+                      <!-- Info Card -->
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px; background-color: #f8fafc; border-radius: 8px; padding: 20px;">
+                        <tr>
+                          <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Estado:</strong> <span style="color: #28a745;">Solicitud recibida</span></td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Vigencia del enlace:</strong> 1 hora</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 14px;"><strong>&bull; Plataforma:</strong> UAPA-PROEVENT (Suplidores)</td>
+                        </tr>
+                      </table>
+
+                      <!-- Reset Button -->
+                      <div style="text-align: center; margin-bottom: 25px;">
+                        <a href="${link}" style="display: inline-block; background-color: #1e3a5f; color: #ffffff; padding: 16px 36px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Restablecer contraseña</a>
+                      </div>
+
+                      <!-- Alternative Link -->
+                      <p style="font-size: 13px; color: #6c757d; text-align: center; margin: 0 0 30px 0; word-break: break-all;">
+                        O copia y pega el siguiente enlace en tu navegador:<br>
+                        <a href="${link}" style="color: #1e3a5f; text-decoration: underline;">${link}</a>
+                      </p>
+
+                      <!-- Warning Box -->
+                      <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; margin-bottom: 30px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td width="30" valign="top" style="font-size: 18px; padding-right: 10px;">🔒</td>
+                            <td style="font-size: 14px; color: #856404; line-height: 1.5;">Si usted no solicitó este cambio, ignore este correo. Su contraseña permanecerá segura.</td>
+                          </tr>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Divider -->
+                  <tr>
+                    <td style="padding: 0 40px;">
+                      <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 0;">
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td align="center" style="padding: 30px 40px; background-color: #fdfdfd;">
+                      <p style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold; color: #1e3a5f;">Sistema UAPA-PROEVENT</p>
+                      <p style="margin: 0 0 5px 0; font-size: 12px; color: #6c757d;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos</p>
+                      <p style="margin: 0 0 15px 0; font-size: 12px; color: #6c757d;">Universidad Abierta para Adultos (UAPA)</p>
+                      <p style="margin: 0; font-size: 12px; color: #adb5bd;">&copy; 2026 Todos los derechos reservados.</p>
+                    </td>
+                  </tr>
+                </table>
               </div>
-            `
+            `,
+            attachments: [
+              {
+                filename: 'logo-proevent.jpeg',
+                path: require('path').join(__dirname, '../proevent-frontend1/src/img/logo-proevent.jpeg'),
+                cid: 'logoproevent'
+              }
+            ]
           };
 
-          transporter.sendMail(mailOptions, (errMail, info) => {
-            if (errMail) {
-              console.error('Error enviando correo a proveedor:', errMail.message);
-              return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
-            }
+          sendMailCentralizado(mailOptions).then(info => {
+            console.log(`✅ Correo enviado a proveedor: ${correo} (ID: ${info.messageId})`);
             res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
+          }).catch(errMail => {
+            console.error('Error enviando correo a proveedor:', errMail.message);
+            return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
           });
         }
       );

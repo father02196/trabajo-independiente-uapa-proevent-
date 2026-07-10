@@ -29,6 +29,7 @@ export default function PoaAdmin({ usuario }) {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin]       = useState("");
   const [montoTotal, setMontoTotal]   = useState("");
+  const [poaSeleccionado, setPoaSeleccionado] = useState(null);
 
 
   // --- EFECTO INICIAL ---
@@ -155,6 +156,175 @@ export default function PoaAdmin({ usuario }) {
         </div>
       </div>
 
+      <div className="poa-card" style={{ marginTop: '24px', padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
+        <h3 style={{fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '16px'}}>Historial de Años Fiscales del POA</h3>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--border-soft)' }}>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Año Fiscal</th>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Fecha de Inicio</th>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Fecha de Término</th>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Presupuesto Aprobado</th>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Presupuesto Disponible</th>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Estado</th>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Descripción</th>
+                <th style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {poas.map((poa, index) => {
+                const isActive = index === 0;
+                const year = poa.fecha_inicio ? poa.fecha_inicio.substring(0, 4) : 'N/A';
+                return (
+                  <tr key={poa.id_poa} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                    <td style={{ padding: '12px', color: 'var(--text-main)', fontWeight: 600 }}>{year}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-main)' }}>{poa.fecha_inicio ? poa.fecha_inicio.substring(0, 10) : ''}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-main)' }}>{poa.fecha_fin ? poa.fecha_fin.substring(0, 10) : ''}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-main)', fontWeight: 600 }}>RD$ {Number(poa.monto_total).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-main)', fontWeight: 600 }}>RD$ {Number(poa.monto_disponible).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td style={{ padding: '12px' }}>
+                      {isActive ? (
+                        <span style={{ padding: '4px 8px', background: 'var(--success-bg, #D1FAE5)', color: 'var(--success, #059669)', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Activo</span>
+                      ) : (
+                        <span style={{ padding: '4px 8px', background: 'var(--bg-subtle, #F3F4F6)', color: 'var(--text-muted, #6B7280)', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Cerrado</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                      {poa.descripcion || `Presupuesto correspondiente al año fiscal ${year}`}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <button onClick={() => setPoaSeleccionado(poa)} className="btn btn-sm" style={{ background: 'transparent', border: '1px solid var(--border-soft)', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+                        Ver detalles
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {poas.length === 0 && (
+                <tr>
+                  <td colSpan="8" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No hay registros de años fiscales.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {poaSeleccionado && (
+        <div style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'}}>
+          <style>
+            {`
+              @keyframes modalPopPremium {
+                0% { opacity: 0; transform: scale(0.95) translateY(20px); }
+                100% { opacity: 1; transform: scale(1) translateY(0); }
+              }
+              .premium-modal-vaf {
+                animation: modalPopPremium 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              }
+              .premium-card-hover {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              }
+              .premium-card-hover:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+              }
+              .btn-premium-close {
+                transition: all 0.2s ease;
+              }
+              .btn-premium-close:hover {
+                background: var(--bg-subtle, #f3f4f6);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+              }
+            `}
+          </style>
+
+          <div className="premium-modal-vaf" style={{background: 'var(--bg-main, #ffffff)', width: '100%', maxWidth: '850px', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', overflow: 'hidden', border: '1px solid var(--border-soft)'}}>
+            
+            {/* Encabezado */}
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '32px 40px', background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-subtle) 100%)', borderBottom: '1px solid var(--border-soft)'}}>
+              <div style={{display: 'flex', gap: '20px', alignItems: 'center'}}>
+                <div style={{width: '64px', height: '64px', borderRadius: '18px', background: 'var(--primary-bg, #eff6ff)', color: 'var(--primary, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px -4px rgba(37, 99, 235, 0.2)'}}>
+                  <FiDollarSign size={32} />
+                </div>
+                <div>
+                  <h2 style={{fontSize: '28px', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.02em'}}>
+                    Detalles del Año Fiscal {poaSeleccionado.fecha_inicio ? poaSeleccionado.fecha_inicio.substring(0, 4) : ''}
+                  </h2>
+                  <p style={{color: 'var(--text-muted)', marginTop: '6px', fontSize: '15px', fontWeight: 500}}>Visión detallada de fondos y asignaciones presupuestarias</p>
+                </div>
+              </div>
+              <button onClick={() => setPoaSeleccionado(null)} className="btn-premium-close" style={{background: 'transparent', border: '1px solid var(--border-soft)', padding: '10px 24px', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, color: 'var(--text-main)', fontSize: '14px'}}>
+                Cerrar
+              </button>
+            </div>
+            
+            {/* Contenido */}
+            <div style={{padding: '40px', overflowY: 'auto', background: '#fcfcfd'}}>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px'}}>
+                
+                {/* Tarjeta Presupuesto Total */}
+                <div className="premium-card-hover" style={{background: 'var(--bg-card)', padding: '28px', borderRadius: '20px', border: '1px solid var(--border-soft)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'}}>
+                  <div style={{fontSize: '13px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <div style={{width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)'}}></div>
+                    Presupuesto Aprobado
+                  </div>
+                  <div style={{fontSize: '36px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.03em'}}>
+                    <span style={{fontSize: '20px', color: 'var(--text-muted)', marginRight: '4px', fontWeight: 600}}>RD$</span>
+                    {Number(poaSeleccionado.monto_total).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                  </div>
+                </div>
+
+                {/* Tarjeta Presupuesto Disponible */}
+                <div className="premium-card-hover" style={{background: 'linear-gradient(135deg, var(--success-bg, #ecfdf5) 0%, #ffffff 100%)', padding: '28px', borderRadius: '20px', border: '2px solid var(--success, #10b981)', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.1)'}}>
+                  <div style={{fontSize: '13px', color: '#065F46', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <div style={{width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success, #10b981)', boxShadow: '0 0 8px var(--success, #10b981)'}}></div>
+                    Presupuesto Disponible
+                  </div>
+                  <div style={{fontSize: '36px', fontWeight: 800, color: 'var(--success, #059669)', letterSpacing: '-0.03em'}}>
+                    <span style={{fontSize: '20px', color: '#059669', opacity: 0.8, marginRight: '4px', fontWeight: 600}}>RD$</span>
+                    {Number(poaSeleccionado.monto_disponible).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                  </div>
+                </div>
+
+                {/* Tarjeta de Fechas */}
+                <div className="premium-card-hover" style={{background: 'var(--bg-card)', padding: '28px', borderRadius: '20px', border: '1px solid var(--border-soft)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'}}>
+                  <div style={{fontSize: '13px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '20px'}}>Fechas del Periodo</div>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-subtle)', padding: '14px 20px', borderRadius: '12px'}}>
+                      <div style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600}}>Inicio</div>
+                      <div style={{fontSize: '15px', fontWeight: 700, color: 'var(--text-main)'}}>{poaSeleccionado.fecha_inicio ? poaSeleccionado.fecha_inicio.substring(0, 10) : ''}</div>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-subtle)', padding: '14px 20px', borderRadius: '12px'}}>
+                      <div style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600}}>Término</div>
+                      <div style={{fontSize: '15px', fontWeight: 700, color: 'var(--text-main)'}}>{poaSeleccionado.fecha_fin ? poaSeleccionado.fecha_fin.substring(0, 10) : ''}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tarjeta Info Extra */}
+                <div className="premium-card-hover" style={{background: 'var(--bg-card)', padding: '28px', borderRadius: '20px', border: '1px solid var(--border-soft)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'}}>
+                  <div style={{fontSize: '13px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '20px'}}>Información de Registro</div>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border-soft)'}}>
+                      <div style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500}}>ID Registro</div>
+                      <div style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)'}}>#{poaSeleccionado.id_poa}</div>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0'}}>
+                      <div style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500}}>Creado por</div>
+                      <div style={{fontSize: '16px', fontWeight: 700, color: 'var(--text-main)'}}>{poaSeleccionado.creado_por || 'Sistema'}</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
