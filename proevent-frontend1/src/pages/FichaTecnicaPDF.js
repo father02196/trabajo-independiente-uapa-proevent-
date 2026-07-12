@@ -23,7 +23,7 @@ import './../css/Dashboard.css';
  * - organizadores: Personal asignado al evento
  * - onClose: función para cerrar la vista modal.
  */
-export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios, organizadores, observaciones, onClose }) {
+export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios, organizadores, observaciones, cronograma, onClose }) {
   const componentRef = useRef();
 
   // --- FUNCIÓN: handlePrint ---
@@ -152,6 +152,35 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                 </table>
               ) : (
                 <p style={{ fontSize: '14px', color: '#64748b' }}>No hay personal organizador asignado.</p>
+              )}
+            </section>
+
+            {/* 3.5 Cronograma Operativo */}
+            <section style={{ marginBottom: '30px' }}>
+              <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>Cronograma Logístico Operativo</h2>
+              {cronograma && cronograma.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Actividad</th>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Responsable</th>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Fecha Límite</th>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cronograma.map((act, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '10px' }}>{act.nombre_actividad}</td>
+                        <td style={{ padding: '10px', fontWeight: 'bold' }}>{act.responsable || 'No asignado'}</td>
+                        <td style={{ padding: '10px' }}>{new Date(act.fecha_cumplimiento).toLocaleDateString()}</td>
+                        <td style={{ padding: '10px', color: act.estado === 'Completada' ? '#16a34a' : '#ea580c' }}>{act.estado}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ fontSize: '14px', color: '#64748b' }}>No hay actividades de cronograma asignadas.</p>
               )}
             </section>
 
