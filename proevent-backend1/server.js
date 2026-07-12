@@ -450,6 +450,134 @@ app.get('/api/auth/me', verificarToken, (req, res) => {
 const rutasFase4 = require('./rutas_fase4')(db);
 app.use('/api', rutasFase4);
 
+// ── RESTABLECIMIENTO DE CONTRASEÑA (EMAIL FLOW OAUTH BYPASS) ───────
+app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo inicial para flujo "Olvidé mi contraseña"
+  const { correo } = req.body; // Extrae el input string del email digitado por el usuario en conflicto
+
+  db.query('SELECT id_usuario FROM usuario WHERE correo = ?', [correo], (err, results) => { // Chequeo de seguridad: Validar si de hecho existe
+    if (err) return res.status(500).json({ mensaje: 'Error al consultar la base de datos' }); // Falla de lectura base MySQL
+    if (results.length === 0) { // Si el motor retorna Array vacío = El usuario es fantasma o se equivocó al teclear
+      return res.status(404).json({ mensaje: 'El correo no está registrado' }); // 404 No encontrado explícito
+    }
+
+    // Generar token criptográfico pseudo-aleatorio único de seguridad (Non-guessable Hash string)
+    const token = crypto.randomBytes(32).toString('hex'); // Librería Crypto nativa NodeJS: Genera 64 caracteres Hexadecimales
+    const expiracion = new Date(Date.now() + 3600000); // 1 hora exacta de validez estricta (Time to live TTL) sumada en formato Milisegundos Epoch a la fecha Actual
+
+    db.query( // Asienta transaccionalmente en la Tabla Temporal el hash y su atadura al correo
+      'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, ?)',
+      [correo, token, expiracion], // Pasa parámetros
+      (errInsert) => { // Callback
+        if (errInsert) return res.status(500).json({ mensaje: 'Error al generar el token' }); // Rechazo por caída de disco
+
+        const link = `http://localhost:3000/reset-password/${token}`; // Concatena el hipervínculo físico mágico inyectando el Hash como segmento URL Dinámico
+
+        // Configuración de Transportador SMTP Gmail (Nodemailer Middleware Module)
+        // [REFAC] Se elimina la instanciación local de nodemailer aquí, delegando a config/mailer.js
+
+        const mailOptions = { // Objeto estructurado Diccionario de Parametros SendMail Base HTML/Texto
+          // from se omite para usar el valor por defecto centralizado en mailer.js
+          to: correo, // Target endpoint receptor (Cliente)
+          subject: 'Restablecer tu contraseña - ProEvent UAPA', // Título Subject header tag
+          text: `Recuperación de Contraseña\n\nEstimado/a usuario/a,\n\nHemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en UAPA-PROEVENT.\n\nPara continuar con el proceso de recuperación, visita el siguiente enlace (válido por 1 hora):\n${link}\n\nSi no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.\n\nAtentamente,\n\nSistema UAPA-PROEVENT\nPlataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos\nUniversidad Abierta para Adultos (UAPA)`, // Fallback plaintext puro si cliente correo NO admite HTML Render
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
+              <div style="text-align:center; margin-bottom: 20px;">
+                <img src="cid:logoproevent" alt="Logo ProEvent" style="width: 180px; height: auto;" />
+              </div>
+              <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña</h2>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Estimado/a usuario/a,</p>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en <strong>UAPA-PROEVENT</strong>.</p>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora a partir de la recepción de este mensaje.</strong></p>
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
+                  Presione Para Restablecer Contraseña
+                </a>
+              </div>
+              <p style="color:#555; font-size:14px; line-height:1.5;">Si no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.</p>
+              <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
+              <p style="color:#555; font-size:14px; line-height:1.5; margin-bottom: 5px;">Atentamente,</p>
+              <p style="color:#1e3a5f; font-size:14px; line-height:1.4; margin-top:0;">
+                <strong>Sistema UAPA-PROEVENT</strong><br>
+                <span style="font-size:12px; color:#666;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos<br>
+                Universidad Abierta para Adultos (UAPA)</span>
+              </p>
+            </div>
+          `, // Inyección Inline CSS para bypass de Email Clients restrictivos (Gmail/Outlook safe css render engine compliant code structure rules block table formatting hack fix)
+          attachments: [
+            {
+              filename: 'logo-proevent.jpeg',
+              path: require('path').join(__dirname, '../proevent-frontend1/src/img/logo-proevent.jpeg'),
+              cid: 'logoproevent' // same cid value as in the html img src
+            }
+          ]
+        };
+
+        sendMailCentralizado(mailOptions).then(info => {
+          console.log(`✅ Correo enviado a: ${correo} (ID: ${info.messageId})`); // Rastreo feliz Server Node Terminal log monitor process trace uid ID messageid
+          res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' }); // Respuesta final HTTP STATUS 200 al UI solicitante de paciencia para revisión Inbox
+        }).catch(errMail => {
+          console.error('❌ Error enviando correo:', errMail.message); // Consola verbose local log failure
+          return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' }); // Avisa fallo
+        });
+      }
+    );
+  });
+});
+
+app.get('/validar-token/:token', (req, res) => { // Endpoint auxiliar silencioso de ping pong. Su función es que la Pantalla GUI Reset password se auto-destruya si el token URL caducó o es falso sin requerir botonazo al montar en RAM component
+  const { token } = req.params; // Toma segmento Path Dinamico
+  db.query( // Lee la tabla sucia temporal de tokens
+    'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Magia SQL C: Chequea MATCH de string con WHERE y usa función matemática Date de base de datos nativa NOW() para verificar si expiró (Time Travel Logic Validation Engine)
+    [token],
+    (err, results) => { // Analiza return array length bool
+      if (err) return res.status(500).json({ mensaje: 'Error al validar el token' }); // Manejador basico logico error
+      if (results.length === 0) { // Si falló (O no existe ese hash inventado hacker, o sí existe pero expiracion < menor que NOW())
+        return res.status(400).json({ mensaje: 'Token inválido o expirado' }); // Lanza destello mortal al UI para bloquear y ocultar inputs del formulario de nueva key
+      }
+      res.json({ mensaje: 'Token válido', correo: results[0].correo }); // Concede Permiso UI Temporal a renderizar Cajas de Texto "Nueva Contraseña x2" y exporta el Mail Subyacente acoplado al hash index
+    }
+  );
+});
+
+app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutador Táctico Finalizador (Post de ejecución destructiva y sobre-escritura)
+  const { token, nuevaContrasena } = req.body; // Requiere la llave token devuelta en payload y el plaintext string password recien digitado
+
+  // 1. Re-Validar Estrictamente lado servidor node el token antes de matar contraseña antigua (Evita Bypassing REST calls Postman y Replays)
+  db.query(
+    'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Mismo chequeo de caducidad temporal anti-latencia
+    [token],
+    async (err, results) => {
+      if (err) return res.status(500).json({ mensaje: 'Error al validar el token' }); // Fallo Try Catch like
+      if (results.length === 0) { // Timeout confirmacion reaccion tardia usuario o inyeccion delay ataque
+        return res.status(400).json({ mensaje: 'Token inválido o expirado' });
+      }
+
+      const correo = results[0].correo; // Pinpoint selectivo estricto de la cuenta víctima objetiva a actualizar segun el token
+
+      try {
+        const passwordHash = await bcrypt.hash(nuevaContrasena, 12);
+        
+        // 2. Actualizar contraseña oficial y forzar invalidación de sesiones previas
+        db.query(
+          'UPDATE usuario SET password_hash = ?, contrasena = NULL, password_changed_at = NOW(), token_version = token_version + 1, failed_login_attempts = 0, locked_until = NULL WHERE correo = ?', 
+          [passwordHash, correo],
+          (errUpdate) => {
+            if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' }); 
+
+            // 3. Destruir e incinerar el token usado para asegurar su condición "Uso Único Desechable Limitado"
+            db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => { }); 
+
+            res.json({ mensaje: 'Contraseña actualizada con éxito' }); 
+          }
+        );
+      } catch (hashError) {
+        return res.status(500).json({ mensaje: 'Error interno encriptando contraseña' });
+      }
+    }
+  );
+});
+
 // Proteger todas las rutas a partir de aquí
 app.use(verificarToken);
 
@@ -1512,43 +1640,6 @@ app.get('/validar-token/:token', (req, res) => { // Endpoint auxiliar silencioso
   );
 });
 
-app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutador Táctico Finalizador (Post de ejecución destructiva y sobre-escritura)
-  const { token, nuevaContrasena } = req.body; // Requiere la llave token devuelta en payload y el plaintext string password recien digitado
-
-  // 1. Re-Validar Estrictamente lado servidor node el token antes de matar contraseña antigua (Evita Bypassing REST calls Postman y Replays)
-  db.query(
-    'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Mismo chequeo de caducidad temporal anti-latencia
-    [token],
-    async (err, results) => {
-      if (err) return res.status(500).json({ mensaje: 'Error al validar el token' }); // Fallo Try Catch like
-      if (results.length === 0) { // Timeout confirmacion reaccion tardia usuario o inyeccion delay ataque
-        return res.status(400).json({ mensaje: 'Token inválido o expirado' });
-      }
-
-      const correo = results[0].correo; // Pinpoint selectivo estricto de la cuenta víctima objetiva a actualizar segun el token
-
-      try {
-        const passwordHash = await bcrypt.hash(nuevaContrasena, 12);
-        
-        // 2. Actualizar contraseña oficial y forzar invalidación de sesiones previas
-        db.query(
-          'UPDATE usuario SET password_hash = ?, contrasena = NULL, password_changed_at = NOW(), token_version = token_version + 1, failed_login_attempts = 0, locked_until = NULL WHERE correo = ?', 
-          [passwordHash, correo],
-          (errUpdate) => {
-            if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' }); 
-
-            // 3. Destruir e incinerar el token usado para asegurar su condición "Uso Único Desechable Limitado"
-            db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => { }); 
-
-            res.json({ mensaje: 'Contraseña actualizada con éxito' }); 
-          }
-        );
-      } catch (hashError) {
-        return res.status(500).json({ mensaje: 'Error interno encriptando contraseña' });
-      }
-    }
-  );
-});
 
 // ── EVALUACIONES DE CALIDAD EVENTO POST-MORTEM ─ CREAR ───────────────────────────────
 app.post('/evaluaciones', (req, res) => { // Via POST API graba encuesta final de calidad retroalimentadora del solicitante
@@ -2193,10 +2284,10 @@ app.get('/servicios-externos-all', (req, res) => {
 
 // --- ENDPOINTS ADMINISTRATIVOS FASE 2 ---
 app.put('/api/servicio_externo/:id/admin', (req, res) => {
-  const { numero_orden_compra, requiere_contrato } = req.body;
+  const { numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada } = req.body;
   const id_usuario = req.headers['x-usuario-id'];
-  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ? WHERE id_servicio_ext = ?',
-    [numero_orden_compra, requiere_contrato, req.params.id], (err) => {
+  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ?, id_cotizacion_adjudicada = ? WHERE id_servicio_ext = ?',
+    [numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada, req.params.id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
       if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
       res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
@@ -2252,7 +2343,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
   db.query('SELECT * FROM presupuesto WHERE id_evento = ?', [id_evento], (e1, r1) => {
     db.query('SELECT * FROM flujo_aprobacion_legal WHERE id_evento = ?', [id_evento], (e2, r2) => {
       db.query(`
-        SELECT cr.*, sc.id_evento, pe.nombre as proveedor_nombre 
+        SELECT cr.*, sc.id_evento, pe.nombre_empresa as proveedor_nombre 
         FROM cotizacion_recibida cr
         JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
         JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
@@ -2269,7 +2360,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
 
 app.get('/api/notificaciones/cotizaciones-vencidas', (req, res) => {
   db.query(`
-    SELECT cr.id_cotizacion, pe.nombre as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
+    SELECT cr.id_cotizacion, pe.nombre_empresa as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
     FROM cotizacion_recibida cr
     JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
     JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
@@ -2442,6 +2533,16 @@ app.post('/api/logistica/:id_servicio/evidencia-contabilidad', upload.single('ar
   db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=? WHERE id_servicio_ext=?`, [rutaRelativa, id_servicio], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
     res.json({mensaje: 'Evidencia subida correctamente', ruta: rutaRelativa});
+  });
+});
+
+// Eliminar Evidencia Contabilidad (Paso 16 - Revertir)
+app.delete('/api/logistica/:id_servicio/evidencia-contabilidad', (req, res) => {
+  const { id_servicio } = req.params;
+  
+  db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=NULL WHERE id_servicio_ext=?`, [id_servicio], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    res.json({mensaje: 'Evidencia eliminada correctamente'});
   });
 });
 

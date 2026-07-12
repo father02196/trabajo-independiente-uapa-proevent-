@@ -197,11 +197,10 @@ module.exports = (db) => {
       if (results.length === 0) return res.status(404).json({ mensaje: 'El correo no está registrado como proveedor' });
 
       const token = crypto.randomBytes(32).toString('hex');
-      const expiracion = new Date(Date.now() + 3600000); // 1 hora
 
       db.query(
-        'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, ?)',
-        [correo, token, expiracion],
+        'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))',
+        [correo, token],
         (errInsert) => {
           if (errInsert) return res.status(500).json({ mensaje: 'Error al generar el token' });
 
