@@ -165,7 +165,7 @@ function AsignacionPersonal({ usuario, eventoPreseleccionado = null }) {
               <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>Evento Activo: {eventoSeleccionado.nombre}</h4>
               <div style={{ display: 'flex', gap: '15px', fontSize: '0.9rem', color: '#555' }}>
                 <span><FiCalendar /> {new Date(eventoSeleccionado.fecha_inicio).toLocaleDateString()}</span>
-                <span><FiMapPin /> {eventoSeleccionado.recinto_nombre || 'Recinto'}</span>
+                <span><FiMapPin /> {eventoSeleccionado.recinto || 'Recinto'}</span>
                 <span><FiCheckCircle /> {eventoSeleccionado.estado}</span>
               </div>
             </div>

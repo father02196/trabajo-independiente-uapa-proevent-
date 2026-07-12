@@ -112,7 +112,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                 <div><strong>Asistentes Estimados:</strong> {evento.cantidad_asistentes}</div>
                 <div><strong>Fecha de Inicio:</strong> {new Date(evento.fecha_inicio).toLocaleDateString()} ({evento.hora_inicio?.substring(0,5)})</div>
                 <div><strong>Fecha de Fin:</strong> {new Date(evento.fecha_fin).toLocaleDateString()} ({evento.hora_fin})</div>
-                <div style={{ gridColumn: 'span 2' }}><strong>Ubicación:</strong> {evento.recinto_nombre || 'No especificada'}</div>
+                <div style={{ gridColumn: 'span 2' }}><strong>Ubicación:</strong> {evento.recinto || 'No especificada'}</div>
               </div>
             </section>
 
