@@ -24,6 +24,12 @@ const generateRefreshToken = (user) => {
 
 // Middleware para verificar el token
 const verificarToken = (req, res, next) => {
+  // Permitir el paso sin token a las rutas de recuperación de contraseña (que por definición son públicas)
+  const publicPaths = ['/solicitar-recuperacion', '/restablecer-contrasena', '/validar-token', '/solicitar-restablecimiento', '/login'];
+  if (publicPaths.some(path => req.path.includes(path))) {
+    return next();
+  }
+
   const token = req.cookies.accessToken;
 
   if (!token) {
