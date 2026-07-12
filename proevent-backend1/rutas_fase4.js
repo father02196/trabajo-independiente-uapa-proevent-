@@ -294,16 +294,6 @@ module.exports = (db) => {
             ]
           };
 
-<<<<<<< HEAD
-          sendMailCentralizado(mailOptions)
-            .then(() => {
-              res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
-            })
-            .catch((errMail) => {
-              console.error('Error enviando correo a proveedor:', errMail.message);
-              res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
-            });
-=======
           sendMailCentralizado(mailOptions).then(info => {
             console.log(`✅ Correo enviado a proveedor: ${correo} (ID: ${info.messageId})`);
             res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
@@ -311,7 +301,6 @@ module.exports = (db) => {
             console.error('Error enviando correo a proveedor:', errMail.message);
             return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
           });
->>>>>>> calendar
         }
       );
     });

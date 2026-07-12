@@ -1499,8 +1499,11 @@ app.put('/audiovisual/evento/:id_evento/estado', (req, res) => { // Sub-endpoint
   });
 });
 
+// ── RESTABLECIMIENTO DE CONTRASEÑA (EMAIL FLOW OAUTH BYPASS) ───────
+app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo inicial para flujo "Olvidé mi contraseña"
+  const { correo } = req.body; // Extrae el input string del email digitado por el usuario en conflicto
 
-<<<<<<< HEAD
+
   db.query('SELECT id_usuario FROM usuario WHERE correo = ?', [correo], (err, results) => { // Chequeo de seguridad: Validar si de hecho existe
     if (err) return res.status(500).json({ mensaje: 'Error al consultar la base de datos' }); // Falla de lectura base MySQL
     if (results.length === 0) { // Si el motor retorna Array vacío = El usuario es fantasma o se equivocó al teclear
@@ -1675,8 +1678,6 @@ app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutad
     }
   );
 });
-=======
->>>>>>> 1b7b698a09253f883a1f2089d6eb92b811fdc2a9
 
 // ── EVALUACIONES DE CALIDAD EVENTO POST-MORTEM ─ CREAR ───────────────────────────────
 app.post('/evaluaciones', (req, res) => { // Via POST API graba encuesta final de calidad retroalimentadora del solicitante
