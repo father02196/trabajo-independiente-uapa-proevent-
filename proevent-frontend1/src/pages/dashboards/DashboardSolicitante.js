@@ -39,6 +39,11 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
   const [sortOrder, setSortOrder]             = useState("asc"); // Orden del timeline
 
+  // --- ESTADOS DEL TRACKING ---
+  const [trackingModalOpen, setTrackingModalOpen] = useState(false);
+  const [trackingData, setTrackingData]           = useState(null);
+  const [trackingLoading, setTrackingLoading]     = useState(false);
+
   // --- FUNCIONES: openModal / closeModal ---
   const openModal = (req) => {
     setSelectedRequest(req);
@@ -47,6 +52,32 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedRequest(null);
+  };
+
+  // --- FUNCIONES: abrirTracking / cerrarTracking ---
+  const abrirTracking = async (req) => {
+    setTrackingModalOpen(true);
+    setTrackingLoading(true);
+    setTrackingData(null);
+    try {
+      const res = await fetch(`${API}/api/aprobaciones-evento/${req.id_evento}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTrackingData(data);
+      } else {
+        setTrackingData({ error: "No se encontró tracking de validaciones" });
+      }
+    } catch (error) {
+      console.error("Error al cargar tracking", error);
+      setTrackingData({ error: "Error de conexión con el servidor" });
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  const cerrarTracking = () => {
+    setTrackingModalOpen(false);
+    setTrackingData(null);
   };
 
   // --- EFECTO: Carga cuando el usuario está disponible ---
@@ -324,10 +355,14 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                         </div>
                       </div>
                       
-                      <div className="modern-event-footer">
-                        <button type="button" className="modern-view-btn" title="Ver detalles del evento" aria-label="Ver ficha de mi solicitud">
-                          <span>Ver Ficha Técnica</span>
+                      <div className="modern-event-footer" style={{ display: 'flex', gap: '8px' }}>
+                        <button type="button" className="modern-view-btn" title="Ver detalles del evento" aria-label="Ver ficha de mi solicitud" onClick={(e) => { e.stopPropagation(); openModal(evt); }}>
+                          <span>Ficha Técnica</span>
                           <FiArrowUpRight className="modern-btn-icon" />
+                        </button>
+                        <button type="button" className="modern-view-btn" style={{ background: '#f8fafc', color: '#3b82f6', border: '1px solid #bfdbfe' }} title="Ver seguimiento de aprobación" onClick={(e) => { e.stopPropagation(); abrirTracking(evt); }}>
+                          <span>Seguimiento</span>
+                          <FiActivity className="modern-btn-icon" />
                         </button>
                       </div>
                     </div>
@@ -481,13 +516,104 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
               </div>
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button type="button" className="btn btn-primary" onClick={() => abrirTracking(selectedRequest)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiActivity /> Ver Seguimiento
+              </button>
               <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar modal">Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,
         document.body
       )}
+
+      {/* --- MODAL DE TRACKING DE APROBACIONES --- */}
+      {trackingModalOpen && ReactDOM.createPortal(
+        <div className="modal-overlay" onClick={cerrarTracking} style={{ zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '700px', backgroundColor: '#fff', borderRadius: '20px', overflow: 'hidden' }}>
+            <div className="modal-header" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)', padding: '24px 32px', borderBottom: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FiActivity size={24} />
+                </div>
+                <div>
+                  <h3 className="modal-title" style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>Seguimiento de Aprobaciones</h3>
+                  <span className="modal-subtitle" style={{ fontSize: '14px', color: '#64748b' }}>Estado de revisión por área operativa</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-body" style={{ padding: '32px', backgroundColor: '#fcfcfd' }}>
+              {trackingLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
+                  <div className="loader" style={{ marginBottom: '16px' }}></div>
+                  <p style={{ color: '#64748b', fontWeight: 500 }}>Analizando flujo de validación...</p>
+                </div>
+              ) : trackingData?.error ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+                    <FiCheckCircle size={32} />
+                  </div>
+                  <h4 style={{ color: '#0f172a', fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>{trackingData.error}</h4>
+                </div>
+              ) : (
+                <>
+                  {/* Banner de Estado General */}
+                  <div style={{ padding: '20px', borderRadius: '16px', marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '16px', border: `2px solid ${trackingData?.puede_iniciar ? '#10b981' : trackingData?.hay_rechazos ? '#ef4444' : '#f59e0b'}`, backgroundColor: trackingData?.puede_iniciar ? '#ecfdf5' : trackingData?.hay_rechazos ? '#fef2f2' : '#fffbeb' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: trackingData?.puede_iniciar ? '#10b981' : trackingData?.hay_rechazos ? '#ef4444' : '#f59e0b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                      {trackingData?.puede_iniciar ? <FiCheckCircle size={24} /> : trackingData?.hay_rechazos ? <FiCheckCircle size={24} /> : <FiClock size={24} />}
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: trackingData?.puede_iniciar ? '#065f46' : trackingData?.hay_rechazos ? '#991b1b' : '#b45309' }}>
+                        {trackingData?.puede_iniciar ? "¡Aprobado Completamente!" : trackingData?.hay_rechazos ? "Evento Rechazado" : "En Revisión Continua"}
+                      </h4>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: trackingData?.puede_iniciar ? '#047857' : trackingData?.hay_rechazos ? '#b91c1c' : '#d97706' }}>
+                        {trackingData?.puede_iniciar ? "Todas las áreas han validado tu evento. Listo para iniciar." : trackingData?.hay_rechazos ? "Una o más áreas han declinado la solicitud." : "Tu evento aún se encuentra recorriendo el flujo de aprobación."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Lista de Aprobaciones por Área */}
+                  <h4 style={{ fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', marginBottom: '16px' }}>Estado por Departamento</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {trackingData?.aprobaciones?.map((area, index) => {
+                      let bg = '#f8fafc', border = '#e2e8f0', iconColor = '#94a3b8', badgeBg = '#f1f5f9', badgeText = '#475569', Icon = FiClock;
+                      
+                      if (!area.requerido) {
+                        bg = '#f8fafc'; border = '#f1f5f9'; iconColor = '#cbd5e1'; badgeBg = '#f1f5f9'; badgeText = '#94a3b8'; Icon = FiCheckCircle;
+                      } else if (area.estado === 'Aprobado' || area.estado === 'Completado') {
+                        bg = '#fff'; border = '#10b981'; iconColor = '#10b981'; badgeBg = '#ecfdf5'; badgeText = '#059669'; Icon = FiCheckCircle;
+                      } else if (area.estado === 'Rechazado') {
+                        bg = '#fff'; border = '#ef4444'; iconColor = '#ef4444'; badgeBg = '#fef2f2'; badgeText = '#dc2626'; Icon = FiCheckCircle;
+                      } else {
+                        bg = '#fff'; border = '#f59e0b'; iconColor = '#f59e0b'; badgeBg = '#fffbeb'; badgeText = '#d97706'; Icon = FiClock;
+                      }
+
+                      return (
+                        <div key={index} style={{ padding: '16px 20px', borderRadius: '12px', borderLeft: `4px solid ${border}`, borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', backgroundColor: bg, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <Icon size={20} color={iconColor} />
+                            <span style={{ fontSize: '15px', fontWeight: 600, color: area.requerido ? '#0f172a' : '#94a3b8' }}>{area.area}</span>
+                          </div>
+                          <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, backgroundColor: badgeBg, color: badgeText }}>
+                            {!area.requerido ? 'No requerido' : area.estado}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '20px 32px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-secondary" onClick={cerrarTracking}>Cerrar Tracking</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 }
