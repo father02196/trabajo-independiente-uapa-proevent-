@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import './../css/Welcome.css';
 import uapaLogo from './../img/Logo-blanco-UAPA.png';
 
-import emblemProevent from './../img/Emblema-Proevent.jpeg';
+import logoIcono from './../img/logo-icono.png';
 
 const API = "http://localhost:8080";
 
@@ -153,12 +153,12 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
       {/* ══════════════════════ NAVBAR ══════════════════════ */}
       <header className={`welcome-header${scrolled ? " scrolled" : ""}`}>
         <div className="header-logo-area">
-          <img src={emblemProevent} alt="Emblema UAPA" className="header-emblem-img" />
+          <div className="header-emblem-crop">
+            <img src={logoIcono} alt="Ícono UAPA ProEvent" className="header-emblem-img" />
+          </div>
           <div className="header-text-block">
             <span className="header-title">
-              <span className="header-uapa">UAPA</span>
-              <span className="header-dash">-</span>
-              <span className="header-proevent">ProEvent</span>
+              <span className="header-uapa">UAPA</span><span className="header-dash">-</span><span className="header-proevent">ProEvent</span>
             </span>
             <span className="header-subtitle">Sistema de Gestión de Eventos Institucionales</span>
           </div>

@@ -33,7 +33,8 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
   const [eventRequests, setEventRequests] = useState([]); // Todos los eventos del sistema
   const [loading, setLoading]             = useState(true); // Spinner de carga
   const [error, setError]                 = useState("");   // Mensaje de error
-  const [sortOrder, setSortOrder]         = useState("asc"); // Orden del timeline
+  const [sortFecha, setSortFecha]         = useState("asc");  // Orden por fecha: asc | desc
+  const [sortId, setSortId]               = useState("");     // Orden por ID: asc | desc | "" (sin orden por ID)
 
   // --- ESTADOS DEL MODAL ---
   const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal
@@ -132,9 +133,11 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
   const proximosEventos = solicitudesRelevantes
     .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
     .sort((a, b) => {
-      const dateA = new Date(a.fecha_inicio);
-      const dateB = new Date(b.fecha_inicio);
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      if (sortId === "asc")  return Number(a.id_evento) - Number(b.id_evento);
+      if (sortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
+      return sortFecha === "asc"
+        ? new Date(a.fecha_inicio) - new Date(b.fecha_inicio)
+        : new Date(b.fecha_inicio) - new Date(a.fecha_inicio);
     })
     .slice(0, 5);
 
@@ -259,25 +262,74 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
 
       <div className="dashboard-double-panel">
         <div className="saas-panel-card">
-          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <FiCalendar className="panel-icon" />
               <div>
                 <h4>Eventos Próximos (Global)</h4>
                 <p>Agenda general de los próximos días</p>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <select
-                className="saas-select"
-                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
+
+            {/* ── CONTROLES DE ORDEN ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '4px 8px' }}>
+
+              {/* Selector: Orden por Fecha */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <FiCalendar style={{ fontSize: '12px', color: '#64748b', flexShrink: 0 }} />
+                <select
+                  id="sort-fecha-agenda"
+                  value={sortFecha}
+                  onChange={e => { setSortFecha(e.target.value); setSortId(""); }}
+                  style={{
+                    border: 'none', background: 'transparent', fontSize: '12px',
+                    fontWeight: '600', color: sortId === "" ? '#3b82f6' : '#64748b',
+                    cursor: 'pointer', outline: 'none', padding: '3px 2px'
+                  }}
+                  aria-label="Ordenar por fecha"
+                >
+                  <option value="asc">Fecha ↑</option>
+                  <option value="desc">Fecha ↓</option>
+                </select>
+              </div>
+
+              {/* Divisor */}
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+
+              {/* Selector: Orden por ID */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>#</span>
+                <select
+                  id="sort-id-agenda"
+                  value={sortId}
+                  onChange={e => setSortId(e.target.value)}
+                  style={{
+                    border: 'none', background: 'transparent', fontSize: '12px',
+                    fontWeight: '600', color: sortId !== "" ? '#3b82f6' : '#64748b',
+                    cursor: 'pointer', outline: 'none', padding: '3px 2px'
+                  }}
+                  aria-label="Ordenar por ID"
+                >
+                  <option value="">ID —</option>
+                  <option value="asc">ID ↑</option>
+                  <option value="desc">ID ↓</option>
+                </select>
+              </div>
+
+              {/* Divisor */}
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+
+              {/* Botón actualizar */}
+              <button
+                type="button"
+                className="reload-data-btn"
+                onClick={() => cargarDatos()}
+                title="Actualizar datos"
+                aria-label="Actualizar datos del panel"
+                style={{ marginLeft: '2px' }}
               >
-                <option value="asc">Más próximos (Asc)</option>
-                <option value="desc">Más lejanos (Desc)</option>
-              </select>
-              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar datos del panel"><FiRefreshCw /></button>
+                <FiRefreshCw />
+              </button>
             </div>
           </div>
           <div className="panel-body">
