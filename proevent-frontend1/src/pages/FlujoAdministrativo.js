@@ -284,7 +284,16 @@ export default function FlujoAdministrativo({ usuario }) {
             id_usuario_revisor: usuario?.id_usuario     // Registro de quién dictó el fallo
           })
         });
-        if (res.ok) toast.success('Flujo legal actualizado');
+        if (res.ok) {
+           toast.success('Flujo legal actualizado');
+           setLegal({ estado_legal: 'Pendiente', observacion_legal: '' });
+           setEventoSeleccionado(null);
+           // Recargar la lista de eventos para reflejar cambios en la tabla
+           const evtRes = await fetch(`${API}/eventos`);
+           const evtData = await evtRes.json();
+           const eventosPermitidos = Array.isArray(evtData) ? evtData.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") : [];
+           setEventos(eventosPermitidos);
+        }
       }
     } catch (err) {
       toast.error('Error de conexión');
