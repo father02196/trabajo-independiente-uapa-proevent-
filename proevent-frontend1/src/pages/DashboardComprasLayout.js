@@ -10,7 +10,7 @@ import React, { useState } from "react";
 import { FiLogOut, FiHeadphones, FiList, FiCalendar, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
-import emblemProevent from "./../img/Emblema-Proevent.jpeg";
+import logoIcono from './../img/logo-icono.png';
 import dashboardIcon from "./../img/dashboard.png";
 
 import DashboardCompras from "./DashboardCompras";
@@ -100,14 +100,16 @@ function DashboardComprasLayout({ usuario, onLogoutClick }) {
         <div className={`dashboard-layout${isSidebarOpen ? '' : ' sidebar-collapsed'}`}>
             <aside className={`dashboard-sidebar${isSidebarOpen ? '' : ' sidebar-hidden'}`}>
                 <div className="sidebar-brand-custom">
-                    <img src={emblemProevent} alt="Emblema UAPA" className="brand-emblem-img" />
+                    <div className="brand-emblem-crop">
+                      <img src={logoIcono} alt="Emblema UAPA" className="brand-emblem-img" />
+                    </div>
                     <div className="brand-text-block">
                         <span className="brand-title">
                             <span className="brand-uapa">UAPA</span>
                             <span className="brand-dash">-</span>
                             <span className="brand-proevent">ProEvent</span>
                         </span>
-                        <span className="brand-subtitle">Sistema de Gestión de Eventos</span>
+                        <span className="brand-subtitle">Gestión de Eventos</span>
                     </div>
                 </div>
 
