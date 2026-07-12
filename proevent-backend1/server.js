@@ -2295,24 +2295,8 @@ app.put('/api/servicio_externo/:id/admin', (req, res) => {
 });
 
 app.put('/api/presupuesto/:id_evento', (req, res) => {
-  const { estado } = req.body;
-  const id_usuario = req.headers['x-usuario-id'];
-  db.query('SELECT id_presupuesto FROM presupuesto WHERE id_evento = ?', [req.params.id_evento], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (results.length === 0) {
-      db.query('INSERT INTO presupuesto (id_evento, total, estado) VALUES (?, 0, ?)', [req.params.id_evento, estado], (err2) => {
-        if (err2) return res.status(500).json({ error: err2.message });
-        if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'CREAR_PRESUPUESTO', `Presupuesto creado con estado ${estado} para evento ${req.params.id_evento}`]);
-        res.json({ mensaje: 'Presupuesto creado y estado actualizado' });
-      });
-    } else {
-      db.query('UPDATE presupuesto SET estado = ? WHERE id_evento = ?', [estado, req.params.id_evento], (err2) => {
-        if (err2) return res.status(500).json({ error: err2.message });
-        if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_PRESUPUESTO', `Presupuesto actualizado a ${estado} para evento ${req.params.id_evento}`]);
-        res.json({ mensaje: 'Estado del presupuesto actualizado' });
-      });
-    }
-  });
+  // RUTA DEPRECADA (Flujo unificado a poa_movimiento)
+  res.status(403).json({ mensaje: 'Esta acción está bloqueada. El presupuesto se aprueba automáticamente desde el módulo de Gestión Presupuestaria.' });
 });
 
 app.put('/api/flujo_legal/:id_evento', (req, res) => {
@@ -2340,7 +2324,7 @@ app.put('/api/flujo_legal/:id_evento', (req, res) => {
 
 app.get('/api/admin_evento/:id_evento', (req, res) => {
   const id_evento = req.params.id_evento;
-  db.query('SELECT * FROM presupuesto WHERE id_evento = ?', [id_evento], (e1, r1) => {
+  db.query('SELECT * FROM poa_movimiento WHERE id_evento = ? ORDER BY id_movimiento DESC LIMIT 1', [id_evento], (e1, r1) => {
     db.query('SELECT * FROM flujo_aprobacion_legal WHERE id_evento = ?', [id_evento], (e2, r2) => {
       db.query(`
         SELECT cr.*, sc.id_evento, pe.nombre_empresa as proveedor_nombre 
@@ -2469,7 +2453,18 @@ app.put('/api/eventos/:id/observar-presupuesto', (req, res) => {
   db.query(`UPDATE evento SET estado='Observado' WHERE id_evento=?`, [id], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
     
-    db.query(`UPDATE presupuesto SET estado='Devuelto' WHERE id_evento=?`, [id], (e2) => {
+    // Contabilidad Inversa Viva: Obtener el movimiento para devolver los fondos
+    db.query(`SELECT id_poa, monto_descontado_dop, estado FROM poa_movimiento WHERE id_evento=? ORDER BY id_movimiento DESC LIMIT 1`, [id], (e2, resMov) => {
+      if(!e2 && resMov.length > 0) {
+        const mov = resMov[0];
+        if(mov.estado !== 'Rechazado') {
+          // Restaurar fondos
+          db.query(`UPDATE poa_fiscal SET monto_disponible = monto_disponible + ? WHERE id_poa = ?`, [mov.monto_descontado_dop, mov.id_poa]);
+          // Actualizar estado del ledger
+          db.query(`UPDATE poa_movimiento SET estado='Rechazado', motivo_rechazo=? WHERE id_evento=?`, [`Devuelto por Observación: ${comentario}`, id]);
+        }
+      }
+      
       db.query(`INSERT INTO historial_observaciones (id_evento, id_usuario, departamento, comentario) VALUES (?, ?, 'VAF-Presupuesto', ?)`, 
       [id, id_usuario, comentario], (e3) => {
         if(e3) return res.status(500).json({error: e3.message});

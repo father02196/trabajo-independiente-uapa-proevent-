@@ -79,7 +79,7 @@ const notificarAutoFinalizacion = async (db, id_evento, nombre_evento, id_solici
 
         // 4. Evaluar condiciones para departamentos administrativos y operativos
         const [presupuestoRes] = await queryAsync(
-            `SELECT COUNT(*) as count FROM presupuesto WHERE id_evento = ? AND estado != 'Rechazado'`, 
+            `SELECT COUNT(*) as count FROM poa_movimiento WHERE id_evento = ? AND estado != 'Rechazado'`, 
             [id_evento]
         );
         const usoPresupuesto = presupuestoRes.count > 0;
