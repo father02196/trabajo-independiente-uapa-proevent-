@@ -75,6 +75,11 @@ const upload = multer({
 // Exponer la carpeta de uploads para acceso estático
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── INTEGRACIÓN GOOGLE CALENDAR ─────────────────────────────────────────────
+const googleCalendarRouter = require('./routes/googleCalendar');
+app.use('/google-calendar', googleCalendarRouter);
+
+
 // Endpoint genérico para subir documentos
 app.post('/api/documentos/upload', verificarToken, upload.single('archivo'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
@@ -1046,12 +1051,11 @@ app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar 
 
   const sql = `
     SELECT 
-      e.id_evento, e.nombre, e.fecha_inicio, e.fecha_fin, e.id_usuario,
+      e.id_evento, e.nombre, e.fecha_inicio, e.fecha_fin, e.hora_inicio, e.hora_fin, e.id_usuario, e.estado,
       r.nombre AS recinto,
       IF((SELECT COUNT(*) FROM servicio_audiovisual sa WHERE sa.id_evento = e.id_evento AND sa.estado != 'Rechazado') > 0, 1, 0) AS necesita_audiovisual
     FROM evento e
     LEFT JOIN recinto r ON e.id_recinto = r.id_recinto
-    WHERE e.estado != 'Rechazado' -- Evade y excluye completamente del dibujo agendado aquellos planes flagrantemente rechazados
   `; // Select parcial que ignora data confidencial administrativa e incluye banderas booleanas IF
 
   db.query(sql, (err, results) => { // Lanza Query
@@ -1063,9 +1067,12 @@ app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar 
         id: evt.id_evento, // Asignacion llave
         start: evt.fecha_inicio, // Mapping param start date 
         end: evt.fecha_fin, // Mapping param end date
+        hora_inicio: evt.hora_inicio,
+        hora_fin: evt.hora_fin,
         title: esPropio ? evt.nombre : "Ocupado", // Censura dinámica: Si es mío revelo titulo, sino aplico etiqueta privada estándar "Ocupado"
         recinto: esPropio ? evt.recinto : "Información Privada", // Censura espacial local
         esPropio: esPropio, // Bandera de propiedad
+        estado: evt.estado,
         necesita_audiovisual: evt.necesita_audiovisual === 1 // Cast int to bool verdadero/falso
       };
     });

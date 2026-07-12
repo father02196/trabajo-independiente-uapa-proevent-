@@ -8,6 +8,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import "./../css/Dashboard.css";
 import { FiDollarSign, FiCalendar } from "react-icons/fi";
 
@@ -213,8 +214,8 @@ export default function PoaAdmin({ usuario }) {
         </div>
       </div>
 
-      {poaSeleccionado && (
-        <div style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'}}>
+      {poaSeleccionado && createPortal(
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(4px)' }} onClick={() => setPoaSeleccionado(null)}>
           <style>
             {`
               @keyframes modalPopPremium {
@@ -242,7 +243,7 @@ export default function PoaAdmin({ usuario }) {
             `}
           </style>
 
-          <div className="premium-modal-vaf" style={{background: 'var(--bg-main, #ffffff)', width: '100%', maxWidth: '850px', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', overflow: 'hidden', border: '1px solid var(--border-soft)'}}>
+          <div className="premium-modal-vaf modal-content modal-premium" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
             
             {/* Encabezado */}
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '32px 40px', background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-subtle) 100%)', borderBottom: '1px solid var(--border-soft)'}}>
@@ -323,7 +324,8 @@ export default function PoaAdmin({ usuario }) {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
