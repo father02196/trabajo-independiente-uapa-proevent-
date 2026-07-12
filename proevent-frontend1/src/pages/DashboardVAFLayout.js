@@ -7,10 +7,10 @@
 // ============================================================
 
 import React, { useState } from "react";
-import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiMenu, FiTrendingUp } from "react-icons/fi";
+import { FiLogOut, FiPieChart, FiDollarSign, FiCalendar, FiHeadphones, FiMenu, FiTrendingUp, FiFileText } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
-import emblemProevent from "./../img/Emblema-Proevent.jpeg";
+import logoIcono from './../img/logo-icono.png';
 
 // Importar los componentes que usará el VAF
 import DashboardVAF from "./DashboardVAF";
@@ -19,6 +19,7 @@ import GestionPresupuestaria from "./GestionPresupuestaria";
 import EventCalendar from "./Calendario";
 import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
+import FlujoAdministrativo from "./FlujoAdministrativo";
 
 export default function DashboardVAFLayout({ usuario, onLogout }) {
   // --- ESTADOS ---
@@ -41,6 +42,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
       case "DashboardVAF": return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
       case "PoaAdmin": return <PoaAdmin usuario={usuario} setActiveTab={setActiveTab} />;
       case "GestionPresupuestaria": return <GestionPresupuestaria usuario={usuario} setActiveTab={setActiveTab} />;
+      case "FlujoAdministrativo": return <FlujoAdministrativo usuario={usuario} />;
       case "Calendario": return <EventCalendar usuario={usuario} setActiveTab={setActiveTab} />;
       case "Soporte": return <SoporteHome setActiveTab={setActiveTab} />;
       default: return <DashboardVAF usuario={usuario} setActiveTab={setActiveTab} />;
@@ -55,6 +57,8 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
         return "Plan Operativo Anual";
       case "GestionPresupuestaria":
         return "Gestión Presupuestaria";
+      case "FlujoAdministrativo":
+        return "Flujo Administrativo";
       case "Calendario":
         return "Calendario de Eventos";
       case "Soporte":
@@ -68,14 +72,16 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
     <div className={`dashboard-layout${isSidebarOpen ? '' : ' sidebar-collapsed'}`}>
       <aside className={`dashboard-sidebar${isSidebarOpen ? '' : ' sidebar-hidden'}`}>
         <div className="sidebar-brand-custom">
-          <img src={emblemProevent} alt="Emblema UAPA" className="brand-emblem-img" />
+          <div className="brand-emblem-crop">
+                      <img src={logoIcono} alt="Emblema UAPA" className="brand-emblem-img" />
+                    </div>
           <div className="brand-text-block">
             <span className="brand-title">
               <span className="brand-uapa">UAPA</span>
               <span className="brand-dash">-</span>
               <span className="brand-proevent">ProEvent</span>
             </span>
-            <span className="brand-subtitle">Sistema de Gestión de Eventos</span>
+            <span className="brand-subtitle">Gestión de Eventos</span>
           </div>
         </div>
 
@@ -97,6 +103,10 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
             <li className={activeTab === "GestionPresupuestaria" ? "active" : ""} onClick={() => setActiveTab("GestionPresupuestaria")}>
               <FiTrendingUp className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
               Gestión Presupuestaria
+            </li>
+            <li className={activeTab === "FlujoAdministrativo" ? "active" : ""} onClick={() => setActiveTab("FlujoAdministrativo")}>
+              <FiFileText className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+              Flujo Administrativo
             </li>
             <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
               <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />

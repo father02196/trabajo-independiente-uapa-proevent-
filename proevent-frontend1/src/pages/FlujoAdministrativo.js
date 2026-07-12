@@ -239,24 +239,7 @@ export default function FlujoAdministrativo({ usuario }) {
   };
 
   // --- FUNCIÓN: guardarPresupuesto ---
-  // Guarda el estado del flujo de presupuesto VAF para el evento seleccionado.
-  // El estado puede ser: Pendiente, Asignado, Aprobado o Rechazado.
-  // Solo visible y ejecutable por el rol "Administrador V-A-F".
-  const guardarPresupuesto = async () => {
-    try {
-      const res = await fetch(`${API}/api/presupuesto/${eventoSeleccionado.id_evento}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-usuario-id': usuario?.id_usuario || '' // Auditoría del funcionario VAF
-        },
-        body: JSON.stringify({ estado: presupuesto.estado }) // Envía solo el nuevo estado
-      });
-      if (res.ok) toast.success('Estado de presupuesto guardado');
-    } catch (err) {
-      toast.error('Error de conexión');
-    }
-  };
+  // DEPRECADA: El estado se gestiona automáticamente desde Gestión Presupuestaria.
 
   // --- FUNCIÓN: guardarLegal ---
   // Guarda el dictamen legal del evento: estado (Aprobado/Rechazado/Observado)
@@ -301,7 +284,16 @@ export default function FlujoAdministrativo({ usuario }) {
             id_usuario_revisor: usuario?.id_usuario     // Registro de quién dictó el fallo
           })
         });
-        if (res.ok) toast.success('Flujo legal actualizado');
+        if (res.ok) {
+           toast.success('Flujo legal actualizado');
+           setLegal({ estado_legal: 'Pendiente', observacion_legal: '' });
+           setEventoSeleccionado(null);
+           // Recargar la lista de eventos para reflejar cambios en la tabla
+           const evtRes = await fetch(`${API}/eventos`);
+           const evtData = await evtRes.json();
+           const eventosPermitidos = Array.isArray(evtData) ? evtData.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") : [];
+           setEventos(eventosPermitidos);
+        }
       }
     } catch (err) {
       toast.error('Error de conexión');
@@ -537,23 +529,20 @@ export default function FlujoAdministrativo({ usuario }) {
           <div style={{ background: '#fffbeb', padding: '24px', borderRadius: '12px', border: '1px solid #fef3c7', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
               <label style={{ fontWeight: '600', fontSize: '14px', color: '#92400e', display: 'block', marginBottom: '12px' }}>
-                Estado de Asignación Presupuestaria:
+                Estado de Asignación Presupuestaria (Libro Mayor):
               </label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <select 
-                  className="table-select-premium" 
-                  value={presupuesto.estado} 
-                  onChange={(e) => setPresupuesto({ ...presupuesto, estado: e.target.value })}
-                  style={{ width: '100%', maxWidth: '300px', padding: '12px', fontSize: '14px' }}
-                >
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Asignado">Asignado (Fondos Reservados)</option>
-                  <option value="Aprobado">Aprobado (Definitivo)</option>
-                  <option value="Rechazado">Rechazado (Sin Fondos)</option>
-                </select>
-                <button type="submit" className="btn btn-primary" onClick={guardarPresupuesto} style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '12px 20px', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
-                  <FiCheckCircle /> Guardar Estado
-                </button>
+                <span style={{ 
+                  padding: '8px 16px', 
+                  borderRadius: '99px', 
+                  fontWeight: 'bold', 
+                  fontSize: '14px',
+                  backgroundColor: presupuesto.estado === 'Aprobado' ? '#d1fae5' : (presupuesto.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7'),
+                  color: presupuesto.estado === 'Aprobado' ? '#047857' : (presupuesto.estado === 'Rechazado' ? '#b91c1c' : '#b45309')
+                }}>
+                  {presupuesto.estado}
+                </span>
+                <span style={{ fontSize: '12.5px', color: '#b45309', maxWidth: '300px', lineHeight: '1.4' }}>Las aprobaciones se gestionan exclusivamente desde la pestaña "Gestión Presupuestaria".</span>
               </div>
             </div>
 

@@ -102,11 +102,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       const dataServ = await resServ.json();
       const servicios = Array.isArray(dataServ) ? dataServ.filter(s => s.id_evento === req.id_evento) : [];
 
-      const resOrg = await fetch(`${API}/eventos/${req.id_evento}/personal`);
+      const resOrg = await fetch(`${API}/organizadores/${req.id_evento}`);
       const dataOrg = await resOrg.json();
 
       const resObs = await fetch(`${API}/api/eventos/${req.id_evento}/historial-observaciones`);
       const dataObs = await resObs.json();
+
+      const resCrono = await fetch(`${API}/cronograma/${req.id_evento}`);
+      const dataCrono = await resCrono.json();
 
       // Almacena todos los datos en el estado pdfData para el componente FichaTecnicaPDF
       setPdfData({
@@ -114,7 +117,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
         legal: dataAdmin.legal,
         servicios,
         organizadores: Array.isArray(dataOrg) ? dataOrg : [],
-        observaciones: Array.isArray(dataObs) ? dataObs : []
+        observaciones: Array.isArray(dataObs) ? dataObs : [],
+        cronograma: Array.isArray(dataCrono) ? dataCrono : []
       });
     } catch (e) {
       console.error("Error pre-cargando datos del PDF", e);
@@ -850,8 +854,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
                     <div className="info-row">
                       <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Revisión Legal</span>
-                      <span className={`badge ${pdfData.legal?.estado_contrato === 'Vigente' ? 'badge-green' : pdfData.legal?.estado_contrato === 'Vencido' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
-                        {pdfData.legal?.estado_contrato || "Pendiente"}
+                      <span className={`badge ${pdfData.legal?.estado_legal === 'Aprobado' ? 'badge-green' : pdfData.legal?.estado_legal === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
+                        {pdfData.legal?.estado_legal || "Pendiente"}
                       </span>
                     </div>
                     <div className="info-row">
@@ -1008,13 +1012,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           servicios={pdfData.servicios}
           organizadores={pdfData.organizadores}
           observaciones={pdfData.observaciones}
+          cronograma={pdfData.cronograma}
           onClose={() => setShowFichaPDF(false)}
         />
       )}
 
       {/* MODAL ASIGNAR SERVICIO EXTERNO */}
       {isAsignarServicioModalOpen && selectedRequest && createPortal(
-        <div className="modal-overlay" onClick={closeAsignarServicioModal} style={{ zIndex: 1060 }}>
+        <div className="modal-overlay" onClick={closeAsignarServicioModal} style={{ zIndex: 10000 }}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
               <div>
@@ -1075,7 +1080,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
       {/* MODAL ESTADO DE APROBACIONES */}
       {modalAprobaciones && createPortal(
-        <div className="modal-overlay" onClick={() => setModalAprobaciones(null)} style={{ zIndex: 1060 }}>
+        <div className="modal-overlay" onClick={() => setModalAprobaciones(null)} style={{ zIndex: 10000 }}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
