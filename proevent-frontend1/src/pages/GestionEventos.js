@@ -1014,7 +1014,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
       {/* MODAL ASIGNAR SERVICIO EXTERNO */}
       {isAsignarServicioModalOpen && selectedRequest && createPortal(
-        <div className="modal-overlay" onClick={closeAsignarServicioModal} style={{ zIndex: 1060 }}>
+        <div className="modal-overlay" onClick={closeAsignarServicioModal} style={{ zIndex: 10000 }}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
               <div>
@@ -1075,7 +1075,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
       {/* MODAL ESTADO DE APROBACIONES */}
       {modalAprobaciones && createPortal(
-        <div className="modal-overlay" onClick={() => setModalAprobaciones(null)} style={{ zIndex: 1060 }}>
+        <div className="modal-overlay" onClick={() => setModalAprobaciones(null)} style={{ zIndex: 10000 }}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
