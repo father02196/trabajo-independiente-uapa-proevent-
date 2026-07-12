@@ -2349,7 +2349,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
         JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
         WHERE sc.id_evento = ?`, [id_evento], (e3, r3) => {
         res.json({
-          presupuesto: r1[0] || { estado: 'Pendiente' },
+          presupuesto: r1[0] || { estado: 'No Asignado' },
           legal: r2[0] || { estado_legal: 'Pendiente', observacion_legal: '' },
           cotizaciones: r3 || []
         });

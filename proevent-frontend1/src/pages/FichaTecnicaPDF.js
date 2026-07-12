@@ -120,7 +120,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             <section style={{ marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>2. Estatus Presupuestario y Legal</h2>
               <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '6px', fontSize: '14px' }}>
-                <div style={{ marginBottom: '10px' }}><strong>Estado del Presupuesto (VAF):</strong> {presupuesto?.estado || 'Pendiente'}</div>
+                <div style={{ marginBottom: '10px' }}><strong>Estado del Presupuesto (VAF):</strong> {presupuesto?.estado || 'No Asignado'}</div>
                 <div style={{ marginBottom: '10px' }}><strong>Dictamen Legal:</strong> {legal?.estado_legal || 'Pendiente'}</div>
                 {legal?.observacion_legal && (
                   <div><strong>Observaciones Legales:</strong> <p style={{ margin: '5px 0 0 0', fontStyle: 'italic', color: '#475569' }}>"{legal.observacion_legal}"</p></div>
