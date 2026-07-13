@@ -12,7 +12,10 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 // Iconos de Feather Icons para paneles y accesos rápidos
-import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor, FiRefreshCw } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiCalendar, FiArrowUpRight, FiGrid, FiActivity, FiEye, FiList, FiStar, FiMonitor, FiRefreshCw, FiBox } from "react-icons/fi";
+
+// Recharts para gráficas analíticas
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 
 // Estilos compartidos del dashboard
 import './../../css/Dashboard.css';
@@ -35,6 +38,7 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
   const [error, setError]                 = useState("");   // Mensaje de error
   const [sortFecha, setSortFecha]         = useState("asc");  // Orden por fecha: asc | desc
   const [sortId, setSortId]               = useState("");     // Orden por ID: asc | desc | "" (sin orden por ID)
+  const [mesRange, setMesRange]           = useState(6);      // Rango de meses de la gráfica de línea
 
   // --- ESTADOS DEL MODAL ---
   const [selectedRequest, setSelectedRequest] = useState(null); // Evento activo en el modal
@@ -121,13 +125,37 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
   const aprobados   = solicitudesRelevantes.filter((e) => e.estado === "Aprobado").length;
   const finalizados = solicitudesRelevantes.filter((e) => e.estado === "Finalizado").length;
 
-  // --- DATOS DEL GRÁFICO DONUT ---
+  // --- DATOS PARA GRÁFICA DONUT ---
   const statusData = [
     { name: "Pendientes", value: pendientes, color: "#f59e0b" },
     { name: "Aprobados",  value: aprobados,  color: "#3b82f6" },
     { name: "Finalizados",value: finalizados, color: "#10b981" },
     { name: "Rechazados", value: solicitudesRelevantes.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
   ].filter(item => item.value > 0);
+
+  // --- DATOS REALES PARA GRÁFICA DE LÍNEA: Solicitudes por Mes ---
+  // Genera los últimos 12 meses y cuenta cuántas solicitudes tienen
+  // fecha_inicio dentro de cada mes.
+  const allLineData = (() => {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const hoy = new Date();
+    const resultado = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      const anio = d.getFullYear();
+      const mes  = d.getMonth(); // 0-based
+      const count = solicitudesRelevantes.filter(e => {
+        if (!e.fecha_inicio) return false;
+        const f = new Date(e.fecha_inicio);
+        f.setMinutes(f.getMinutes() + f.getTimezoneOffset()); // corr. timezone
+        return f.getFullYear() === anio && f.getMonth() === mes;
+      }).length;
+      resultado.push({ name: meses[mes], value: count });
+    }
+    return resultado;
+  })();
+  // Slice dinámico según el rango seleccionado
+  const lineData = allLineData.slice(-mesRange);
 
   // --- TIMELINE: PRÓXIMOS 5 EVENTOS ACTIVOS ---
   const proximosEventos = solicitudesRelevantes
@@ -186,7 +214,7 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
         </div>
       </div>
 
-      <div className="charts-grid-saas" style={{ gridTemplateColumns: '1fr' }}>
+      <div className="charts-grid-saas" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div className="saas-chart-card saas-donut-card">
           <div className="chart-header">
             <div>
@@ -256,6 +284,80 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ── GRÁFICA 2: LINE CHART DE SOLICITUDES POR MES ── */}
+        <div className="saas-chart-card">
+          <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h4>Solicitudes por Mes</h4>
+              <p>Cantidad de solicitudes recibidas cada mes</p>
+            </div>
+            <select
+              className="saas-select"
+              value={mesRange}
+              onChange={e => setMesRange(Number(e.target.value))}
+              style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', color: '#475569', cursor: 'pointer', background: '#f8fafc' }}
+            >
+              <option value={3}>Últimos 3 meses</option>
+              <option value={6}>Últimos 6 meses</option>
+              <option value={9}>Últimos 9 meses</option>
+              <option value={12}>Últimos 12 meses</option>
+            </select>
+          </div>
+          <div className="chart-wrapper" style={{ height: '240px', display: 'flex', flexDirection: 'column', padding: '10px 0' }}>
+            <div style={{ flex: 1, width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={lineData}
+                  margin={{ top: 20, right: 20, left: -25, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} 
+                    dy={10} 
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 11, fill: '#94a3b8' }} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
+                    itemStyle={{ color: '#0f172a', fontWeight: 600, fontSize: '13px' }}
+                    labelStyle={{ color: '#64748b', fontSize: '12px', marginBottom: '4px' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorValue)" 
+                    activeDot={{ r: 6, strokeWidth: 0, fill: '#2563eb' }}
+                  >
+                    <LabelList dataKey="value" position="top" style={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} offset={10} />
+                  </Area>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="donut-legend" style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+              <div className="donut-legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="dot" style={{ backgroundColor: '#3b82f6', width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' }}></span>
+                <span className="name" style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Solicitudes</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

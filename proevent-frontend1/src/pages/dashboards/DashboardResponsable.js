@@ -3,8 +3,8 @@
 // Pertenece a: Módulo de Inicio (ProEvent - Rol Responsable)
 // Propósito: Vista de supervisión para el Responsable de área.
 // Muestra: KPIs de eventos y equipo, progreso global del
-// cronograma, próximos eventos, radar de tareas críticas y
-// tabla detallada de todos los eventos activos del sistema.
+// cronograma, próximos eventos, radar de tareas críticas,
+// gráficas analíticas y tabla de eventos activos.
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -13,29 +13,61 @@ import {
   FiCheckCircle, FiClock, FiCalendar, FiActivity,
   FiList, FiAlertCircle, FiStar, FiMapPin, FiRefreshCw,
   FiArrowUpRight, FiGrid, FiMonitor, FiUsers, FiTrendingUp,
-  FiZap
+  FiZap, FiPieChart, FiBarChart2
 } from "react-icons/fi";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 import './../../css/Dashboard.css';
 
 const API = "http://localhost:8080";
 
+// --- TOOLTIPS PERSONALIZADOS PARA RECHARTS ---
+const CustomPieTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: '#fff', border: 'none', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <p style={{ margin: 0, fontWeight: 700, color: payload[0].payload.color, fontSize: '13px' }}>
+          {payload[0].name}: {payload[0].value}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomAreaTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: '#fff', border: 'none', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <p style={{ margin: '0 0 6px 0', fontWeight: 700, color: '#64748b', fontSize: '13px' }}>{label}</p>
+        {payload.map((p, i) => (
+          <p key={i} style={{ margin: 0, fontWeight: 600, color: p.color, fontSize: '13px' }}>
+            {p.name}: {p.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 // ============================================================
 // COMPONENTE: DashboardResponsable
-// Recibe:
-//   - usuario: objeto del usuario Responsable logueado
-//   - setActiveTab: navega entre pestañas del layout
 // ============================================================
 function DashboardResponsable({ usuario, setActiveTab }) {
 
   // --- ESTADOS ---
-  const [eventos, setEventos]         = useState([]);  // Todos los eventos del sistema
-  const [tareasEquipo, setTareasEquipo] = useState([]); // Tareas globales del cronograma
+  const [eventos, setEventos]         = useState([]);  
+  const [tareasEquipo, setTareasEquipo] = useState([]); 
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
-  const [sortFecha, setSortFecha]     = useState("asc");  // Orden por fecha: asc | desc
-  const [sortId, setSortId]           = useState("");     // Orden por ID: asc | desc | "" (sin orden por ID)
-  const [activeEventsSortOrder, setActiveEventsSortOrder] = useState("desc"); // Orden tabla eventos activos
+  const [sortFecha, setSortFecha]     = useState("asc");  
+  const [sortId, setSortId]           = useState("");     
+  const [activeEventsSortOrder, setActiveEventsSortOrder] = useState("desc"); 
+  const [mesRange, setMesRange]       = useState(6);
 
   // --- ESTADOS DEL MODAL DE EVENTO ---
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -50,18 +82,15 @@ function DashboardResponsable({ usuario, setActiveTab }) {
     if (!silent) setLoading(true);
     setError("");
     try {
-      // 1. Todos los eventos del sistema
       const resEventos = await fetch(`${API}/eventos`);
       const dataEventos = await resEventos.json();
       if (Array.isArray(dataEventos)) setEventos(dataEventos);
 
-      // 2. Tareas globales del cronograma (visibilidad de supervisión)
       try {
         const resTareas = await fetch(`${API}/cronograma`);
         const dataTareas = await resTareas.json();
         if (Array.isArray(dataTareas)) setTareasEquipo(dataTareas);
       } catch (_) {
-        // Si el endpoint global no existe, dejamos tareasEquipo vacío
         setTareasEquipo([]);
       }
     } catch (err) {
@@ -124,7 +153,6 @@ function DashboardResponsable({ usuario, setActiveTab }) {
     .sort((a, b) => {
       if (sortId === "asc")  return Number(a.id_evento) - Number(b.id_evento);
       if (sortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
-      // Sin orden por ID: ordenar por fecha
       return sortFecha === "asc"
         ? new Date(a.fecha_inicio) - new Date(b.fecha_inicio)
         : new Date(b.fecha_inicio) - new Date(a.fecha_inicio);
@@ -141,15 +169,15 @@ function DashboardResponsable({ usuario, setActiveTab }) {
   // --- CÁLCULOS: TAREAS DEL EQUIPO ---
   const totalTareas       = tareasEquipo.length;
   const tareasCompletadas = tareasEquipo.filter(t => t.estado === "Completada").length;
-  const tareasPendientes  = tareasEquipo.filter(t => t.estado !== "Completada").length;
+  const tareasPendientesTotal = tareasEquipo.filter(t => t.estado !== "Completada").length;
   const tareasVencidas    = tareasEquipo.filter(t => {
     if (t.estado === "Completada") return false;
     return getDiasRestantes(t.fecha_cumplimiento) < 0;
   }).length;
+  const tareasEnProceso = tareasPendientesTotal - tareasVencidas;
 
   const pctProgreso = totalTareas > 0 ? Math.round((tareasCompletadas / totalTareas) * 100) : 0;
 
-  // Tareas críticas (vencidas o urgentes), ordenadas por fecha
   const tareasCriticas = tareasEquipo
     .filter(t => {
       if (t.estado === "Completada") return false;
@@ -159,13 +187,47 @@ function DashboardResponsable({ usuario, setActiveTab }) {
     .sort((a, b) => new Date(a.fecha_cumplimiento) - new Date(b.fecha_cumplimiento))
     .slice(0, 5);
 
-  // Texto del banner de bienvenida
   const mensajeBanner = (() => {
     const parts = [];
     if (eventosAprobados > 0) parts.push(`${eventosAprobados} evento${eventosAprobados !== 1 ? 's' : ''} aprobado${eventosAprobados !== 1 ? 's' : ''} activo${eventosAprobados !== 1 ? 's' : ''}`);
     if (tareasVencidas > 0) parts.push(`${tareasVencidas} tarea${tareasVencidas !== 1 ? 's' : ''} vencida${tareasVencidas !== 1 ? 's' : ''} en el equipo`);
     return parts.length > 0 ? `Supervisando: ${parts.join(' · ')}.` : 'Todo en orden. Sin alertas críticas en este momento.';
   })();
+
+  // --- DATOS PARA GRÁFICAS ---
+  // Gráfica 1: Distribución de Tareas (Pie)
+  const pieData = [
+    { name: 'Completadas', value: tareasCompletadas, color: '#10b981' },
+    { name: 'En Proceso', value: tareasEnProceso, color: '#3b82f6' },
+    { name: 'Vencidas', value: tareasVencidas, color: '#ef4444' }
+  ].filter(d => d.value > 0);
+
+  // Gráfica 2: Tendencia de Eventos Activos por Mes (Area)
+  const allTrendData = (() => {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const hoy = new Date();
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - (11 - i), 1);
+      const anio = d.getFullYear();
+      const mes  = d.getMonth();
+      return {
+        name: meses[mes],
+        Aprobados: eventos.filter(e => {
+          if (!e.fecha_inicio || e.estado !== "Aprobado") return false;
+          const f = new Date(e.fecha_inicio);
+          f.setMinutes(f.getMinutes() + f.getTimezoneOffset());
+          return f.getFullYear() === anio && f.getMonth() === mes;
+        }).length,
+        Pendientes: eventos.filter(e => {
+          if (!e.fecha_inicio || e.estado !== "Pendiente") return false;
+          const f = new Date(e.fecha_inicio);
+          f.setMinutes(f.getMinutes() + f.getTimezoneOffset());
+          return f.getFullYear() === anio && f.getMonth() === mes;
+        }).length,
+      };
+    });
+  })();
+  const trendData = allTrendData.slice(-mesRange);
 
   if (loading) {
     return (
@@ -216,7 +278,6 @@ function DashboardResponsable({ usuario, setActiveTab }) {
           style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600', transition: 'background 0.2s' }}
           onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.25)'}
           onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.15)'}
-          aria-label="Actualizar datos del panel"
         >
           <FiRefreshCw size={14} /> Actualizar
         </button>
@@ -228,10 +289,8 @@ function DashboardResponsable({ usuario, setActiveTab }) {
         </div>
       )}
 
-      {/* ── 4 TARJETAS KPI HÍBRIDAS ── */}
+      {/* ── 4 TARJETAS KPI ── */}
       <div className="stats-cards-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '24px' }}>
-
-        {/* Eventos Aprobados */}
         <div className="saas-stat-card primary-glow">
           <div className="card-top">
             <span className="card-label">Eventos Aprobados</span>
@@ -241,13 +300,10 @@ function DashboardResponsable({ usuario, setActiveTab }) {
           </div>
           <div className="card-bottom">
             <h3>{eventosAprobados}</h3>
-            <span className="card-trend text-green">
-              <FiArrowUpRight /> Activos en sistema
-            </span>
+            <span className="card-trend text-green"><FiArrowUpRight /> Activos en sistema</span>
           </div>
         </div>
 
-        {/* Total tareas equipo */}
         <div className="saas-stat-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
           <div className="card-top">
             <span className="card-label">Tareas del Equipo</span>
@@ -261,7 +317,6 @@ function DashboardResponsable({ usuario, setActiveTab }) {
           </div>
         </div>
 
-        {/* Tareas pendientes */}
         <div className="saas-stat-card warning-glow">
           <div className="card-top">
             <span className="card-label">Pendientes del Equipo</span>
@@ -270,12 +325,11 @@ function DashboardResponsable({ usuario, setActiveTab }) {
             </div>
           </div>
           <div className="card-bottom">
-            <h3>{tareasPendientes}</h3>
+            <h3>{tareasPendientesTotal}</h3>
             <span className="card-trend text-orange">En ejecución</span>
           </div>
         </div>
 
-        {/* Tareas vencidas */}
         <div className="saas-stat-card" style={{ borderLeft: '4px solid #ef4444' }}>
           <div className="card-top">
             <span className="card-label">Tareas Vencidas</span>
@@ -292,45 +346,130 @@ function DashboardResponsable({ usuario, setActiveTab }) {
         </div>
       </div>
 
-      {/* ── BARRA DE PROGRESO GLOBAL DEL CRONOGRAMA ── */}
+      {/* ── BARRA DE PROGRESO GLOBAL ── */}
       {totalTareas > 0 && (
-        <div style={{
-          background: 'white',
-          borderRadius: '14px',
-          padding: '20px 24px',
-          marginBottom: '24px',
-          boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-          border: '1px solid #e2e8f0'
-        }}>
+        <div style={{ background: 'white', borderRadius: '14px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 1px 6px rgba(0,0,0,0.07)', border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FiTrendingUp style={{ color: '#0f766e' }} />
               <span style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>Progreso Global del Cronograma</span>
-              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '400' }}>· Todas las tareas del equipo</span>
             </div>
-            <span style={{ fontWeight: '700', fontSize: '18px', color: pctProgreso === 100 ? '#10b981' : '#0f766e' }}>
-              {pctProgreso}%
-            </span>
+            <span style={{ fontWeight: '700', fontSize: '18px', color: pctProgreso === 100 ? '#10b981' : '#0f766e' }}>{pctProgreso}%</span>
           </div>
           <div style={{ background: '#f1f5f9', borderRadius: '99px', height: '10px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${pctProgreso}%`,
-              background: pctProgreso === 100 ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #0f766e, #14b8a6)',
-              borderRadius: '99px',
-              transition: 'width 0.6s ease'
-            }} />
+            <div style={{ height: '100%', width: `${pctProgreso}%`, background: pctProgreso === 100 ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #0f766e, #14b8a6)', borderRadius: '99px', transition: 'width 0.6s ease' }} />
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#94a3b8' }}>
-            {tareasCompletadas} de {totalTareas} tareas completadas por el equipo
-          </p>
+          <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#94a3b8' }}>{tareasCompletadas} de {totalTareas} tareas completadas por el equipo</p>
         </div>
       )}
+
+      {/* ── SECCIÓN DE GRÁFICAS ANALÍTICAS (NUEVO) ── */}
+      <div className="charts-grid-saas" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '24px' }}>
+        
+        {/* Gráfica 1: Estado de Tareas (Donut) */}
+        <div className="saas-chart-card saas-donut-card">
+          <div className="chart-header">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiPieChart style={{ color: '#6366f1' }} />
+                <h4>Estado de Tareas del Equipo</h4>
+              </div>
+              <p>Distribución actual del cronograma</p>
+            </div>
+          </div>
+          <div className="chart-wrapper donut-center" style={{ height: '240px', padding: '10px 0' }}>
+            {pieData.length === 0 ? (
+              <div className="no-data-placeholder">No hay tareas asignadas</div>
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+                <ResponsiveContainer width="55%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%" cy="50%"
+                      innerRadius={60} outerRadius={85}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomPieTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ width: '45%', display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: '10px' }}>
+                  {pieData.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }}></span>
+                      <div>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#475569', lineHeight: 1.2 }}>{item.name}</p>
+                        <p style={{ margin: '2px 0 0 0', fontSize: '15px', fontWeight: '800', color: '#0f172a', lineHeight: 1.2 }}>{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Gráfica 2: Tendencia de Eventos (Area) */}
+        <div className="saas-chart-card">
+          <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiBarChart2 style={{ color: '#3b82f6' }} />
+                <h4>Volumen de Eventos Activos</h4>
+              </div>
+              <p>Aprobados vs Pendientes por mes</p>
+            </div>
+            <select
+              className="saas-select"
+              value={mesRange}
+              onChange={e => setMesRange(Number(e.target.value))}
+              style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', color: '#475569', cursor: 'pointer', background: '#f8fafc' }}
+            >
+              <option value={3}>Últimos 3 meses</option>
+              <option value={6}>Últimos 6 meses</option>
+              <option value={9}>Últimos 9 meses</option>
+              <option value={12}>Últimos 12 meses</option>
+            </select>
+          </div>
+          <div className="chart-wrapper" style={{ height: '240px', padding: '8px 0' }}>
+            {trendData.length === 0 ? (
+              <div className="no-data-placeholder">Sin datos registrados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData} margin={{ top: 15, right: 15, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorAprobados" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorPendientes" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} />
+                  <Tooltip content={<CustomAreaTooltip />} />
+                  <Legend wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '10px' }} iconType="circle" iconSize={8} />
+                  <Area type="monotone" dataKey="Aprobados" stroke="#3b82f6" strokeWidth={2.5} fill="url(#colorAprobados)" activeDot={{ r: 5, strokeWidth: 0 }} />
+                  <Area type="monotone" dataKey="Pendientes" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorPendientes)" activeDot={{ r: 5, strokeWidth: 0 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ── PANEL DOBLE: EVENTOS PRÓXIMOS + PANEL DERECHO ── */}
       <div className="dashboard-double-panel" style={{ marginBottom: '24px' }}>
 
-        {/* Panel izquierdo: Próximos Eventos (estética modern-event-card) */}
         <div className="saas-panel-card">
           <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -340,66 +479,25 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                 <p>Agenda general de los próximos días</p>
               </div>
             </div>
-
-            {/* ── CONTROLES DE ORDEN ── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '4px 8px' }}>
-
-              {/* Selector: Orden por Fecha */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <FiCalendar style={{ fontSize: '12px', color: '#64748b', flexShrink: 0 }} />
-                <select
-                  id="sort-fecha-agenda"
-                  value={sortFecha}
-                  onChange={e => { setSortFecha(e.target.value); setSortId(""); }}
-                  style={{
-                    border: 'none', background: 'transparent', fontSize: '12px',
-                    fontWeight: '600', color: sortId === "" ? '#3b82f6' : '#64748b',
-                    cursor: 'pointer', outline: 'none', padding: '3px 2px'
-                  }}
-                  aria-label="Ordenar por fecha"
-                >
+                <FiCalendar style={{ fontSize: '12px', color: '#64748b' }} />
+                <select id="sort-fecha-agenda" value={sortFecha} onChange={e => { setSortFecha(e.target.value); setSortId(""); }} style={{ border: 'none', background: 'transparent', fontSize: '12px', fontWeight: '600', color: sortId === "" ? '#3b82f6' : '#64748b', outline: 'none' }}>
                   <option value="asc">Fecha ↑</option>
                   <option value="desc">Fecha ↓</option>
                 </select>
               </div>
-
-              {/* Divisor */}
-              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
-
-              {/* Selector: Orden por ID */}
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>#</span>
-                <select
-                  id="sort-id-agenda"
-                  value={sortId}
-                  onChange={e => setSortId(e.target.value)}
-                  style={{
-                    border: 'none', background: 'transparent', fontSize: '12px',
-                    fontWeight: '600', color: sortId !== "" ? '#3b82f6' : '#64748b',
-                    cursor: 'pointer', outline: 'none', padding: '3px 2px'
-                  }}
-                  aria-label="Ordenar por ID"
-                >
+                <select id="sort-id-agenda" value={sortId} onChange={e => setSortId(e.target.value)} style={{ border: 'none', background: 'transparent', fontSize: '12px', fontWeight: '600', color: sortId !== "" ? '#3b82f6' : '#64748b', outline: 'none' }}>
                   <option value="">ID —</option>
                   <option value="asc">ID ↑</option>
                   <option value="desc">ID ↓</option>
                 </select>
               </div>
-
-              {/* Divisor */}
-              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
-
-              {/* Botón actualizar */}
-              <button
-                type="button"
-                className="reload-data-btn"
-                onClick={() => cargarDatos()}
-                title="Actualizar datos"
-                aria-label="Actualizar agenda de eventos"
-                style={{ marginLeft: '2px' }}
-              >
-                <FiRefreshCw />
-              </button>
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0' }} />
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} style={{ marginLeft: '2px' }}><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -416,19 +514,11 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                       <div className="modern-event-date">
                         <FiCalendar className="modern-date-icon" />
                         <span>{formatFechaLarga(evt.fecha_inicio)}</span>
-                        {evt.hora_inicio && (
-                          <>
-                            <span className="modern-date-separator">•</span>
-                            <FiClock className="modern-date-icon" />
-                            <span>{evt.hora_inicio?.substring(0, 5)}</span>
-                          </>
-                        )}
                       </div>
                       <span className={`modern-status-badge modern-status-${evt.estado?.toLowerCase() || 'pendiente'}`}>
                         {evt.estado || 'Pendiente'}
                       </span>
                     </div>
-
                     <div className="modern-event-body">
                       <h5 className="modern-event-title">
                         <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
@@ -445,9 +535,8 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                         </div>
                       </div>
                     </div>
-
                     <div className="modern-event-footer">
-                      <button type="button" className="modern-view-btn" title="Ver ficha técnica" aria-label="Ver ficha técnica del evento">
+                      <button type="button" className="modern-view-btn">
                         <span>Ver Ficha Técnica</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>
@@ -459,10 +548,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
           </div>
         </div>
 
-        {/* Panel derecho: Accesos rápidos + Radar de tareas críticas */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-          {/* Sub-panel: Accesos Rápidos */}
           <div className="saas-panel-card" style={{ flex: '0 0 auto' }}>
             <div className="panel-header">
               <FiZap className="panel-icon" style={{ color: '#0f766e' }} />
@@ -477,82 +563,61 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                   <div className="icon-wrapper"><FiList /></div>
                   <div className="btn-text">
                     <strong>Crear Evento</strong>
-                    <span>Nueva solicitud de evento</span>
+                    <span>Nueva solicitud</span>
                   </div>
                 </div>
                 <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("Audiovisual")}>
                   <div className="icon-wrapper"><FiMonitor /></div>
                   <div className="btn-text">
                     <strong>Solicitud AV</strong>
-                    <span>Reserva de audiovisual</span>
+                    <span>Reserva equipo</span>
                   </div>
                 </div>
                 <div className="quick-action-btn premium-btn-orange" onClick={() => setActiveTab && setActiveTab("Calendario")}>
                   <div className="icon-wrapper"><FiCalendar /></div>
                   <div className="btn-text">
                     <strong>Ver Agenda</strong>
-                    <span>Calendario de actividades</span>
-                  </div>
-                </div>
-                <div
-                  className="quick-action-btn"
-                  style={{ background: 'linear-gradient(135deg, #0f766e, #14b8a6)', cursor: 'pointer', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 2px 8px rgba(15,118,110,0.25)' }}
-                  onClick={() => setActiveTab && setActiveTab("VisualizarEvaluaciones")}
-                >
-                  <div className="icon-wrapper" style={{ color: 'white' }}><FiStar /></div>
-                  <div className="btn-text">
-                    <strong style={{ color: 'white' }}>Historial Evaluaciones</strong>
-                    <span style={{ color: 'rgba(255,255,255,0.8)' }}>Resultados de eventos</span>
+                    <span>Calendario</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Sub-panel: Radar de Tareas Críticas */}
           <div className="saas-panel-card" style={{ flex: '1 1 auto' }}>
             <div className="panel-header">
               <FiAlertCircle className="panel-icon" style={{ color: '#ef4444' }} />
               <div>
                 <h4>Radar de Tareas Críticas</h4>
-                <p>{tareasCriticas.length > 0 ? `${tareasCriticas.length} tarea(s) urgentes o vencidas` : 'Sin alertas críticas'}</p>
+                <p>{tareasCriticas.length > 0 ? `${tareasCriticas.length} urgentes` : 'Sin alertas'}</p>
               </div>
             </div>
             <div className="panel-body" style={{ padding: '12px 16px' }}>
               {tareasCriticas.length === 0 ? (
                 <div className="empty-panel-state">
                   <FiCheckCircle className="icon" style={{ color: '#10b981' }} />
-                  <p style={{ color: '#10b981', fontWeight: '600' }}>¡El equipo está al día! Sin tareas críticas.</p>
+                  <p style={{ color: '#10b981', fontWeight: '600' }}>¡Equipo al día!</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {tareasCriticas.map(t => {
                     const dias = getDiasRestantes(t.fecha_cumplimiento);
                     const urgClass = getUrgencyClass(dias);
-                    const urgLabel = getUrgencyLabel(dias);
                     return (
                       <div key={t.id_actividad} style={{
                         background: urgClass === 'overdue' ? '#fef2f2' : urgClass === 'urgent' ? '#fffbeb' : '#fff7ed',
                         border: `1px solid ${urgClass === 'overdue' ? '#fca5a5' : urgClass === 'urgent' ? '#fcd34d' : '#fed7aa'}`,
-                        borderRadius: '10px',
-                        padding: '10px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px'
+                        borderRadius: '10px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px'
                       }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontWeight: '600', fontSize: '13px', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {t.nombre_actividad}
-                          </p>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+                          <p style={{ margin: 0, fontWeight: '600', fontSize: '13px', color: '#1e293b' }}>{t.nombre_actividad}</p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
                             <span style={{ fontSize: '11px', color: '#64748b' }}>{t.nombre_evento}</span>
                             <span style={{
                               fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px',
-                              background: urgClass === 'overdue' ? '#fca5a5' : urgClass === 'urgent' ? '#fcd34d' : '#fed7aa',
-                              color: urgClass === 'overdue' ? '#991b1b' : urgClass === 'urgent' ? '#92400e' : '#c2410c'
-                            }}>
-                              {urgLabel}
-                            </span>
+                              background: urgClass === 'overdue' ? '#fca5a5' : '#fcd34d',
+                              color: urgClass === 'overdue' ? '#991b1b' : '#92400e'
+                            }}>{getUrgencyLabel(dias)}</span>
                           </div>
                         </div>
                         <FiAlertCircle style={{ color: urgClass === 'overdue' ? '#ef4444' : '#f59e0b', flexShrink: 0 }} size={16} />
@@ -573,18 +638,13 @@ function DashboardResponsable({ usuario, setActiveTab }) {
             <FiActivity className="panel-icon" style={{ color: '#2563eb' }} />
             <div>
               <h4>Todos los Eventos Activos del Sistema</h4>
-              <p>Vista detallada para supervisión · {eventosActivos.length} evento{eventosActivos.length !== 1 ? 's' : ''} activo{eventosActivos.length !== 1 ? 's' : ''}</p>
+              <p>Vista detallada para supervisión · {eventosActivos.length} eventos</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px' }}>
               <FiCalendar style={{ color: '#64748b', marginRight: '8px' }} />
-              <select
-                className="saas-select"
-                style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: '500' }}
-                value={activeEventsSortOrder}
-                onChange={(e) => setActiveEventsSortOrder(e.target.value)}
-              >
+              <select className="saas-select" style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: '500' }} value={activeEventsSortOrder} onChange={(e) => setActiveEventsSortOrder(e.target.value)}>
                 <option value="desc">Más recientes primero</option>
                 <option value="asc">Menos recientes primero</option>
               </select>
@@ -609,18 +669,10 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                 </thead>
                 <tbody>
                   {eventosActivos.map((evt, idx) => (
-                    <tr
-                      key={evt.id_evento}
-                      style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? 'white' : '#fafbfc', transition: 'background 0.15s', cursor: 'pointer' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
-                      onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? 'white' : '#fafbfc'}
-                      onClick={() => openModal(evt)}
-                    >
+                    <tr key={evt.id_evento} onClick={() => openModal(evt)} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? 'white' : '#fafbfc', cursor: 'pointer' }}>
                       <td style={{ padding: '12px 16px' }}>
                         <div>
-                          <p style={{ margin: 0, fontWeight: '600', color: '#1e293b' }}>
-                            #{evt.id_evento} · {evt.nombre}
-                          </p>
+                          <p style={{ margin: 0, fontWeight: '600', color: '#1e293b' }}>#{evt.id_evento} · {evt.nombre}</p>
                           <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>{evt.tipo_evento || 'General'}</p>
                         </div>
                       </td>
@@ -637,9 +689,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ background: '#eff6ff', color: '#1d4ed8', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '600' }}>
-                          {evt.modalidad || 'Presencial'}
-                        </span>
+                        <span style={{ background: '#eff6ff', color: '#1d4ed8', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '600' }}>{evt.modalidad || 'Presencial'}</span>
                       </td>
                       <td style={{ padding: '12px 16px', color: '#475569' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -648,9 +698,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span className={`status-pill ${evt.estado === 'Aprobado' ? 'approved' : 'pending'}`}>
-                          {evt.estado}
-                        </span>
+                        <span className={`status-pill ${evt.estado === 'Aprobado' ? 'approved' : 'pending'}`}>{evt.estado}</span>
                       </td>
                     </tr>
                   ))}
@@ -661,7 +709,7 @@ function DashboardResponsable({ usuario, setActiveTab }) {
         </div>
       </div>
 
-      {/* ── MODAL FICHA TÉCNICA (portal a body) ── */}
+      {/* ── MODAL FICHA TÉCNICA ── */}
       {isModalOpen && selectedRequest && ReactDOM.createPortal(
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()}>
@@ -672,77 +720,33 @@ function DashboardResponsable({ usuario, setActiveTab }) {
               </div>
               <span className="badge badge-blue" style={{ fontSize: '14px', padding: '6px 12px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
-
             <div className="modal-body">
               <div className="modal-grid-3">
-                {/* Columna 1: Info General */}
                 <div className="info-card">
-                  <div className="info-card-title">
-                    <FiCalendar size={14} /> Información General
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Nombre del Evento</span>
-                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>{selectedRequest.nombre}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Tipo</span>
-                    <span className="info-value">{selectedRequest.tipo_evento || '—'}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Fecha Inicio</span>
-                    <span className="info-value">{formatFecha(selectedRequest.fecha_inicio)}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Fecha Fin</span>
-                    <span className="info-value">{formatFecha(selectedRequest.fecha_fin)}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Horario</span>
-                    <span className="info-value">{selectedRequest.hora_inicio?.substring(0,5) || '—'} – {selectedRequest.hora_fin?.substring(0,5) || '—'}</span>
-                  </div>
+                  <div className="info-card-title"><FiCalendar size={14} /> Información General</div>
+                  <div className="info-row"><span className="info-label">Nombre del Evento</span><span className="info-value" style={{ color: '#3B82F6', fontSize: '16px' }}>{selectedRequest.nombre}</span></div>
+                  <div className="info-row"><span className="info-label">Tipo</span><span className="info-value">{selectedRequest.tipo_evento || '—'}</span></div>
+                  <div className="info-row"><span className="info-label">Fecha Inicio</span><span className="info-value">{formatFecha(selectedRequest.fecha_inicio)}</span></div>
+                  <div className="info-row"><span className="info-label">Horario</span><span className="info-value">{selectedRequest.hora_inicio?.substring(0,5) || '—'} – {selectedRequest.hora_fin?.substring(0,5) || '—'}</span></div>
                 </div>
-
-                {/* Columna 2: Logística */}
                 <div className="info-card">
-                  <div className="info-card-title">
-                    <FiMapPin size={14} /> Logística y Asistencia
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Recinto</span>
-                    <span className="info-value">{selectedRequest.recinto || '—'}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Modalidad</span>
-                    <span className="info-value">{selectedRequest.modalidad || '—'}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Asistentes</span>
-                    <span className="info-value">{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : '—'}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Audiovisual</span>
-                    <span className="info-value">{selectedRequest.necesita_audiovisual ? '✅ Requiere AV' : '❌ Sin AV'}</span>
-                  </div>
+                  <div className="info-card-title"><FiMapPin size={14} /> Logística y Asistencia</div>
+                  <div className="info-row"><span className="info-label">Recinto</span><span className="info-value">{selectedRequest.recinto || '—'}</span></div>
+                  <div className="info-row"><span className="info-label">Modalidad</span><span className="info-value">{selectedRequest.modalidad || '—'}</span></div>
+                  <div className="info-row"><span className="info-label">Asistentes</span><span className="info-value">{selectedRequest.cantidad_asistentes ? `${selectedRequest.cantidad_asistentes} personas` : '—'}</span></div>
                 </div>
-
-                {/* Columna 3: Estado */}
                 <div className="info-card">
-                  <div className="info-card-title">
-                    <FiStar size={14} /> Estado
-                  </div>
+                  <div className="info-card-title"><FiStar size={14} /> Estado</div>
                   <div className="info-row" style={{ marginTop: '12px' }}>
                     <span className="info-label">Estado de la Solicitud</span>
-                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
-                      {selectedRequest.estado || 'Pendiente'}
-                    </span>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>{selectedRequest.estado || 'Pendiente'}</span>
                   </div>
                 </div>
               </div>
             </div>
-
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar ficha técnica">Cerrar Ficha Técnica</button>
-              <button type="button" className="btn btn-primary" onClick={() => { closeModal(); setActiveTab && setActiveTab("Calendario"); }} aria-label="Ver evento en el calendario">
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-primary" onClick={() => { closeModal(); setActiveTab && setActiveTab("Calendario"); }}>
                 <FiCalendar style={{ marginRight: '6px' }} /> Ver en Calendario
               </button>
             </div>
