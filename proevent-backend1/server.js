@@ -1741,6 +1741,8 @@ app.post('/equipos-audiovisuales', (req, res) => { // Creacion de Item de Catál
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Condicion 0 validation rules blank logic guard fail bypass trigger
   db.query('INSERT INTO equipo_audiovisual (nombre, icono, cantidad_total) VALUES (?, ?, ?)', [nombre, icono || 'FiMonitor', cantidad_total || 0], (err, result) => { // Instancia fisicamente con iconos feather react default FiMonitor icon fallback default parameter text string array insert in mysql parameter object array value struct
     if (err) return res.status(500).json({ error: err.message }); // HTTP Exception catcher JSON send out return 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_CATALOGO', `Equipo Audiovisual creado: ${nombre}`);
     res.status(201).json({ mensaje: 'Equipo Creado', id: result.insertId }); // Ok 201 Created Inserted id fetch global parameter object ID assign index
   });
 });
@@ -1748,12 +1750,16 @@ app.put('/equipos-audiovisuales/:id', (req, res) => { // Edita existencia metada
   const { nombre, icono, cantidad_total } = req.body; // Cosechadora req body object param element properties destruct obj js target keys vars constants extract assignment data string array number
   db.query('UPDATE equipo_audiovisual SET nombre=?, icono=?, cantidad_total=? WHERE id_equipo=?', [nombre, icono, cantidad_total || 0, req.params.id], (err) => { // Update estatico param string replacement index target where equals strict math int sql native syntax execute connection string payload transmit variable mapping 
     if (err) return res.status(500).json({ error: err.message }); // error boundary stop execution logic chain return object json content type text
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_CATALOGO', `Equipo Audiovisual ID ${req.params.id} actualizado`);
     res.json({ mensaje: 'Equipo Actualizado' }); // Ok 200 return object text 
   });
 });
 app.delete('/equipos-audiovisuales/:id', (req, res) => { // API Backend server Delete Endpoint Router parameter express method destructure
   db.query('DELETE FROM equipo_audiovisual WHERE id_equipo=?', [req.params.id], (err) => { // Desvanece item fisico dictionary delete wipe erase action function database table action native execution run commit delete math 
     if (err) return res.status(500).json({ error: err.message }); // Falla por FK constraint constraint de evento previo en foreign rules (foreign key constraint error mysql native failure code prevention crash loop block mechanism return code string)
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_CATALOGO', `Equipo Audiovisual ID ${req.params.id} eliminado`);
     res.json({ mensaje: 'Equipo Eliminado' }); // Success Result Out JSON body string text response status 200 HTTP API Standard return
   });
 });
@@ -1770,18 +1776,24 @@ app.post('/tipos-evento', (req, res) => { // Add new type
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Bouncer vacio
   db.query('INSERT INTO tipo_evento_master (nombre) VALUES (?)', [nombre], (err, result) => { // Insert Table
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_CATALOGO', `Tipo Evento creado: ${nombre}`);
     res.status(201).json({ mensaje: 'Tipo Creado', id: result.insertId }); // Exito
   });
 });
 app.put('/tipos-evento/:id', (req, res) => { // Modificador Metadata
   db.query('UPDATE tipo_evento_master SET nombre=? WHERE id_tipo_evento=?', [req.body.nombre, req.params.id], (err) => { // Update row
     if (err) return res.status(500).json({ error: err.message }); // Error throw handler
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_CATALOGO', `Tipo Evento ID ${req.params.id} actualizado`);
     res.json({ mensaje: 'Tipo Actualizado' }); // Success return message string object JSON HTTP 200
   });
 });
 app.delete('/tipos-evento/:id', (req, res) => { // Borrado duro
   db.query('DELETE FROM tipo_evento_master WHERE id_tipo_evento=?', [req.params.id], (err) => { // Destructor
     if (err) return res.status(500).json({ error: err.message }); // Bloqueo de Foreign Key Restrict si algun evento viejo usa este tipo master 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_CATALOGO', `Tipo Evento ID ${req.params.id} eliminado`);
     res.json({ mensaje: 'Tipo Eliminado' }); // Success 200 OK 
   });
 });
@@ -1798,18 +1810,24 @@ app.post('/tipos-detalle-corporativo', (req, res) => { // Ruta insercion base
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Regex not null check false bypass prevent
   db.query('INSERT INTO tipo_detalle_corporativo (nombre) VALUES (?)', [nombre], (err, result) => { // SQL Ejecucion
     if (err) return res.status(500).json({ error: err.message }); // Caida DB MySQL Log error string parse
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_CATALOGO', `Detalle Corporativo creado: ${nombre}`);
     res.status(201).json({ mensaje: 'Detalle Creado', id: result.insertId }); // Send Object Response
   });
 });
 app.put('/tipos-detalle-corporativo/:id', (req, res) => { // Alter param row 
   db.query('UPDATE tipo_detalle_corporativo SET nombre=? WHERE id_detalle_corp=?', [req.body.nombre, req.params.id], (err) => { // Update Setter target mapping match
     if (err) return res.status(500).json({ error: err.message }); // Error
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_CATALOGO', `Detalle Corporativo ID ${req.params.id} actualizado`);
     res.json({ mensaje: 'Detalle Actualizado' }); // Return UI msg string
   });
 });
 app.delete('/tipos-detalle-corporativo/:id', (req, res) => { // Destruction Drop delete node row
   db.query('DELETE FROM tipo_detalle_corporativo WHERE id_detalle_corp=?', [req.params.id], (err) => { // Purga 
     if (err) return res.status(500).json({ error: err.message }); // SQL Restrict prevent crash log text error code mysql backend query
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_CATALOGO', `Detalle Corporativo ID ${req.params.id} eliminado`);
     res.json({ mensaje: 'Detalle Eliminado' }); // Send
   });
 });
@@ -1826,18 +1844,24 @@ app.post('/alimentos', (req, res) => { // Añade Elemento
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Filtra vacios null string undefined 
   db.query('INSERT INTO alimento (nombre) VALUES (?)', [nombre], (err, result) => { // Dispara Query
     if (err) return res.status(500).json({ error: err.message }); // Throw log node app error
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_CATALOGO', `Alimento creado: ${nombre}`);
     res.status(201).json({ mensaje: 'Alimento Creado', id: result.insertId }); // Good path
   });
 });
 app.put('/alimentos/:id', (req, res) => { // Edita String texto Metadata 
   db.query('UPDATE alimento SET nombre=? WHERE id_alimento=?', [req.body.nombre, req.params.id], (err) => { // Modifica
     if (err) return res.status(500).json({ error: err.message }); // Handler log text response function 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_CATALOGO', `Alimento ID ${req.params.id} actualizado`);
     res.json({ mensaje: 'Alimento Actualizado' }); // Send back ok status code 200 normal text string object 
   });
 });
 app.delete('/alimentos/:id', (req, res) => { // Remueve Item fisico de sistema global
   db.query('DELETE FROM alimento WHERE id_alimento=?', [req.params.id], (err) => { // Delete action execute query commit MySQL Storage Engine trigger match target ID PK Primary key filter search row delete math function log transaction node router
     if (err) return res.status(500).json({ error: err.message }); // Evita colapso si un Evento historico ya lo seleccionó previamente y tiene FK Lock table rules constraint trigger abort 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_CATALOGO', `Alimento ID ${req.params.id} eliminado`);
     res.json({ mensaje: 'Alimento Eliminado' }); // Terminado HTTP End response write socket close output message
   });
 });
@@ -1852,6 +1876,8 @@ app.post('/recintos', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe un recinto con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_CATALOGO', `Recinto creado: ${nombre}`);
     res.status(201).json({ mensaje: 'Recinto creado exitosamente.', id: result.insertId });
   });
 });
@@ -1863,6 +1889,8 @@ app.put('/recintos/:id', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe un recinto con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_CATALOGO', `Recinto ID ${req.params.id} actualizado`);
     res.json({ mensaje: 'Recinto actualizado exitosamente.' });
   });
 });
@@ -1874,6 +1902,8 @@ app.delete('/recintos/:id', (req, res) => {
       }
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_CATALOGO', `Recinto ID ${req.params.id} eliminado`);
     res.json({ mensaje: 'Recinto eliminado exitosamente.' });
   });
 });
@@ -1888,6 +1918,8 @@ app.post('/dependencias', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe una dependencia con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_CATALOGO', `Dependencia creada: ${nombre}`);
     res.status(201).json({ mensaje: 'Dependencia creada exitosamente.', id: result.insertId });
   });
 });
@@ -1899,6 +1931,8 @@ app.put('/dependencias/:id', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe una dependencia con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_CATALOGO', `Dependencia ID ${req.params.id} actualizada`);
     res.json({ mensaje: 'Dependencia actualizada exitosamente.' });
   });
 });
@@ -1910,6 +1944,8 @@ app.delete('/dependencias/:id', (req, res) => {
       }
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_CATALOGO', `Dependencia ID ${req.params.id} eliminada`);
     res.json({ mensaje: 'Dependencia eliminada exitosamente.' });
   });
 });
@@ -1938,6 +1974,8 @@ app.post('/api/eventos/:id/documentos', upload.single('archivo'), (req, res) => 
       console.error("Error al registrar documento:", err);
       return res.status(500).json({ error: 'Error al registrar el documento en la base de datos' });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'SUBIDA_DOCUMENTO_BOVEDA', `Documento '${nombre_original}' subido al evento ID ${id_evento}`);
     res.status(201).json({
       mensaje: 'Documento subido y registrado con éxito',
       ruta: ruta_archivo,
@@ -1963,6 +2001,8 @@ app.post('/tipos-servicio-externo', (req, res) => {
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' });
   db.query('INSERT INTO tipo_servicio_externo (nombre, clasificacion) VALUES (?, ?)', [nombre, clasificacion || 'Corriente'], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_CATALOGO', `Tipo Servicio Externo creado: ${nombre}`);
     res.status(201).json({ mensaje: 'Tipo de Servicio Creado', id: result.insertId });
   });
 });
@@ -1970,12 +2010,16 @@ app.put('/tipos-servicio-externo/:id', (req, res) => {
   const { nombre, clasificacion } = req.body;
   db.query('UPDATE tipo_servicio_externo SET nombre=?, clasificacion=? WHERE id_tipo_servicio=?', [nombre, clasificacion, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_CATALOGO', `Tipo Servicio Externo ID ${req.params.id} actualizado`);
     res.json({ mensaje: 'Tipo de Servicio Actualizado' });
   });
 });
 app.delete('/tipos-servicio-externo/:id', (req, res) => {
   db.query('DELETE FROM tipo_servicio_externo WHERE id_tipo_servicio=?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_CATALOGO', `Tipo Servicio Externo ID ${req.params.id} eliminado`);
     res.json({ mensaje: 'Tipo de Servicio Eliminado' });
   });
 });
@@ -1998,6 +2042,8 @@ app.post('/servicios-externos', (req, res) => {
   db.query('INSERT INTO servicio_externo (id_evento, id_tipo_servicio, detalles, cantidad) VALUES (?, ?, ?, ?)',
     [id_evento, id_tipo_servicio, detalles || '', cantidad || 1], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'SOLICITUD_SERVICIO_EXTERNO', `Servicio externo solicitado para evento ID ${id_evento}`);
       res.status(201).json({ mensaje: 'Servicio Externo Solicitado', id: result.insertId });
     });
 });
@@ -2005,12 +2051,16 @@ app.put('/servicios-externos/:id/estado', (req, res) => {
   const { estado } = req.body;
   db.query('UPDATE servicio_externo SET estado=? WHERE id_servicio_ext=?', [estado, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_SERVICIO_EXTERNO', `Estado de servicio ext ID ${req.params.id} cambiado a ${estado}`);
     res.json({ mensaje: 'Estado de Servicio Actualizado' });
   });
 });
 app.delete('/servicios-externos/:id', (req, res) => {
   db.query('DELETE FROM servicio_externo WHERE id_servicio_ext=?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_SERVICIO_EXTERNO', `Servicio ext ID ${req.params.id} eliminado`);
     res.json({ mensaje: 'Servicio Externo Eliminado' });
   });
 });
@@ -2032,12 +2082,16 @@ app.post('/organizadores', (req, res) => {
   db.query('INSERT INTO evento_organizador (id_evento, id_usuario, rol_organizacion) VALUES (?, ?, ?)',
     [id_evento, id_usuario, rol_organizacion], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'ASIGNACION_ORGANIZADOR', `Usuario ID ${id_usuario} asignado como ${rol_organizacion} al evento ID ${id_evento}`);
       res.status(201).json({ mensaje: 'Organizador asignado' });
     });
 });
 app.delete('/organizadores/:id_evento_org', (req, res) => {
   db.query('DELETE FROM evento_organizador WHERE id_evento_org=?', [req.params.id_evento_org], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'REMOCION_ORGANIZADOR', `Organizador ID-registro ${req.params.id_evento_org} removido`);
     res.json({ mensaje: 'Organizador removido' });
   });
 });
@@ -2087,6 +2141,8 @@ app.post('/cronograma', (req, res) => {
   db.query('INSERT INTO actividad_cronograma (id_evento, nombre_actividad, id_usuario_responsable, fecha_cumplimiento) VALUES (?, ?, ?, ?)',
     [id_evento, nombre_actividad, id_usuario_responsable || null, fecha_cumplimiento], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_TAREA_CRONOGRAMA', `Tarea '${nombre_actividad}' agregada al cronograma del evento ID ${id_evento}`);
       res.status(201).json({ mensaje: 'Actividad agregada al cronograma' });
     });
 });
@@ -2094,12 +2150,16 @@ app.put('/cronograma/:id_actividad/estado', (req, res) => {
   const { estado } = req.body;
   db.query('UPDATE actividad_cronograma SET estado=? WHERE id_actividad=?', [estado, req.params.id_actividad], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_TAREA_CRONOGRAMA', `Estado de tarea ID ${req.params.id_actividad} cambiado a ${estado}`);
     res.json({ mensaje: 'Estado de actividad actualizado' });
   });
 });
 app.delete('/cronograma/:id_actividad', (req, res) => {
   db.query('DELETE FROM actividad_cronograma WHERE id_actividad=?', [req.params.id_actividad], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_TAREA_CRONOGRAMA', `Tarea ID ${req.params.id_actividad} eliminada`);
     res.json({ mensaje: 'Actividad eliminada' });
   });
 });
@@ -2213,6 +2273,8 @@ app.post('/documentos/:id_evento', upload.single('archivo'), (req, res) => {
   db.query(`INSERT INTO documento_evento (id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?)`,
     [id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio || null], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'SUBIDA_DOCUMENTO_BOVEDA', `Documento '${nombre_archivo}' subido al evento ID ${id_evento}`);
       res.status(201).json({ mensaje: 'Documento subido con éxito', id: result.insertId, ruta_archivo });
     });
 });
@@ -2221,6 +2283,8 @@ app.delete('/documentos/:id_documento', (req, res) => {
   // Lógica de borrado suave (Soft Delete) o archivo
   db.query(`UPDATE documento_evento SET estado = 'Archivado' WHERE id_documento = ?`, [req.params.id_documento], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'ARCHIVADO_DOCUMENTO_BOVEDA', `Documento ID ${req.params.id_documento} archivado`);
     res.json({ mensaje: 'Documento archivado' });
   });
 });
@@ -2251,6 +2315,8 @@ app.put('/flujo-legal/:id_evento/resolucion', (req, res) => {
   db.query(`UPDATE flujo_aprobacion_legal SET estado_legal=?, observacion_legal=?, id_usuario_revisor=? WHERE id_evento=?`,
     [estado_legal, observacion_legal || '', id_usuario_revisor, id_evento], (err) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'RESOLUCION_LEGAL', `Resolución legal del evento ID ${id_evento} actualizada a ${estado_legal}`);
       res.json({ mensaje: 'Resolución legal actualizada' });
     });
 });
@@ -2263,6 +2329,8 @@ app.put('/servicios-externos/:id/recepcion', (req, res) => {
   db.query('UPDATE servicio_externo SET estado_recepcion = ?, incidencias = ?, fecha_recepcion = NOW() WHERE id_servicio_ext = ?',
     [estado_recepcion || 'Recibido', incidencias || '', id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'RECEPCION_SERVICIO', `Recepción de servicio ext ID ${id} registrada como ${estado_recepcion}`);
       res.json({ mensaje: 'Recepción del servicio registrada' });
     });
 });
@@ -2273,6 +2341,8 @@ app.put('/servicios-externos/:id/pago', (req, res) => {
   const { estado_pago } = req.body;
   db.query('UPDATE servicio_externo SET estado_pago = ? WHERE id_servicio_ext = ?', [estado_pago, id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) registrarMovimiento(reqUserId, null, 'PAGO_SERVICIO', `Pago de servicio ext ID ${id} actualizado a ${estado_pago}`);
     res.json({ mensaje: 'Estado contable del pago actualizado' });
   });
 });
@@ -2301,6 +2371,8 @@ app.put('/eventos/:id/cerrar-expediente', (req, res) => {
 
     db.query('UPDATE evento SET estado = ? WHERE id_evento = ?', ['Finalizado', id], (errUpd) => {
       if (errUpd) return res.status(500).json({ error: errUpd.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) registrarMovimiento(reqUserId, null, 'CIERRE_EXPEDIENTE', `Expediente del evento ID ${id} cerrado de forma definitiva`);
       res.json({ mensaje: 'Expediente del evento cerrado correctamente.' });
     });
   });

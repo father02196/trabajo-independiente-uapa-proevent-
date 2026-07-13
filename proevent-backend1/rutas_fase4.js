@@ -84,6 +84,13 @@ module.exports = (db) => {
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'RNC o Correo ya en uso por otro proveedor.' });
         return res.status(500).json({ error: err.message });
       }
+      const id_usuario = req.headers['x-usuario-id'] || (req.user ? req.user.id : null);
+      if (id_usuario) {
+        db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', 
+        [id_usuario, 'ACTUALIZACION_PROVEEDOR', `Proveedor ID ${id} actualizado. Empresa: ${nombre_empresa}, Categoria ID: ${id_tipo_servicio}`], (errLog) => {
+          if (errLog) console.error('Error registrando bitácora:', errLog);
+        });
+      }
       res.json({ message: 'Proveedor actualizado con éxito' });
     });
   });
@@ -94,6 +101,13 @@ module.exports = (db) => {
     const { estado } = req.body; // 'Activo' o 'Inactivo'
     db.query('UPDATE proveedor_externo SET estado = ? WHERE id_proveedor = ?', [estado, id], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+      const id_usuario = req.headers['x-usuario-id'] || (req.user ? req.user.id : null);
+      if (id_usuario) {
+        db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', 
+        [id_usuario, 'CAMBIO_ESTADO_PROVEEDOR', `Proveedor ID ${id} marcado como ${estado}`], (errLog) => {
+          if (errLog) console.error('Error registrando bitácora:', errLog);
+        });
+      }
       res.json({ message: `Proveedor marcado como ${estado}` });
     });
   });
