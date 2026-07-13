@@ -86,7 +86,7 @@ function PortalProveedoresResetPassword({ token, onBackClick }) {
         
         <div className="lc-header">
           {onBackClick && (
-            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+            <button type="button" className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
           )}
 
           <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '220px', height: 'auto', margin: '0 auto 15px', display: 'block' }} />
@@ -150,7 +150,7 @@ function PortalProveedoresResetPassword({ token, onBackClick }) {
 
         {success && (
           <div className="lc-form">
-            <button className="lc-btn-primary" onClick={onBackClick}>
+            <button type="button" className="lc-btn-primary" onClick={onBackClick}>
               Ir al Portal de Suplidores
             </button>
           </div>

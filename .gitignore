@@ -1,30 +1,22 @@
-proevent-backend1/backup_emergencia_junio30_utf8.sql
-proevent-backend1/backup_emergencia_junio30.sql
-
-# Archivos temporales de scripts
-proevent-backend1/fix_*.js
-proevent-backend1/test_smtp.js
-
-# Archivos subidos por usuarios durante pruebas
-proevent-backend1/uploads/*
-!proevent-backend1/uploads/.gitkeep
-
-# Archivos ambientales locales
-proevent-frontend1/.env
+# Entornos y secretos
 .env
 .env.*
-proevent-backend1/.env
-proevent-backend1/.env.*
-!*.env.example
+!.env.example
 
-# Imágenes redundantes
-proevent-frontend1/src/pages/img/logo-proevent.jpg.jpeg
+# Archivos de bases de datos y volcados SQL
+*.sql
 
-# Ignorar backups locales
-*.zip
+# Archivos generados / JSONs de prueba
+av_results.json
+events_results.json
+test.json
+users.json
+eslint_report.json
+lint3.json
+untyped_buttons.json
 
-# node_modules/
+# Dependencias
+node_modules/
 
-# Backups de Base de Datos
-proevent-backend1/backup_emergencia_junio30_utf8.sql
-proevent-backend1/backup_emergencia_junio30.sql
+# Mac / SO
+.DS_Store

@@ -3,12 +3,13 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-
 import { FiLogOut, FiHeadphones, FiActivity, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiMenu } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
-import emblemProevent from "./../img/Emblema-Proevent.jpeg";
+import logoIcono from './../img/logo-icono.png';
 import dashboardIcon from "./../img/dashboard.png";
 import audiovisualIcon from "./../img/audiovisual.png";
 
 import DashboardAudiovisual from "./dashboards/DashboardAudiovisual";
 import Eventos from "./Eventos";
+import Audiovisual from "./Audiovisual";
 import AdminAudiovisual from "./AdminAudiovisual";
 import InventarioAudiovisual from "./InventarioAudiovisual";
 import GestionSolicitudesAV from "./GestionSolicitudesAV";
@@ -56,12 +57,14 @@ function DashboardAudiovisualLayout({ usuario, onLogoutClick }) {
         <div className={`dashboard-layout${isSidebarOpen ? '' : ' sidebar-collapsed'}`}>
             <aside className={`dashboard-sidebar${isSidebarOpen ? '' : ' sidebar-hidden'}`}>
                 <div className="sidebar-brand-custom">
-                    <img src={emblemProevent} alt="Emblema UAPA" className="brand-emblem-img" />
+                    <div className="brand-emblem-crop">
+                      <img src={logoIcono} alt="Emblema UAPA" className="brand-emblem-img" />
+                    </div>
                     <div className="brand-text-block">
                         <span className="brand-title">
                             <span className="brand-uapa">UAPA</span><span className="brand-dash">-</span><span className="brand-proevent">ProEvent</span>
                         </span>
-                        <span className="brand-subtitle">Depto. Audiovisual</span>
+                        <span className="brand-subtitle">Gestión de Eventos</span>
                     </div>
                 </div>
 
@@ -112,7 +115,7 @@ function DashboardAudiovisualLayout({ usuario, onLogoutClick }) {
 
                 <div className="sidebar-user-section">
                     <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
-                        <button className="logout-button" onClick={onLogoutClick}>
+                        <button type="button" className="logout-button" onClick={onLogoutClick}>
                             <FiLogOut className="action-icon" aria-hidden="true" />
                             Cerrar sesión
                         </button>
@@ -133,6 +136,7 @@ function DashboardAudiovisualLayout({ usuario, onLogoutClick }) {
                 <header className="dashboard-header">
                     <div className="header-left">
                         <button
+                            type="button"
                             className="hamburger-btn"
                             onClick={toggleSidebar}
                             title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
@@ -153,7 +157,7 @@ function DashboardAudiovisualLayout({ usuario, onLogoutClick }) {
                         <Route path="/" element={<DashboardAudiovisual usuario={usuario} setActiveTab={mockSetActiveTab} />} />
                         <Route path="calendario" element={<Calendario usuario={usuario} />} />
                         
-                        <Route path="solicitud" element={<Eventos usuario={usuario} />} />
+                        <Route path="solicitud" element={<Audiovisual usuario={usuario} />} />
                         <Route path="gestion" element={<GestionSolicitudesAV usuario={usuario} />} />
                         <Route path="catalogo" element={<AdminAudiovisual usuario={usuario} />} />
                         <Route path="inventario" element={<InventarioAudiovisual usuario={usuario} />} />

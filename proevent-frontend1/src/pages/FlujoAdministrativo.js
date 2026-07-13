@@ -17,6 +17,8 @@ import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownloa
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from 'react-hot-toast';
 
+import axios from '../api/axios';
+
 // URL base de la API del backend (Node.js/Express en XAMPP)
 const API = "http://localhost:8080";
 
@@ -212,7 +214,7 @@ export default function FlujoAdministrativo({ usuario }) {
   // Actualiza el número de Orden de Compra (OC) y el flag de "requiere contrato"
   // de un servicio externo específico. Se usa en el panel de Compras (pestaña OC).
   // Se ejecuta al hacer blur en el input de OC o al cambiar el toggle de contrato.
-  const guardarCambiosServicio = async (id_servicio_ext, num_oc, req_contrato) => {
+  const guardarCambiosServicio = async (id_servicio_ext, num_oc, req_contrato, id_cot_adj) => {
     try {
       const res = await fetch(`${API}/api/servicio_externo/${id_servicio_ext}/admin`, {
         method: 'PUT',
@@ -222,7 +224,8 @@ export default function FlujoAdministrativo({ usuario }) {
         },
         body: JSON.stringify({ 
           numero_orden_compra: num_oc,           // Número de OC asignado por Compras
-          requiere_contrato: req_contrato ? 1 : 0 // 1=Sí requiere contrato, 0=No
+          requiere_contrato: req_contrato ? 1 : 0, // 1=Sí requiere contrato, 0=No
+          id_cotizacion_adjudicada: id_cot_adj || null
         })
       });
       if (res.ok) {
@@ -236,24 +239,7 @@ export default function FlujoAdministrativo({ usuario }) {
   };
 
   // --- FUNCIÓN: guardarPresupuesto ---
-  // Guarda el estado del flujo de presupuesto VAF para el evento seleccionado.
-  // El estado puede ser: Pendiente, Asignado, Aprobado o Rechazado.
-  // Solo visible y ejecutable por el rol "Administrador V-A-F".
-  const guardarPresupuesto = async () => {
-    try {
-      const res = await fetch(`${API}/api/presupuesto/${eventoSeleccionado.id_evento}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-usuario-id': usuario?.id_usuario || '' // Auditoría del funcionario VAF
-        },
-        body: JSON.stringify({ estado: presupuesto.estado }) // Envía solo el nuevo estado
-      });
-      if (res.ok) toast.success('Estado de presupuesto guardado');
-    } catch (err) {
-      toast.error('Error de conexión');
-    }
-  };
+  // DEPRECADA: El estado se gestiona automáticamente desde Gestión Presupuestaria.
 
   // --- FUNCIÓN: guardarLegal ---
   // Guarda el dictamen legal del evento: estado (Aprobado/Rechazado/Observado)
@@ -298,7 +284,16 @@ export default function FlujoAdministrativo({ usuario }) {
             id_usuario_revisor: usuario?.id_usuario     // Registro de quién dictó el fallo
           })
         });
-        if (res.ok) toast.success('Flujo legal actualizado');
+        if (res.ok) {
+           toast.success('Flujo legal actualizado');
+           setLegal({ estado_legal: 'Pendiente', observacion_legal: '' });
+           setEventoSeleccionado(null);
+           // Recargar la lista de eventos para reflejar cambios en la tabla
+           const evtRes = await fetch(`${API}/eventos`);
+           const evtData = await evtRes.json();
+           const eventosPermitidos = Array.isArray(evtData) ? evtData.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") : [];
+           setEventos(eventosPermitidos);
+        }
       }
     } catch (err) {
       toast.error('Error de conexión');
@@ -343,16 +338,13 @@ export default function FlujoAdministrativo({ usuario }) {
   const evaluarCotizacionesIA = async (id_solicitud) => {
     const loadToast = toast.loading('Analizando cotizaciones con Inteligencia Artificial...');
     try {
-      const res = await fetch(`${API}/api/admin/evaluar-cotizaciones/${id_solicitud}`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success('Análisis completado', { id: loadToast });
-        setAnalisisIA(data.veredicto); // Guarda el veredicto de la IA para mostrarlo en la UI
-      } else {
-        toast.error(data.error || 'Error en el análisis', { id: loadToast });
-      }
+      const res = await axios.post(`/api/admin/evaluar-cotizaciones/${id_solicitud}`);
+      const data = res.data;
+      
+      toast.success('Análisis completado', { id: loadToast });
+      setAnalisisIA(data.veredicto); // Guarda el veredicto de la IA para mostrarlo en la UI
     } catch (err) {
-      toast.error('Error de conexión con la IA', { id: loadToast });
+      toast.error(err.response?.data?.error || 'Error de conexión con la IA', { id: loadToast });
     }
   };
 
@@ -380,7 +372,7 @@ export default function FlujoAdministrativo({ usuario }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <strong style={{ color: '#1e293b', fontSize: '14.5px' }}>Solicitud de Cotización #{id_solicitud}</strong>
                   {cotList.length >= 2 && (
-                    <button onClick={() => evaluarCotizacionesIA(id_solicitud)} className="btn btn-primary btn-sm" style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <button type="button" onClick={() => evaluarCotizacionesIA(id_solicitud)} className="btn btn-primary btn-sm" style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', gap: '6px', alignItems: 'center' }}>
                       ✨ Análisis Comparativo con IA
                     </button>
                   )}
@@ -475,12 +467,27 @@ export default function FlujoAdministrativo({ usuario }) {
                   </div>
                   <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '250px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Cotización Ganadora:</label>
+                      <select 
+                        className="form-control-premium" 
+                        defaultValue={s.id_cotizacion_adjudicada || ''}
+                        onChange={(e) => guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, s.requiere_contrato, e.target.value)}
+                      >
+                        <option value="">-- Seleccionar --</option>
+                        {cotizaciones.map(c => (
+                          <option key={c.id_cotizacion} value={c.id_cotizacion}>
+                            {c.proveedor_nombre || `ID: ${c.id_cotizacion}`} — {c.moneda || 'DOP'} {c.monto_total_detectado}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1, minWidth: '250px' }}>
                       <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Número de Orden de Compra (OC):</label>
                       <input 
                         type="text" 
                         className="form-control-premium" 
                         defaultValue={s.numero_orden_compra || ''}
-                        onBlur={(e) => guardarCambiosServicio(s.id_servicio_ext, e.target.value, s.requiere_contrato)}
+                        onBlur={(e) => guardarCambiosServicio(s.id_servicio_ext, e.target.value, s.requiere_contrato, s.id_cotizacion_adjudicada)}
                         placeholder="Ej: OC-2026-001"
                       />
                     </div>
@@ -522,23 +529,20 @@ export default function FlujoAdministrativo({ usuario }) {
           <div style={{ background: '#fffbeb', padding: '24px', borderRadius: '12px', border: '1px solid #fef3c7', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
               <label style={{ fontWeight: '600', fontSize: '14px', color: '#92400e', display: 'block', marginBottom: '12px' }}>
-                Estado de Asignación Presupuestaria:
+                Estado de Asignación Presupuestaria (Libro Mayor):
               </label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <select 
-                  className="table-select-premium" 
-                  value={presupuesto.estado} 
-                  onChange={(e) => setPresupuesto({ ...presupuesto, estado: e.target.value })}
-                  style={{ width: '100%', maxWidth: '300px', padding: '12px', fontSize: '14px' }}
-                >
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Asignado">Asignado (Fondos Reservados)</option>
-                  <option value="Aprobado">Aprobado (Definitivo)</option>
-                  <option value="Rechazado">Rechazado (Sin Fondos)</option>
-                </select>
-                <button className="btn btn-primary" onClick={guardarPresupuesto} style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '12px 20px', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
-                  <FiCheckCircle /> Guardar Estado
-                </button>
+                <span style={{ 
+                  padding: '8px 16px', 
+                  borderRadius: '99px', 
+                  fontWeight: 'bold', 
+                  fontSize: '14px',
+                  backgroundColor: presupuesto.estado === 'Aprobado' ? '#d1fae5' : (presupuesto.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7'),
+                  color: presupuesto.estado === 'Aprobado' ? '#047857' : (presupuesto.estado === 'Rechazado' ? '#b91c1c' : '#b45309')
+                }}>
+                  {presupuesto.estado}
+                </span>
+                <span style={{ fontSize: '12.5px', color: '#b45309', maxWidth: '300px', lineHeight: '1.4' }}>Las aprobaciones se gestionan exclusivamente desde la pestaña "Gestión Presupuestaria".</span>
               </div>
             </div>
 
@@ -600,7 +604,7 @@ export default function FlujoAdministrativo({ usuario }) {
               placeholder="Ingrese cualquier observación, enmienda requerida o nota jurídica para el solicitante..."
               style={{ width: '100%', marginBottom: '20px', resize: 'vertical' }}
             />
-            <button className="btn btn-primary" onClick={guardarLegal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button type="submit" className="btn btn-primary" onClick={guardarLegal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FiShield /> Guardar Dictamen Legal
             </button>
           </div>
@@ -730,7 +734,7 @@ export default function FlujoAdministrativo({ usuario }) {
                           <a href={`${API}${doc.ruta_archivo}`} download target="_blank" rel="noreferrer" className="action-icon-btn" style={{ color: '#3b82f6' }} title="Descargar documento">
                             <FiDownload />
                           </a>
-                          <button className="action-icon-btn delete" onClick={() => archivarDocumento(doc.id_documento)} title="Eliminar / Archivar">
+                          <button type="button" className="action-icon-btn delete" onClick={() => archivarDocumento(doc.id_documento)} title="Eliminar / Archivar">
                             <FiTrash2 />
                           </button>
                         </div>
@@ -763,6 +767,7 @@ export default function FlujoAdministrativo({ usuario }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', margin: 0 }}>Seleccionar Evento Operativo</label>
             <button
+              type="button"
               onClick={cargarEventos}
               disabled={recargandoEventos}
               title="Recargar lista de eventos"
@@ -807,6 +812,7 @@ export default function FlujoAdministrativo({ usuario }) {
             <div className="flujo-tabs-nav">
               {(isComprasRole || isGeneralRole) && (
                 <button 
+                  type="button"
                   className={`flujo-tab-btn${tab === 'compras' ? ' active' : ''}`}
                   onClick={() => setTab('compras')} 
                 >
@@ -815,6 +821,7 @@ export default function FlujoAdministrativo({ usuario }) {
               )}
               {(isVAFRole || isGeneralRole) && (
                 <button 
+                  type="button"
                   className={`flujo-tab-btn${tab === 'presupuesto' ? ' active' : ''}`}
                   onClick={() => setTab('presupuesto')} 
                 >
@@ -823,6 +830,7 @@ export default function FlujoAdministrativo({ usuario }) {
               )}
               {(isLegalRole || isGeneralRole) && (
                 <button 
+                  type="button"
                   className={`flujo-tab-btn${tab === 'legal' ? ' active' : ''}`}
                   onClick={() => setTab('legal')} 
                 >
@@ -830,6 +838,7 @@ export default function FlujoAdministrativo({ usuario }) {
                 </button>
               )}
               <button 
+                type="button"
                 className={`flujo-tab-btn${tab === 'documentos' ? ' active' : ''}`}
                 onClick={() => setTab('documentos')}
                 style={{ marginLeft: 'auto' }}

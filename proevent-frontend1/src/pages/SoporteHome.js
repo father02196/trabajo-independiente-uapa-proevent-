@@ -57,18 +57,21 @@ function SoporteHome() {
             <div className="soporte-tabs-wrapper">
                 <div className="soporte-tabs">
                     <button 
+                        type="button"
                         className={`soporte-tab-btn ${activeTab === 'faq' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('faq')}
                     >
                         <FiHelpCircle /> Preguntas Frecuentes
                     </button>
                     <button 
+                        type="button"
                         className={`soporte-tab-btn ${activeTab === 'guia' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('guia')}
                     >
                         <FiCheckCircle /> Guía Rápida
                     </button>
                     <button 
+                        type="button"
                         className={`soporte-tab-btn ${activeTab === 'contacto' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('contacto')}
                     >

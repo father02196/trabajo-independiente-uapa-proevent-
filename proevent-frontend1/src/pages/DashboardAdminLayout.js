@@ -3,13 +3,14 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-
 import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
-import emblemProevent from "./../img/Emblema-Proevent.jpeg";
+import logoIcono from './../img/logo-icono.png';
 import dashboardIcon from "./../img/dashboard.png";
 import eventosIcon from "./../img/eventos.png";
 import audiovisualIcon from "./../img/audiovisual.png";
 
 import DashboardAdmin from "./dashboards/DashboardAdmin";
 import Eventos from "./Eventos";
+import Audiovisual from "./Audiovisual";
 import AjustesUsuarios from "./AjustesUsuarios";
 import Bitacora from "./Bitacora";
 import SoporteHome from "./SoporteHome";
@@ -87,12 +88,14 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
         <div className={`dashboard-layout${isSidebarOpen ? '' : ' sidebar-collapsed'}`}>
             <aside className={`dashboard-sidebar${isSidebarOpen ? '' : ' sidebar-hidden'}`}>
                 <div className="sidebar-brand-custom">
-                    <img src={emblemProevent} alt="Emblema UAPA" className="brand-emblem-img" />
+                    <div className="brand-emblem-crop">
+                      <img src={logoIcono} alt="Emblema UAPA" className="brand-emblem-img" />
+                    </div>
                     <div className="brand-text-block">
                         <span className="brand-title">
                             <span className="brand-uapa">UAPA</span><span className="brand-dash">-</span><span className="brand-proevent">ProEvent</span>
                         </span>
-                        <span className="brand-subtitle">Administración Principal</span>
+                        <span className="brand-subtitle">Gestión de Eventos</span>
                     </div>
                 </div>
 
@@ -192,7 +195,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
 
                 <div className="sidebar-user-section">
                     <div className={`user-logout-menu ${userMenuOpen ? "open" : ""}`}>
-                        <button className="logout-button" onClick={onLogoutClick}>
+                        <button type="button" className="logout-button" onClick={onLogoutClick}>
                             <FiLogOut className="action-icon" aria-hidden="true" />
                             Cerrar sesión
                         </button>
@@ -213,6 +216,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                 <header className="dashboard-header">
                     <div className="header-left">
                         <button
+                            type="button"
                             className="hamburger-btn"
                             onClick={toggleSidebar}
                             title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
@@ -238,7 +242,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                         <Route path="eventos/catalogos" element={<AdminEvento usuario={usuario} />} />
                         <Route path="eventos/gestion" element={<GestionEventos usuario={usuario} />} />
                         
-                        <Route path="audiovisual/solicitud" element={<Eventos usuario={usuario} />} />
+                        <Route path="audiovisual/solicitud" element={<Audiovisual usuario={usuario} />} />
                         <Route path="audiovisual/gestion" element={<GestionSolicitudesAV usuario={usuario} />} />
                         <Route path="audiovisual/catalogo" element={<AdminAudiovisual usuario={usuario} />} />
                         <Route path="audiovisual/inventario" element={<InventarioAudiovisual usuario={usuario} />} />

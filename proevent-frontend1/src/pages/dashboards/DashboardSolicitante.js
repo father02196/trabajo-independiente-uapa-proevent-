@@ -37,7 +37,13 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   // --- ESTADOS DEL MODAL ---
   const [selectedRequest, setSelectedRequest] = useState(null); // Evento seleccionado
   const [isModalOpen, setIsModalOpen]         = useState(false); // Visibilidad del modal
-  const [sortOrder, setSortOrder]             = useState("asc"); // Orden del timeline
+  const [sortFecha, setSortFecha]             = useState("asc");  // Orden por fecha: asc | desc
+  const [sortId, setSortId]                   = useState("");     // Orden por ID: asc | desc | "" (sin orden por ID)
+
+  // --- ESTADOS DEL TRACKING ---
+  const [trackingModalOpen, setTrackingModalOpen] = useState(false);
+  const [trackingData, setTrackingData]           = useState(null);
+  const [trackingLoading, setTrackingLoading]     = useState(false);
 
   // --- FUNCIONES: openModal / closeModal ---
   const openModal = (req) => {
@@ -47,6 +53,32 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedRequest(null);
+  };
+
+  // --- FUNCIONES: abrirTracking / cerrarTracking ---
+  const abrirTracking = async (req) => {
+    setTrackingModalOpen(true);
+    setTrackingLoading(true);
+    setTrackingData(null);
+    try {
+      const res = await fetch(`${API}/api/aprobaciones-evento/${req.id_evento}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTrackingData(data);
+      } else {
+        setTrackingData({ error: "No se encontró tracking de validaciones" });
+      }
+    } catch (error) {
+      console.error("Error al cargar tracking", error);
+      setTrackingData({ error: "Error de conexión con el servidor" });
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  const cerrarTracking = () => {
+    setTrackingModalOpen(false);
+    setTrackingData(null);
   };
 
   // --- EFECTO: Carga cuando el usuario está disponible ---
@@ -121,14 +153,33 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
     { name: "Rechazados", value: eventRequests.filter(e => e.estado === "Rechazado").length, color: "#ef4444" }
   ].filter(item => item.value > 0);
 
+  // --- DATOS DE LA GRÁFICA DE BARRAS: Solicitudes por Tipo de Evento ---
+  const tipoColors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#f97316"];
+  const tiposMap = {};
+  eventRequests.forEach(e => {
+    const tipo = e.tipo_evento || "Sin clasificar";
+    tiposMap[tipo] = (tiposMap[tipo] || 0) + 1;
+  });
+  const tiposData = Object.entries(tiposMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([name, value], i) => ({ name, value, color: tipoColors[i % tipoColors.length] }));
+
   // --- TIMELINE: PRÓXIMOS 5 EVENTOS PERSONALES ---
-  // Solo eventos del solicitante, ordenados por fecha ascendente.
+  // Filtro por estado activo + id_usuario del solicitante.
+  // Si se selecciona orden por ID, tiene prioridad sobre el de fecha.
   const proximosEventos = eventRequests
-    .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
+    .filter(e =>
+      (e.estado === "Aprobado" || e.estado === "Pendiente") &&
+      String(e.id_usuario) === String(usuario?.id_usuario)
+    )
     .sort((a, b) => {
-      const dateA = new Date(a.fecha_inicio);
-      const dateB = new Date(b.fecha_inicio);
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      if (sortId === "asc")  return Number(a.id_evento) - Number(b.id_evento);
+      if (sortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
+      // Sin orden por ID: ordenar por fecha
+      return sortFecha === "asc"
+        ? new Date(a.fecha_inicio) - new Date(b.fecha_inicio)
+        : new Date(b.fecha_inicio) - new Date(a.fecha_inicio);
     })
     .slice(0, 5);
 
@@ -177,15 +228,17 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
         </div>
       </div>
 
-      <div className="charts-grid-saas" style={{ gridTemplateColumns: '1fr' }}>
+      <div className="charts-grid-saas" style={{ gridTemplateColumns: '1fr 1fr' }}>
+
+        {/* ── GRÁFICA 1: DONUT DE ESTADO ── */}
         <div className="saas-chart-card saas-donut-card">
           <div className="chart-header">
             <div>
               <h4>Estado de Mis Solicitudes</h4>
-              <p>Resumen de aprobación</p>
+              <p>Distribución por estado de aprobación</p>
             </div>
           </div>
-          <div className="chart-wrapper donut-center" style={{ height: '240px' }}>
+          <div className="chart-wrapper donut-center" style={{ height: '270px' }}>
             {loading ? (
               <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
                 <div className="loader" style={{ marginBottom: '10px' }}></div>
@@ -194,84 +247,215 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
             ) : statusData.length === 0 ? (
               <div className="no-data-placeholder">Aún no has creado ninguna solicitud</div>
             ) : (
-              <div className="donut-chart-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ position: 'relative', width: '120px', height: '120px' }}>
+              <div className="donut-chart-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '18px' }}>
+                {/* Donut SVG — 18% más grande: 142px, aro de 16 */}
+                <div style={{ position: 'relative', width: '142px', height: '142px', flexShrink: 0 }}>
                   <svg viewBox="0 0 100 100" width="100%" height="100%">
-                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+                    <circle cx="50" cy="50" r="38" fill="transparent" stroke="#e2e8f0" strokeWidth="16" />
                     {(() => {
-                      let accumulatedPercentage = 0;
+                      const circum = 2 * Math.PI * 38; // ≈ 238.76
+                      let accumulated = 0;
                       return statusData.map((item, idx) => {
-                        const percentage = item.value / totalSolicitudes;
-                        const strokeDash = `${percentage * 251.2} 251.2`;
-                        const strokeOffset = 251.2 - (accumulatedPercentage * 251.2) + 62.8;
-                        accumulatedPercentage += percentage;
-                        
+                        const pct = item.value / totalSolicitudes;
+                        const dash = `${pct * circum} ${circum}`;
+                        const offset = circum - accumulated * circum + circum / 4;
+                        accumulated += pct;
                         return (
-                          <circle 
+                          <circle
                             key={idx}
-                            cx="50" 
-                            cy="50" 
-                            r="40" 
-                            fill="transparent" 
-                            stroke={item.color} 
-                            strokeWidth="12" 
-                            strokeDasharray={strokeDash}
-                            strokeDashoffset={strokeOffset}
-                            strokeLinecap="round"
-                            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                            cx="50" cy="50" r="38"
+                            fill="transparent"
+                            stroke={item.color}
+                            strokeWidth="16"
+                            strokeDasharray={dash}
+                            strokeDashoffset={offset}
+                            strokeLinecap="butt"
+                            style={{ transition: 'stroke-dashoffset 0.6s ease', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.12))' }}
                           />
                         );
                       });
                     })()}
                   </svg>
-                  <div style={{
-                    position: 'absolute',
-                    top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    textAlign: 'center'
-                  }}>
-                    <span style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', display: 'block', lineHeight: 1 }}>{totalSolicitudes}</span>
-                    <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total</span>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                    <span style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', display: 'block', lineHeight: 1 }}>{totalSolicitudes}</span>
+                    <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Total</span>
                   </div>
                 </div>
-                
-                <div className="donut-legend" style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px 12px', width: '100%', justifyContent: 'center' }}>
-                  {statusData.map((item, index) => (
-                    <div key={index} className="donut-legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className="dot" style={{ backgroundColor: item.color, width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' }}></span>
-                      <span className="name" style={{ fontSize: '11px', fontWeight: '600', color: '#475569' }}>
-                        {item.name}: {item.value}
-                      </span>
-                    </div>
-                  ))}
+
+                {/* Leyenda moderna estilo pill */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', width: '100%' }}>
+                  {statusData.map((item, index) => {
+                    const pct = Math.round((item.value / totalSolicitudes) * 100);
+                    return (
+                      <div key={index} style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '5px 10px', borderRadius: '20px',
+                        backgroundColor: `${item.color}15`,
+                        border: `1px solid ${item.color}40`
+                      }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color, display: 'inline-block', flexShrink: 0 }} />
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#334155' }}>{item.name}</span>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: item.color }}>{pct}%</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* ── GRÁFICA 2: DONUT DE TIPOS DE EVENTO ── */}
+        <div className="saas-chart-card saas-donut-card">
+          <div className="chart-header">
+            <div>
+              <h4>Solicitudes por Tipo de Evento</h4>
+              <p>Distribución de categorías</p>
+            </div>
+          </div>
+          <div className="chart-wrapper donut-center" style={{ height: '270px' }}>
+            {loading ? (
+              <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="loader" style={{ marginBottom: '10px' }}></div>
+                <p>Cargando información...</p>
+              </div>
+            ) : tiposData.length === 0 ? (
+              <div className="no-data-placeholder">Aún no has creado ninguna solicitud</div>
+            ) : (
+              <div className="donut-chart-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '18px' }}>
+                {/* Donut SVG — mismo tamaño y grosor que el primero */}
+                <div style={{ position: 'relative', width: '142px', height: '142px', flexShrink: 0 }}>
+                  <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    <circle cx="50" cy="50" r="38" fill="transparent" stroke="#e2e8f0" strokeWidth="16" />
+                    {(() => {
+                      const circum = 2 * Math.PI * 38;
+                      const totalTipos = tiposData.reduce((s, t) => s + t.value, 0);
+                      let accumulated = 0;
+                      return tiposData.map((item, idx) => {
+                        const pct = item.value / totalTipos;
+                        const dash = `${pct * circum} ${circum}`;
+                        const offset = circum - accumulated * circum + circum / 4;
+                        accumulated += pct;
+                        return (
+                          <circle
+                            key={idx}
+                            cx="50" cy="50" r="38"
+                            fill="transparent"
+                            stroke={item.color}
+                            strokeWidth="16"
+                            strokeDasharray={dash}
+                            strokeDashoffset={offset}
+                            strokeLinecap="butt"
+                            style={{ transition: 'stroke-dashoffset 0.6s ease', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.12))' }}
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                    <span style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', display: 'block', lineHeight: 1 }}>{tiposData.reduce((s, t) => s + t.value, 0)}</span>
+                    <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Eventos</span>
+                  </div>
+                </div>
+
+                {/* Leyenda moderna estilo pill */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', width: '100%' }}>
+                  {tiposData.map((item, index) => {
+                    const totalTipos = tiposData.reduce((s, t) => s + t.value, 0);
+                    const pct = Math.round((item.value / totalTipos) * 100);
+                    return (
+                      <div key={index} style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '5px 10px', borderRadius: '20px',
+                        backgroundColor: `${item.color}15`,
+                        border: `1px solid ${item.color}40`,
+                        maxWidth: '160px'
+                      }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color, display: 'inline-block', flexShrink: 0 }} />
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.name}>{item.name}</span>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: item.color, flexShrink: 0 }}>{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
+
 
       <div className="dashboard-double-panel">
         <div className="saas-panel-card">
-          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <FiCalendar className="panel-icon" />
               <div>
                 <h4>Próximos Eventos en Agenda</h4>
-                <p>Agenda personal</p>
+                <p>Eventos aprobados y pendientes programados próximamente</p>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <select 
-                className="saas-select" 
-                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
+
+            {/* ── CONTROLES DE ORDEN ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '4px 8px' }}>
+
+              {/* Selector: Orden por Fecha */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <FiCalendar style={{ fontSize: '12px', color: '#64748b', flexShrink: 0 }} />
+                <select
+                  id="sort-fecha-agenda"
+                  value={sortFecha}
+                  onChange={e => { setSortFecha(e.target.value); setSortId(""); }}
+                  style={{
+                    border: 'none', background: 'transparent', fontSize: '12px',
+                    fontWeight: '600', color: sortId === "" ? '#3b82f6' : '#64748b',
+                    cursor: 'pointer', outline: 'none', padding: '3px 2px'
+                  }}
+                  aria-label="Ordenar por fecha"
+                >
+                  <option value="asc">Fecha ↑</option>
+                  <option value="desc">Fecha ↓</option>
+                </select>
+              </div>
+
+              {/* Divisor */}
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+
+              {/* Selector: Orden por ID */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>#</span>
+                <select
+                  id="sort-id-agenda"
+                  value={sortId}
+                  onChange={e => setSortId(e.target.value)}
+                  style={{
+                    border: 'none', background: 'transparent', fontSize: '12px',
+                    fontWeight: '600', color: sortId !== "" ? '#3b82f6' : '#64748b',
+                    cursor: 'pointer', outline: 'none', padding: '3px 2px'
+                  }}
+                  aria-label="Ordenar por ID"
+                >
+                  <option value="">ID —</option>
+                  <option value="asc">ID ↑</option>
+                  <option value="desc">ID ↓</option>
+                </select>
+              </div>
+
+              {/* Divisor */}
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+
+              {/* Botón actualizar */}
+              <button
+                type="button"
+                className="reload-data-btn"
+                onClick={() => cargarDatos()}
+                title="Actualizar datos"
+                aria-label="Actualizar estado de solicitudes"
+                style={{ marginLeft: '2px' }}
               >
-                <option value="asc">Más próximos (Asc)</option>
-                <option value="desc">Más lejanos (Desc)</option>
-              </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+                <FiRefreshCw />
+              </button>
             </div>
           </div>
           <div className="panel-body">
@@ -309,7 +493,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                       
                       <div className="modern-event-body">
                         <h5 className="modern-event-title">
-                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
                           {evt.nombre}
                         </h5>
                         <div className="modern-event-meta-info">
@@ -324,10 +508,14 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                         </div>
                       </div>
                       
-                      <div className="modern-event-footer">
-                        <button className="modern-view-btn" title="Ver detalles del evento">
-                          <span>Ver Ficha Técnica</span>
+                      <div className="modern-event-footer" style={{ display: 'flex', gap: '8px' }}>
+                        <button type="button" className="modern-view-btn" title="Ver detalles del evento" aria-label="Ver ficha de mi solicitud" onClick={(e) => { e.stopPropagation(); openModal(evt); }}>
+                          <span>Ficha Técnica</span>
                           <FiArrowUpRight className="modern-btn-icon" />
+                        </button>
+                        <button type="button" className="modern-view-btn" style={{ background: '#f8fafc', color: '#3b82f6', border: '1px solid #bfdbfe' }} title="Ver seguimiento de aprobación" onClick={(e) => { e.stopPropagation(); abrirTracking(evt); }}>
+                          <span>Seguimiento</span>
+                          <FiActivity className="modern-btn-icon" />
                         </button>
                       </div>
                     </div>
@@ -448,7 +636,6 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   </div>
                 </div>
               </div>
-            </div>
 
               {/* Requerimientos Adicionales a Ancho Completo */}
               <div className="modal-grid-1" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -480,14 +667,106 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   </div>
                 </div>
               </div>
+            </div>
 
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button type="button" className="btn btn-primary" onClick={() => abrirTracking(selectedRequest)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiActivity /> Ver Seguimiento
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal} aria-label="Cerrar modal">Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,
         document.body
       )}
+
+      {/* --- MODAL DE TRACKING DE APROBACIONES --- */}
+      {trackingModalOpen && ReactDOM.createPortal(
+        <div className="modal-overlay" onClick={cerrarTracking} style={{ zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '700px', backgroundColor: '#fff', borderRadius: '20px', overflow: 'hidden' }}>
+            <div className="modal-header" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)', padding: '24px 32px', borderBottom: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FiActivity size={24} />
+                </div>
+                <div>
+                  <h3 className="modal-title" style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>Seguimiento de Aprobaciones</h3>
+                  <span className="modal-subtitle" style={{ fontSize: '14px', color: '#64748b' }}>Estado de revisión por área operativa</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-body" style={{ padding: '32px', backgroundColor: '#fcfcfd' }}>
+              {trackingLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
+                  <div className="loader" style={{ marginBottom: '16px' }}></div>
+                  <p style={{ color: '#64748b', fontWeight: 500 }}>Analizando flujo de validación...</p>
+                </div>
+              ) : trackingData?.error ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+                    <FiCheckCircle size={32} />
+                  </div>
+                  <h4 style={{ color: '#0f172a', fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>{trackingData.error}</h4>
+                </div>
+              ) : (
+                <>
+                  {/* Banner de Estado General */}
+                  <div style={{ padding: '20px', borderRadius: '16px', marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '16px', border: `2px solid ${trackingData?.puede_iniciar ? '#10b981' : trackingData?.hay_rechazos ? '#ef4444' : '#f59e0b'}`, backgroundColor: trackingData?.puede_iniciar ? '#ecfdf5' : trackingData?.hay_rechazos ? '#fef2f2' : '#fffbeb' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: trackingData?.puede_iniciar ? '#10b981' : trackingData?.hay_rechazos ? '#ef4444' : '#f59e0b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                      {trackingData?.puede_iniciar ? <FiCheckCircle size={24} /> : trackingData?.hay_rechazos ? <FiCheckCircle size={24} /> : <FiClock size={24} />}
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: trackingData?.puede_iniciar ? '#065f46' : trackingData?.hay_rechazos ? '#991b1b' : '#b45309' }}>
+                        {trackingData?.puede_iniciar ? "¡Aprobado Completamente!" : trackingData?.hay_rechazos ? "Evento Rechazado" : "En Revisión Continua"}
+                      </h4>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: trackingData?.puede_iniciar ? '#047857' : trackingData?.hay_rechazos ? '#b91c1c' : '#d97706' }}>
+                        {trackingData?.puede_iniciar ? "Todas las áreas han validado tu evento. Listo para iniciar." : trackingData?.hay_rechazos ? "Una o más áreas han declinado la solicitud." : "Tu evento aún se encuentra recorriendo el flujo de aprobación."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Lista de Aprobaciones por Área */}
+                  <h4 style={{ fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', marginBottom: '16px' }}>Estado por Departamento</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {trackingData?.aprobaciones?.map((area, index) => {
+                      let bg = '#f8fafc', border = '#e2e8f0', iconColor = '#94a3b8', badgeBg = '#f1f5f9', badgeText = '#475569', Icon = FiClock;
+                      
+                      if (!area.requerido) {
+                        bg = '#f8fafc'; border = '#f1f5f9'; iconColor = '#cbd5e1'; badgeBg = '#f1f5f9'; badgeText = '#94a3b8'; Icon = FiCheckCircle;
+                      } else if (area.estado === 'Aprobado' || area.estado === 'Completado') {
+                        bg = '#fff'; border = '#10b981'; iconColor = '#10b981'; badgeBg = '#ecfdf5'; badgeText = '#059669'; Icon = FiCheckCircle;
+                      } else if (area.estado === 'Rechazado') {
+                        bg = '#fff'; border = '#ef4444'; iconColor = '#ef4444'; badgeBg = '#fef2f2'; badgeText = '#dc2626'; Icon = FiCheckCircle;
+                      } else {
+                        bg = '#fff'; border = '#f59e0b'; iconColor = '#f59e0b'; badgeBg = '#fffbeb'; badgeText = '#d97706'; Icon = FiClock;
+                      }
+
+                      return (
+                        <div key={index} style={{ padding: '16px 20px', borderRadius: '12px', borderLeft: `4px solid ${border}`, borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', backgroundColor: bg, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <Icon size={20} color={iconColor} />
+                            <span style={{ fontSize: '15px', fontWeight: 600, color: area.requerido ? '#0f172a' : '#94a3b8' }}>{area.area}</span>
+                          </div>
+                          <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, backgroundColor: badgeBg, color: badgeText }}>
+                            {!area.requerido ? 'No requerido' : area.estado}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '20px 32px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-secondary" onClick={cerrarTracking}>Cerrar Tracking</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 }

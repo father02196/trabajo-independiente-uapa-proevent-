@@ -3,8 +3,8 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import './../css/Welcome.css';
 import uapaLogo from './../img/Logo-blanco-UAPA.png';
-import logoProevent from './../img/logo-proevent.jpeg';
-import emblemProevent from './../img/Emblema-Proevent.jpeg';
+
+import logoIcono from './../img/logo-icono.png';
 
 const API = "http://localhost:8080";
 
@@ -97,12 +97,7 @@ const POLICIES = [
   },
 ];
 
-/* ── Checkmark SVG ── */
-const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="2.5 8.5 6 12 13.5 4" />
-  </svg>
-);
+
 
 function Welcome({ isLoggedIn, onLogoutClick }) {
   const navigate = useNavigate();
@@ -158,12 +153,12 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
       {/* ══════════════════════ NAVBAR ══════════════════════ */}
       <header className={`welcome-header${scrolled ? " scrolled" : ""}`}>
         <div className="header-logo-area">
-          <img src={emblemProevent} alt="Emblema UAPA" className="header-emblem-img" />
+          <div className="header-emblem-crop">
+            <img src={logoIcono} alt="Ícono UAPA ProEvent" className="header-emblem-img" />
+          </div>
           <div className="header-text-block">
             <span className="header-title">
-              <span className="header-uapa">UAPA</span>
-              <span className="header-dash">-</span>
-              <span className="header-proevent">ProEvent</span>
+              <span className="header-uapa">UAPA</span><span className="header-dash">-</span><span className="header-proevent">ProEvent</span>
             </span>
             <span className="header-subtitle">Sistema de Gestión de Eventos Institucionales</span>
           </div>
@@ -176,13 +171,13 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
           <a href="#portal" onClick={(e) => { e.preventDefault(); navigate('/portal-proveedores'); }} className="nav-link">Portal Proveedores</a>
           <a href="#contact"   className="nav-link">Contacto</a>
           {isLoggedIn ? (
-            <button className="nav-cta-btn" onClick={onLogoutClick}>Cerrar Sesión</button>
+            <button type="button" className="nav-cta-btn" onClick={onLogoutClick}>Cerrar Sesión</button>
           ) : (
-            <button className="nav-cta-btn" onClick={() => navigate('/login')}>Iniciar Sesión</button>
+            <button type="button" className="nav-cta-btn" onClick={() => navigate('/login')}>Iniciar Sesión</button>
           )}
         </nav>
 
-        <button className="menu-icon" onClick={toggleSidebar} aria-label="Menú">
+        <button type="button" className="menu-icon" onClick={toggleSidebar} aria-label="Menú">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
             <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
           </svg>
@@ -197,20 +192,20 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
             <div className="sidebar-brand-icon">PE</div>
             <span>ProEvent</span>
           </div>
-          <button className="close-btn" onClick={toggleSidebar}>×</button>
+          <button type="button" className="close-btn" onClick={toggleSidebar}>×</button>
         </div>
         <ul className="sidebar-menu">
           <li><a href="#features"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>📋 Módulos</a></li>
           <li><a href="#policies"  className="sidebar-link" onClick={() => setSidebarOpen(false)}>📜 Políticas</a></li>
           <li><a href="#portal" className="sidebar-link" onClick={(e) => { e.preventDefault(); setSidebarOpen(false); navigate('/portal-proveedores'); }}>🏢 Portal Proveedores</a></li>
-          <li><button className="sidebar-link" onClick={openHelpModal}>🆘 Ayuda y Contacto</button></li>
+          <li><button type="button" className="sidebar-link" onClick={openHelpModal}>🆘 Ayuda y Contacto</button></li>
           {isLoggedIn ? (
             <li className="sidebar-bottom-item">
-              <button className="sidebar-link logout-link" onClick={onLogoutClick}>🚪 Cerrar Sesión</button>
+              <button type="button" className="sidebar-link logout-link" onClick={onLogoutClick}>🚪 Cerrar Sesión</button>
             </li>
           ) : (
             <li className="sidebar-bottom-item">
-              <button className="sidebar-link login-link" onClick={() => { setSidebarOpen(false); navigate('/login'); }}>🔐 Iniciar Sesión</button>
+              <button type="button" className="sidebar-link login-link" onClick={() => { setSidebarOpen(false); navigate('/login'); }}>🔐 Iniciar Sesión</button>
             </li>
           )}
         </ul>
@@ -245,11 +240,11 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
 
           <div className="hero-actions">
             {isLoggedIn ? (
-              <button className="hero-btn primary" onClick={() => navigate('/dashboard')}>
+              <button type="button" className="hero-btn primary" onClick={() => navigate('/dashboard')}>
                 Mi Cuenta
               </button>
             ) : (
-              <button className="hero-btn primary" onClick={() => navigate('/login')}>
+              <button type="button" className="hero-btn primary" onClick={() => navigate('/login')}>
                 Acceder al Sistema
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="2" y1="8" x2="14" y2="8"/><polyline points="9 3 14 8 9 13"/>
@@ -526,7 +521,7 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
           <div className="cta-content">
             <h2 className="cta-title">¿Listo para gestionar tu próximo evento?</h2>
             <p className="cta-subtitle">Accede al sistema con tus credenciales institucionales y comienza hoy mismo.</p>
-            <button className="hero-btn primary cta-main-btn" onClick={() => navigate('/login')}>
+            <button type="button" className="hero-btn primary cta-main-btn" onClick={() => navigate('/login')}>
               Iniciar Sesión en ProEvent
             </button>
           </div>
@@ -571,7 +566,7 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
               <li><span>📧 eventos@uapa.edu.do</span></li>
               <li><span>📧 produccionaudiovisual@uapa.edu.do</span></li>
               <li><span>📞 (809) 724-0266 ext. 112</span></li>
-              <li><button className="footer-help-btn" onClick={openHelpModal}>Centro de Ayuda</button></li>
+              <li><button type="button" className="footer-help-btn" onClick={openHelpModal}>Centro de Ayuda</button></li>
             </ul>
           </div>
         </div>
@@ -584,7 +579,7 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
       {showHelpModal && createPortal(
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeHelpModal()}>
           <div className="modal-content help-modal">
-            <button className="modal-close" onClick={closeHelpModal}>×</button>
+            <button type="button" className="modal-close" onClick={closeHelpModal}>×</button>
             <div className="modal-icon-header">
               <div className="modal-icon-circle">🆘</div>
               <h3 className="modal-title">Centro de Ayuda</h3>
@@ -604,7 +599,7 @@ function Welcome({ isLoggedIn, onLogoutClick }) {
                 <p><strong>Extensión:</strong> 470 / 239</p>
               </div>
             </div>
-            <button className="primary-btn" onClick={closeHelpModal}>Cerrar</button>
+            <button type="button" className="primary-btn" onClick={closeHelpModal}>Cerrar</button>
           </div>
         </div>,
         document.body

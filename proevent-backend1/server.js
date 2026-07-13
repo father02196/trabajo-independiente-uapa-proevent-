@@ -1,16 +1,17 @@
+require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env — DEBE ir primero
 // --- IMPORTACIONES PRINCIPALES ---
 const express = require('express'); // Framework web minimalista para crear el servidor HTTP en Node.js
 const mysql = require('mysql2'); // Driver para establecer y manejar conexiones con la base de datos MySQL
 const cors = require('cors'); // Middleware que habilita CORS permitiendo que el Frontend (React) haga peticiones al Backend
 const cookieParser = require('cookie-parser'); // Middleware para parsear cookies (JWT)
 const crypto = require('crypto'); // Módulo de criptografía nativo de Node (usado para generar tokens de contraseña)
-const nodemailer = require('nodemailer'); // Librería estándar para el transporte y envío de correos electrónicos
+const { sendMailCentralizado, getTransporter } = require('./config/mailer'); // Servicio centralizado de correo
 const { OAuth2Client } = require('google-auth-library'); // SDK de Google para verificar tokens de sesión OAuth2
 const multer = require('multer'); // Middleware para el manejo de subida de archivos (multipart/form-data)
 const path = require('path'); // Módulo de Node para trabajar con rutas de archivos
 const { generateAccessToken, generateRefreshToken, verificarToken } = require('./utils/jwtUtils'); // JWT Utils
+const { procesarDescuentoPOA, reconciliarDescuentoPOA } = require('./utils/poaService'); // Servicio centralizado de actualización y notificación POA
 const bcrypt = require('bcryptjs'); // Librería de encriptación segura para contraseñas
-require('dotenv').config(); // Carga las variables de entorno almacenadas en el archivo .env al objeto process.env
 
 // --- FUNCIÓN DE UTILIDAD ---
 // Elimina datos sensibles del objeto de usuario antes de enviarlo al cliente mediante construcción estricta
@@ -20,7 +21,8 @@ function sanitizeUser(user) {
         nombre: user.nombre,
         correo: user.correo,
         rol: user.rol || user.id_rol,
-        estado: user.estado
+        estado: user.estado,
+        token_version: user.token_version
     };
 }
 
@@ -72,6 +74,11 @@ const upload = multer({
 
 // Exponer la carpeta de uploads para acceso estático
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ── INTEGRACIÓN GOOGLE CALENDAR ─────────────────────────────────────────────
+const googleCalendarRouter = require('./routes/googleCalendar');
+app.use('/google-calendar', googleCalendarRouter);
+
 
 // Endpoint genérico para subir documentos
 app.post('/api/documentos/upload', verificarToken, upload.single('archivo'), (req, res) => {
@@ -188,9 +195,12 @@ db.getConnection((err, connection) => {
 // --- FUNCIONES DE APOYO (HELPERS) ---
 // Helper: Crear una notificación dirigida a un usuario específico o a un rol completo
 function crearNotificacion({ id_usuario_destino = null, rol_destino = null, titulo, cuerpo, enlace_accion = null }) {
-  const sql = `INSERT INTO notificacion_sistema (id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion) VALUES (?, ?, ?, ?, ?)`;
-  db.query(sql, [id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion], (err) => {
-    if (err) console.error('Error al crear notificación:', err.message);
+  return new Promise((resolve) => {
+    const sql = `INSERT INTO notificacion_sistema (id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion) VALUES (?, ?, ?, ?, ?)`;
+    db.query(sql, [id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion], (err) => {
+      if (err) console.error('Error al crear notificación:', err.message);
+      resolve(!err);
+    });
   });
 }
 
@@ -219,6 +229,8 @@ function registrarMovimiento(id_usuario, id_rol, accion, detalles = '') {
 
 // --- PROCESOS EN SEGUNDO PLANO (CRON JOBS SIMULADOS) ---
 // ── AUTO-FINALIZACIÓN DE EVENTOS ─────────────────────────
+const { notificarAutoFinalizacion } = require('./utils/notificacionService');
+
 // Tarea automática: Revisa iterativamente si algún evento catalogado actualmente como 'Aprobado'
 // ya dejó atrás su fecha límite esperada (fecha_fin) en el mundo real y lo auto-marca en tabla como 'Finalizado'.
 function autoFinalizarEventos() {
@@ -257,12 +269,14 @@ function autoFinalizarEventos() {
         // Ciclo secuencial interactivo para documentar uno por uno los históricos operados en la base 
         eventos.forEach(e => {
           if (e.id_usuario) { // Garantiza seguridad asegurando que genuinamente existió en el row el ID del originado humano
-            registrarMovimiento(
-              e.id_usuario, // Culpabilidad técnica virtual auto-asignable como creador del originante inicial
-              null, // Rol es null forzando auto-resolver el callback helper db para leer su row 
-              'AUTO_FINALIZACION_EVENTO', // Bandera unívoca clave sobre operación computacional sistemática programada
-              `El evento "${e.nombre}" (ID: ${e.id_evento}) fue finalizado automáticamente al superar su fecha de fin.` // Relato traducido plenamente legible a usuario corriente en la tabla visual de las bitácoras
-            );
+            notificarAutoFinalizacion(db, e.id_evento, e.nombre, e.id_usuario, crearNotificacion).then(count => {
+              registrarMovimiento(
+                e.id_usuario, // Culpabilidad técnica virtual auto-asignable como creador del originante inicial
+                null, // Rol es null forzando auto-resolver el callback helper db para leer su row 
+                'AUTO_FINALIZACION_EVENTO', // Bandera unívoca clave sobre operación computacional sistemática programada
+                `El evento "${e.nombre}" (ID: ${e.id_evento}) fue auto-finalizado. Se generaron ${count} notificaciones para los departamentos y roles correspondientes.` // Relato traducido plenamente legible a usuario corriente en la tabla visual de las bitácoras
+              );
+            });
           }
         });
       }
@@ -427,6 +441,139 @@ app.get('/api/auth/me', verificarToken, (req, res) => {
       const u = results[0];
       if (u.estado === 'inactivo') return res.status(403).json({ mensaje: 'Cuenta inactiva' });
       res.json({ usuario: u });
+    }
+  );
+});
+
+// --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
+// [REFAC] Transporter eliminado de aquí; rutas_fase4 importa el mailer directamente
+const rutasFase4 = require('./rutas_fase4')(db);
+app.use('/api', rutasFase4);
+
+// ── RESTABLECIMIENTO DE CONTRASEÑA (EMAIL FLOW OAUTH BYPASS) ───────
+app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo inicial para flujo "Olvidé mi contraseña"
+  const { correo } = req.body; // Extrae el input string del email digitado por el usuario en conflicto
+
+  db.query('SELECT id_usuario FROM usuario WHERE correo = ?', [correo], (err, results) => { // Chequeo de seguridad: Validar si de hecho existe
+    if (err) return res.status(500).json({ mensaje: 'Error al consultar la base de datos' }); // Falla de lectura base MySQL
+    if (results.length === 0) { // Si el motor retorna Array vacío = El usuario es fantasma o se equivocó al teclear
+      return res.status(404).json({ mensaje: 'El correo no está registrado' }); // 404 No encontrado explícito
+    }
+
+    // Generar token criptográfico pseudo-aleatorio único de seguridad (Non-guessable Hash string)
+    const token = crypto.randomBytes(32).toString('hex'); // Librería Crypto nativa NodeJS: Genera 64 caracteres Hexadecimales
+    const expiracion = new Date(Date.now() + 3600000); // 1 hora exacta de validez estricta (Time to live TTL) sumada en formato Milisegundos Epoch a la fecha Actual
+
+    db.query( // Asienta transaccionalmente en la Tabla Temporal el hash y su atadura al correo
+      'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, ?)',
+      [correo, token, expiracion], // Pasa parámetros
+      (errInsert) => { // Callback
+        if (errInsert) return res.status(500).json({ mensaje: 'Error al generar el token' }); // Rechazo por caída de disco
+
+        const link = `http://localhost:3000/reset-password/${token}`; // Concatena el hipervínculo físico mágico inyectando el Hash como segmento URL Dinámico
+
+        // Configuración de Transportador SMTP Gmail (Nodemailer Middleware Module)
+        // [REFAC] Se elimina la instanciación local de nodemailer aquí, delegando a config/mailer.js
+
+        const mailOptions = { // Objeto estructurado Diccionario de Parametros SendMail Base HTML/Texto
+          // from se omite para usar el valor por defecto centralizado en mailer.js
+          to: correo, // Target endpoint receptor (Cliente)
+          subject: 'Restablecer tu contraseña - ProEvent UAPA', // Título Subject header tag
+          text: `Recuperación de Contraseña\n\nEstimado/a usuario/a,\n\nHemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en UAPA-PROEVENT.\n\nPara continuar con el proceso de recuperación, visita el siguiente enlace (válido por 1 hora):\n${link}\n\nSi no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.\n\nAtentamente,\n\nSistema UAPA-PROEVENT\nPlataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos\nUniversidad Abierta para Adultos (UAPA)`, // Fallback plaintext puro si cliente correo NO admite HTML Render
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
+              <div style="text-align:center; margin-bottom: 20px;">
+                <img src="cid:logoproevent" alt="Logo ProEvent" style="width: 180px; height: auto;" />
+              </div>
+              <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña</h2>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Estimado/a usuario/a,</p>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en <strong>UAPA-PROEVENT</strong>.</p>
+              <p style="color:#333; font-size:15px; line-height:1.5;">Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora a partir de la recepción de este mensaje.</strong></p>
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
+                  Presione Para Restablecer Contraseña
+                </a>
+              </div>
+              <p style="color:#555; font-size:14px; line-height:1.5;">Si no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.</p>
+              <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
+              <p style="color:#555; font-size:14px; line-height:1.5; margin-bottom: 5px;">Atentamente,</p>
+              <p style="color:#1e3a5f; font-size:14px; line-height:1.4; margin-top:0;">
+                <strong>Sistema UAPA-PROEVENT</strong><br>
+                <span style="font-size:12px; color:#666;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos<br>
+                Universidad Abierta para Adultos (UAPA)</span>
+              </p>
+            </div>
+          `, // Inyección Inline CSS para bypass de Email Clients restrictivos (Gmail/Outlook safe css render engine compliant code structure rules block table formatting hack fix)
+          attachments: [
+            {
+              filename: 'logo-proevent.jpeg',
+              path: require('path').join(__dirname, '../proevent-frontend1/src/img/logo-proevent.jpeg'),
+              cid: 'logoproevent' // same cid value as in the html img src
+            }
+          ]
+        };
+
+        sendMailCentralizado(mailOptions).then(info => {
+          console.log(`✅ Correo enviado a: ${correo} (ID: ${info.messageId})`); // Rastreo feliz Server Node Terminal log monitor process trace uid ID messageid
+          res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' }); // Respuesta final HTTP STATUS 200 al UI solicitante de paciencia para revisión Inbox
+        }).catch(errMail => {
+          console.error('❌ Error enviando correo:', errMail.message); // Consola verbose local log failure
+          return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' }); // Avisa fallo
+        });
+      }
+    );
+  });
+});
+
+app.get('/validar-token/:token', (req, res) => { // Endpoint auxiliar silencioso de ping pong. Su función es que la Pantalla GUI Reset password se auto-destruya si el token URL caducó o es falso sin requerir botonazo al montar en RAM component
+  const { token } = req.params; // Toma segmento Path Dinamico
+  db.query( // Lee la tabla sucia temporal de tokens
+    'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Magia SQL C: Chequea MATCH de string con WHERE y usa función matemática Date de base de datos nativa NOW() para verificar si expiró (Time Travel Logic Validation Engine)
+    [token],
+    (err, results) => { // Analiza return array length bool
+      if (err) return res.status(500).json({ mensaje: 'Error al validar el token' }); // Manejador basico logico error
+      if (results.length === 0) { // Si falló (O no existe ese hash inventado hacker, o sí existe pero expiracion < menor que NOW())
+        return res.status(400).json({ mensaje: 'Token inválido o expirado' }); // Lanza destello mortal al UI para bloquear y ocultar inputs del formulario de nueva key
+      }
+      res.json({ mensaje: 'Token válido', correo: results[0].correo }); // Concede Permiso UI Temporal a renderizar Cajas de Texto "Nueva Contraseña x2" y exporta el Mail Subyacente acoplado al hash index
+    }
+  );
+});
+
+app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutador Táctico Finalizador (Post de ejecución destructiva y sobre-escritura)
+  const { token, nuevaContrasena } = req.body; // Requiere la llave token devuelta en payload y el plaintext string password recien digitado
+
+  // 1. Re-Validar Estrictamente lado servidor node el token antes de matar contraseña antigua (Evita Bypassing REST calls Postman y Replays)
+  db.query(
+    'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Mismo chequeo de caducidad temporal anti-latencia
+    [token],
+    async (err, results) => {
+      if (err) return res.status(500).json({ mensaje: 'Error al validar el token' }); // Fallo Try Catch like
+      if (results.length === 0) { // Timeout confirmacion reaccion tardia usuario o inyeccion delay ataque
+        return res.status(400).json({ mensaje: 'Token inválido o expirado' });
+      }
+
+      const correo = results[0].correo; // Pinpoint selectivo estricto de la cuenta víctima objetiva a actualizar segun el token
+
+      try {
+        const passwordHash = await bcrypt.hash(nuevaContrasena, 12);
+        
+        // 2. Actualizar contraseña oficial y forzar invalidación de sesiones previas
+        db.query(
+          'UPDATE usuario SET password_hash = ?, contrasena = NULL, password_changed_at = NOW(), token_version = token_version + 1, failed_login_attempts = 0, locked_until = NULL WHERE correo = ?', 
+          [passwordHash, correo],
+          (errUpdate) => {
+            if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' }); 
+
+            // 3. Destruir e incinerar el token usado para asegurar su condición "Uso Único Desechable Limitado"
+            db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => { }); 
+
+            res.json({ mensaje: 'Contraseña actualizada con éxito' }); 
+          }
+        );
+      } catch (hashError) {
+        return res.status(500).json({ mensaje: 'Error interno encriptando contraseña' });
+      }
     }
   );
 });
@@ -713,19 +860,10 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
         db.query('INSERT INTO detalle_montaje (id_evento, descripcion) VALUES (?, ?)', [id_evento, observaciones], () => { }); // Guarda comentario largo atado
       }
 
-      // --- ACTUALIZACIÓN DE ESTADOS CONTABLES DINíMICOS (SUSTRACCIÓN POR RESERVA FINANCIERA POA) ---
-      if (montoPOA > 0 && id_poa_activo) { // Solo si hay monto y se validó exitosamente el id activo subyacente del poa fiscal vivo anual
-        db.query( // Dispara transacción a sub-tabla ledger de historial y log de rastreo financiero poa_movimiento
-          `INSERT INTO poa_movimiento (id_poa, id_evento, monto_solicitado_original, moneda_original, tasa_cambio, monto_descontado_dop, estado)
-           VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')`, // Inyecta datos cambiarios calculados estáticamente en este milisegundo al cambio del día marcado 'Pendiente' hasta decisión de los gestores
-          [id_poa_activo, id_evento, montoPOA, moneda || 'DOP', tasa_cambio, monto_dop],
-          (poaErr) => { // Espera respuesta asíncrona DB
-            if (!poaErr) { // Y solo si no hubo fatal error de insercion en bitacora POA
-              // Realiza el Descuento final FíSICO Y MATEMíTICO REAL de la base central sustrayendo sin compasión el estimado para bloquear el dinero (reserva contable real en caliente UPDATE)
-              db.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, id_poa_activo], () => { }); // Deduce
-            }
-          }
-        );
+      // --- ACTUALIZACIÓN DE ESTADOS CONTABLES DINÁMICOS (SUSTRACCIÓN POR RESERVA FINANCIERA POA) ---
+      // Delegado al poaService centralizado: registra movimiento, deduce saldo y detecta cruce de umbral 20%
+      if (montoPOA > 0 && id_poa_activo) {
+        procesarDescuentoPOA(db, id_poa_activo, id_evento, montoPOA, moneda, tasa_cambio, monto_dop, crearNotificacion);
       }
 
       // CONCLUSIÓN DE MÚLTIPLES HITOS INSERCIONALES EXITOSA (END)
@@ -952,29 +1090,9 @@ app.put('/eventos/:id', async (req, res) => { // Asignación de Endpoint dinámi
 
     await dbPromise.query(sql, params);
 
-    // --- APLICACION DE RECONCILIACION CONTABLE (POA) ---
-    if (movPrevio) {
-      if (movPrevio.estado !== 'Rechazado') {
-        await dbPromise.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible + ? WHERE id_poa = ?", [movPrevio.monto_descontado_dop, movPrevio.id_poa]);
-      }
-      if (montoPOA > 0) {
-        await dbPromise.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, movPrevio.id_poa]);
-        await dbPromise.query(
-          "UPDATE poa_movimiento SET monto_solicitado_original = ?, moneda_original = ?, tasa_cambio = ?, monto_descontado_dop = ?, estado = 'Pendiente', motivo_rechazo = NULL WHERE id_movimiento = ?",
-          [montoPOA, moneda || 'DOP', tasa_cambio, monto_dop, movPrevio.id_movimiento]
-        );
-      } else {
-        await dbPromise.query("DELETE FROM poa_movimiento WHERE id_movimiento = ?", [movPrevio.id_movimiento]);
-      }
-    } else {
-      if (montoPOA > 0 && id_poa_activo) {
-        await dbPromise.query(
-          `INSERT INTO poa_movimiento (id_poa, id_evento, monto_solicitado_original, moneda_original, tasa_cambio, monto_descontado_dop, estado) VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')`,
-          [id_poa_activo, id, montoPOA, moneda || 'DOP', tasa_cambio, monto_dop]
-        );
-        await dbPromise.query("UPDATE poa_fiscal SET monto_disponible = monto_disponible - ? WHERE id_poa = ?", [monto_dop, id_poa_activo]);
-      }
-    }
+    // --- APLICACIÓN DE RECONCILIACIÓN CONTABLE (POA) ---
+    // Delegado al poaService: reembolsa previo, registra nuevo movimiento, deduce saldo y detecta umbral 20%
+    await reconciliarDescuentoPOA(dbPromise, db, id_poa_activo, id, montoPOA, moneda, tasa_cambio, monto_dop, movPrevio, crearNotificacion);
 
     // --- LIMPIEZA M:N --- 
     // Usamos callbacks normales para operaciones no-bloqueantes de satélites
@@ -1061,12 +1179,11 @@ app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar 
 
   const sql = `
     SELECT 
-      e.id_evento, e.nombre, e.fecha_inicio, e.fecha_fin, e.id_usuario,
+      e.id_evento, e.nombre, e.fecha_inicio, e.fecha_fin, e.hora_inicio, e.hora_fin, e.id_usuario, e.estado,
       r.nombre AS recinto,
       IF((SELECT COUNT(*) FROM servicio_audiovisual sa WHERE sa.id_evento = e.id_evento AND sa.estado != 'Rechazado') > 0, 1, 0) AS necesita_audiovisual
     FROM evento e
     LEFT JOIN recinto r ON e.id_recinto = r.id_recinto
-    WHERE e.estado != 'Rechazado' -- Evade y excluye completamente del dibujo agendado aquellos planes flagrantemente rechazados
   `; // Select parcial que ignora data confidencial administrativa e incluye banderas booleanas IF
 
   db.query(sql, (err, results) => { // Lanza Query
@@ -1078,9 +1195,12 @@ app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar 
         id: evt.id_evento, // Asignacion llave
         start: evt.fecha_inicio, // Mapping param start date 
         end: evt.fecha_fin, // Mapping param end date
+        hora_inicio: evt.hora_inicio,
+        hora_fin: evt.hora_fin,
         title: esPropio ? evt.nombre : "Ocupado", // Censura dinámica: Si es mío revelo titulo, sino aplico etiqueta privada estándar "Ocupado"
         recinto: esPropio ? evt.recinto : "Información Privada", // Censura espacial local
         esPropio: esPropio, // Bandera de propiedad
+        estado: evt.estado,
         necesita_audiovisual: evt.necesita_audiovisual === 1 // Cast int to bool verdadero/falso
       };
     });
@@ -1383,6 +1503,7 @@ app.put('/audiovisual/evento/:id_evento/estado', (req, res) => { // Sub-endpoint
 app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo inicial para flujo "Olvidé mi contraseña"
   const { correo } = req.body; // Extrae el input string del email digitado por el usuario en conflicto
 
+
   db.query('SELECT id_usuario FROM usuario WHERE correo = ?', [correo], (err, results) => { // Chequeo de seguridad: Validar si de hecho existe
     if (err) return res.status(500).json({ mensaje: 'Error al consultar la base de datos' }); // Falla de lectura base MySQL
     if (results.length === 0) { // Si el motor retorna Array vacío = El usuario es fantasma o se equivocó al teclear
@@ -1402,41 +1523,86 @@ app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo i
         const link = `http://localhost:3000/reset-password/${token}`; // Concatena el hipervínculo físico mágico inyectando el Hash como segmento URL Dinámico
 
         // Configuración de Transportador SMTP Gmail (Nodemailer Middleware Module)
-        const transporter = nodemailer.createTransport({ // Instancia la conexión transaccional
-          service: 'gmail', // Target OAuth/BasicAuth G Suite/Google Mail Service Cloud Provider
-          auth: { // Autenticación del sender server backoffice bot origin source account
-            user: process.env.GMAIL_USER, // Credencial Segura Oculta `.env` String
-            pass: process.env.GMAIL_PASS, // App Password Autenticado Google Security `.env`
-          },
-        });
+        // [REFAC] Se elimina la instanciación local de nodemailer aquí, delegando a config/mailer.js
 
         const mailOptions = { // Objeto estructurado Diccionario de Parametros SendMail Base HTML/Texto
-          from: `"ProEvent UAPA" <${process.env.GMAIL_USER}>`, // Máscara spoof de remitente alias
+          // from se omite para usar el valor por defecto centralizado en mailer.js
           to: correo, // Target endpoint receptor (Cliente)
           subject: 'Restablecer tu contraseña - ProEvent UAPA', // Título Subject header tag
           text: `Recuperación de Contraseña\n\nEstimado/a usuario/a,\n\nHemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en UAPA-PROEVENT.\n\nPara continuar con el proceso de recuperación, visita el siguiente enlace (válido por 1 hora):\n${link}\n\nSi no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.\n\nAtentamente,\n\nSistema UAPA-PROEVENT\nPlataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos\nUniversidad Abierta para Adultos (UAPA)`, // Fallback plaintext puro si cliente correo NO admite HTML Render
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
-              <div style="text-align:center; margin-bottom: 20px;">
-                <img src="cid:logoproevent" alt="Logo ProEvent" style="width: 180px; height: auto;" />
-              </div>
-              <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña</h2>
-              <p style="color:#333; font-size:15px; line-height:1.5;">Estimado/a usuario/a,</p>
-              <p style="color:#333; font-size:15px; line-height:1.5;">Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en <strong>UAPA-PROEVENT</strong>.</p>
-              <p style="color:#333; font-size:15px; line-height:1.5;">Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora a partir de la recepción de este mensaje.</strong></p>
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
-                  Presione Para Restablecer Contraseña
-                </a>
-              </div>
-              <p style="color:#555; font-size:14px; line-height:1.5;">Si no realizaste esta solicitud, puedes ignorar este correo de manera segura. Tu contraseña actual permanecerá sin cambios y no será necesario realizar ninguna acción adicional.</p>
-              <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
-              <p style="color:#555; font-size:14px; line-height:1.5; margin-bottom: 5px;">Atentamente,</p>
-              <p style="color:#1e3a5f; font-size:14px; line-height:1.4; margin-top:0;">
-                <strong>Sistema UAPA-PROEVENT</strong><br>
-                <span style="font-size:12px; color:#666;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos<br>
-                Universidad Abierta para Adultos (UAPA)</span>
-              </p>
+            <div style="background-color: #f4f7f6; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333; line-height: 1.6;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                <!-- Logo Section -->
+                <tr>
+                  <td align="center" style="padding: 40px 20px 20px 20px;">
+                    <img src="cid:logoproevent" alt="Logo ProEvent" style="max-width: 200px; height: auto;" />
+                  </td>
+                </tr>
+                <!-- Content Section -->
+                <tr>
+                  <td style="padding: 0 40px 20px 40px;">
+                    <h2 style="color: #1e3a5f; text-align: center; font-size: 24px; font-weight: 700; margin: 0 0 20px 0;">Recuperación de Contraseña</h2>
+                    <p style="font-size: 16px; margin: 0 0 20px 0; color: #4a4a4a;">Hola, hemos recibido una solicitud para restablecer la contraseña de la siguiente cuenta:</p>
+                    
+                    <!-- User Email Highlight -->
+                    <div style="background-color: #f8fafc; border-left: 4px solid #f58220; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+                      <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1e3a5f;">
+                        <span style="font-size: 18px; vertical-align: middle; margin-right: 8px;">📧</span> ${correo}
+                      </p>
+                    </div>
+
+                    <!-- Info Card -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px; background-color: #f8fafc; border-radius: 8px; padding: 20px;">
+                      <tr>
+                        <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Estado:</strong> <span style="color: #28a745;">Solicitud recibida</span></td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Vigencia del enlace:</strong> 1 hora</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 14px;"><strong>&bull; Plataforma:</strong> UAPA-PROEVENT</td>
+                      </tr>
+                    </table>
+
+                    <!-- Reset Button -->
+                    <div style="text-align: center; margin-bottom: 25px;">
+                      <a href="${link}" style="display: inline-block; background-color: #1e3a5f; color: #ffffff; padding: 16px 36px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Restablecer contraseña</a>
+                    </div>
+
+                    <!-- Alternative Link -->
+                    <p style="font-size: 13px; color: #6c757d; text-align: center; margin: 0 0 30px 0; word-break: break-all;">
+                      O copia y pega el siguiente enlace en tu navegador:<br>
+                      <a href="${link}" style="color: #1e3a5f; text-decoration: underline;">${link}</a>
+                    </p>
+
+                    <!-- Warning Box -->
+                    <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; margin-bottom: 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td width="30" valign="top" style="font-size: 18px; padding-right: 10px;">🔒</td>
+                          <td style="font-size: 14px; color: #856404; line-height: 1.5;">Si usted no solicitó este cambio, ignore este correo. Su contraseña permanecerá segura.</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Divider -->
+                <tr>
+                  <td style="padding: 0 40px;">
+                    <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 0;">
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td align="center" style="padding: 30px 40px; background-color: #fdfdfd;">
+                    <p style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold; color: #1e3a5f;">Sistema UAPA-PROEVENT</p>
+                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #6c757d;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos</p>
+                    <p style="margin: 0 0 15px 0; font-size: 12px; color: #6c757d;">Universidad Abierta para Adultos (UAPA)</p>
+                    <p style="margin: 0; font-size: 12px; color: #adb5bd;">&copy; 2026 Todos los derechos reservados.</p>
+                  </td>
+                </tr>
+              </table>
             </div>
           `, // Inyección Inline CSS para bypass de Email Clients restrictivos (Gmail/Outlook safe css render engine compliant code structure rules block table formatting hack fix)
           attachments: [
@@ -1448,13 +1614,12 @@ app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo i
           ]
         };
 
-        transporter.sendMail(mailOptions, (errMail, info) => { // Disparo real TCP del socket hacia SMTP Servers remotos en red con payload compilado base64 content type multipart
-          if (errMail) { // Fracaso de conexión o credenciales erróneas banneadas por google policies o bad TLS Handshake protocol mismatch port 465 587 block
-            console.error('❌ Error enviando correo:', errMail.message); // Consola verbose local log failure
-            return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' }); // Avisa fallo
-          }
+        sendMailCentralizado(mailOptions).then(info => {
           console.log(`✅ Correo enviado a: ${correo} (ID: ${info.messageId})`); // Rastreo feliz Server Node Terminal log monitor process trace uid ID messageid
           res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' }); // Respuesta final HTTP STATUS 200 al UI solicitante de paciencia para revisión Inbox
+        }).catch(errMail => {
+          console.error('❌ Error enviando correo:', errMail.message); // Consola verbose local log failure
+          return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' }); // Avisa fallo
         });
       }
     );
@@ -1994,10 +2159,8 @@ app.put('/servicios-externos/:id/proveedor', (req, res) => {
                 const prov = provRows[0];
                 // Enviar correo si el transporter está disponible
                 try {
-                  const nodemailer = require('nodemailer');
-                  const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS } });
-                  transporter.sendMail({
-                    from: 'uapaproeventstmdeevento@gmail.com',
+                  // [REFAC] Usando sendMailCentralizado de config/mailer.js
+                  sendMailCentralizado({
                     to: prov.correo,
                     subject: `Nueva Solicitud de Servicio - UAPA ProEvent`,
                     html: `<h3>Hola ${prov.nombre_empresa},</h3>
@@ -2159,10 +2322,10 @@ app.get('/servicios-externos-all', (req, res) => {
 
 // --- ENDPOINTS ADMINISTRATIVOS FASE 2 ---
 app.put('/api/servicio_externo/:id/admin', (req, res) => {
-  const { numero_orden_compra, requiere_contrato } = req.body;
+  const { numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada } = req.body;
   const id_usuario = req.headers['x-usuario-id'];
-  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ? WHERE id_servicio_ext = ?',
-    [numero_orden_compra, requiere_contrato, req.params.id], (err) => {
+  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ?, id_cotizacion_adjudicada = ? WHERE id_servicio_ext = ?',
+    [numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada, req.params.id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
       if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
       res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
@@ -2170,24 +2333,8 @@ app.put('/api/servicio_externo/:id/admin', (req, res) => {
 });
 
 app.put('/api/presupuesto/:id_evento', (req, res) => {
-  const { estado } = req.body;
-  const id_usuario = req.headers['x-usuario-id'];
-  db.query('SELECT id_presupuesto FROM presupuesto WHERE id_evento = ?', [req.params.id_evento], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (results.length === 0) {
-      db.query('INSERT INTO presupuesto (id_evento, total, estado) VALUES (?, 0, ?)', [req.params.id_evento, estado], (err2) => {
-        if (err2) return res.status(500).json({ error: err2.message });
-        if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'CREAR_PRESUPUESTO', `Presupuesto creado con estado ${estado} para evento ${req.params.id_evento}`]);
-        res.json({ mensaje: 'Presupuesto creado y estado actualizado' });
-      });
-    } else {
-      db.query('UPDATE presupuesto SET estado = ? WHERE id_evento = ?', [estado, req.params.id_evento], (err2) => {
-        if (err2) return res.status(500).json({ error: err2.message });
-        if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_PRESUPUESTO', `Presupuesto actualizado a ${estado} para evento ${req.params.id_evento}`]);
-        res.json({ mensaje: 'Estado del presupuesto actualizado' });
-      });
-    }
-  });
+  // RUTA DEPRECADA (Flujo unificado a poa_movimiento)
+  res.status(403).json({ mensaje: 'Esta acción está bloqueada. El presupuesto se aprueba automáticamente desde el módulo de Gestión Presupuestaria.' });
 });
 
 app.put('/api/flujo_legal/:id_evento', (req, res) => {
@@ -2215,16 +2362,16 @@ app.put('/api/flujo_legal/:id_evento', (req, res) => {
 
 app.get('/api/admin_evento/:id_evento', (req, res) => {
   const id_evento = req.params.id_evento;
-  db.query('SELECT * FROM presupuesto WHERE id_evento = ?', [id_evento], (e1, r1) => {
+  db.query('SELECT * FROM poa_movimiento WHERE id_evento = ? ORDER BY id_movimiento DESC LIMIT 1', [id_evento], (e1, r1) => {
     db.query('SELECT * FROM flujo_aprobacion_legal WHERE id_evento = ?', [id_evento], (e2, r2) => {
       db.query(`
-        SELECT cr.*, sc.id_evento, pe.nombre as proveedor_nombre 
+        SELECT cr.*, sc.id_evento, pe.nombre_empresa as proveedor_nombre 
         FROM cotizacion_recibida cr
         JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
         JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
         WHERE sc.id_evento = ?`, [id_evento], (e3, r3) => {
         res.json({
-          presupuesto: r1[0] || { estado: 'Pendiente' },
+          presupuesto: r1[0] || { estado: 'No Asignado' },
           legal: r2[0] || { estado_legal: 'Pendiente', observacion_legal: '' },
           cotizaciones: r3 || []
         });
@@ -2235,7 +2382,7 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
 
 app.get('/api/notificaciones/cotizaciones-vencidas', (req, res) => {
   db.query(`
-    SELECT cr.id_cotizacion, pe.nombre as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
+    SELECT cr.id_cotizacion, pe.nombre_empresa as proveedor_nombre, cr.fecha_vigencia, sc.id_evento
     FROM cotizacion_recibida cr
     JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
     JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
@@ -2331,15 +2478,7 @@ app.get('/api/aprobaciones-evento/:id_evento', (req, res) => {
   });
 });
 
-// --- INTEGRACIÓN FASE 4 (Proveedores Externos e IA) ---
-// Transportador configurado con GMail App Password desde variables de entorno
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
-});
-const rutasFase4 = require('./rutas_fase4')(db, transporter);
-app.use('/api', rutasFase4);
-
+// --- INTEGRACIÓN FASE 4 MOVIDA ARRIBA ---
 // INSTANCIACIÓN DE SERVIDOR EXPRESS JS AL PUERTO ESPECIFICADO LEYENDO VARIABLES DOTENV Y ARRANCANDO CICLO HOST NODE
 // ── FASE 2: APIS DE SUBSANACIÓN, EVIDENCIA CONTABLE E INCIDENCIAS ──
 
@@ -2352,7 +2491,18 @@ app.put('/api/eventos/:id/observar-presupuesto', (req, res) => {
   db.query(`UPDATE evento SET estado='Observado' WHERE id_evento=?`, [id], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
     
-    db.query(`UPDATE presupuesto SET estado='Devuelto' WHERE id_evento=?`, [id], (e2) => {
+    // Contabilidad Inversa Viva: Obtener el movimiento para devolver los fondos
+    db.query(`SELECT id_poa, monto_descontado_dop, estado FROM poa_movimiento WHERE id_evento=? ORDER BY id_movimiento DESC LIMIT 1`, [id], (e2, resMov) => {
+      if(!e2 && resMov.length > 0) {
+        const mov = resMov[0];
+        if(mov.estado !== 'Rechazado') {
+          // Restaurar fondos
+          db.query(`UPDATE poa_fiscal SET monto_disponible = monto_disponible + ? WHERE id_poa = ?`, [mov.monto_descontado_dop, mov.id_poa]);
+          // Actualizar estado del ledger
+          db.query(`UPDATE poa_movimiento SET estado='Rechazado', motivo_rechazo=? WHERE id_evento=?`, [`Devuelto por Observación: ${comentario}`, id]);
+        }
+      }
+      
       db.query(`INSERT INTO historial_observaciones (id_evento, id_usuario, departamento, comentario) VALUES (?, ?, 'VAF-Presupuesto', ?)`, 
       [id, id_usuario, comentario], (e3) => {
         if(e3) return res.status(500).json({error: e3.message});
@@ -2416,6 +2566,16 @@ app.post('/api/logistica/:id_servicio/evidencia-contabilidad', upload.single('ar
   db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=? WHERE id_servicio_ext=?`, [rutaRelativa, id_servicio], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
     res.json({mensaje: 'Evidencia subida correctamente', ruta: rutaRelativa});
+  });
+});
+
+// Eliminar Evidencia Contabilidad (Paso 16 - Revertir)
+app.delete('/api/logistica/:id_servicio/evidencia-contabilidad', (req, res) => {
+  const { id_servicio } = req.params;
+  
+  db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=NULL WHERE id_servicio_ext=?`, [id_servicio], (e1) => {
+    if(e1) return res.status(500).json({error: e1.message});
+    res.json({mensaje: 'Evidencia eliminada correctamente'});
   });
 });
 

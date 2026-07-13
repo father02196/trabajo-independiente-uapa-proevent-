@@ -3,21 +3,57 @@
 // Pertenece a: Módulo Dashboards Principales
 // Propósito: Pantalla de inicio exclusiva para el Administrador Legal.
 // Muestra indicadores clave (contratos pendientes, dictámenes),
-// alertas de eventos observados y accesos directos al flujo administrativo.
+// gráficas de flujo legal y volumen de revisiones, alertas de 
+// eventos observados y accesos directos al flujo administrativo.
 // ============================================================
 
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck, FiRefreshCw } from "react-icons/fi";
+import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck, FiRefreshCw, FiPieChart, FiBarChart2 } from "react-icons/fi";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
 import './../css/Dashboard.css';
 
 const API = "http://localhost:8080";
 
+// --- TOOLTIPS PERSONALIZADOS PARA RECHARTS ---
+const CustomPieTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: '#fff', border: 'none', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <p style={{ margin: 0, fontWeight: 700, color: payload[0].payload.color, fontSize: '13px' }}>
+          {payload[0].name}: {payload[0].value}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomAreaTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: '#fff', border: 'none', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <p style={{ margin: '0 0 6px 0', fontWeight: 700, color: '#64748b', fontSize: '13px' }}>{label}</p>
+        {payload.map((p, i) => (
+          <p key={i} style={{ margin: 0, fontWeight: 600, color: p.color, fontSize: '13px' }}>
+            {p.name}: {p.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 function DashboardLegal({ usuario, setActiveTab }) {
   // --- ESTADOS ---
-  const [eventRequests, setEventRequests] = useState([]); // Lista de eventos aprobados
+  const [eventRequests, setEventRequests] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sortOrder, setSortOrder] = useState("asc");      // Orden de los próximos eventos
+  const [sortOrder, setSortOrder] = useState("asc");      
+  const [mesRange, setMesRange] = useState(6);
 
   // --- EFECTO INICIAL ---
   useEffect(() => {
@@ -40,7 +76,6 @@ function DashboardLegal({ usuario, setActiveTab }) {
   };
 
   // --- FUNCIÓN: formatFechaLarga ---
-  // Formatea la fecha para mostrar el día completo y mes en texto
   const formatFechaLarga = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
@@ -48,17 +83,15 @@ function DashboardLegal({ usuario, setActiveTab }) {
     return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
-  // --- KPIs y Estadísticas (Simuladas/Calculadas) ---
+  // --- KPIs y Estadísticas ---
   const eventosAprobados = eventRequests.filter((e) => e.estado === "Aprobado" || e.estado === "Finalizado").length;
-  
   // Contratos pendientes asumen que eventos "Aprobados" necesitan contrato
   const contratosPendientes = eventRequests.filter((e) => e.estado === "Aprobado").length;
   // Dictámenes asumimos que están "Finalizados"
   const dictamenesEmitidos = eventRequests.filter((e) => e.estado === "Finalizado").length;
-  const eventosObservados = 0; // Podría leerse de e.legal?.estado_legal
+  const eventosObservados = eventRequests.filter((e) => e.estado === "Rechazado").length; 
 
-  // --- FUNCIÓN DE ORDENAMIENTO ---
-  // Obtiene los eventos en progreso/aprobados ordenados por proximidad de fecha
+  // --- FUNCIÓN DE ORDENAMIENTO DE TABLA ---
   const eventosEnProceso = eventRequests
     .filter(e => e.estado === "Aprobado")
     .sort((a, b) => {
@@ -68,10 +101,46 @@ function DashboardLegal({ usuario, setActiveTab }) {
     })
     .slice(0, 5);
 
+  // --- DATOS PARA GRÁFICAS ---
+  // Gráfica 1: Distribución de Carga Jurídica (Pie)
+  const pieData = [
+    { name: 'Contratos Pendientes', value: contratosPendientes, color: '#f59e0b' },
+    { name: 'Dictámenes Emitidos', value: dictamenesEmitidos, color: '#3b82f6' },
+    { name: 'Observados / Rechazados', value: eventosObservados, color: '#ef4444' }
+  ].filter(d => d.value > 0);
+
+  // Gráfica 2: Flujo de Revisiones Legales (Area)
+  const allTrendData = (() => {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const hoy = new Date();
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - (11 - i), 1);
+      const anio = d.getFullYear();
+      const mes  = d.getMonth();
+      return {
+        name: meses[mes],
+        'Pendientes': eventRequests.filter(e => {
+          if (!e.fecha_inicio || e.estado !== "Aprobado") return false;
+          const f = new Date(e.fecha_inicio);
+          f.setMinutes(f.getMinutes() + f.getTimezoneOffset());
+          return f.getFullYear() === anio && f.getMonth() === mes;
+        }).length,
+        'Dictaminados': eventRequests.filter(e => {
+          if (!e.fecha_inicio || e.estado === "Aprobado" || e.estado === "Rechazado") return false; 
+          // Evaluamos cualquier otro como dictaminado en el pasado
+          const f = new Date(e.fecha_inicio);
+          f.setMinutes(f.getMinutes() + f.getTimezoneOffset());
+          return f.getFullYear() === anio && f.getMonth() === mes;
+        }).length,
+      };
+    });
+  })();
+  const trendData = allTrendData.slice(-mesRange);
+
   return (
     <div className="saas-dashboard-container fade-in">
       
-      {/* CARDS DE ESTADÍSTICAS PREMIUM - ROL LEGAL */}
+      {/* ── CARDS DE ESTADÍSTICAS PREMIUM - ROL LEGAL ── */}
       <div className="stats-cards-grid">
         <div className="saas-stat-card warning-glow">
           <div className="card-top">
@@ -110,7 +179,7 @@ function DashboardLegal({ usuario, setActiveTab }) {
           </div>
           <div className="card-bottom">
             <h3>{eventosObservados}</h3>
-            <span className="card-trend text-red">Devueltos por legal</span>
+            <span className="card-trend text-red">Devueltos o rechazados</span>
           </div>
         </div>
 
@@ -128,8 +197,120 @@ function DashboardLegal({ usuario, setActiveTab }) {
         </div>
       </div>
 
-      {/* TIMELINE Y ACCESOS */}
-      <div className="dashboard-double-panel">
+      {/* ── SECCIÓN DE GRÁFICAS ANALÍTICAS JURÍDICAS ── */}
+      <div className="charts-grid-saas" style={{ gridTemplateColumns: '1fr 1fr', marginTop: '24px' }}>
+        
+        {/* Gráfica 1: Distribución de Carga Jurídica (Donut) */}
+        <div className="saas-chart-card saas-donut-card">
+          <div className="chart-header">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiPieChart style={{ color: '#3b82f6' }} />
+                <h4>Estado de Expedientes Legales</h4>
+              </div>
+              <p>Distribución actual de la carga de trabajo</p>
+            </div>
+          </div>
+          <div className="chart-wrapper donut-center" style={{ height: '240px', padding: '10px 0' }}>
+            {loading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="loader"></div>
+              </div>
+            ) : pieData.length === 0 ? (
+              <div className="no-data-placeholder">No hay datos legales registrados</div>
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+                <ResponsiveContainer width="55%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%" cy="50%"
+                      innerRadius={60} outerRadius={85}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomPieTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ width: '45%', display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: '10px' }}>
+                  {pieData.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }}></span>
+                      <div>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#475569', lineHeight: 1.2 }}>{item.name}</p>
+                        <p style={{ margin: '2px 0 0 0', fontSize: '15px', fontWeight: '800', color: '#0f172a', lineHeight: 1.2 }}>{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Gráfica 2: Flujo de Revisiones Legales (Area) */}
+        <div className="saas-chart-card">
+          <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiBarChart2 style={{ color: '#6366f1' }} />
+                <h4>Flujo de Revisiones y Dictámenes</h4>
+              </div>
+              <p>Volumen de contratos evaluados por mes</p>
+            </div>
+            <select
+              className="saas-select"
+              value={mesRange}
+              onChange={e => setMesRange(Number(e.target.value))}
+              style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', color: '#475569', cursor: 'pointer', background: '#f8fafc' }}
+            >
+              <option value={3}>Últimos 3 meses</option>
+              <option value={6}>Últimos 6 meses</option>
+              <option value={9}>Últimos 9 meses</option>
+              <option value={12}>Últimos 12 meses</option>
+            </select>
+          </div>
+          <div className="chart-wrapper" style={{ height: '240px', padding: '8px 0' }}>
+            {loading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="loader"></div>
+              </div>
+            ) : trendData.length === 0 ? (
+              <div className="no-data-placeholder">Sin datos registrados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData} margin={{ top: 15, right: 15, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorDictaminados" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorPendientesLeg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} />
+                  <Tooltip content={<CustomAreaTooltip />} />
+                  <Legend wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '10px' }} iconType="circle" iconSize={8} />
+                  <Area type="monotone" dataKey="Dictaminados" stroke="#3b82f6" strokeWidth={2.5} fill="url(#colorDictaminados)" activeDot={{ r: 5, strokeWidth: 0 }} />
+                  <Area type="monotone" dataKey="Pendientes" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorPendientesLeg)" activeDot={{ r: 5, strokeWidth: 0 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── TIMELINE Y ACCESOS ── */}
+      <div className="dashboard-double-panel" style={{ marginTop: '24px' }}>
         
         {/* PANEL IZQUIERDO: EVENTOS PENDIENTES DE DICTAMEN */}
         <div className="saas-panel-card">
@@ -151,7 +332,7 @@ function DashboardLegal({ usuario, setActiveTab }) {
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           
@@ -188,7 +369,10 @@ function DashboardLegal({ usuario, setActiveTab }) {
                     </div>
                     
                     <div className="modern-event-body">
-                      <h5 className="modern-event-title">{evt.nombre}</h5>
+                      <h5 className="modern-event-title">
+                        <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
+                        {evt.nombre}
+                      </h5>
                       <div className="modern-event-meta-info" style={{ marginTop: '10px' }}>
                         <div className="modern-meta-item">
                           <FiShield className="modern-meta-icon" />
@@ -202,7 +386,7 @@ function DashboardLegal({ usuario, setActiveTab }) {
                     </div>
                     
                     <div className="modern-event-footer">
-                      <button className="modern-view-btn" title="Ir al Expediente">
+                      <button type="button" className="modern-view-btn" title="Ir al Expediente" aria-label="Ir al expediente legal">
                         <span>Revisar Expediente y Dictaminar</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>

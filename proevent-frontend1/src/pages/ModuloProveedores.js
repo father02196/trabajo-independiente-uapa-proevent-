@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo, FiEye, FiEyeOff, FiDownload, FiTrash2 } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
 import './../css/ModuloProveedores.css';
 
@@ -60,7 +60,7 @@ function ModuloProveedores({ usuario }) {
     // --- ESTADOS PARA INCIDENCIAS Y EVIDENCIAS ---
     const [modalIncidencia, setModalIncidencia] = useState({ open: false, servicio: null });
     const [resolucionForm, setResolucionForm] = useState("");
-    const [modalEvidencia, setModalEvidencia] = useState({ open: false, eventoId: null });
+    const [modalEvidencia, setModalEvidencia] = useState({ open: false, servicioId: null });
     const [evidenciaFile, setEvidenciaFile] = useState(null);
 
     // --- EFECTOS: Carga dinámica según la pestaña ---
@@ -195,20 +195,38 @@ function ModuloProveedores({ usuario }) {
         e.preventDefault();
         if (!evidenciaFile) return alert("Debe seleccionar un archivo.");
         const formData = new FormData();
-        formData.append("archivo", evidenciaFile);
+        formData.append("archivo_evidencia", evidenciaFile);
         formData.append("id_usuario", usuario?.id_usuario || "");
 
         try {
-            const res = await fetch(`${API}/api/eventos/${modalEvidencia.eventoId}/evidencia-contabilidad`, {
+            const res = await fetch(`${API}/api/logistica/${modalEvidencia.servicioId}/evidencia-contabilidad`, {
                 method: 'POST',
                 body: formData
             });
             if (res.ok) {
                 alert("Evidencia subida correctamente.");
-                setModalEvidencia({ open: false, eventoId: null });
+                setModalEvidencia({ open: false, servicioId: null });
                 setEvidenciaFile(null);
+                fetchServicios();
             } else {
                 alert("Error al subir evidencia.");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const eliminarEvidencia = async (id_servicio) => {
+        if (!window.confirm("¿Seguro que deseas eliminar la evidencia CxP?")) return;
+        try {
+            const res = await fetch(`${API}/api/logistica/${id_servicio}/evidencia-contabilidad`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                alert("Evidencia eliminada correctamente.");
+                fetchServicios();
+            } else {
+                alert("Error al eliminar evidencia.");
             }
         } catch (error) {
             console.error(error);
@@ -419,15 +437,15 @@ function ModuloProveedores({ usuario }) {
 
             {/* Premium Pill Tabs */}
             <div className="modern-tabs">
-                <button className={activeTab === 'logistica' ? 'active' : ''} onClick={() => setActiveTab('logistica')}>
+                <button type="button" className={activeTab === 'logistica' ? 'active' : ''} onClick={() => setActiveTab('logistica')}>
                     <FiPackage style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
                     Logística Operativa
                 </button>
-                <button className={activeTab === 'directorio' ? 'active' : ''} onClick={() => setActiveTab('directorio')}>
+                <button type="button" className={activeTab === 'directorio' ? 'active' : ''} onClick={() => setActiveTab('directorio')}>
                     <FiFileText style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
                     Directorio de Suplidores
                 </button>
-                <button className={activeTab === 'ia' ? 'active' : ''} onClick={() => setActiveTab('ia')}>
+                <button type="button" className={activeTab === 'ia' ? 'active' : ''} onClick={() => setActiveTab('ia')}>
                     <FiCpu style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
                     Licitaciones (IA)
                 </button>
@@ -447,7 +465,7 @@ function ModuloProveedores({ usuario }) {
                             </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'flex-end', marginLeft: 'auto' }}>
-                            <button className="btn btn-secondary btn-sm" onClick={fetchServicios} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={fetchServicios} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <FiRefreshCw size={13} /> Actualizar
                             </button>
                         </div>
@@ -522,6 +540,7 @@ function ModuloProveedores({ usuario }) {
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                                                         {!s.fecha_envio_proveedor && (
                                                             <button 
+                                                                type="button"
                                                                 className="btn btn-primary btn-sm" 
                                                                 onClick={() => openModalEnvio(s)}
                                                             >
@@ -530,6 +549,7 @@ function ModuloProveedores({ usuario }) {
                                                         )}
                                                         {s.estado_incidencia === 'En Proceso' && (
                                                             <button 
+                                                                type="button"
                                                                 className="btn btn-sm" 
                                                                 style={{ backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fde68a' }}
                                                                 onClick={() => setModalIncidencia({ open: true, servicio: s })}
@@ -537,13 +557,33 @@ function ModuloProveedores({ usuario }) {
                                                                 <FiAlertTriangle size={13} /> Resolver Incidencia
                                                             </button>
                                                         )}
-                                                        <button 
-                                                            className="btn btn-secondary btn-sm" 
-                                                            onClick={() => setModalEvidencia({ open: true, eventoId: s.id_evento })}
-                                                            title="Subir evidencia de envío a CxP"
-                                                        >
-                                                            <FiUpload size={13} /> Evidencia CxP
-                                                        </button>
+                                                        {s.evidencia_contabilidad_ruta ? (
+                                                            <div className="action-pill-bar" style={{ display: 'flex', gap: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4px' }}>
+                                                                <button type="button" onClick={() => window.open(`${API}${s.evidencia_contabilidad_ruta}`, '_blank')} style={{ color: '#10b981', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }} title="Visualizar">
+                                                                    <FiEye size={16} />
+                                                                </button>
+                                                                <button type="button" onClick={() => {
+                                                                    const a = document.createElement('a');
+                                                                    a.href = `${API}${s.evidencia_contabilidad_ruta}`;
+                                                                    a.download = s.evidencia_contabilidad_ruta.split('/').pop();
+                                                                    a.click();
+                                                                }} style={{ color: '#3b82f6', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }} title="Descargar">
+                                                                    <FiDownload size={16} />
+                                                                </button>
+                                                                <button type="button" onClick={() => eliminarEvidencia(s.id_servicio_ext)} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }} title="Eliminar">
+                                                                    <FiTrash2 size={16} />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <button 
+                                                                type="button"
+                                                                className="btn btn-secondary btn-sm" 
+                                                                onClick={() => setModalEvidencia({ open: true, servicioId: s.id_servicio_ext })}
+                                                                title="Subir evidencia de envío a CxP"
+                                                            >
+                                                                <FiUpload size={13} /> Evidencia CxP
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -585,6 +625,7 @@ function ModuloProveedores({ usuario }) {
                             </div>
                         </div>
                         <button 
+                            type="button"
                             className="btn btn-primary" 
                             onClick={() => openModal('nuevo_proveedor', null)}
                             style={{ whiteSpace: 'nowrap', marginLeft: '12px', flexShrink: 0 }}
@@ -649,6 +690,7 @@ function ModuloProveedores({ usuario }) {
                                                 <td>
                                                     <div className="acciones-celda">
                                                         <button 
+                                                            type="button"
                                                             onClick={() => openModal('editar_proveedor', p)}
                                                             className="btn-icon-action"
                                                             title="Editar Suplidor"
@@ -656,6 +698,7 @@ function ModuloProveedores({ usuario }) {
                                                             <FiEdit />
                                                         </button>
                                                         <button 
+                                                            type="button"
                                                             onClick={() => handleToggleEstado(p)}
                                                             className={`btn-icon-action ${p.estado === 'Activo' ? 'danger' : ''}`}
                                                             title={p.estado === 'Activo' ? "Desactivar Suplidor" : "Activar Suplidor"}
@@ -771,6 +814,7 @@ function ModuloProveedores({ usuario }) {
                                                         />
                                                     </label>
                                                     <button 
+                                                        type="button"
                                                         className="btn btn-primary btn-sm"
                                                         disabled={!fileFactura}
                                                         onClick={async () => {
@@ -1064,6 +1108,7 @@ function ModuloProveedores({ usuario }) {
                             {mensajeErrorCorreo || "El correo electrónico ingresado no pudo ser validado o parece no existir. Verifique la dirección e intente nuevamente."}
                         </p>
                         <button 
+                            type="button"
                             className="btn btn-primary" 
                             style={{ 
                                 width: '100%', 
@@ -1089,7 +1134,7 @@ function ModuloProveedores({ usuario }) {
             `}</style>
             {/* Modal Evidencia CxP */}
             {modalEvidencia.open && createPortal(
-                <div className="modal-overlay" onClick={() => setModalEvidencia({ open: false, eventoId: null })}>
+                <div className="modal-overlay" onClick={() => setModalEvidencia({ open: false, servicioId: null })}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>Subir Evidencia CxP</h2>
@@ -1107,7 +1152,7 @@ function ModuloProveedores({ usuario }) {
                                 />
                             </div>
                             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setModalEvidencia({ open: false, eventoId: null })}>Cancelar</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalEvidencia({ open: false, servicioId: null })}>Cancelar</button>
                                 <button type="submit" className="btn btn-primary">Subir Archivo</button>
                             </div>
                         </form>

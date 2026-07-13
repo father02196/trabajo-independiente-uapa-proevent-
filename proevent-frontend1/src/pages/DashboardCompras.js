@@ -3,21 +3,58 @@
 // Pertenece a: Módulo de Compras / Licitaciones
 // Propósito: Panel analítico para el administrador de compras.
 // Muestra KPIs logísticos (licitaciones, órdenes de compra, presupuesto)
-// y los eventos próximos que requieren adjudicación.
+// y gráficas analíticas de presupuesto y tendencia de eventos.
 // ============================================================
 
 import React, { useState, useEffect } from "react";
-import { FiShoppingCart, FiFileText, FiCheckCircle, FiDollarSign, FiRefreshCw, FiGrid, FiActivity, FiArrowUpRight, FiClock } from "react-icons/fi";
+import { FiShoppingCart, FiFileText, FiCheckCircle, FiDollarSign, FiRefreshCw, FiGrid, FiActivity, FiArrowUpRight, FiClock, FiCalendar, FiTrendingUp } from "react-icons/fi";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  AreaChart, Area, Legend, LabelList
+} from 'recharts';
 import './../css/Dashboard.css';
 
 const API = "http://localhost:8080";
+
+// Tooltip personalizado para presupuesto (formato DOP)
+const TooltipPresupuesto = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const val = new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(payload[0].value);
+    return (
+      <div style={{ background: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: '13px' }}>
+        <p style={{ margin: 0, color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>{label}</p>
+        <p style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>{val}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Tooltip personalizado para eventos por mes
+const TooltipEventos = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: '13px' }}>
+        <p style={{ margin: 0, color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>{label}</p>
+        {payload.map((p, i) => (
+          <p key={i} style={{ margin: '2px 0', color: p.color, fontWeight: 700 }}>
+            {p.name}: {p.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 function DashboardCompras({ usuario, setActiveTab }) {
   // --- ESTADOS ---
   const [eventRequests, setEventRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortFecha, setSortFecha] = useState("asc");
+  const [sortId, setSortId]       = useState("");
+  const [mesRange, setMesRange]   = useState(6);
 
   // --- EFECTOS INICIALES ---
   useEffect(() => {
@@ -25,15 +62,12 @@ function DashboardCompras({ usuario, setActiveTab }) {
   }, [usuario]);
 
   // --- FUNCIÓN: cargarDatos ---
-  // Obtiene todos los eventos desde la API para extraer las analíticas
   const cargarDatos = async (silent = false) => {
     if (!silent) setLoading(true);
     setError("");
     try {
       const resEvents = await fetch(`${API}/eventos`).then(r => r.json());
-      if (Array.isArray(resEvents)) {
-        setEventRequests(resEvents);
-      }
+      if (Array.isArray(resEvents)) setEventRequests(resEvents);
     } catch (err) {
       setError("No se pudo conectar con el servidor.");
     } finally {
@@ -42,12 +76,8 @@ function DashboardCompras({ usuario, setActiveTab }) {
   };
 
   // --- UTILIDADES DE FORMATO ---
-  const formatMonedaDOP = (valor) => {
-    return new Intl.NumberFormat("es-DO", {
-      style: "currency",
-      currency: "DOP"
-    }).format(valor);
-  };
+  const formatMonedaDOP = (valor) =>
+    new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(valor);
 
   const formatFechaLarga = (fechaStr) => {
     if (!fechaStr) return "—";
@@ -56,30 +86,72 @@ function DashboardCompras({ usuario, setActiveTab }) {
     return fecha.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
   };
 
-  // --- CÁLCULOS Y KPIs LOGÍSTICOS ---
-  const eventosAprobados = eventRequests.filter((e) => e.estado === "Aprobado" || e.estado === "Finalizado").length;
-  // Simulación de cotizaciones basadas en el sistema actual
-  const licitacionesAbiertas = eventRequests.filter((e) => e.estado === "Aprobado").length;
-  const ocEmitidas = eventRequests.filter((e) => e.estado === "Finalizado").length;
-
-  const totalPresupuestoGeneral = eventRequests
+  // --- KPIs LOGÍSTICOS ---
+  const licitacionesAbiertas      = eventRequests.filter(e => e.estado === "Aprobado").length;
+  const ocEmitidas                = eventRequests.filter(e => e.estado === "Finalizado").length;
+  const totalPresupuestoGeneral   = eventRequests
     .filter(e => e.estado === "Aprobado" || e.estado === "Finalizado")
     .reduce((acc, curr) => acc + (parseFloat(curr.monto_poa) || 0), 0);
 
-  // Proximos eventos logísticos
+  // --- PRÓXIMOS EVENTOS PARA TABLA ---
   const eventosEnProceso = eventRequests
     .filter(e => e.estado === "Aprobado")
     .sort((a, b) => {
-      const dateA = new Date(a.fecha_inicio);
-      const dateB = new Date(b.fecha_inicio);
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      if (sortId === "asc")  return Number(a.id_evento) - Number(b.id_evento);
+      if (sortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
+      return sortFecha === "asc"
+        ? new Date(a.fecha_inicio) - new Date(b.fecha_inicio)
+        : new Date(b.fecha_inicio) - new Date(a.fecha_inicio);
     })
     .slice(0, 5);
 
+  // --- GRÁFICA 1: PRESUPUESTO POA POR RECINTO (BarChart Horizontal) ---
+  const venueBudgets = {};
+  eventRequests.forEach(req => {
+    if (req.estado === "Aprobado" || req.estado === "Finalizado") {
+      const recinto = (req.recinto || "Sin recinto")
+        .replace("Sede ", "").replace(" Oriental", "").replace(" Santo Domingo", " SD");
+      venueBudgets[recinto] = (venueBudgets[recinto] || 0) + (parseFloat(req.monto_poa) || 0);
+    }
+  });
+  const venueData = Object.entries(venueBudgets)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+
+  const barColors = ["#3b82f6", "#6366f1", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
+
+  // --- GRÁFICA 2: TENDENCIA DE EVENTOS POR MES (AreaChart doble línea) ---
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const allTrendData = (() => {
+    const hoy = new Date();
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - (11 - i), 1);
+      const anio = d.getFullYear();
+      const mes  = d.getMonth();
+      return {
+        name: meses[mes],
+        Aprobados: eventRequests.filter(e => {
+          if (!e.fecha_inicio || e.estado !== "Aprobado") return false;
+          const f = new Date(e.fecha_inicio);
+          f.setMinutes(f.getMinutes() + f.getTimezoneOffset());
+          return f.getFullYear() === anio && f.getMonth() === mes;
+        }).length,
+        Finalizados: eventRequests.filter(e => {
+          if (!e.fecha_inicio || e.estado !== "Finalizado") return false;
+          const f = new Date(e.fecha_inicio);
+          f.setMinutes(f.getMinutes() + f.getTimezoneOffset());
+          return f.getFullYear() === anio && f.getMonth() === mes;
+        }).length,
+      };
+    });
+  })();
+  const trendData = allTrendData.slice(-mesRange);
+
   return (
     <div className="saas-dashboard-container fade-in">
-      
-      {/* 4 CARDS DE ESTADÍSTICAS PREMIUM - ROL COMPRAS */}
+
+      {/* ── 4 KPI CARDS ── */}
       <div className="stats-cards-grid">
         <div className="saas-stat-card warning-glow">
           <div className="card-top">
@@ -90,9 +162,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
           </div>
           <div className="card-bottom">
             <h3>{licitacionesAbiertas}</h3>
-            <span className="card-trend text-orange">
-              Eventos esperando adjudicación
-            </span>
+            <span className="card-trend text-orange">Eventos esperando adjudicación</span>
           </div>
         </div>
 
@@ -130,38 +200,206 @@ function DashboardCompras({ usuario, setActiveTab }) {
             </div>
           </div>
           <div className="card-bottom">
-            <h3>{formatMonedaDOP(totalPresupuestoGeneral)}</h3>
+            <h3 style={{ fontSize: '18px' }}>{formatMonedaDOP(totalPresupuestoGeneral)}</h3>
             <span className="card-trend text-purple">Global comprometido POA</span>
           </div>
         </div>
       </div>
 
-      {/* TIMELINE DE ADQUISICIONES Y ACCESOS */}
+      {/* ── GRÁFICAS ANALÍTICAS ── */}
+      <div className="charts-grid-saas" style={{ gridTemplateColumns: '1fr 1fr', marginTop: '24px' }}>
+
+        {/* GRÁFICA 1: PRESUPUESTO POR RECINTO */}
+        <div className="saas-chart-card">
+          <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h4>Presupuesto POA por Recinto</h4>
+              <p>Monto comprometido en eventos aprobados y finalizados</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#eff6ff', borderRadius: '8px', padding: '5px 10px' }}>
+              <FiDollarSign style={{ color: '#3b82f6', fontSize: '13px' }} />
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#3b82f6' }}>POA</span>
+            </div>
+          </div>
+          <div className="chart-wrapper" style={{ height: '240px', padding: '8px 0' }}>
+            {loading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="loader"></div>
+              </div>
+            ) : venueData.length === 0 ? (
+              <div className="no-data-placeholder">Sin datos de presupuesto registrados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={venueData}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis
+                    type="number"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
+                    tickFormatter={v => `RD$${(v / 1000).toFixed(0)}k`}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
+                    width={90}
+                  />
+                  <Tooltip content={<TooltipPresupuesto />} />
+                  <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}>
+                    {venueData.map((_, index) => (
+                      <Cell key={index} fill={barColors[index % barColors.length]} />
+                    ))}
+                    <LabelList
+                      dataKey="value"
+                      position="right"
+                      formatter={v => `$${(v / 1000).toFixed(0)}k`}
+                      style={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* GRÁFICA 2: TENDENCIA DE EVENTOS POR MES */}
+        <div className="saas-chart-card">
+          <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h4>Tendencia de Eventos</h4>
+              <p>Aprobados vs Finalizados por mes</p>
+            </div>
+            <select
+              className="saas-select"
+              value={mesRange}
+              onChange={e => setMesRange(Number(e.target.value))}
+              style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', color: '#475569', cursor: 'pointer', background: '#f8fafc' }}
+            >
+              <option value={3}>Últimos 3 meses</option>
+              <option value={6}>Últimos 6 meses</option>
+              <option value={9}>Últimos 9 meses</option>
+              <option value={12}>Últimos 12 meses</option>
+            </select>
+          </div>
+          <div className="chart-wrapper" style={{ height: '240px', padding: '8px 0' }}>
+            {loading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="loader"></div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData} margin={{ top: 15, right: 20, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gradAprobados" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gradFinalizados" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#10b981" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<TooltipEventos />} />
+                  <Legend
+                    wrapperStyle={{ fontSize: '12px', fontWeight: '600', paddingTop: '8px' }}
+                    iconType="circle"
+                    iconSize={8}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Aprobados"
+                    stroke="#3b82f6"
+                    strokeWidth={2.5}
+                    fill="url(#gradAprobados)"
+                    activeDot={{ r: 5, strokeWidth: 0 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Finalizados"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                    fill="url(#gradFinalizados)"
+                    activeDot={{ r: 5, strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── PANEL DOBLE: REQUERIMIENTOS + ACCESOS ── */}
       <div className="dashboard-double-panel" style={{ marginTop: '24px' }}>
-        
+
         {/* PANEL IZQUIERDO: EVENTOS PENDIENTES DE LOGÍSTICA */}
         <div className="saas-panel-card">
-          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <FiClock className="panel-icon" />
               <div>
                 <h4>Requerimientos en Análisis</h4>
                 <p>Eventos aprobados próximos que requieren adjudicación</p>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <select
-                className="saas-select"
-                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#475569', backgroundColor: '#fff', cursor: 'pointer', outline: 'none' }}
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-              >
-                <option value="asc">Más próximos (Asc)</option>
-                <option value="desc">Más lejanos (Desc)</option>
-              </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+
+            {/* Controles de orden estilo pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '4px 8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <FiCalendar style={{ fontSize: '12px', color: '#64748b', flexShrink: 0 }} />
+                <select
+                  id="sort-fecha-compras"
+                  value={sortFecha}
+                  onChange={e => { setSortFecha(e.target.value); setSortId(""); }}
+                  style={{ border: 'none', background: 'transparent', fontSize: '12px', fontWeight: '600', color: sortId === "" ? '#3b82f6' : '#64748b', cursor: 'pointer', outline: 'none', padding: '3px 2px' }}
+                  aria-label="Ordenar por fecha"
+                >
+                  <option value="asc">Fecha ↑</option>
+                  <option value="desc">Fecha ↓</option>
+                </select>
+              </div>
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>#</span>
+                <select
+                  id="sort-id-compras"
+                  value={sortId}
+                  onChange={e => setSortId(e.target.value)}
+                  style={{ border: 'none', background: 'transparent', fontSize: '12px', fontWeight: '600', color: sortId !== "" ? '#3b82f6' : '#64748b', cursor: 'pointer', outline: 'none', padding: '3px 2px' }}
+                  aria-label="Ordenar por ID"
+                >
+                  <option value="">ID —</option>
+                  <option value="asc">ID ↑</option>
+                  <option value="desc">ID ↓</option>
+                </select>
+              </div>
+              <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos" aria-label="Actualizar datos" style={{ marginLeft: '2px' }}>
+                <FiRefreshCw />
+              </button>
             </div>
           </div>
+
           <div className="panel-body">
             {loading ? (
               <div className="loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '150px' }}>
@@ -182,14 +420,11 @@ function DashboardCompras({ usuario, setActiveTab }) {
                         <FiClock className="modern-date-icon" />
                         <span>Entrega: {formatFechaLarga(evt.fecha_inicio)}</span>
                       </div>
-                      <span className="modern-status-badge modern-status-aprobado">
-                        Pendiente OC
-                      </span>
+                      <span className="modern-status-badge modern-status-aprobado">Pendiente OC</span>
                     </div>
-                    
                     <div className="modern-event-body">
                       <h5 className="modern-event-title">
-                        <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                        <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
                         {evt.nombre}
                       </h5>
                       <div className="modern-event-meta-info" style={{ marginTop: '8px' }}>
@@ -203,9 +438,8 @@ function DashboardCompras({ usuario, setActiveTab }) {
                         </div>
                       </div>
                     </div>
-                    
                     <div className="modern-event-footer">
-                      <button className="modern-view-btn" title="Ir al Flujo de Compras">
+                      <button type="button" className="modern-view-btn" title="Ir al Flujo de Compras" aria-label="Ir al flujo de compras">
                         <span>Ir a Analizar Cotizaciones</span>
                         <FiArrowUpRight className="modern-btn-icon" />
                       </button>
@@ -217,7 +451,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
           </div>
         </div>
 
-        {/* PANEL DERECHO: ACCESOS DE COMPRAS */}
+        {/* PANEL DERECHO: ACCESOS RÁPIDOS + RESUMEN POA */}
         <div className="saas-panel-card">
           <div className="panel-header">
             <FiGrid className="panel-icon" />
@@ -227,7 +461,6 @@ function DashboardCompras({ usuario, setActiveTab }) {
             </div>
           </div>
           <div className="panel-body flex-column-body">
-            
             <div className="quick-actions-list">
               <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
                 <div className="icon-wrapper"><FiShoppingCart /></div>
@@ -262,7 +495,7 @@ function DashboardCompras({ usuario, setActiveTab }) {
               </div>
               <p className="poa-footer-text">Presupuesto consolidado de todos los recintos de UAPA invertido a través del departamento de compras.</p>
             </div>
-            
+
           </div>
         </div>
       </div>

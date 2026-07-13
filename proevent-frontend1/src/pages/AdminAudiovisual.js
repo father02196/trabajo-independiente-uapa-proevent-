@@ -213,8 +213,8 @@ export default function AdminAudiovisual({ usuario }) {
                   <td style={{ textAlign: 'center', fontWeight: '700', color: '#334155' }}>{eq.cantidad_total || 0}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleEditar(eq)} title="Editar"><FiEdit2 /></button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleEliminar(eq.id_equipo)} title="Eliminar" style={{ color: '#EF4444', borderColor: '#FECACA', background: '#FEF2F2' }}><FiTrash2 /></button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleEditar(eq)} title="Editar"><FiEdit2 /></button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleEliminar(eq.id_equipo)} title="Eliminar" style={{ color: '#EF4444', borderColor: '#FECACA', background: '#FEF2F2' }}><FiTrash2 /></button>
                     </div>
                   </td>
                 </tr>
@@ -235,13 +235,13 @@ export default function AdminAudiovisual({ usuario }) {
             Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, equipos.length)} de {equipos.length} equipos
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
               Anterior
             </button>
             <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
               Página {currentPage} de {totalPages || 1}
             </span>
-            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
               Siguiente
             </button>
           </div>

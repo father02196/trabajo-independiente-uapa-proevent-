@@ -14,6 +14,7 @@ import userIcon  from "./../img/user.png";
 import lockIcon  from "./../img/lock.png";
 import logoProevent from "./../img/logo-proevent.jpeg";
 import axios from "../api/axios"; // Usamos la instancia configurada con credentials
+import { useNavigate } from "react-router-dom";
 
 function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const [email,        setEmail]        = useState("");
@@ -22,6 +23,14 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
   const [error,        setError]        = useState("");
   const [loading,      setLoading]      = useState(false);
   const googleButtonRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Forzar campos vacíos al montar: Chrome ignora autoComplete="off"
+  // y pre-rellena con credenciales guardadas. Este efecto los limpia.
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+  }, []);
 
   /* ── Google Sign-In ──────────────────────────────────── */
   // Función de callback que procesa el token JWT devuelto por Google
@@ -95,7 +104,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
 
         <div className="lc-header">
           {onBackClick && (
-            <button className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
+            <button type="button" className="lc-back" onClick={onBackClick}>← Volver al inicio</button>
           )}
           
           {/* Espacio para el nuevo logo proporcionado */}
@@ -110,6 +119,10 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
         {/* Formulario */}
         <form className="lc-form" onSubmit={handleSubmit} noValidate autoComplete="off">
 
+          {/* Campos señuelo invisibles: evitan que Chrome inyecte el autocompletado en los campos reales */}
+          <input type="text"     name="fake-user"  style={{ display: 'none' }} aria-hidden="true" readOnly />
+          <input type="password" name="fake-pass"  style={{ display: 'none' }} aria-hidden="true" readOnly />
+
           {/* Campo correo */}
           <div className="lc-field">
             <label className="lc-label" htmlFor="lc-email">Correo electrónico</label>
@@ -123,6 +136,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="off"
+                name="lc-email-field"
               />
             </div>
           </div>
@@ -134,7 +148,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
               <button
                 type="button"
                 className="lc-forgot"
-                onClick={onForgotPasswordClick}
+                onClick={onForgotPasswordClick || (() => navigate('/forgot-password'))}
               >
                 ¿Olvidaste tu contraseña?
               </button>
@@ -149,6 +163,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
+                name="lc-password-field"
               />
               <button
                 type="button"

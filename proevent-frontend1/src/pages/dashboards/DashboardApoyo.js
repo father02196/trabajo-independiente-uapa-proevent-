@@ -30,7 +30,8 @@ function DashboardApoyo({ usuario, setActiveTab }) {
   const [eventosParticipa, setEventosParticipa] = useState([]); // Eventos donde está asignado
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState("");
-  const [activeEventsSortOrder, setActiveEventsSortOrder] = useState("desc"); // Orden tabla eventos activos
+  const [activeEventsSortFecha, setActiveEventsSortFecha] = useState("asc");  // Orden por fecha: asc | desc
+  const [activeEventsSortId, setActiveEventsSortId]       = useState("");     // Orden por ID: asc | desc | "" (sin orden por ID)
   const [completandoId, setCompletandoId] = useState(null); // ID de tarea en proceso de completar
   const [modalEvento, setModalEvento]     = useState(null); // Evento activo en modal
 
@@ -138,9 +139,11 @@ function DashboardApoyo({ usuario, setActiveTab }) {
     .sort((a, b) => new Date(a.fecha_cumplimiento) - new Date(b.fecha_cumplimiento));
 
   const sortedEventosParticipa = [...eventosParticipa].sort((a, b) => {
-    const dateA = new Date(a.fecha_inicio || 0);
-    const dateB = new Date(b.fecha_inicio || 0);
-    return activeEventsSortOrder === "desc" ? dateB - dateA : dateA - dateB;
+    if (activeEventsSortId === "asc")  return Number(a.id_evento) - Number(b.id_evento);
+    if (activeEventsSortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
+    return activeEventsSortFecha === "asc"
+      ? new Date(a.fecha_inicio) - new Date(b.fecha_inicio)
+      : new Date(b.fecha_inicio) - new Date(a.fecha_inicio);
   });
 
   if (loading) {
@@ -189,10 +192,12 @@ function DashboardApoyo({ usuario, setActiveTab }) {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => cargarDatos()}
           style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600', transition: 'background 0.2s' }}
           onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.25)'}
           onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.15)'}
+          aria-label="Actualizar datos del panel"
         >
           <FiRefreshCw size={14} /> Actualizar
         </button>
@@ -360,6 +365,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => completarTarea(t.id_actividad)}
                         disabled={isCompleting}
                         style={{
@@ -378,6 +384,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                           flexShrink: 0,
                           transition: 'background 0.2s'
                         }}
+                        aria-label="Marcar tarea como completada"
                       >
                         <FiCheck size={13} />
                         {isCompleting ? 'Guardando...' : 'Marcar lista'}
@@ -387,8 +394,10 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                 })}
                 {tareasPendientesSorted.length >= 5 && (
                   <button
+                    type="button"
                     onClick={() => setActiveTab && setActiveTab("CronogramaGlobal")}
                     style={{ background: 'transparent', border: '1px dashed #cbd5e1', color: '#64748b', borderRadius: '8px', padding: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    aria-label="Ver todas mis tareas"
                   >
                     Ver todas mis tareas <FiChevronRight size={14} />
                   </button>
@@ -483,27 +492,74 @@ function DashboardApoyo({ usuario, setActiveTab }) {
 
       {/* ── TABLA: TODOS MIS EVENTOS ACTIVOS ── */}
       <div className="saas-panel-card">
-        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <FiCalendar className="panel-icon" style={{ color: '#2563eb' }} />
             <div>
               <h4>Eventos Activos del Sistema</h4>
               <p>Eventos aprobados y en proceso donde puedes participar</p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px' }}>
-              <FiCalendar style={{ color: '#64748b', marginRight: '8px' }} />
+
+          {/* ── CONTROLES DE ORDEN ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '4px 8px' }}>
+
+            {/* Selector: Orden por Fecha */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <FiCalendar style={{ fontSize: '12px', color: '#64748b', flexShrink: 0 }} />
               <select
-                className="saas-select"
-                style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: '500' }}
-                value={activeEventsSortOrder}
-                onChange={(e) => setActiveEventsSortOrder(e.target.value)}
+                id="sort-fecha-agenda"
+                value={activeEventsSortFecha}
+                onChange={e => { setActiveEventsSortFecha(e.target.value); setActiveEventsSortId(""); }}
+                style={{
+                  border: 'none', background: 'transparent', fontSize: '12px',
+                  fontWeight: '600', color: activeEventsSortId === "" ? '#3b82f6' : '#64748b',
+                  cursor: 'pointer', outline: 'none', padding: '3px 2px'
+                }}
+                aria-label="Ordenar por fecha"
               >
-                <option value="desc">Más recientes primero</option>
-                <option value="asc">Menos recientes primero</option>
+                <option value="asc">Fecha ↑</option>
+                <option value="desc">Fecha ↓</option>
               </select>
             </div>
+
+            {/* Divisor */}
+            <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+
+            {/* Selector: Orden por ID */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>#</span>
+              <select
+                id="sort-id-agenda"
+                value={activeEventsSortId}
+                onChange={e => setActiveEventsSortId(e.target.value)}
+                style={{
+                  border: 'none', background: 'transparent', fontSize: '12px',
+                  fontWeight: '600', color: activeEventsSortId !== "" ? '#3b82f6' : '#64748b',
+                  cursor: 'pointer', outline: 'none', padding: '3px 2px'
+                }}
+                aria-label="Ordenar por ID"
+              >
+                <option value="">ID —</option>
+                <option value="asc">ID ↑</option>
+                <option value="desc">ID ↓</option>
+              </select>
+            </div>
+
+            {/* Divisor */}
+            <span style={{ width: '1px', height: '18px', background: '#e2e8f0', display: 'inline-block' }} />
+
+            {/* Botón actualizar */}
+            <button
+              type="button"
+              className="reload-data-btn"
+              onClick={() => cargarDatos()}
+              title="Actualizar datos"
+              aria-label="Actualizar datos del panel"
+              style={{ marginLeft: '2px' }}
+            >
+              <FiRefreshCw />
+            </button>
           </div>
         </div>
         <div className="panel-body" style={{ padding: '0' }}>
@@ -651,8 +707,8 @@ function DashboardApoyo({ usuario, setActiveTab }) {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setModalEvento(null)}>Cerrar</button>
-              <button className="btn btn-primary" onClick={() => { setModalEvento(null); setActiveTab && setActiveTab("Calendario"); }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setModalEvento(null)} aria-label="Cerrar modal">Cerrar</button>
+              <button type="button" className="btn btn-primary" onClick={() => { setModalEvento(null); setActiveTab && setActiveTab("Calendario"); }} aria-label="Ver evento en el calendario">
                 <FiCalendar style={{ marginRight: '6px' }} /> Ver en Calendario
               </button>
             </div>

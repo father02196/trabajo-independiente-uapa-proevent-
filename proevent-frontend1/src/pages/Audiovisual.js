@@ -428,7 +428,7 @@ export default function Audiovisual({ usuario }) {
                       </select>
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
                         <FiEye size={14} /> Ver
                       </button>
                     </td>
@@ -535,7 +535,7 @@ export default function Audiovisual({ usuario }) {
             </div>
             
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
             </div>
           </div>
         </div>,

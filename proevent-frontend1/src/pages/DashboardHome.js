@@ -13,7 +13,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 // Iconos de Feather Icons para tarjetas, gráficos y acciones
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEye, FiEdit2 } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiArrowUpRight, FiDollarSign, FiPlus, FiGrid, FiActivity, FiStar, FiMonitor, FiEdit2 } from "react-icons/fi";
 
 // Estilos del panel principal compartidos
 import './../css/Dashboard.css';
@@ -353,7 +353,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
               <h4>Presupuesto POA Aprobado por Recinto</h4>
               <p>Inversión financiera en eventos por campus de la UAPA (en DOP)</p>
             </div>
-            <button className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos"><FiRefreshCw /></button>
+            <button type="button" className="reload-data-btn" onClick={cargarDatos} title="Sincronizar datos"><FiRefreshCw /></button>
           </div>
           
           <div className="budget-chart-layout">
@@ -508,7 +508,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                 <option value="asc">Más próximos (Asc)</option>
                 <option value="desc">Más lejanos (Desc)</option>
               </select>
-              <button className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
+              <button type="button" className="reload-data-btn" onClick={() => cargarDatos()} title="Actualizar datos"><FiRefreshCw /></button>
             </div>
           </div>
           <div className="panel-body">
@@ -546,7 +546,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                       
                       <div className="modern-event-body">
                         <h5 className="modern-event-title">
-                          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '6px', fontWeight: 'bold' }}>#EVT-{evt.id_evento}</span>
+                          <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px', fontWeight: '800' }}>#EVT-{evt.id_evento}</span>
                           {evt.nombre}
                         </h5>
                         <div className="modern-event-meta-info">
@@ -562,7 +562,7 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
                       </div>
                       
                       <div className="modern-event-footer">
-                        <button className="modern-view-btn" title="Ver detalles del evento">
+                        <button type="button" className="modern-view-btn" title="Ver detalles del evento">
                           <span>Ver Ficha Técnica</span>
                           <FiArrowUpRight className="modern-btn-icon" />
                         </button>
@@ -751,12 +751,12 @@ function DashboardHome({ usuario, searchTerm = "", onEditEvent, setActiveTab }) 
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 {usuario?.rol === "Solicitante" && selectedRequest.estado !== "Aprobado" && selectedRequest.estado !== "Finalizado" && onEditEvent && (
-                  <button className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" className="btn btn-primary" onClick={() => { closeModal(); onEditEvent(selectedRequest); }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FiEdit2 /> Editar Evento
                   </button>
                 )}
               </div>
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha Técnica</button>
             </div>
           </div>
         </div>,

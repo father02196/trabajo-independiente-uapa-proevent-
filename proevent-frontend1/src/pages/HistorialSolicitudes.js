@@ -180,6 +180,7 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
               &#8645; Ordenar por Fecha
             </label>
             <button
+              type="button"
               onClick={() => requestSort('fecha_inicio')}
               title={sortConfig?.direction === 'ascending' ? 'Click: más recientes primero' : 'Click: más antiguos primero'}
               style={{
@@ -262,15 +263,15 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
                     </td>
                     <td>
                       <div className="actions-cell" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '8px' }}>
-                        <button className="action-icon-btn view" onClick={() => handleView(sol)} title="Ver Detalles de Solicitud" style={{ color: '#0ea5e9', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd' }}>
+                        <button type="button" className="action-icon-btn view" onClick={() => handleView(sol)} title="Ver Detalles de Solicitud" style={{ color: '#0ea5e9', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd' }}>
                           <FiEye />
                         </button>
                         {sol.estado === 'Pendiente' ? (
-                          <button className="action-icon-btn edit" onClick={() => handleEdit(sol)} title="Editar Solicitud">
+                          <button type="button" className="action-icon-btn edit" onClick={() => handleEdit(sol)} title="Editar Solicitud">
                             <FiEdit2 />
                           </button>
                         ) : sol.estado === 'Observado' ? (
-                          <button className="action-icon-btn" onClick={() => openSubsanar(sol)} title="Ver Observaciones y Subsanar" style={{ color: '#d97706', backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}>
+                          <button type="button" className="action-icon-btn" onClick={() => openSubsanar(sol)} title="Ver Observaciones y Subsanar" style={{ color: '#d97706', backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}>
                             <FiRefreshCw />
                           </button>
                         ) : (
@@ -293,6 +294,7 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
             </div>
             <div className="pagination-controls" style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
               <button 
+                type="button"
                 className="btn btn-secondary btn-sm" 
                 disabled={currentPage === 1} 
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -303,6 +305,7 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
                 Pág. {currentPage} de {totalPages || 1}
               </span>
               <button 
+                type="button"
                 className="btn btn-secondary btn-sm" 
                 disabled={currentPage === totalPages} 
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
@@ -398,6 +401,7 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
             {/* Footer del Modal */}
             <div className="modal-footer" style={{ padding: '20px 32px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px', display: 'flex', justifyContent: 'flex-end' }}>
               <button 
+                type="button"
                 className="btn btn-secondary" 
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', fontSize: '15px', fontWeight: '600' }}
                 onClick={() => setSelectedViewEvent(null)}
@@ -439,8 +443,8 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
               )}
             </div>
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '15px' }}>
-              <button className="btn btn-secondary" onClick={() => setModalSubsanar(false)}>Cerrar</button>
-              <button className="btn btn-primary" onClick={confirmSubsanar} style={{background: '#d97706', borderColor: '#d97706'}}>
+              <button type="button" className="btn btn-secondary" onClick={() => setModalSubsanar(false)}>Cerrar</button>
+              <button type="button" className="btn btn-primary" onClick={confirmSubsanar} style={{background: '#d97706', borderColor: '#d97706'}}>
                 Confirmar Subsanación
               </button>
             </div>

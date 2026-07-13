@@ -11,8 +11,7 @@ import { FiLock, FiClock, FiChevronDown } from "react-icons/fi";
 const API = "http://localhost:8080";
 
 // --- COMPONENTE SELECTOR DE TIEMPO ESTRICTO 24H ---
-// Sustituye al <input type="time"> nativo para obligar formato 24h en cualquier SO.
-const TimePicker24h = ({ id, value, onChange, disabled, isPending }) => {
+const TimePicker24h = ({ id, value, onChange, disabled, isPending, dataTestId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -51,6 +50,7 @@ const TimePicker24h = ({ id, value, onChange, disabled, isPending }) => {
           opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer', 
           backgroundColor: disabled ? '#F3F4F6' : '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
         }}
+        data-testid={dataTestId}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FiClock color="#9CA3AF" />
@@ -202,6 +202,9 @@ export default function InformacionGeneral({ data, setData }) {
             onChange={(e) => setData({ ...data, titulo: e.target.value })}
             required
             autoFocus
+            data-testid="input-titulo-evento"
+            name="titulo_evento"
+            id="titulo_evento"
           />
         </div>
 
@@ -215,6 +218,9 @@ export default function InformacionGeneral({ data, setData }) {
             required
             disabled={!enableDependencia}
             style={!enableDependencia ? disabledStyle : {}}
+            data-testid="select-dependencia"
+            name="dependencia_solicitante"
+            id="dependencia_solicitante"
           >
             <option value="">-- Seleccione una dependencia --</option>
             {dependencias.map(d => (
@@ -233,6 +239,9 @@ export default function InformacionGeneral({ data, setData }) {
             required
             disabled={!enableTipo}
             style={!enableTipo ? disabledStyle : {}}
+            data-testid="select-tipo-evento"
+            name="tipo_evento"
+            id="tipo_evento"
           >
             <option value="">-- Seleccione Tipo de Evento --</option>
             {tiposEvento.map(t => (
@@ -253,6 +262,8 @@ export default function InformacionGeneral({ data, setData }) {
             required
             disabled={!enableInicio}
             style={!enableInicio ? disabledStyle : {}}
+            data-testid="input-fecha-inicio"
+            name="fecha_inicio"
           />
         </div>
 
@@ -265,6 +276,7 @@ export default function InformacionGeneral({ data, setData }) {
             onChange={(val) => setData({ ...data, horaInicio: val })}
             disabled={!enableHoraInicio}
             isPending={isPending(isHoraInicioValid, enableHoraInicio)}
+            dataTestId="timepicker-hora-inicio"
           />
         </div>
 
@@ -280,6 +292,8 @@ export default function InformacionGeneral({ data, setData }) {
             required
             disabled={!enableFin}
             style={!enableFin ? disabledStyle : {}}
+            data-testid="input-fecha-fin"
+            name="fecha_fin"
           />
         </div>
 
@@ -292,6 +306,7 @@ export default function InformacionGeneral({ data, setData }) {
             onChange={(val) => setData({ ...data, horaFin: val })}
             disabled={!enableHoraFin}
             isPending={isPending(!data.horaFin, enableHoraFin)}
+            dataTestId="timepicker-hora-fin"
           />
         </div>
       </div>

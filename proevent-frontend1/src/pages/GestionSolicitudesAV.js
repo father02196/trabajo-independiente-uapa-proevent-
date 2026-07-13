@@ -56,6 +56,7 @@ const CustomBadgeDropdown = ({ currentStatus, onChange }) => {
   return (
     <div className="custom-badge-wrapper" ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
       <button 
+        type="button"
         onClick={() => !isUpdating && setIsOpen(!isOpen)}
         disabled={isUpdating}
         style={{
@@ -278,6 +279,7 @@ export default function GestionSolicitudesAV({ usuario }) {
           </div>
           <div className="header-actions-group">
             <button 
+              type="button"
               className="btn btn-secondary btn-sm" 
               onClick={handleRecargar} 
               disabled={isLoadingReload}
@@ -334,6 +336,7 @@ export default function GestionSolicitudesAV({ usuario }) {
               &#8645; Ordenar por Creación
             </label>
             <button
+              type="button"
               onClick={() => setSortDirection(prev => prev === 'descending' ? 'ascending' : 'descending')}
               title={sortDirection === 'descending' ? 'Click: más antiguos primero' : 'Click: más recientes primero'}
               style={{
@@ -389,7 +392,7 @@ export default function GestionSolicitudesAV({ usuario }) {
                   />
                 </td>
                 <td style={{ textAlign: 'center' }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
                     <FiEye size={14} /> Ver
                   </button>
                 </td>
@@ -414,13 +417,13 @@ export default function GestionSolicitudesAV({ usuario }) {
             Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, sortedSolicitudes.length)} de {sortedSolicitudes.length} solicitudes
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
               Anterior
             </button>
             <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
               Página {currentPage} de {totalPages || 1}
             </span>
-            <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
               Siguiente
             </button>
           </div>
@@ -514,7 +517,7 @@ export default function GestionSolicitudesAV({ usuario }) {
             </div>
             
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Cerrar Ficha</button>
             </div>
           </div>
         </div>,

@@ -6,6 +6,7 @@ const pdfParse = require('pdf-parse');
 const { OpenAI } = require('openai');
 const multer = require('multer');
 const router = express.Router();
+const { sendMailCentralizado } = require('./config/mailer');
 
 // Configuración de Multer para aceptar PDFs hasta 10MB
 const upload = multer({
@@ -20,12 +21,15 @@ const upload = multer({
   }
 });
 
-module.exports = (db, transporter) => {
+// [REFAC] transporter removido de los parámetros, ahora usa sendMailCentralizado
+const { verificarToken } = require('./utils/jwtUtils');
+
+module.exports = (db) => {
 
   // --- RUTAS DEL ADMINISTRADOR ---
 
   // 1. Crear un Proveedor (Solo Admin)
-  router.post('/admin/proveedor', async (req, res) => {
+  router.post('/admin/proveedor', verificarToken, async (req, res) => {
     try {
       const { nombre_empresa, rnc_cedula, id_tipo_servicio, persona_contacto, correo, telefono, contrasena } = req.body;
       
@@ -45,14 +49,11 @@ module.exports = (db, transporter) => {
         }
         
         // Enviar correo de bienvenida al proveedor (opcional/ideal)
-        if (transporter) {
-          transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: correo,
-            subject: 'Accesos a Portal de Proveedores - UAPA ProEvent',
-            text: `Hola ${persona_contacto},\n\nSe ha creado tu cuenta en el Portal de Proveedores de la UAPA.\nCredenciales:\nCorreo: ${correo}\nContraseña: ${contrasena}\n\nPuedes ingresar en el portal.`
-          }).catch(console.error);
-        }
+        sendMailCentralizado({
+          to: correo,
+          subject: 'Accesos a Portal de Proveedores - UAPA ProEvent',
+          text: `Hola ${persona_contacto},\n\nSe ha creado tu cuenta en el Portal de Proveedores de la UAPA.\nCredenciales:\nCorreo: ${correo}\nContraseña: ${contrasena}\n\nPuedes ingresar en el portal.`
+        }).catch(console.error);
 
         res.json({ message: 'Proveedor creado con éxito', id: results.insertId });
       });
@@ -62,7 +63,7 @@ module.exports = (db, transporter) => {
   });
 
   // 2. Obtener lista de proveedores (Para Admin y para disparador)
-  router.get('/admin/proveedores', (req, res) => {
+  router.get('/admin/proveedores', verificarToken, (req, res) => {
     db.query('SELECT p.*, t.nombre as categoria FROM proveedor_externo p JOIN tipo_servicio_externo t ON p.id_tipo_servicio = t.id_tipo_servicio ORDER BY p.fecha_registro DESC', (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(results);
@@ -70,7 +71,7 @@ module.exports = (db, transporter) => {
   });
 
   // --- Módulo: Directorio de Suplidores | Función: Editar Proveedor ---
-  router.put('/admin/proveedor/:id', (req, res) => {
+  router.put('/admin/proveedor/:id', verificarToken, (req, res) => {
     const { id } = req.params;
     const { nombre_empresa, rnc_cedula, id_tipo_servicio, persona_contacto, correo, telefono } = req.body;
     const query = `
@@ -88,7 +89,7 @@ module.exports = (db, transporter) => {
   });
 
   // --- Módulo: Directorio de Suplidores | Función: Cambiar Estado Proveedor ---
-  router.put('/admin/proveedor/:id/estado', (req, res) => {
+  router.put('/admin/proveedor/:id/estado', verificarToken, (req, res) => {
     const { id } = req.params;
     const { estado } = req.body; // 'Activo' o 'Inactivo'
     db.query('UPDATE proveedor_externo SET estado = ? WHERE id_proveedor = ?', [estado, id], (err, results) => {
@@ -99,7 +100,7 @@ module.exports = (db, transporter) => {
 
 
   // 2.1 Crear Solicitud de Cotización (RF-22: Envío automatizado a Proveedores)
-  router.post('/admin/solicitud-cotizacion', (req, res) => {
+  router.post('/admin/solicitud-cotizacion', verificarToken, (req, res) => {
     const { id_evento, id_tipo_servicio, descripcion_requerimientos, fecha_limite } = req.body;
     db.query(
       'INSERT INTO solicitud_cotizacion (id_evento, id_tipo_servicio, descripcion_requerimientos, fecha_limite) VALUES (?, ?, ?, ?)',
@@ -114,9 +115,9 @@ module.exports = (db, transporter) => {
               const eventoNombre = evRes[0].nombre;
               
               provRes.forEach(proveedor => {
-                if (transporter && proveedor.correo) {
-                  transporter.sendMail({
-                    from: 'uapaproeventstmdeevento@gmail.com', // Usar la misma cuenta
+                if (proveedor.correo) {
+                  // [REFAC] Usando sendMailCentralizado de config/mailer.js
+                  sendMailCentralizado({
                     to: proveedor.correo,
                     subject: `Nueva Oportunidad de Negocio - UAPA ProEvent`,
                     html: `
@@ -128,7 +129,7 @@ module.exports = (db, transporter) => {
                       <p>Puedes enviar tu cotización a través de nuestro <a href="http://localhost:3000/licitaciones">Portal de Proveedores B2B</a>.</p>
                       <br><p>Atentamente,<br>Departamento de Compras UAPA</p>
                     `
-                  }).catch(console.error);
+                  }).catch(err => console.error('Error enviando notificación B2B:', err));
                 }
               });
             }
@@ -171,6 +172,18 @@ module.exports = (db, transporter) => {
       if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas' });
       if (proveedor.estado !== 'Activo') return res.status(403).json({ error: 'Cuenta inactiva o suspendida.' });
 
+      const jwt = require('jsonwebtoken');
+      const { JWT_SECRET } = require('./utils/jwtUtils');
+      const tokenPayload = {
+        id_proveedor: proveedor.id_proveedor,
+        id_tipo: proveedor.id_tipo_servicio,
+        nombre: proveedor.nombre_empresa,
+        tipo_usuario: 'proveedor'
+      };
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '15m' });
+      
+      res.cookie('accessToken', token, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+
       res.json({ message: 'Login exitoso', proveedor: { id: proveedor.id_proveedor, nombre: proveedor.nombre_empresa, id_tipo: proveedor.id_tipo_servicio } });
     });
   });
@@ -184,11 +197,10 @@ module.exports = (db, transporter) => {
       if (results.length === 0) return res.status(404).json({ mensaje: 'El correo no está registrado como proveedor' });
 
       const token = crypto.randomBytes(32).toString('hex');
-      const expiracion = new Date(Date.now() + 3600000); // 1 hora
 
       db.query(
-        'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, ?)',
-        [correo, token, expiracion],
+        'INSERT INTO restablecimiento_token (correo, token, expiracion) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))',
+        [correo, token],
         (errInsert) => {
           if (errInsert) return res.status(500).json({ mensaje: 'Error al generar el token' });
 
@@ -199,27 +211,95 @@ module.exports = (db, transporter) => {
             to: correo,
             subject: 'Restablecer tu contraseña de Proveedor - ProEvent UAPA',
             html: `
-              <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e0e0e0; border-radius: 14px;">
-                <h2 style="color:#1e3a5f; text-align:center; margin-bottom: 24px;">Recuperación de Contraseña (Suplidores)</h2>
-                <p>Estimado/a Proveedor,</p>
-                <p>Hemos recibido una solicitud para restablecer la contraseña asociada a tu cuenta de acceso en el Portal de Suplidores de <strong>UAPA-PROEVENT</strong>.</p>
-                <p>Para continuar con el proceso de recuperación, haz clic en el botón que aparece a continuación. Por razones de seguridad, <strong>este enlace tendrá una vigencia de 1 hora.</strong></p>
-                <div style="text-align: center; margin: 32px 0;">
-                  <a href="${link}" style="background-color:#1e3a5f; color:white; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; display:inline-block;">
-                    Restablecer Contraseña
-                  </a>
-                </div>
-                <p>Si no realizaste esta solicitud, puedes ignorar este correo de manera segura.</p>
+              <div style="background-color: #f4f7f6; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333; line-height: 1.6;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                  <!-- Logo Section -->
+                  <tr>
+                    <td align="center" style="padding: 40px 20px 20px 20px;">
+                      <img src="cid:logoproevent" alt="Logo ProEvent" style="max-width: 200px; height: auto;" />
+                    </td>
+                  </tr>
+                  <!-- Content Section -->
+                  <tr>
+                    <td style="padding: 0 40px 20px 40px;">
+                      <h2 style="color: #1e3a5f; text-align: center; font-size: 24px; font-weight: 700; margin: 0 0 20px 0;">Recuperación de Contraseña</h2>
+                      <p style="font-size: 16px; margin: 0 0 20px 0; color: #4a4a4a;">Hola, hemos recibido una solicitud para restablecer la contraseña de la siguiente cuenta:</p>
+                      
+                      <!-- User Email Highlight -->
+                      <div style="background-color: #f8fafc; border-left: 4px solid #f58220; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+                        <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1e3a5f;">
+                          <span style="font-size: 18px; vertical-align: middle; margin-right: 8px;">📧</span> ${correo}
+                        </p>
+                      </div>
+
+                      <!-- Info Card -->
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px; background-color: #f8fafc; border-radius: 8px; padding: 20px;">
+                        <tr>
+                          <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Estado:</strong> <span style="color: #28a745;">Solicitud recibida</span></td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 10px; font-size: 14px;"><strong>&bull; Vigencia del enlace:</strong> 1 hora</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 14px;"><strong>&bull; Plataforma:</strong> UAPA-PROEVENT (Suplidores)</td>
+                        </tr>
+                      </table>
+
+                      <!-- Reset Button -->
+                      <div style="text-align: center; margin-bottom: 25px;">
+                        <a href="${link}" style="display: inline-block; background-color: #1e3a5f; color: #ffffff; padding: 16px 36px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Restablecer contraseña</a>
+                      </div>
+
+                      <!-- Alternative Link -->
+                      <p style="font-size: 13px; color: #6c757d; text-align: center; margin: 0 0 30px 0; word-break: break-all;">
+                        O copia y pega el siguiente enlace en tu navegador:<br>
+                        <a href="${link}" style="color: #1e3a5f; text-decoration: underline;">${link}</a>
+                      </p>
+
+                      <!-- Warning Box -->
+                      <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; margin-bottom: 30px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td width="30" valign="top" style="font-size: 18px; padding-right: 10px;">🔒</td>
+                            <td style="font-size: 14px; color: #856404; line-height: 1.5;">Si usted no solicitó este cambio, ignore este correo. Su contraseña permanecerá segura.</td>
+                          </tr>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Divider -->
+                  <tr>
+                    <td style="padding: 0 40px;">
+                      <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 0;">
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td align="center" style="padding: 30px 40px; background-color: #fdfdfd;">
+                      <p style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold; color: #1e3a5f;">Sistema UAPA-PROEVENT</p>
+                      <p style="margin: 0 0 5px 0; font-size: 12px; color: #6c757d;">Plataforma Institucional para la Gestión y Trazabilidad de Eventos y Servicios Externos</p>
+                      <p style="margin: 0 0 15px 0; font-size: 12px; color: #6c757d;">Universidad Abierta para Adultos (UAPA)</p>
+                      <p style="margin: 0; font-size: 12px; color: #adb5bd;">&copy; 2026 Todos los derechos reservados.</p>
+                    </td>
+                  </tr>
+                </table>
               </div>
-            `
+            `,
+            attachments: [
+              {
+                filename: 'logo-proevent.jpeg',
+                path: require('path').join(__dirname, '../proevent-frontend1/src/img/logo-proevent.jpeg'),
+                cid: 'logoproevent'
+              }
+            ]
           };
 
-          transporter.sendMail(mailOptions, (errMail, info) => {
-            if (errMail) {
-              console.error('Error enviando correo a proveedor:', errMail.message);
-              return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
-            }
+          sendMailCentralizado(mailOptions).then(info => {
+            console.log(`✅ Correo enviado a proveedor: ${correo} (ID: ${info.messageId})`);
             res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
+          }).catch(errMail => {
+            console.error('Error enviando correo a proveedor:', errMail.message);
+            return res.status(500).json({ mensaje: 'Error al enviar el correo. Intente de nuevo.' });
           });
         }
       );
@@ -267,7 +347,10 @@ module.exports = (db, transporter) => {
   });
 
   // 4. Ver solicitudes abiertas para su categoría
-  router.get('/proveedor/:id_tipo/solicitudes', (req, res) => {
+  router.get('/proveedor/:id_tipo/solicitudes', verificarToken, (req, res) => {
+    if (req.user.tipo_usuario !== 'proveedor' || req.user.id_tipo.toString() !== req.params.id_tipo.toString()) {
+      return res.status(403).json({ error: 'Acceso denegado a estas solicitudes' });
+    }
     const id_tipo = req.params.id_tipo;
     db.query(`
       SELECT s.*, e.nombre as nombre_evento, e.fecha_inicio
@@ -280,7 +363,10 @@ module.exports = (db, transporter) => {
   });
 
   // 4.5 Obtener métricas del proveedor (Dashboard B2B)
-  router.get('/proveedor/:id_proveedor/metricas', (req, res) => {
+  router.get('/proveedor/:id_proveedor/metricas', verificarToken, (req, res) => {
+    if (req.user.tipo_usuario !== 'proveedor' || req.user.id_proveedor.toString() !== req.params.id_proveedor.toString()) {
+      return res.status(403).json({ error: 'Acceso denegado a estas métricas' });
+    }
     const { id_proveedor } = req.params;
     db.query(`
       SELECT 
@@ -376,7 +462,7 @@ module.exports = (db, transporter) => {
   // --- RUTAS DE INTELIGENCIA ARTIFICIAL Y LISTADO B2B (ADMIN) ---
 
   // Nueva ruta para obtener licitaciones evaluadas/adjudicadas para mostrar en ModuloProveedores
-  router.get('/admin/licitaciones-adjudicadas', (req, res) => {
+  router.get('/admin/licitaciones-adjudicadas', verificarToken, (req, res) => {
     db.query(`
       SELECT a.id_analisis, a.id_solicitud, a.proveedor_recomendado_id, a.fecha_analisis, 
              s.id_evento, s.requisitos, e.nombre as nombre_evento, 
@@ -398,7 +484,7 @@ module.exports = (db, transporter) => {
     apiKey: process.env.OPENAI_API_KEY || 'dummy_key' // Asume que se ha puesto en .env. El dummy evita crasheo al iniciar.
   });
 
-  router.post('/admin/evaluar-cotizaciones/:id_solicitud', async (req, res) => {
+  router.post('/admin/evaluar-cotizaciones/:id_solicitud', verificarToken, async (req, res) => {
     const id_solicitud = req.params.id_solicitud;
 
     // 1. Obtener todas las cotizaciones de esta solicitud

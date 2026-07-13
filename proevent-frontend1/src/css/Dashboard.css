@@ -19,7 +19,7 @@
    SIDEBAR
    ═══════════════════════════════════════════════════════════ */
 .dashboard-sidebar {
-  width: 260px;
+  width: 275px; /* Aumentado ligeramente para garantizar que el título a 22px nunca se corte */
   background: var(--bg-sidebar, #FFFFFF);
   box-shadow: 2px 0 16px rgba(0,0,0,0.05);
   border-right: 1px solid #E2E8F0;
@@ -58,66 +58,81 @@
 
 /* ── Brand Custom (Nuevo Logo) ── */
 .sidebar-brand-custom {
-  padding: 14px 16px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid #1e3a8a; /* match original sidebar border */
-  background: #FFFFFF; /* Fondo blanco para el logo */
-  min-height: 80px;
+  justify-content: flex-start;
+  gap: 14px;
+  border-bottom: 1px solid #E5E7EB; /* Borde inferior muy sutil */
+  background: #FFFFFF;
+  min-height: 60px; /* Reducción del 25% respecto a los 80px anteriores */
+  flex-shrink: 0;
   flex-shrink: 0;
 }
 
-/* Emblema / escudo */
+/* Contenedor del ícono (imagen ya recortada) */
+.brand-emblem-crop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Imagen del ícono sin texto */
 .brand-emblem-img {
-  height: 42px;
-  width: 42px;
+  height: 48px; /* Ícono entre 46-52px */
+  width: auto;
   object-fit: contain;
-  flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 0;
+  display: block;
 }
 
-/* Texto al lado del emblema */
+/* Texto a la derecha del ícono */
 .brand-text-block {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 2px;
   min-width: 0;
   text-align: left;
+  /* Sin margin-top forzado — Flexbox centra el bloque correctamente */
 }
 
 .brand-title {
-  font-size: 11.5px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
   font-family: var(--font-family-base);
+  letter-spacing: -0.01em;
 }
 
 .brand-uapa {
-  color: #1E293B; /* Azul oscuro/negro */
+  color: #123D8F;
   letter-spacing: 0.02em;
 }
 
 .brand-dash {
-  color: #1E293B; /* Mismo azul oscuro para el guión */
-  font-weight: 800;
+  color: #123D8F;
+  font-weight: 700;
   margin: 0 1px;
 }
 
 .brand-proevent {
-  color: #F59E0B; /* Naranja vibrante de la imagen */
+  color: #F68B1F;
   letter-spacing: 0.01em;
 }
 
 .brand-subtitle {
-  font-size: 7px;
-  color: #64748B;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   white-space: nowrap;
+  line-height: 1.2;
   font-family: var(--font-family-base);
+  margin-top: 2px;
 }
 
 .brand-logo-img {
@@ -190,7 +205,7 @@
 /* ── Nav ── */
 .sidebar-nav {
   flex: 1;
-  padding: 10px 10px;
+  padding: 4px 10px; /* Reducido para acortar el espacio vertical entre el logo y el primer menú */
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;

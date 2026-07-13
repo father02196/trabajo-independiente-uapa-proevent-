@@ -50,7 +50,7 @@ function PortalProveedoresForgotPassword({ onBackClick }) {
 
         <div className="lc-header">
           {onBackClick && (
-            <button className="lc-back" onClick={onBackClick}>← Volver al login</button>
+            <button type="button" className="lc-back" onClick={onBackClick}>← Volver al login</button>
           )}
 
           <img src={logoProevent} alt="Logo UAPA ProEvent" className="lc-main-logo" style={{ width: '220px', height: 'auto', margin: '0 auto 15px', display: 'block' }} />

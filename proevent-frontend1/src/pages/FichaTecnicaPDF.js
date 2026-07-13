@@ -23,7 +23,7 @@ import './../css/Dashboard.css';
  * - organizadores: Personal asignado al evento
  * - onClose: función para cerrar la vista modal.
  */
-export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios, organizadores, observaciones, onClose }) {
+export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios, organizadores, observaciones, cronograma, onClose }) {
   const componentRef = useRef();
 
   // --- FUNCIÓN: handlePrint ---
@@ -62,13 +62,13 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             <FiDownload /> Generador de Ficha Técnica
           </h3>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn btn-secondary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+            <button type="button" className="btn btn-secondary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
               <FiPrinter /> Imprimir
             </button>
-            <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+            <button type="button" className="btn btn-secondary" onClick={handleDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
               <FiDownload /> Guardar PDF
             </button>
-            <button className="btn btn-secondary" onClick={onClose} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}>
               Cerrar
             </button>
           </div>
@@ -112,7 +112,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                 <div><strong>Asistentes Estimados:</strong> {evento.cantidad_asistentes}</div>
                 <div><strong>Fecha de Inicio:</strong> {new Date(evento.fecha_inicio).toLocaleDateString()} ({evento.hora_inicio?.substring(0,5)})</div>
                 <div><strong>Fecha de Fin:</strong> {new Date(evento.fecha_fin).toLocaleDateString()} ({evento.hora_fin})</div>
-                <div style={{ gridColumn: 'span 2' }}><strong>Ubicación:</strong> {evento.recinto_nombre || 'No especificada'}</div>
+                <div style={{ gridColumn: 'span 2' }}><strong>Ubicación:</strong> {evento.recinto || 'No especificada'}</div>
               </div>
             </section>
 
@@ -120,7 +120,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             <section style={{ marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>2. Estatus Presupuestario y Legal</h2>
               <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '6px', fontSize: '14px' }}>
-                <div style={{ marginBottom: '10px' }}><strong>Estado del Presupuesto (VAF):</strong> {presupuesto?.estado || 'Pendiente'}</div>
+                <div style={{ marginBottom: '10px' }}><strong>Estado del Presupuesto (VAF):</strong> {presupuesto?.estado || 'No Asignado'}</div>
                 <div style={{ marginBottom: '10px' }}><strong>Dictamen Legal:</strong> {legal?.estado_legal || 'Pendiente'}</div>
                 {legal?.observacion_legal && (
                   <div><strong>Observaciones Legales:</strong> <p style={{ margin: '5px 0 0 0', fontStyle: 'italic', color: '#475569' }}>"{legal.observacion_legal}"</p></div>
@@ -152,6 +152,35 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                 </table>
               ) : (
                 <p style={{ fontSize: '14px', color: '#64748b' }}>No hay personal organizador asignado.</p>
+              )}
+            </section>
+
+            {/* 3.5 Cronograma Operativo */}
+            <section style={{ marginBottom: '30px' }}>
+              <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>Cronograma Logístico Operativo</h2>
+              {cronograma && cronograma.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Actividad</th>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Responsable</th>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Fecha Límite</th>
+                      <th style={{ padding: '10px', borderBottom: '2px solid #cbd5e1' }}>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cronograma.map((act, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '10px' }}>{act.nombre_actividad}</td>
+                        <td style={{ padding: '10px', fontWeight: 'bold' }}>{act.responsable || 'No asignado'}</td>
+                        <td style={{ padding: '10px' }}>{new Date(act.fecha_cumplimiento).toLocaleDateString()}</td>
+                        <td style={{ padding: '10px', color: act.estado === 'Completada' ? '#16a34a' : '#ea580c' }}>{act.estado}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ fontSize: '14px', color: '#64748b' }}>No hay actividades de cronograma asignadas.</p>
               )}
             </section>
 
