@@ -1503,6 +1503,7 @@ app.put('/audiovisual/evento/:id_evento/estado', (req, res) => { // Sub-endpoint
 app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo inicial para flujo "Olvidé mi contraseña"
   const { correo } = req.body; // Extrae el input string del email digitado por el usuario en conflicto
 
+
   db.query('SELECT id_usuario FROM usuario WHERE correo = ?', [correo], (err, results) => { // Chequeo de seguridad: Validar si de hecho existe
     if (err) return res.status(500).json({ mensaje: 'Error al consultar la base de datos' }); // Falla de lectura base MySQL
     if (results.length === 0) { // Si el motor retorna Array vacío = El usuario es fantasma o se equivocó al teclear
@@ -1640,6 +1641,43 @@ app.get('/validar-token/:token', (req, res) => { // Endpoint auxiliar silencioso
   );
 });
 
+app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutador Táctico Finalizador (Post de ejecución destructiva y sobre-escritura)
+  const { token, nuevaContrasena } = req.body; // Requiere la llave token devuelta en payload y el plaintext string password recien digitado
+
+  // 1. Re-Validar Estrictamente lado servidor node el token antes de matar contraseña antigua (Evita Bypassing REST calls Postman y Replays)
+  db.query(
+    'SELECT correo FROM restablecimiento_token WHERE token = ? AND expiracion > NOW()', // Mismo chequeo de caducidad temporal anti-latencia
+    [token],
+    async (err, results) => {
+      if (err) return res.status(500).json({ mensaje: 'Error al validar el token' }); // Fallo Try Catch like
+      if (results.length === 0) { // Timeout confirmacion reaccion tardia usuario o inyeccion delay ataque
+        return res.status(400).json({ mensaje: 'Token inválido o expirado' });
+      }
+
+      const correo = results[0].correo; // Pinpoint selectivo estricto de la cuenta víctima objetiva a actualizar segun el token
+
+      try {
+        const passwordHash = await bcrypt.hash(nuevaContrasena, 12);
+        
+        // 2. Actualizar contraseña oficial y forzar invalidación de sesiones previas
+        db.query(
+          'UPDATE usuario SET password_hash = ?, contrasena = NULL, password_changed_at = NOW(), token_version = token_version + 1, failed_login_attempts = 0, locked_until = NULL WHERE correo = ?', 
+          [passwordHash, correo],
+          (errUpdate) => {
+            if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' }); 
+
+            // 3. Destruir e incinerar el token usado para asegurar su condición "Uso Único Desechable Limitado"
+            db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => { }); 
+
+            res.json({ mensaje: 'Contraseña actualizada con éxito' }); 
+          }
+        );
+      } catch (hashError) {
+        return res.status(500).json({ mensaje: 'Error interno encriptando contraseña' });
+      }
+    }
+  );
+});
 
 // ── EVALUACIONES DE CALIDAD EVENTO POST-MORTEM ─ CREAR ───────────────────────────────
 app.post('/evaluaciones', (req, res) => { // Via POST API graba encuesta final de calidad retroalimentadora del solicitante

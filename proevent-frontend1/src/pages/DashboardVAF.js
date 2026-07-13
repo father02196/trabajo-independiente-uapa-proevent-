@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // COMPONENTE: DashboardVAF
 // Pertenece a: Módulo Financiero / VAF
 // Propósito: Panel global del presupuesto (Plan Operativo Anual).
@@ -163,7 +163,7 @@ export default function DashboardVAF({ usuario, setActiveTab }) {
                   <FiClock className="panel-icon" />
                   <div>
                     <h4>Pendientes de Evaluación</h4>
-                    <p>├Üúúltimos movimientos del POA que esperan revisión</p>
+                    <p>Últimos movimientos del POA que esperan revisión</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
