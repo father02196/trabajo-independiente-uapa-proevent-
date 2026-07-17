@@ -28,6 +28,7 @@ import ModuloProveedores from "./ModuloProveedores";
 import GestionCategorias from "./GestionCategorias";
 import FlujoAdministrativo from "./FlujoAdministrativo";
 import GestionEventos from "./GestionEventos";
+import LicitacionesElegidas from "./LicitacionesElegidas";
 
 function DashboardAdminLayout({ usuario, onLogoutClick }) {
     const navigate = useNavigate();
@@ -62,6 +63,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
         if (currentPath.includes("/admin/audiovisual/inventario")) return "Inventario Audiovisual";
         if (currentPath.includes("/admin/proveedores/gestion")) return "Gestión Operativa";
         if (currentPath.includes("/admin/proveedores/categorias")) return "Gestión de Categorías";
+        if (currentPath.includes("/admin/proveedores/licitaciones-elegidas")) return "Licitaciones Elegidas";
         if (currentPath.includes("/admin/evaluacion")) return "Evaluación";
         if (currentPath.includes("/admin/soporte")) return "Soporte";
         if (currentPath.includes("/admin/evaluaciones")) return "Historial de Evaluaciones";
@@ -160,6 +162,9 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                             <li className={currentPath.includes("/admin/proveedores/categorias") ? "active" : ""} onClick={() => handleNavigate("/admin/proveedores/categorias")}>
                                 <FiList className="action-icon" /> Gestión de Categorías
                             </li>
+                            <li className={currentPath.includes("/admin/proveedores/licitaciones-elegidas") ? "active" : ""} onClick={() => handleNavigate("/admin/proveedores/licitaciones-elegidas")}>
+                                <FiCheckCircle className="action-icon" /> Licitaciones Elegidas
+                            </li>
                         </ul>
 
                         {/* Administración general */}
@@ -249,6 +254,7 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                         
                         <Route path="proveedores/gestion" element={<ModuloProveedores usuario={usuario} />} />
                         <Route path="proveedores/categorias" element={<GestionCategorias usuario={usuario} />} />
+                        <Route path="proveedores/licitaciones-elegidas" element={<LicitacionesElegidas />} />
                         
                         <Route path="evaluacion" element={<Evaluacion usuario={usuario} />} />
                         <Route path="soporte" element={<SoporteHome usuario={usuario} />} />

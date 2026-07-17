@@ -20,3 +20,7 @@ node_modules/
 
 # Mac / SO
 .DS_Store
+
+# Carpetas privadas y scripts temporales
+uploads/
+scratch/

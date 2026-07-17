@@ -174,7 +174,7 @@ function ModuloProveedores({ usuario }) {
         try {
             const res = await fetch(`${API}/api/servicios/${modalIncidencia.servicio.id_servicio_ext}/resolver-incidencia`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
                 body: JSON.stringify({ resolucion: resolucionForm })
             });
             if (res.ok) {
@@ -201,6 +201,7 @@ function ModuloProveedores({ usuario }) {
         try {
             const res = await fetch(`${API}/api/logistica/${modalEvidencia.servicioId}/evidencia-contabilidad`, {
                 method: 'POST',
+                headers: { 'x-usuario-id': usuario?.id_usuario || '' },
                 body: formData
             });
             if (res.ok) {
@@ -220,7 +221,8 @@ function ModuloProveedores({ usuario }) {
         if (!window.confirm("¿Seguro que deseas eliminar la evidencia CxP?")) return;
         try {
             const res = await fetch(`${API}/api/logistica/${id_servicio}/evidencia-contabilidad`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'x-usuario-id': usuario?.id_usuario || '' }
             });
             if (res.ok) {
                 alert("Evidencia eliminada correctamente.");
@@ -319,7 +321,7 @@ function ModuloProveedores({ usuario }) {
         try {
             const res = await fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
                 body: JSON.stringify(formData)
             });
             const data = await res.json();
@@ -347,7 +349,7 @@ function ModuloProveedores({ usuario }) {
             // Envía la petición PUT al backend para actualizar exclusivamente el campo estado
             const res = await fetch(`http://localhost:8080/api/admin/proveedor/${proveedor.id_proveedor}/estado`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
                 body: JSON.stringify({ estado: nuevoEstado }) // Convierte el estado a formato JSON
             });
             if (res.ok) {

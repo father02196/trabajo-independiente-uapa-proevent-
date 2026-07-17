@@ -69,7 +69,7 @@ function GestionCategorias({ usuario }) {
         try {
             const res = await fetch(`${API}/api/admin/categorias-servicio/${cat.id_tipo_servicio}/estado`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
                 body: JSON.stringify({ estado: nuevoEstado })
             });
             if (res.ok) {

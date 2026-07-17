@@ -188,7 +188,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     try {
       const res = await fetch(`${API}/servicios-externos`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'x-usuario-id': usuario?.id_usuario || '' },
         body: JSON.stringify({
           id_evento: selectedRequest.id_evento,
           id_tipo_servicio: servicioForm.id_tipo_servicio,
@@ -235,7 +235,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     try {
       const res = await fetch(`${API}/organizadores`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'x-usuario-id': usuario?.id_usuario || '' },
         body: JSON.stringify({ id_evento, id_usuario, rol_organizacion: rol })
       });
       if (res.ok) {

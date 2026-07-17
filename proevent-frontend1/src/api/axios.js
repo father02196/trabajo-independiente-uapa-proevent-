@@ -6,6 +6,20 @@ const axiosInstance = axios.create({
   withCredentials: true // Permite enviar y recibir HttpOnly Cookies (Access y Refresh)
 });
 
+// Variables para manejar concurrencia en la renovación de tokens (Race Condition)
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+const onRefreshed = () => {
+  refreshSubscribers.forEach(cb => cb());
+  refreshSubscribers = [];
+};
+
+const onRefreshFailed = () => {
+  refreshSubscribers.forEach(cb => cb(new Error('Refresh failed')));
+  refreshSubscribers = [];
+};
+
 // Interceptor de Respuestas
 axiosInstance.interceptors.response.use(
   (response) => {
@@ -23,12 +37,27 @@ axiosInstance.interceptors.response.use(
     ) {
       originalRequest._retry = true; 
 
-      try {
-        await axios.post('http://localhost:8080/api/auth/refresh', {}, { withCredentials: true });
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        window.dispatchEvent(new Event('auth:logout'));
-        return Promise.reject(error); // Reject with original error, not the refresh error
+      if (!isRefreshing) {
+        isRefreshing = true;
+        try {
+          await axios.post('http://localhost:8080/api/auth/refresh', {}, { withCredentials: true });
+          isRefreshing = false;
+          onRefreshed();
+          return axiosInstance(originalRequest);
+        } catch (refreshError) {
+          isRefreshing = false;
+          onRefreshFailed();
+          window.dispatchEvent(new Event('auth:logout'));
+          return Promise.reject(error); // Reject with original error, not the refresh error
+        }
+      } else {
+        // Encolar la petición si ya se está renovando el token
+        return new Promise((resolve, reject) => {
+          refreshSubscribers.push((err) => {
+            if (err) return reject(error); // Rechazar con el error 401 original si falla
+            resolve(axiosInstance(originalRequest));
+          });
+        });
       }
     }
     return Promise.reject(error);

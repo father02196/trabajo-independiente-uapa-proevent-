@@ -1,262 +1,332 @@
 // ============================================================
-// MÓDULO DE BITÁCORA DE MOVIMIENTOS (AUDITORÍA)
-// Pertenece a: Módulo de Seguridad y Auditoría del Sistema
-// Propósito: Mostrar el historial detallado de todas las acciones
-// y operaciones realizadas por los usuarios (cambios de estado, login,
-// eliminaciones). Permite filtrar por ID, usuario, acción y fecha.
+// MÓDULO DE BITÁCORA DE MOVIMIENTOS (AUDITORÍA FASE 4)
+// Paginación y Filtrado 100% en el Backend
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText, FiClock } from 'react-icons/fi';
-import { useSortableData } from '../hooks/useSortableData';
-import './../css/Dashboard.css'; // Reutilizamos estilos base
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiFilter, FiUser, FiActivity, FiFileText, FiClock, FiRefreshCw, FiDownload, FiEye, FiX } from 'react-icons/fi';
+import './../css/Dashboard.css';
 import './../css/Bitacora.css';
 
 const API = 'http://localhost:8080';
 
-// ============================================================
-// COMPONENTE: Bitacora
-// ============================================================
 export default function Bitacora() {
-    // --- ESTADOS DEL COMPONENTE ---
-    const [registros, setRegistros] = useState([]);       // Historial completo
-    const [loading, setLoading] = useState(true);         // Indicador de carga
-    const [error, setError] = useState('');               // Mensaje de error
-    
-    // Paginación
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [registros, setRegistros] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [modalData, setModalData] = useState(null);
 
-    // Estados para los filtros de búsqueda
-    const [searchQuery, setSearchQuery] = useState('');   // Texto libre
-    const [filtroAccion, setFiltroAccion] = useState('Todas'); // Dropdown de acción
-    const [rangoFecha, setRangoFecha] = useState('todos');     // Dropdown de tiempo
-    const [accionesUnicas, setAccionesUnicas] = useState([]);  // Listado dinámico de acciones
 
-    // --- EFECTO: Carga inicial ---
-    useEffect(() => {
-        cargarBitacora();
-    }, []);
+    // Estado de Paginación del Backend
+    const [pagination, setPagination] = useState({ page: 1, limit: 15, total: 0, totalPages: 1 });
 
-    // --- FUNCIÓN: cargarBitacora ---
-    // Extrae los datos desde el backend y puebla las categorías únicas de acción
-    const cargarBitacora = async () => {
+    // Filtros
+    const [filters, setFilters] = useState({
+        accion: '',
+        modulo: '',
+        tipo_actor: '',
+        fecha_inicio: '',
+        fecha_fin: '',
+        request_id: ''
+    });
+
+    const [accionesUnicas] = useState([
+
+        'ACTUALIZACION_AUDIOVISUAL', 'ACTUALIZACION_AUDIOVISUAL_GLOBAL',
+        'ACTUALIZACION_CATALOGO', 'ACTUALIZACION_EVENTO', 'ACTUALIZACION_POA', 'ACTUALIZACION_PROVEEDOR',
+        'ACTUALIZACION_SERVICIO_EXTERNO', 'ACTUALIZACION_TAREA_CRONOGRAMA',
+        'ACTUALIZAR_OC_SERVICIO', 'ALERTA_POA_20', 'APROBAR_PRESUPUESTO', 'ASIGNACION_ORGANIZADOR',
+        'AUTO_FINALIZACION_EVENTO', 'CAMBIO_ESTADO_PROVEEDOR',
+        'CAMBIO_ESTADO_USUARIO', 'CIERRE_EXPEDIENTE', 'CREACION_AUDIOVISUAL', 'CREACION_CATALOGO',
+        'CREACION_EVENTO', 'CREACION_POA', 'CREACION_TAREA_CRONOGRAMA', 'CREACION_USUARIO', 'DASHBOARD_VISUALIZADO',
+        'DICTAMEN_LEGAL', 'DICTAMEN_LEGAL_ACTUALIZADO',
+        'DOCUMENTO_ARCHIVADO', 'EDICION_EVENTO', 'ELIMINACION_CATALOGO', 'ELIMINACION_EVENTO',
+        'ELIMINACION_EVIDENCIA_CONTABLE', 'ELIMINACION_SERVICIO_EXTERNO',
+        'ELIMINACION_TAREA_CRONOGRAMA', 'ELIMINACION_USUARIO',
+        'ENVIO_ORDEN_PROVEEDOR', 'LOGIN_EXITOSO',
+        'LOGIN_FALLIDO', 'LOGIN_GOOGLE', 'OBSERVACION_PRESUPUESTO', 'PAGO_FACTURA_B2B',
+        'PAGO_SERVICIO', 'RECEPCION_SERVICIO',
+        'REMOCION_ORGANIZADOR', 'RESOLUCION_INCIDENCIA_LOGISTICA',
+        'RESOLUCION_LEGAL', 'SOLICITUD_SERVICIO_EXTERNO',
+        'SUBIDA_DOCUMENTO_BOVEDA', 'SUBIDA_EVIDENCIA_CONTABLE'
+
+    ]);
+
+    const cargarBitacora = useCallback(async (page = 1) => {
         setLoading(true);
+        setError('');
         try {
-            const res = await fetch(`${API}/bitacora`);
+            const queryParams = new URLSearchParams({
+                page,
+                limit: pagination.limit,
+                ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== ''))
+            });
+
+            const res = await fetch(`${API}/bitacora?${queryParams}`, { credentials: 'include' });
+            if (!res.ok) {
+                if (res.status === 403 || res.status === 401) throw new Error('Acceso denegado: Se requiere rol de Administrador.');
+                throw new Error('Error al cargar la bitácora.');
+            }
+
             const data = await res.json();
-            if (Array.isArray(data)) {
-                setRegistros(data);
-                // Extraer acciones únicas para el Select
-                const acciones = [...new Set(data.map(item => item.accion))];
-                setAccionesUnicas(acciones);
+
+            if (data.data) {
+                const normalizedData = data.data.map(item => {
+                    let parsedDetalles = item.detalles;
+                    try { parsedDetalles = JSON.parse(item.detalles); } catch (e) { }
+                    return { ...item, detallesObj: parsedDetalles };
+                });
+                setRegistros(normalizedData);
+                setPagination(data.pagination);
             } else {
-                setError('Error en el formato de respuesta');
+                setError('Respuesta inválida del servidor');
             }
         } catch (err) {
-            setError('No se pudo conectar al servidor de bitácora.');
+            setError(err.message || 'No se pudo conectar al servidor.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, pagination.limit]);
 
-    // --- FUNCIÓN: formatearFecha ---
-    // Convierte el timestamp de BD a formato local "DD/MMM/YYYY HH:MM"
+    useEffect(() => {
+        cargarBitacora(pagination.page);
+    }, [cargarBitacora, pagination.page]);
+
     const formatearFecha = (fechaDb) => {
         if (!fechaDb) return '—';
         const date = new Date(fechaDb);
-        return date.toLocaleString('es-DO', { 
+        return date.toLocaleString('es-DO', {
             day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
     };
 
-    // --- LÓGICA DE FILTRADO ---
-    // Filtra la data original según texto, tipo de acción y ventana de tiempo
-    const registrosFiltrados = registros.filter(reg => {
-        const queryNormalizada = searchQuery.toLowerCase();
-        
-        // Match Búsqueda (ID de registro, ID Usuario, o Nombre de Usuario)
-        const matchSearch = 
-            reg.id_bitacora.toString().includes(queryNormalizada) ||
-            (reg.id_usuario && reg.id_usuario.toString().includes(queryNormalizada)) ||
-            (reg.nombre_usuario && reg.nombre_usuario.toLowerCase().includes(queryNormalizada)) ||
-            (reg.detalles && reg.detalles.toLowerCase().includes(queryNormalizada));
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+    };
 
-        // Match Acción (Select)
-        const matchAccion = filtroAccion === 'Todas' || reg.accion === filtroAccion;
+    const aplicarFiltros = () => {
+        setPagination(prev => ({ ...prev, page: 1 }));
+        cargarBitacora(1);
+    };
 
-        let matchFecha = true;
-        if (rangoFecha !== 'todos' && reg.fecha) {
-            const fechaReg = new Date(reg.fecha);
-            const hoy = new Date();
-            
-            if (rangoFecha === 'hoy') {
-                matchFecha = fechaReg.toDateString() === hoy.toDateString();
-            } else if (rangoFecha === 'semana') {
-                const hace7dias = new Date();
-                hace7dias.setDate(hoy.getDate() - 7);
-                matchFecha = fechaReg >= hace7dias;
-            } else if (rangoFecha === 'mes') {
-                const hace30dias = new Date();
-                hace30dias.setDate(hoy.getDate() - 30);
-                matchFecha = fechaReg >= hace30dias;
-            } else if (rangoFecha === 'este_año') {
-                matchFecha = fechaReg.getFullYear() === hoy.getFullYear();
-            } else if (rangoFecha === 'año_pasado') {
-                matchFecha = fechaReg.getFullYear() === hoy.getFullYear() - 1;
-            }
+    const limpiarFiltros = () => {
+        setFilters({ accion: '', modulo: '', tipo_actor: '', fecha_inicio: '', fecha_fin: '', request_id: '' });
+        setPagination(prev => ({ ...prev, page: 1 }));
+        setTimeout(() => cargarBitacora(1), 0);
+    };
+
+    const descargarCSV = () => {
+        const queryParams = new URLSearchParams({
+            export_format: 'csv',
+            ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== ''))
+        });
+        window.open(`${API}/bitacora?${queryParams}`, '_blank');
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= pagination.totalPages) {
+            setPagination(prev => ({ ...prev, page: newPage }));
         }
-
-        return matchSearch && matchAccion && matchFecha;
-    });
-
-    // --- LÓGICA DE PAGINACIÓN Y ORDENAMIENTO ---
-    const sortedRegistros = [...registrosFiltrados].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-    const totalPages = Math.ceil(sortedRegistros.length / itemsPerPage);
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = sortedRegistros.slice(indexOfFirstItem, indexOfLastItem);
-
-    // Resetear a pág 1 si los filtros cambian
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery, filtroAccion, rangoFecha]);
+    };
 
     return (
-        <div className="bitacora-container">
-            <div className="section-header" style={{ marginBottom: '20px' }}>
+        <div className="dashboard-container animate-fade-in">
+            <header className="dashboard-header">
                 <div>
-                    <h2 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: '8px' }}>Bitácora de Movimientos</h2>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Consulta el historial de auditoría y acciones realizadas en la plataforma.</p>
+                    <h1 className="dashboard-title"><FiActivity className="icon-title" /> Auditoría Corporativa</h1>
+                    <p className="dashboard-subtitle">Control y trazabilidad de eventos transaccionales</p>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button onClick={descargarCSV} className="btn-secondary" style={{ padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff' }} title="Exportar CSV">
+                        <FiDownload style={{ marginRight: '5px' }} /> CSV
+                    </button>
+                    <button onClick={() => cargarBitacora(pagination.page)} className="btn-primary" style={{ padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px', border: 'none', backgroundColor: '#0f172a', color: '#fff' }} title="Recargar bitácora">
+                        <FiRefreshCw className={loading ? 'spin-animation' : ''} style={{ marginRight: '5px' }} /> Actualizar
+                    </button>
+                </div>
+            </header>
+
+            <div className="table-container" style={{ padding: '1.5rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+
+                    <div className="filter-group">
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                            <FiFilter /> Acción
+                        </label>
+                        <select name="accion" value={filters.accion} onChange={handleFilterChange} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                            <option value="">Todas las acciones</option>
+                            {accionesUnicas.map((acc, idx) => (
+                                <option key={idx} value={acc}>{acc}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                            <FiUser /> Actor
+                        </label>
+                        <select name="tipo_actor" value={filters.tipo_actor} onChange={handleFilterChange} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                            <option value="">Todos</option>
+                            <option value="INTERNO">Interno</option>
+                            <option value="PROVEEDOR">Proveedor</option>
+                            <option value="SISTEMA">Sistema</option>
+                            <option value="ANONIMO">Anónimo</option>
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                            <FiFileText /> Request ID
+                        </label>
+                        <input type="text" name="request_id" value={filters.request_id} onChange={handleFilterChange} placeholder="UUID..." style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                    </div>
+
+                    <div className="filter-group">
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                            <FiClock /> Desde
+                        </label>
+                        <input type="date" name="fecha_inicio" value={filters.fecha_inicio} onChange={handleFilterChange} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                    </div>
+
+                    <div className="filter-group">
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                            <FiClock /> Hasta
+                        </label>
+                        <input type="date" name="fecha_fin" value={filters.fecha_fin} onChange={handleFilterChange} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                    </div>
+                </div>
+                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                    <button onClick={limpiarFiltros} style={{ padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff' }}>Limpiar</button>
+                    <button onClick={aplicarFiltros} style={{ padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px', border: 'none', backgroundColor: '#2563eb', color: '#fff' }}>Buscar</button>
                 </div>
             </div>
 
-            <div className="bitacora-filters-bar">
-                <div className="filter-group">
-                    <FiSearch className="filter-icon" />
-                    <input 
-                        type="text" 
-                        placeholder="Buscar por ID, Usuario o detalles..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bitacora-search-input"
-                    />
-                </div>
-                <div className="filter-group">
-                    <FiFilter className="filter-icon" />
-                    <select 
-                        value={filtroAccion} 
-                        onChange={(e) => setFiltroAccion(e.target.value)}
-                        className="bitacora-select"
-                    >
-                        <option value="Todas">Todas las Acciones</option>
-                        {accionesUnicas.map(acc => (
-                            <option key={acc} value={acc}>{acc.replace(/_/g, ' ')}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="filter-group">
-                    <FiClock className="filter-icon" />
-                    <select 
-                        value={rangoFecha} 
-                        onChange={(e) => setRangoFecha(e.target.value)}
-                        className="bitacora-select"
-                    >
-                        <option value="todos">Cualquier fecha</option>
-                        <option value="hoy">Hoy</option>
-                        <option value="semana">Últimos 7 días</option>
-                        <option value="mes">Últimos 30 días</option>
-                        <option value="este_año">Este Año</option>
-                        <option value="año_pasado">Año Pasado</option>
-                    </select>
-                </div>
-            </div>
+            <div className="table-container">
+                {error && (
+                    <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '4px', marginBottom: '1rem' }}>
+                        <strong>Error: </strong> {error}
+                    </div>
+                )}
 
-            <div className="table-container bitacora-table-wrapper">
-                {loading ? (
-                    <div className="loading-state">Cargando registros de auditoría...</div>
-                ) : error ? (
-                    <div className="error-state">{error}</div>
-                ) : (
-                    <table className="requests-table bitacora-table">
-                        <thead>
+                <table className="requests-table bitacora-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>FECHA Y HORA</th>
+                            <th>ACTOR</th>
+                            <th>ACCIÓN / MÓDULO</th>
+                            <th>DETALLES (JSON)</th>
+                            <th>REQUEST ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
                             <tr>
-                                <th>FECHA Y HORA</th>
-                                <th>ACCIÓN Y DETALLE</th>
-                                <th>USUARIO AUTOR</th>
-                                <th>ROL</th>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                                    <FiRefreshCw className="spin-animation" style={{ marginRight: '0.5rem' }} /> Cargando registros...
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {currentItems.map(reg => (
+                        ) : registros.length === 0 ? (
+                            <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                                    No se encontraron movimientos.
+                                </td>
+                            </tr>
+                        ) : (
+                            registros.map((reg) => (
                                 <tr key={reg.id_bitacora}>
+                                    <td style={{ color: '#94a3b8' }}>#{reg.id_bitacora}</td>
                                     <td style={{ whiteSpace: 'nowrap', color: '#475569', fontSize: '0.9rem' }}>
                                         {formatearFecha(reg.fecha)}
                                     </td>
                                     <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontWeight: 600, color: '#334155' }}>
+                                                {reg.tipo_actor || 'ANONIMO'}
+                                            </span>
+                                            <small style={{ color: '#64748b' }}>
+                                                {reg.nombre_usuario || reg.nombre_proveedor || 'N/A'}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>
                                         <div className="accion-badge">
-                                            <FiActivity style={{ marginRight: '6px' }}/>
-                                            {reg.accion} &nbsp; <span style={{ color: '#94a3b8', fontSize: '11px' }}>#{reg.id_bitacora}</span>
+                                            {reg.accion}
                                         </div>
-                                        <div className="accion-detalles">
-                                            {reg.detalles}
-                                        </div>
+                                        {reg.modulo && <small style={{ display: 'block', marginTop: '4px', color: '#64748b' }}>Módulo: {reg.modulo}</small>}
+                                    </td>
+                                    <td style={{ maxWidth: '300px' }}>
+                                        {typeof reg.detallesObj === 'object' && reg.detallesObj !== null ? (
+                                            <div>
+                                                <span style={{ fontSize: '0.85rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                                                    {Object.keys(reg.detallesObj).length} campos registrados
+                                                </span>
+                                                <button 
+                                                    className="bitacora-btn-ver-detalles" 
+                                                    onClick={() => setModalData(reg)}
+                                                >
+                                                    <FiEye /> Ver Detalles
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                                {String(reg.detalles || '—')}
+                                            </span>
+                                        )}
                                     </td>
                                     <td>
-                                        <div className="usuario-info-cell">
-                                            <FiUser className="user-icon-small" />
-                                            <span>{reg.nombre_usuario || 'Sistema / Eliminado'}</span>
-                                        </div>
-                                        {reg.id_usuario && <span className="text-muted" style={{ fontSize: '11px' }}>ID: {reg.id_usuario}</span>}
-                                    </td>
-                                    <td>
-                                        <span className="badge" style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: '500' }}>
-                                            {reg.rol_usuario || 'Desconocido'}
-                                        </span>
+                                        <small style={{ color: '#94a3b8', fontFamily: 'monospace' }}>
+                                            {reg.request_id ? reg.request_id.split('-')[0] + '...' : '—'}
+                                        </small>
                                     </td>
                                 </tr>
-                            ))}
-                            {registrosFiltrados.length === 0 && (
-                                <tr>
-                                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                        No se encontraron movimientos que coincidan con tus filtros.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+
+                {!loading && pagination.totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                        <span style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                            Mostrando página <strong>{pagination.page}</strong> de {pagination.totalPages} (Total: {pagination.total})
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                                style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: pagination.page === 1 ? '#f1f5f9' : '#fff', cursor: pagination.page === 1 ? 'not-allowed' : 'pointer', color: pagination.page === 1 ? '#94a3b8' : '#334155' }}
+                                disabled={pagination.page === 1}
+                                onClick={() => handlePageChange(pagination.page - 1)}
+                            >
+                                Anterior
+                            </button>
+                            <button
+                                style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: pagination.page === pagination.totalPages ? '#f1f5f9' : '#fff', cursor: pagination.page === pagination.totalPages ? 'not-allowed' : 'pointer', color: pagination.page === pagination.totalPages ? '#94a3b8' : '#334155' }}
+                                disabled={pagination.page === pagination.totalPages}
+                                onClick={() => handlePageChange(pagination.page + 1)}
+                            >
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
 
-            {/* CONTROLES DE PAGINACIÓN */}
-            {registrosFiltrados.length > 0 && (
-                <div className="pagination-container">
-                    <div className="pagination-info">
-                        Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, registrosFiltrados.length)} de {registrosFiltrados.length} movimientos
-                    </div>
-                    <div className="pagination-controls">
-                        <button 
-                            type="button"
-                            className="page-btn" 
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                            aria-label="Página anterior"
-                        >
-                            Anterior
-                        </button>
-                        <span className="page-number">
-                            Página {currentPage} de {totalPages || 1}
-                        </span>
-                        <button 
-                            type="button"
-                            className="page-btn" 
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            aria-label="Página siguiente"
-                        >
-                            Siguiente
-                        </button>
+            {/* MODAL DETALLES JSON */}
+            {modalData && (
+                <div className="bitacora-modal-overlay" onClick={() => setModalData(null)}>
+                    <div className="bitacora-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="bitacora-modal-header">
+                            <h3><FiFileText /> Detalles del Registro #{modalData.id_bitacora}</h3>
+                            <button className="bitacora-modal-close" onClick={() => setModalData(null)}>
+                                <FiX />
+                            </button>
+                        </div>
+                        <div className="bitacora-modal-body">
+                            <pre className="bitacora-json-pre">
+                                {JSON.stringify(modalData.detallesObj, null, 4)}
+                            </pre>
+                        </div>
                     </div>
                 </div>
             )}
