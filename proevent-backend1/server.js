@@ -1632,15 +1632,28 @@ app.get('/audiovisual', (req, res) => { // Endpoint de lectura gerencial adminis
 app.put('/audiovisual/:id/estado', (req, res) => { // Endpoint de mutabilidad dinámica de micro-estatus PUT Unitario individual 
   const { id } = req.params; // Desentrama ID URL parameter
   const { estado } = req.body; // Pospone el paquete de decisión estatus
-  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Completado']; // Enumera virtualmente en Node el diccionario de Listas Blancas validadoras lógicas en ram de Estados Aceptables (Previene Injection Attacks de Fake States)
+  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Entregado']; // Listas Blancas validadoras
 
-  if (!estadosValidos.includes(estado)) // Caza intentos maliciosos o bugeados de sobre-escritura con estados extraterrestres no contemplados por el core negocio
-    return res.status(400).json({ mensaje: 'Estado audiovisual no válido' }); // Detiene ejecucion y repulsa via 400 Bad Request client mistake
+  if (!estadosValidos.includes(estado)) // Caza Fake States
+    return res.status(400).json({ mensaje: 'Estado audiovisual no válido' }); 
 
-  db.query('UPDATE servicio_audiovisual SET estado=? WHERE id_servicio=?', [estado, id], (err, result) => { // Activa UPDATE MySQL de una sola pieza referida apuntando exclusivamente al row especifico del Service Item id
-    if (err) { // Handle callback Error
-      console.error('Update Error:', err); // Aviso Logger Silencioso NodeJS Host
-      return res.status(500).json({ mensaje: 'Error al actualizar estado', error: err.message }); // Rechazo final HTTP Backend down status 500
+  db.query('SELECT estado FROM servicio_audiovisual WHERE id_servicio = ?', [id], (err, results) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al consultar estado actual', error: err.message });
+    if (results.length === 0) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const estadoActual = results[0].estado;
+    
+    // Validación estricta de flujo de estados
+    if (estado !== 'Rechazado') { // Rechazado se permite desde cualquier estado
+      if (estadoActual === 'Pendiente' && estado !== 'En revisión') {
+        return res.status(400).json({ mensaje: 'Transición inválida: De Pendiente solo puede pasar a En revisión.' });
+      } else if (estadoActual === 'En revisión' && estado !== 'Aprobado') {
+        return res.status(400).json({ mensaje: 'Transición inválida: De En revisión solo puede pasar a Aprobado.' });
+      } else if (estadoActual === 'Aprobado' && estado !== 'Entregado') {
+        return res.status(400).json({ mensaje: 'Transición inválida: De Aprobado solo puede pasar a Entregado.' });
+      } else if (estadoActual === 'Entregado') {
+        return res.status(400).json({ mensaje: 'Transición inválida: El equipo ya fue entregado.' });
+      }
     }
     console.log(`Update Result for id ${id}:`, result); // Logger satisfactorio de depuracion 
     res.json({ mensaje: 'Estado audiovisual actualizado con éxito', affectedRows: result.affectedRows }); // HTTP response emite cuantas filas exactas se alteraron (deberia ser 1 siempre)
@@ -1655,13 +1668,13 @@ app.put('/audiovisual/:id/estado', (req, res) => { // Endpoint de mutabilidad di
 });
 
 // ── AUDIOVISUAL ─ ACTUALIZAR ESTADO (GLOBAL MASIVO POR CLUSTER EVENTO) ─
-app.put('/audiovisual/evento/:id_evento/estado', (req, res) => { // Sub-endpoint derivado que apunta al Cluster Superior Agrupador de la familia completa de audiovisuales (El id de su evento padre creador orgánico) en caso que el gerente de audiovisulaes quiera Aprobar masivamente en 1 Clic una canasta de equipos solicitada entera
-  const { id_evento } = req.params;  // Pide el Foreign Key id_evento por sobre el Primary id_servicio 
-  const { estado } = req.body;  // Absorbe intencion de masa Update Generalizado Global  
-  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Completado']; // Whitelist constante protectora en memoria Node
+app.put('/audiovisual/evento/:id_evento/estado', (req, res) => {
+  const { id_evento } = req.params;
+  const { estado } = req.body;
+  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Entregado'];
 
-  if (!estadosValidos.includes(estado)) // Caza Fake States
-    return res.status(400).json({ mensaje: 'Estado audiovisual no válido' }); // Return false stop Request 400 bad data payload
+  if (!estadosValidos.includes(estado))
+    return res.status(400).json({ mensaje: 'Estado audiovisual no válido' });
 
   db.query('UPDATE servicio_audiovisual SET estado=? WHERE id_evento=?', [estado, id_evento], (err, result) => { // Sobrescribe implacablemente con una sola Query a N cantidad multiplicada de sub elementos adosados todos coincidentemente a un mismo Foraneo id_evento
     if (err) { // Manejador basico error
@@ -1968,6 +1981,38 @@ app.delete('/equipos-audiovisuales/:id', (req, res) => { // API Backend server D
     }
     res.json({ mensaje: 'Equipo Eliminado' }); // Success Result Out JSON body string text response status 200 HTTP API Standard return
   });
+});
+
+// --- ENDPOINTS MANTENIMIENTO AUDIOVISUAL ---
+app.get('/mantenimiento-audiovisual', (req, res) => {
+  db.query("SELECT * FROM mantenimiento_audiovisual WHERE estado_registro = 'Activo'", (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+app.post('/mantenimiento-audiovisual', (req, res) => {
+  const { id_equipo, tipo, descripcion, cantidad, fecha_inicio, fecha_fin } = req.body;
+  if (!id_equipo || !tipo || !cantidad) return res.status(400).json({ mensaje: 'Faltan datos requeridos' });
+  db.query(
+    'INSERT INTO mantenimiento_audiovisual (id_equipo, tipo, descripcion, cantidad, fecha_inicio, fecha_fin) VALUES (?, ?, ?, ?, ?, ?)',
+    [id_equipo, tipo, descripcion, cantidad, fecha_inicio, fecha_fin || null],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ mensaje: 'Mantenimiento registrado', id: result.insertId });
+    }
+  );
+});
+
+app.put('/mantenimiento-audiovisual/:id/resolver', (req, res) => {
+  db.query(
+    "UPDATE mantenimiento_audiovisual SET estado_registro = 'Resuelto', fecha_fin = CURRENT_DATE() WHERE id_mantenimiento = ?",
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: 'Mantenimiento resuelto' });
+    }
+  );
 });
 
 // 2. Tipos de Evento Master (Catálogo Estático Funcional)

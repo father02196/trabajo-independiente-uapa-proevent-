@@ -67,7 +67,10 @@ function DashboardResponsable({ usuario, setActiveTab }) {
   const [sortFecha, setSortFecha]     = useState("asc");  
   const [sortId, setSortId]           = useState("");     
   const [activeEventsSortOrder, setActiveEventsSortOrder] = useState("desc"); 
+  const [activeEventsSortId, setActiveEventsSortId]       = useState("");
   const [mesRange, setMesRange]       = useState(6);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // --- ESTADOS DEL MODAL DE EVENTO ---
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -161,10 +164,19 @@ function DashboardResponsable({ usuario, setActiveTab }) {
 
   const eventosActivos = [...eventosActivosBase]
     .sort((a, b) => {
+      if (activeEventsSortId === "asc") return Number(a.id_evento) - Number(b.id_evento);
+      if (activeEventsSortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
+
       const dateA = new Date(a.fecha_inicio || 0);
       const dateB = new Date(b.fecha_inicio || 0);
       return activeEventsSortOrder === "desc" ? dateB - dateA : dateA - dateB;
     });
+
+  // Paginación de eventos activos
+  const totalPages = Math.ceil(eventosActivos.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentEventosActivos = eventosActivos.slice(indexOfFirstItem, indexOfLastItem);
 
   // --- CÁLCULOS: TAREAS DEL EQUIPO ---
   const totalTareas       = tareasEquipo.length;
@@ -641,14 +653,39 @@ function DashboardResponsable({ usuario, setActiveTab }) {
               <p>Vista detallada para supervisión · {eventosActivos.length} eventos</p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px' }}>
-              <FiCalendar style={{ color: '#64748b', marginRight: '8px' }} />
-              <select className="saas-select" style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: '500' }} value={activeEventsSortOrder} onChange={(e) => setActiveEventsSortOrder(e.target.value)}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* Filtro Fecha */}
+            <div style={{ display: 'flex', alignItems: 'center', background: activeEventsSortId === "" ? '#eff6ff' : '#ffffff', border: `1px solid ${activeEventsSortId === "" ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: '8px', padding: '6px 12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'all 0.2s' }}>
+              <FiCalendar style={{ color: activeEventsSortId === "" ? '#3b82f6' : '#94a3b8', marginRight: '8px' }} />
+              <select className="saas-select" style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '13px', color: activeEventsSortId === "" ? '#1d4ed8' : '#64748b', cursor: 'pointer', fontWeight: '600' }} value={activeEventsSortOrder} onChange={(e) => { setActiveEventsSortOrder(e.target.value); setActiveEventsSortId(""); setCurrentPage(1); }}>
                 <option value="desc">Más recientes primero</option>
                 <option value="asc">Menos recientes primero</option>
               </select>
             </div>
+
+            {/* Botón Filtro ID */}
+            <button 
+              type="button"
+              onClick={() => {
+                const nextSort = activeEventsSortId === "" ? "desc" : activeEventsSortId === "desc" ? "asc" : "";
+                setActiveEventsSortId(nextSort);
+                setCurrentPage(1);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: activeEventsSortId !== "" ? '#eff6ff' : '#ffffff',
+                border: `1px solid ${activeEventsSortId !== "" ? '#bfdbfe' : '#e2e8f0'}`,
+                borderRadius: '8px', padding: '7px 14px',
+                color: activeEventsSortId !== "" ? '#1d4ed8' : '#64748b',
+                fontWeight: '600', fontSize: '13px', cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => { if(activeEventsSortId === "") e.currentTarget.style.background = '#f8fafc' }}
+              onMouseLeave={e => { if(activeEventsSortId === "") e.currentTarget.style.background = '#ffffff' }}
+            >
+              <span style={{ fontWeight: '800', fontSize: '14px', color: activeEventsSortId !== "" ? '#3b82f6' : '#94a3b8' }}>#</span>
+              {activeEventsSortId === "" ? "Ordenar por ID" : activeEventsSortId === "desc" ? "ID: Mayor a Menor ↓" : "ID: Menor a Mayor ↑"}
+            </button>
           </div>
         </div>
         <div className="panel-body" style={{ padding: '0' }}>
@@ -658,18 +695,19 @@ function DashboardResponsable({ usuario, setActiveTab }) {
               <p>No hay eventos activos en este momento.</p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    {['Evento', 'Fecha Inicio', 'Recinto', 'Modalidad', 'Asistentes', 'Estado'].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {eventosActivos.map((evt, idx) => (
-                    <tr key={evt.id_evento} onClick={() => openModal(evt)} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? 'white' : '#fafbfc', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      {['Evento', 'Fecha Inicio', 'Recinto', 'Modalidad', 'Asistentes', 'Estado'].map(h => (
+                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentEventosActivos.map((evt, idx) => (
+                      <tr key={evt.id_evento} onClick={() => openModal(evt)} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? 'white' : '#fafbfc', cursor: 'pointer' }}>
                       <td style={{ padding: '12px 16px' }}>
                         <div>
                           <p style={{ margin: 0, fontWeight: '600', color: '#1e293b' }}>#{evt.id_evento} · {evt.nombre}</p>
@@ -704,6 +742,31 @@ function DashboardResponsable({ usuario, setActiveTab }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: currentPage === 1 ? '#f1f5f9' : 'white', color: currentPage === 1 ? '#94a3b8' : '#475569', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s' }}
+                >
+                  Anterior
+                </button>
+                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
+                  Página <strong style={{ color: '#0f172a' }}>{currentPage}</strong> de {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: currentPage === totalPages ? '#f1f5f9' : 'white', color: currentPage === totalPages ? '#94a3b8' : '#475569', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s' }}
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
             </div>
           )}
         </div>
