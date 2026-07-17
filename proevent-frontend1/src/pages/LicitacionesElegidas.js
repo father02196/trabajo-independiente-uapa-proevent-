@@ -73,8 +73,8 @@ export default function LicitacionesElegidas() {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando historial...</div>
           ) : (
-            <div className="table-responsive" style={{ padding: '0 22px 22px 22px' }}>
-              <table className="modern-table" style={{ width: '100%', fontSize: '13px' }}>
+            <div className="table-responsive" style={{ padding: '0 22px 22px 22px', overflowX: 'auto' }}>
+              <table className="modern-table" style={{ width: '100%', minWidth: '1300px', fontSize: '13px', whiteSpace: 'nowrap' }}>
                 <thead>
                   <tr>
                     <th>Fecha Evento</th>
