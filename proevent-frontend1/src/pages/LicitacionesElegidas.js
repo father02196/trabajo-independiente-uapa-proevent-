@@ -83,15 +83,8 @@ export default function LicitacionesElegidas() {
 
   const exportarPDF = () => {
     try {
-      const tableDiv = document.getElementById('tabla-licitaciones');
-      if (!tableDiv) return toast.error('No se pudo encontrar la tabla.');
-      
-      const cloneDiv = tableDiv.cloneNode(true);
-      cloneDiv.style.overflowX = 'visible';
-      cloneDiv.style.width = 'max-content';
-      cloneDiv.style.position = 'absolute';
-      cloneDiv.style.left = '-9999px';
-      document.body.appendChild(cloneDiv);
+      const element = document.getElementById('tabla-licitaciones');
+      if (!element) return toast.error('No se pudo encontrar la tabla.');
       
       const opt = {
         margin:       10,
@@ -101,8 +94,7 @@ export default function LicitacionesElegidas() {
         jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' }
       };
       
-      html2pdf().set(opt).from(cloneDiv).save().then(() => {
-        document.body.removeChild(cloneDiv);
+      html2pdf().set(opt).from(element).save().then(() => {
         toast.success('PDF exportado correctamente');
       });
     } catch (error) {
@@ -177,8 +169,8 @@ export default function LicitacionesElegidas() {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando historial...</div>
           ) : (
-            <div id="tabla-licitaciones" className="table-responsive" style={{ padding: '0 22px 22px 22px', overflowX: 'auto', background: '#fff' }}>
-              <table className="modern-table" style={{ width: '100%', minWidth: '1150px', fontSize: '13px', whiteSpace: 'nowrap' }}>
+            <div className="table-responsive" style={{ padding: '0 22px 22px 22px', overflowX: 'auto', background: '#fff' }}>
+              <table id="tabla-licitaciones" className="modern-table" style={{ width: '100%', minWidth: '1150px', fontSize: '13px', whiteSpace: 'nowrap' }}>
                 <thead>
                   <tr>
                     <th>Fecha Evento</th>
