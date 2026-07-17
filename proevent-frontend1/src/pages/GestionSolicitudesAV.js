@@ -12,8 +12,8 @@ import { createPortal } from "react-dom";
 import { FiEye, FiMonitor, FiFileText, FiCheckCircle, FiRefreshCw, FiFilter, FiSearch, FiUser, FiChevronDown } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
-// --- COMPONENTE SELECTOR DE ESTADOS PREMIUM (Diseño Minimalista Institucional) ---
-const CustomBadgeDropdown = ({ currentStatus, onChange }) => {
+// --- COMPONENTE SELECTOR DE ESTADOS (Muestra todos, bloquea los inválidos) ---
+const CustomBadgeDropdown = ({ currentStatus, onChange, ...props }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const dropdownRef = useRef(null);
@@ -28,73 +28,123 @@ const CustomBadgeDropdown = ({ currentStatus, onChange }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Tonos pastel sutiles, institucionales y sin íconos según requerimiento
-  const config = {
-    "Pendiente": { bg: "#f8fafc", text: "#475569", border: "#e2e8f0" }, // Gris pizarra muy sutil y limpio
-    "En revisión": { bg: "#dbeafe", text: "#1e3a8a", border: "#bfdbfe" }, // Azul pastel
-    "Aprobado": { bg: "#dcfce7", text: "#166534", border: "#bbf7d0" }, // Verde pastel
-    "Rechazado": { bg: "#fee2e2", text: "#991b1b", border: "#fecaca" }, // Rojo pastel
-    "Completado": { bg: "#f3f4f6", text: "#374151", border: "#e5e7eb" }, // Gris institucional neutro
+  // Todos los estados del sistema con sus colores
+  const ESTADOS = [
+    { key: "Pendiente",   bg: "#fefce8", text: "#854d0e", border: "#fde047", dot: "#eab308" },
+    { key: "En revisión", bg: "#dbeafe", text: "#1e3a8a", border: "#93c5fd", dot: "#3b82f6" },
+    { key: "Aprobado",    bg: "#dcfce7", text: "#166534", border: "#86efac", dot: "#22c55e" },
+    { key: "Entregado",   bg: "#f0fdf4", text: "#15803d", border: "#bbf7d0", dot: "#16a34a" },
+    { key: "Rechazado",   bg: "#fee2e2", text: "#991b1b", border: "#fca5a5", dot: "#ef4444" },
+  ];
+
+  // Transiciones permitidas por estado actual
+  const TRANSICIONES = {
+    "Pendiente":   ["En revisión", "Rechazado"],
+    "En revisión": ["Aprobado", "Rechazado"],
+    "Aprobado":    ["Entregado", "Rechazado"],
+    "Entregado":   [],
+    "Rechazado":   ["En revisión"], // Reabrir
   };
 
-  const getConf = (st) => config[st] || config["Pendiente"];
+  const permitidas = TRANSICIONES[currentStatus] || [];
+  const esTerminal = permitidas.length === 0;
+  const confActual = ESTADOS.find(e => e.key === currentStatus) || ESTADOS[0];
 
   const handleSelect = async (st) => {
-    if (st === currentStatus) {
-      setIsOpen(false);
-      return;
-    }
     setIsOpen(false);
+    if (!permitidas.includes(st)) return;
     setIsUpdating(true);
-    try {
-      await onChange(st);
-    } finally {
-      setIsUpdating(false);
-    }
+    try { await onChange(st); }
+    finally { setIsUpdating(false); }
   };
 
+  // Estado terminal o readOnly: solo badge estático
+  if (esTerminal || props.readOnly) {
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600',
+        backgroundColor: confActual.bg, color: confActual.text,
+        border: `1px solid ${confActual.border}`, userSelect: 'none'
+      }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: confActual.dot, display: 'inline-block' }} />
+        {currentStatus}
+      </span>
+    );
+  }
+
   return (
-    <div className="custom-badge-wrapper" ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
-      <button 
+    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Botón principal — muestra el estado actual */}
+      <button
         type="button"
         onClick={() => !isUpdating && setIsOpen(!isOpen)}
         disabled={isUpdating}
         style={{
-          display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px',
-          backgroundColor: getConf(currentStatus).bg, color: getConf(currentStatus).text,
-          border: `1px solid ${getConf(currentStatus).border}`, borderRadius: '6px',
-          fontSize: '12px', fontWeight: '600', cursor: isUpdating ? 'wait' : 'pointer', 
-          transition: 'all 0.2s ease', minWidth: '110px', justifyContent: 'space-between',
-          opacity: isUpdating ? 0.7 : 1, boxShadow: 'none'
+          display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 10px',
+          backgroundColor: confActual.bg, color: confActual.text,
+          border: `1px solid ${confActual.border}`, borderRadius: '6px',
+          fontSize: '12px', fontWeight: '600', cursor: isUpdating ? 'wait' : 'pointer',
+          transition: 'all 0.2s', minWidth: '130px', justifyContent: 'space-between',
+          opacity: isUpdating ? 0.6 : 1,
         }}
       >
-        <span>{currentStatus}</span>
-        <FiChevronDown size={14} style={{ opacity: 0.6, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: confActual.dot, flexShrink: 0, display: 'inline-block' }} />
+          {isUpdating ? 'Guardando...' : currentStatus}
+        </span>
+        <FiChevronDown size={13} style={{ opacity: 0.5, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
       </button>
 
+      {/* Panel con TODOS los estados */}
       {isOpen && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 100,
-          backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px',
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', minWidth: '100%',
-          padding: '4px', display: 'flex', flexDirection: 'column', gap: '2px',
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 1000,
+          backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.12)', minWidth: '190px',
+          padding: '6px', display: 'flex', flexDirection: 'column', gap: '3px',
         }}>
-          {Object.keys(config).map((st) => (
-            <div 
-              key={st}
-              onClick={() => handleSelect(st)}
-              style={{
-                padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500',
-                color: '#475569', transition: 'background 0.15s ease',
-                backgroundColor: currentStatus === st ? '#f8fafc' : 'transparent',
-                textAlign: 'left'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = getConf(st).bg; e.currentTarget.style.color = getConf(st).text; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = currentStatus === st ? '#f8fafc' : 'transparent'; e.currentTarget.style.color = '#475569'; }}
-            >
-              {st}
-            </div>
-          ))}
+          <div style={{ padding: '4px 8px 6px', fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #f1f5f9', marginBottom: '2px' }}>
+            Cambiar estado
+          </div>
+          {ESTADOS.map(({ key, bg, text, border, dot }) => {
+            const esCurrent  = key === currentStatus;
+            const esValida   = permitidas.includes(key);
+            const deshabilitada = !esValida && !esCurrent;
+
+            return (
+              <div
+                key={key}
+                onClick={() => !deshabilitada && !esCurrent && handleSelect(key)}
+                title={deshabilitada ? `No se puede pasar de "${currentStatus}" a "${key}" directamente` : ''}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '7px 10px', borderRadius: '7px', fontSize: '12px', fontWeight: '600',
+                  cursor: deshabilitada || esCurrent ? 'not-allowed' : 'pointer',
+                  backgroundColor: deshabilitada ? '#f8fafc' : bg,
+                  color: deshabilitada ? '#cbd5e1' : text,
+                  border: `1px solid ${deshabilitada ? '#e2e8f0' : border}`,
+                  opacity: deshabilitada ? 0.5 : 1,
+                  transition: 'opacity 0.15s',
+                }}
+                onMouseEnter={(e) => { if (!deshabilitada && !esCurrent) e.currentTarget.style.opacity = '0.75'; }}
+                onMouseLeave={(e) => { if (!deshabilitada && !esCurrent) e.currentTarget.style.opacity = '1'; }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: deshabilitada ? '#cbd5e1' : dot, display: 'inline-block', flexShrink: 0 }} />
+                  {key}
+                </span>
+                {esCurrent && (
+                  <span style={{ fontSize: '10px', fontWeight: '700', backgroundColor: text, color: '#fff', borderRadius: '4px', padding: '1px 6px' }}>
+                    Actual
+                  </span>
+                )}
+                {deshabilitada && (
+                  <span style={{ fontSize: '10px', color: '#cbd5e1' }}>🔒</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -133,6 +183,9 @@ export default function GestionSolicitudesAV({ usuario }) {
       const res = await fetch(`${API}/audiovisual?t=${new Date().getTime()}`, { headers: { 'Cache-Control': 'no-cache' } });
       const data = await res.json();
       if (Array.isArray(data)) {
+        // Prioridad de estado del grupo: Pendiente > En revisión > Aprobado > Entregado > Rechazado
+        // Si cualquier equipo está en Pendiente, el grupo completo aparece como Pendiente
+        const prioridad = { 'Pendiente': 1, 'En revisión': 2, 'Aprobado': 3, 'Entregado': 4, 'Rechazado': 5 };
         const agrupadas = Object.values(data.reduce((acc, req) => {
           if (!acc[req.id_evento]) {
             acc[req.id_evento] = {
@@ -140,10 +193,18 @@ export default function GestionSolicitudesAV({ usuario }) {
               nombre_evento: req.nombre_evento,
               fecha_evento: req.fecha_evento,
               nombre_usuario: req.nombre_usuario || "—",
-              estado_av: req.estado_av,
+              estado_av: req.estado_av || 'Pendiente',
               equipos: [],
               total_equipos: 0
             };
+          } else {
+            // El estado del grupo es el de menor prioridad (más pendiente) entre todos sus equipos
+            const estadoActualGrupo = acc[req.id_evento].estado_av;
+            const prioActual = prioridad[estadoActualGrupo] || 99;
+            const prioNuevo  = prioridad[req.estado_av]   || 99;
+            if (prioNuevo < prioActual) {
+              acc[req.id_evento].estado_av = req.estado_av || 'Pendiente';
+            }
           }
           acc[req.id_evento].equipos.push({
             id_servicio: req.id_servicio,
@@ -154,7 +215,6 @@ export default function GestionSolicitudesAV({ usuario }) {
             estado_av: req.estado_av
           });
           acc[req.id_evento].total_equipos += 1;
-          if (req.estado_av === "Pendiente") acc[req.id_evento].estado_av = "Pendiente";
           return acc;
         }, {}));
         setSolicitudesAV(agrupadas);
@@ -190,33 +250,63 @@ export default function GestionSolicitudesAV({ usuario }) {
     }
   };
 
-  // --- FUNCIÓN: handleCambiarEstado ---
+  // --- FUNCIÓN: handleCambiarEstado (Sincronización DB) ---
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
-    // 1. Optimistic Update: Cambiamos el estado visualmente al instante
-    setSolicitudesAV(prev => prev.map(av => 
+    const solicitud = solicitudesAV.find(s => s.id_evento === id_evento);
+    const estadoActual = solicitud ? solicitud.estado_av : "Pendiente";
+
+    // Validaciones de flujo estricto por si acaso (el componente visual ya lo restringe)
+    if (nuevoEstado !== "Rechazado") {
+      if (estadoActual === "Pendiente" && nuevoEstado !== "En revisión") {
+        toast.error(`Transición inválida. De "Pendiente" solo puede pasar a "En revisión".`);
+        return;
+      }
+      if (estadoActual === "En revisión" && nuevoEstado !== "Aprobado") {
+        toast.error(`Transición inválida. De "En revisión" solo puede pasar a "Aprobado".`);
+        return;
+      }
+      if (estadoActual === "Aprobado" && nuevoEstado !== "Entregado") {
+        toast.error(`Transición inválida. De "Aprobado" solo puede pasar a "Entregado".`);
+        return;
+      }
+      if (estadoActual === "Entregado") {
+        toast.error("El equipo ya fue entregado y no puede cambiar de estado.");
+        return;
+      }
+    } else if (nuevoEstado === "En revisión" && estadoActual !== "Rechazado" && estadoActual !== "Pendiente") {
+      toast.error(`Transición inválida.`);
+      return;
+    }
+
+    const confirmar = window.confirm(`¿Estás seguro de que deseas cambiar el estado de "${estadoActual}" a "${nuevoEstado}" para el evento #${id_evento}?`);
+    if (!confirmar) return;
+
+    // 1. Optimistic Update visual al instante
+    setSolicitudesAV(prev => prev.map(av =>
       av.id_evento === id_evento ? { ...av, estado_av: nuevoEstado } : av
     ));
 
     try {
       const res = await fetch(`${API}/audiovisual/evento/${id_evento}/estado`, {
         method: "PUT",
+        credentials: "include",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${usuario?.token || ""}`, "x-usuario-id": usuario?.id_usuario || ""
+          "x-usuario-id": usuario?.id_usuario || ""
         },
         body: JSON.stringify({ estado: nuevoEstado })
       });
+      const body = await res.json();
       if (res.ok) {
-        toast.success(`Estado actualizado a ${nuevoEstado}`);
-        // 2. Sincronización en background
-        cargarSolicitudesAV().catch(()=>{});
+        toast.success(`Estado actualizado a "${nuevoEstado}"`);
+        cargarSolicitudesAV().catch(() => {});
       } else {
-        toast.error("Error al cambiar el estado.");
-        cargarSolicitudesAV().catch(()=>{}); 
+        toast.error(body?.mensaje || "Error al cambiar el estado.");
+        cargarSolicitudesAV().catch(() => {});
       }
     } catch {
       toast.error("No se pudo conectar al servidor.");
-      cargarSolicitudesAV().catch(()=>{}); 
+      cargarSolicitudesAV().catch(() => {});
     }
   };
 
@@ -388,7 +478,8 @@ export default function GestionSolicitudesAV({ usuario }) {
                 <td>
                   <CustomBadgeDropdown 
                     currentStatus={av.estado_av || "Pendiente"} 
-                    onChange={(nuevoEstado) => handleCambiarEstado(av.id_evento, nuevoEstado)} 
+                    onChange={(nuevoEstado) => handleCambiarEstado(av.id_evento, nuevoEstado)}
+                    readOnly={!(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual" || usuario?.rol === "Administrador de Audiovisual")}
                   />
                 </td>
                 <td style={{ textAlign: 'center' }}>

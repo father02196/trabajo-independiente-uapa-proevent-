@@ -89,11 +89,12 @@ export default function Audiovisual({ usuario }) {
   // Obtiene los detalles técnicos (muchas filas) y los agrupa por Evento
   // para mostrarlos en la tabla inferior del dashboard técnico.
   const cargarSolicitudesAV = () => {
-    fetch(`${API}/audiovisual`)
+    fetch(`${API}/audiovisual?t=${new Date().getTime()}`, { headers: { 'Cache-Control': 'no-cache' } })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          // Agrupa múltiples registros de equipos bajo el mismo id_evento
+          // Prioridad de estado: Pendiente > En revisión > Aprobado > Entregado > Rechazado
+          const prioridad = { 'Pendiente': 1, 'En revisión': 2, 'Aprobado': 3, 'Entregado': 4, 'Rechazado': 5 };
           const agrupadas = Object.values(data.reduce((acc, req) => {
             if (!acc[req.id_evento]) {
               acc[req.id_evento] = {
@@ -101,10 +102,17 @@ export default function Audiovisual({ usuario }) {
                 nombre_evento: req.nombre_evento,
                 fecha_evento: req.fecha_evento,
                 nombre_usuario: req.nombre_usuario || "—",
-                estado_av: req.estado_av,
+                estado_av: req.estado_av || 'Pendiente',
                 equipos: [],
                 total_equipos: 0
               };
+            } else {
+              // El estado del grupo refleja el de menor avance entre todos sus equipos
+              const prioActual = prioridad[acc[req.id_evento].estado_av] || 99;
+              const prioNuevo  = prioridad[req.estado_av] || 99;
+              if (prioNuevo < prioActual) {
+                acc[req.id_evento].estado_av = req.estado_av || 'Pendiente';
+              }
             }
             acc[req.id_evento].equipos.push({
               id_servicio: req.id_servicio,
@@ -115,8 +123,6 @@ export default function Audiovisual({ usuario }) {
               estado_av: req.estado_av
             });
             acc[req.id_evento].total_equipos += 1;
-            // Si algún equipo está Pendiente, marcar todo el evento como Pendiente
-            if (req.estado_av === 'Pendiente') acc[req.id_evento].estado_av = 'Pendiente';
             return acc;
           }, {}));
           setSolicitudesAV(agrupadas);
@@ -128,18 +134,53 @@ export default function Audiovisual({ usuario }) {
   };
 
   // --- FUNCIÓN: handleCambiarEstado (Vista Admin AV) ---
-  // Cambia el estado (Aprobado/Rechazado) de la solicitud AV de un evento
+  // Cambia el estado de la solicitud AV con validación de flujo estricto:
+  // Pendiente → En revisión → Aprobado → Entregado
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
+    const solicitud = solicitudesAV.find(s => s.id_evento === id_evento);
+    const estadoActual = solicitud ? solicitud.estado_av : 'Pendiente';
+
+    if (nuevoEstado !== 'Rechazado') {
+      if (estadoActual === 'Pendiente' && nuevoEstado !== 'En revisión') {
+        alert(`Transición inválida. De "Pendiente" solo puede pasar a "En revisión".`);
+        return;
+      }
+      if (estadoActual === 'En revisión' && nuevoEstado !== 'Aprobado') {
+        alert(`Transición inválida. De "En revisión" solo puede pasar a "Aprobado".`);
+        return;
+      }
+      if (estadoActual === 'Aprobado' && nuevoEstado !== 'Entregado') {
+        alert(`Transición inválida. De "Aprobado" solo puede pasar a "Entregado".`);
+        return;
+      }
+      if (estadoActual === 'Entregado') {
+        alert('El equipo ya fue entregado y no puede cambiar de estado.');
+        return;
+      }
+    }
+
+    // Optimistic update visual
+    setSolicitudesAV(prev => prev.map(av =>
+      av.id_evento === id_evento ? { ...av, estado_av: nuevoEstado } : av
+    ));
+
     try {
       const res = await fetch(`${API}/audiovisual/evento/${id_evento}/estado`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json", "x-usuario-id": usuario?.id_usuario || "" },
         body: JSON.stringify({ estado: nuevoEstado })
       });
-      if (res.ok) cargarSolicitudesAV();
-      else alert("Error al cambiar el estado.");
+      const body = await res.json();
+      if (res.ok) {
+        cargarSolicitudesAV();
+      } else {
+        alert(body?.mensaje || "Error al cambiar el estado.");
+        cargarSolicitudesAV(); // Revertir al estado real
+      }
     } catch {
       alert("No se pudo conectar al servidor.");
+      cargarSolicitudesAV();
     }
   };
 
@@ -414,18 +455,52 @@ export default function Audiovisual({ usuario }) {
                       <span className="badge badge-slate">{av.total_equipos} equipo(s)</span>
                     </td>
                     <td>
-                      <select
-                        className="input-base"
-                        value={av.estado_av || "Pendiente"}
-                        onChange={(e) => handleCambiarEstado(av.id_evento, e.target.value)}
-                        style={{ padding: '6px 12px', fontSize: '13px', width: 'auto', minWidth: '130px' }}
-                      >
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="En revisión">En revisión</option>
-                        <option value="Aprobado">Aprobado</option>
-                        <option value="Rechazado">Rechazado</option>
-                        <option value="Completado">Completado</option>
-                      </select>
+                      {(() => {
+                        const estadoActual = av.estado_av || 'Pendiente';
+                        const transiciones = {
+                          'Pendiente':   ['En revisión', 'Rechazado'],
+                          'En revisión': ['Aprobado', 'Rechazado'],
+                          'Aprobado':    ['Entregado', 'Rechazado'],
+                          'Entregado':   [],
+                          'Rechazado':   [],
+                        };
+                        const colores = {
+                          'Pendiente':   { bg: '#fefce8', text: '#854d0e', border: '#fde047' },
+                          'En revisión': { bg: '#dbeafe', text: '#1e3a8a', border: '#93c5fd' },
+                          'Aprobado':    { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+                          'Rechazado':   { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' },
+                          'Entregado':   { bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0' },
+                        };
+                        const todosLosEstados = ['Pendiente', 'En revisión', 'Aprobado', 'Entregado', 'Rechazado'];
+                        const permitidas = transiciones[estadoActual] || [];
+                        const c = colores[estadoActual] || colores['Pendiente'];
+
+                        if (permitidas.length === 0) {
+                          return (
+                            <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
+                              {estadoActual}
+                            </span>
+                          );
+                        }
+                        return (
+                          <select
+                            className="input-base"
+                            value={estadoActual}
+                            onChange={(e) => handleCambiarEstado(av.id_evento, e.target.value)}
+                            style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '600', width: 'auto', minWidth: '140px', backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}`, borderRadius: '6px' }}
+                          >
+                            {todosLosEstados.map(op => (
+                              <option
+                                key={op}
+                                value={op}
+                                disabled={op !== estadoActual && !permitidas.includes(op)}
+                              >
+                                {op === estadoActual ? `✓ ${op}` : op}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => openModal(av)}>
