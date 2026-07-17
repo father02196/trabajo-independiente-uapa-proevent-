@@ -10,10 +10,16 @@ export default function LicitacionesElegidas() {
   const [licitaciones, setLicitaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   useEffect(() => {
     cargarLicitaciones();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const cargarLicitaciones = async () => {
     setLoading(true);
@@ -39,6 +45,9 @@ export default function LicitacionesElegidas() {
     l.proveedor_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.numero_orden_compra?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filtradas.length / itemsPerPage);
+  const currentItems = filtradas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="admin-page-container fade-in">
@@ -74,7 +83,7 @@ export default function LicitacionesElegidas() {
             <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando historial...</div>
           ) : (
             <div className="table-responsive" style={{ padding: '0 22px 22px 22px', overflowX: 'auto' }}>
-              <table className="modern-table" style={{ width: '100%', minWidth: '1300px', fontSize: '13px', whiteSpace: 'nowrap' }}>
+              <table className="modern-table" style={{ width: '100%', minWidth: '1150px', fontSize: '13px', whiteSpace: 'nowrap' }}>
                 <thead>
                   <tr>
                     <th>Fecha Evento</th>
@@ -90,7 +99,7 @@ export default function LicitacionesElegidas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtradas.map(l => (
+                  {currentItems.map((l, idx) => (
                     <tr key={l.id_cotizacion}>
                       <td style={{ color: '#475569' }}>{formatearFecha(l.fecha_evento)}</td>
                       <td style={{ fontWeight: '500', color: '#0f172a' }}>
@@ -139,6 +148,28 @@ export default function LicitacionesElegidas() {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+          
+          {!loading && totalPages > 1 && (
+            <div className="pagination-container" style={{ padding: '15px 22px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="pagination-info" style={{ fontSize: '13px', color: '#64748B' }}>
+                Mostrando página <strong style={{ color: '#0F172A', fontWeight: 700 }}>{currentPage}</strong> de {totalPages} (Total: {filtradas.length})
+              </div>
+              <div className="pagination-controls" style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  className="btn btn-secondary btn-sm" 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(prev => prev - 1)}>
+                  Anterior
+                </button>
+                <button 
+                  className="btn btn-secondary btn-sm" 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(prev => prev + 1)}>
+                  Siguiente
+                </button>
+              </div>
             </div>
           )}
         </div>
