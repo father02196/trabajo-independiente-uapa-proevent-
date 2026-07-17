@@ -9,10 +9,12 @@
 // ============================================================
 
 // Importaciones de React y hooks necesarios
+// Importaciones de React y hooks necesarios
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 // Iconos de Feather Icons usados en la UI de los paneles y botones
-import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye, FiRefreshCw } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye, FiRefreshCw, FiEdit2 } from 'react-icons/fi';
 
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from 'react-hot-toast';
@@ -39,8 +41,7 @@ export default function FlujoAdministrativo({ usuario }) {
   const [legal, setLegal] = useState({ estado_legal: 'Pendiente', observacion_legal: '' }); // Estado del flujo legal
   const [cotizaciones, setCotizaciones] = useState([]);         // Cotizaciones B2B recibidas de proveedores
   const [documentos, setDocumentos] = useState([]);             // Documentos en la Bóveda Digital del evento
-  const [analisisIA, setAnalisisIA] = useState(null);           // Resultado del análisis de IA sobre cotizaciones
-  
+  const [analisisIAs, setAnalisisIAs] = useState({});           // Resultados del análisis de IA sobre cotizaciones (key: id_solicitud)
   // --- DETECCIÓN DE ROL DEL USUARIO ---
   // Determina qué paneles se muestran según el rol del usuario logueado.
   // isGeneralRole: muestra todo (para Administrador General o roles desconocidos)
@@ -59,6 +60,13 @@ export default function FlujoAdministrativo({ usuario }) {
   });
   const [loading, setLoading] = useState(false); // Indicador de carga al cambiar de evento
   const [recargandoEventos, setRecargandoEventos] = useState(false); // Indicador de recarga del selector
+  const [showHistorialModal, setShowHistorialModal] = useState(false); // Modal de historial global
+
+  // Nuevos estados para inserción por lotes en Órdenes de Compra
+  const [archivosPendientes, setArchivosPendientes] = useState({});
+  const [datosOCLocal, setDatosOCLocal] = useState({});
+  const [editMode, setEditMode] = useState({});
+  const [erroresCampos, setErroresCampos] = useState({});
 
   // --- FUNCIÓN: cargarEventos ---
   // Obtiene los eventos del backend relevantes para el flujo administrativo.
@@ -120,6 +128,23 @@ export default function FlujoAdministrativo({ usuario }) {
       setLegal(dataAdmin.legal);                    // Estado del dictamen legal
       setCotizaciones(dataAdmin.cotizaciones || []); // Lista de cotizaciones B2B
 
+      // Carga de análisis de IA previos desde la base de datos
+      if (dataAdmin.analisis_ia) {
+        const iaData = dataAdmin.analisis_ia.reduce((acc, curr) => {
+          try {
+            curr.matriz_comparativa = typeof curr.matriz_comparativa_json === 'string' 
+              ? JSON.parse(curr.matriz_comparativa_json) 
+              : curr.matriz_comparativa_json;
+          } catch(e) {}
+          curr.justificacion = curr.justificacion_ia;
+          acc[curr.id_solicitud] = curr;
+          return acc;
+        }, {});
+        setAnalisisIAs(iaData);
+      } else {
+        setAnalisisIAs({});
+      }
+
       // 2. Servicios externos del evento (para OC y control de contratos B2B)
       const resServ = await fetch(`${API}/servicios-externos-all`);
       const dataServ = await resServ.json();
@@ -178,7 +203,8 @@ export default function FlujoAdministrativo({ usuario }) {
     try {
       const res = await fetch(`${API}/api/documentos/upload`, {
         method: 'POST',
-        body: formData // No se pone Content-Type, el browser lo asigna con boundary automáticamente
+        headers: { 'x-usuario-id': usuario?.id_usuario || '' },
+        body: formData
       });
       const data = await res.json();
       if (res.ok) {
@@ -198,11 +224,14 @@ export default function FlujoAdministrativo({ usuario }) {
   // Solicita confirmación al usuario antes de proceder.
   // Usa DELETE en el endpoint /api/documentos/:id y luego recarga la lista.
   const archivarDocumento = async (id_documento) => {
-    if (!window.confirm('¿Seguro que deseas archivar este documento? Ya no será visible aquí.')) return;
+    if (!window.confirm('¿Seguro que deseas eliminar este documento? Ya no será visible en la bóveda.')) return;
     try {
-      const res = await fetch(`${API}/api/documentos/${id_documento}`, { method: 'DELETE' });
+      const res = await fetch(`${API}/api/documentos/${id_documento}`, { 
+        method: 'DELETE',
+        headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+      });
       if (res.ok) {
-        toast.success('Documento archivado');
+        toast.success('Documento eliminado exitosamente');
         cargarDocumentos(eventoSeleccionado.id_evento); // Refresca la lista de la bóveda
       }
     } catch (err) {
@@ -238,6 +267,156 @@ export default function FlujoAdministrativo({ usuario }) {
     }
   };
 
+  // --- FUNCIÓN: handleSelectFileLocal ---
+  // Guarda el archivo seleccionado en la memoria local (archivosPendientes) sin subirlo a la bóveda
+  const handleSelectFileLocal = (e, tipo, id_servicio_ext) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setArchivosPendientes(prev => ({
+      ...prev,
+      [id_servicio_ext]: {
+        ...(prev[id_servicio_ext] || {}),
+        [tipo]: file
+      }
+    }));
+  };
+
+  // --- FUNCIÓN: handleInsertarBoveda ---
+  // Valida que estén presentes los 4 campos (o los necesarios si es actualización) y 
+  // envía la metadata a la BD y los archivos a la bóveda.
+  const handleInsertarBoveda = async (s) => {
+    const id = s.id_servicio_ext;
+    const datos = datosOCLocal[id] || {};
+    const archivos = archivosPendientes[id] || {};
+
+    const num_oc = datos.numero_orden_compra !== undefined ? datos.numero_orden_compra : s.numero_orden_compra;
+    const req_contrato = datos.requiere_contrato !== undefined ? datos.requiere_contrato : s.requiere_contrato;
+    const id_cot_adj = datos.id_cotizacion_adjudicada !== undefined ? datos.id_cotizacion_adjudicada : s.id_cotizacion_adjudicada;
+
+    const isActualizacion = !!s.numero_orden_compra;
+
+    // Validación detallada de campos faltantes
+    const faltantes = [];
+    const camposError = [];
+
+    if (!id_cot_adj) {
+      faltantes.push('Cotización Ganadora');
+      camposError.push('id_cot_adj');
+    }
+    if (!num_oc || !num_oc.trim()) {
+      faltantes.push('Número de Orden de Compra (OC)');
+      camposError.push('num_oc');
+    }
+    if (!isActualizacion) {
+      if (!archivos['Cotizacion']) {
+        faltantes.push('PDF Cotización');
+        camposError.push('doc_cot');
+      }
+      if (!archivos['Orden de Compra']) {
+        faltantes.push('PDF OC Firmada');
+        camposError.push('doc_oc');
+      }
+    }
+
+    if (faltantes.length > 0) {
+      setErroresCampos(prev => ({ ...prev, [id]: camposError }));
+      const msg = "Por favor, rellene los campos que faltan:\n• " + faltantes.join("\n• ");
+      return toast.error(msg, { style: { whiteSpace: 'pre-line', textAlign: 'left', minWidth: '300px' } });
+    }
+
+    // Si pasamos la validación, limpiamos cualquier error visual
+    setErroresCampos(prev => ({ ...prev, [id]: [] }));
+
+    const loadToast = toast.loading(isActualizacion ? 'Actualizando Bóveda...' : 'Insertando en Bóveda...');
+    
+    try {
+      // Función auxiliar para normalizar texto (elimina acentos, espacios extra y pasa a minúsculas)
+      const normalizeStr = (str) => {
+        if (!str) return '';
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+      };
+
+      // 1. Guardar cambios en base de datos usando axios
+      await axios.put(`${API}/api/servicio_externo/${id}/admin`, {
+        numero_orden_compra: num_oc,
+        requiere_contrato: req_contrato ? 1 : 0,
+        id_cotizacion_adjudicada: id_cot_adj
+      }, {
+        headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+      });
+
+      // 2. Si es actualización, archivar documentos viejos que están siendo reemplazados
+      if (isActualizacion) {
+        const docsToArchive = [];
+        const normOcBusqueda = normalizeStr(s.numero_orden_compra);
+
+        if (archivos['Cotizacion']) {
+           const doc = documentos.find(d => normalizeStr(d.numero_orden_compra) === normOcBusqueda && normalizeStr(d.tipo_documento) === 'cotizacion');
+           if (doc) docsToArchive.push(doc.id_documento);
+        }
+        if (archivos['Orden de Compra']) {
+           const doc = documentos.find(d => normalizeStr(d.numero_orden_compra) === normOcBusqueda && normalizeStr(d.tipo_documento) === 'orden de compra');
+           if (doc) docsToArchive.push(doc.id_documento);
+        }
+        
+        for (const id_doc of docsToArchive) {
+           await axios.delete(`${API}/api/documentos/${id_doc}`, { 
+             headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+           });
+        }
+      }
+
+      // 3. Subir archivos si los hay usando axios
+      const uploadPromises = [];
+      const subir = async (file, tipo) => {
+        const formData = new FormData();
+        formData.append('archivo', file);
+        formData.append('id_evento', eventoSeleccionado.id_evento);
+        formData.append('tipo_documento', tipo);
+        formData.append('id_usuario_subio', usuario?.id_usuario);
+        formData.append('numero_orden_compra', num_oc);
+
+        await axios.post(`${API}/api/documentos/upload`, formData, {
+          headers: { 
+            'x-usuario-id': usuario?.id_usuario || '',
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      };
+
+      if (archivos['Cotizacion']) uploadPromises.push(subir(archivos['Cotizacion'], 'Cotizacion'));
+      if (archivos['Orden de Compra']) uploadPromises.push(subir(archivos['Orden de Compra'], 'Orden de Compra'));
+
+      await Promise.all(uploadPromises);
+
+      toast.success(isActualizacion ? 'Orden de compra actualizada correctamente' : 'Insertado en bóveda exitosamente', { id: loadToast });
+      
+      // Limpiar archivos locales, limpiar datos y refrescar bóveda
+      setArchivosPendientes(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setDatosOCLocal(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setEditMode(prev => ({ ...prev, [id]: false })); // Salir de modo edición
+      
+      cargarDocumentos(eventoSeleccionado.id_evento);
+
+      // Refrescar estado local para que UI cambie a modo "Actualización" sin recargar la página entera
+      s.numero_orden_compra = num_oc;
+      s.requiere_contrato = req_contrato;
+      s.id_cotizacion_adjudicada = id_cot_adj;
+
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || err.response?.data?.mensaje || err.message || 'Error durante la inserción';
+      toast.error(errorMsg, { id: loadToast });
+    }
+  };
+
   // --- FUNCIÓN: guardarPresupuesto ---
   // DEPRECADA: El estado se gestiona automáticamente desde Gestión Presupuestaria.
 
@@ -254,7 +433,7 @@ export default function FlujoAdministrativo({ usuario }) {
       if (legal.estado_legal === 'Observado') {
         const res = await fetch(`${API}/api/legal/${eventoSeleccionado.id_evento}/observar`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
           body: JSON.stringify({ 
             id_usuario: usuario?.id_usuario, 
             comentario: legal.observacion_legal 
@@ -342,7 +521,7 @@ export default function FlujoAdministrativo({ usuario }) {
       const data = res.data;
       
       toast.success('Análisis completado', { id: loadToast });
-      setAnalisisIA(data.veredicto); // Guarda el veredicto de la IA para mostrarlo en la UI
+      setAnalisisIAs(prev => ({ ...prev, [id_solicitud]: data.veredicto })); // Guarda el veredicto de la IA para mostrarlo en la UI
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error de conexión con la IA', { id: loadToast });
     }
@@ -367,7 +546,9 @@ export default function FlujoAdministrativo({ usuario }) {
           </div>
           
           <div className="panel-body">
-            {Object.entries(cotizacionesAgrupadas).map(([id_solicitud, cotList]) => (
+            {Object.entries(cotizacionesAgrupadas).map(([id_solicitud, cotList]) => {
+              const analisis = analisisIAs[id_solicitud]; // Extrae el análisis específico de esta solicitud
+              return (
               <div key={id_solicitud} style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <strong style={{ color: '#1e293b', fontSize: '14.5px' }}>Solicitud de Cotización #{id_solicitud}</strong>
@@ -381,7 +562,7 @@ export default function FlujoAdministrativo({ usuario }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {cotList.map(c => {
                     const alerta = calcularAlertaVencimiento(c.fecha_vigencia);
-                    const isRecomendada = analisisIA?.proveedor_recomendado_id === c.id_proveedor;
+                    const isRecomendada = analisis?.proveedor_recomendado_id === c.id_proveedor;
                     return (
                       <div key={c.id_cotizacion} className={isRecomendada ? '' : 'modern-event-card'} style={isRecomendada ? { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f0fdf4', borderRadius: '12px', borderLeft: `4px solid #22c55e`, border: '1px solid #bbf7d0', boxShadow: '0 4px 12px rgba(34,197,94,0.1)' } : { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', flexDirection: 'row' }}>
                         <div>
@@ -407,10 +588,10 @@ export default function FlujoAdministrativo({ usuario }) {
                   })}
                 </div>
 
-                {analisisIA && cotList.some(c => c.id_proveedor === analisisIA.proveedor_recomendado_id) && (
+                {analisis && cotList.some(c => c.id_proveedor === analisis.proveedor_recomendado_id) && (
                   <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#fdf4ff', border: '1px solid #f5d0fe', borderRadius: '12px' }}>
                     <h5 style={{ color: '#86198f', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>✨ Veredicto de la IA</h5>
-                    <p style={{ fontSize: '13.5px', color: '#4a044e', marginBottom: '16px', lineHeight: '1.6' }}>{analisisIA.justificacion}</p>
+                    <p style={{ fontSize: '13.5px', color: '#4a044e', marginBottom: '16px', lineHeight: '1.6' }}>{analisis.justificacion}</p>
                     <table className="modern-table" style={{ width: '100%', fontSize: '13px', textAlign: 'left', borderCollapse: 'collapse', backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
                       <thead style={{ background: '#fae8ff' }}>
                         <tr>
@@ -420,7 +601,7 @@ export default function FlujoAdministrativo({ usuario }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {analisisIA.matriz_comparativa?.map((mat, i) => (
+                        {analisis.matriz_comparativa?.map((mat, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #fae8ff' }}>
                             <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#86198f' }}>{mat.proveedor}</td>
                             <td style={{ padding: '12px 16px', color: '#4a044e' }}>RD$ {mat.costo_normalizado_dop}</td>
@@ -432,7 +613,8 @@ export default function FlujoAdministrativo({ usuario }) {
                   </div>
                 )}
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       )}
@@ -457,7 +639,14 @@ export default function FlujoAdministrativo({ usuario }) {
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '16px' }}>
-              {servicios.map(s => (
+              {servicios.map(s => {
+                const isActualizacion = !!s.numero_orden_compra;
+                const isEditMode = editMode[s.id_servicio_ext];
+                const showInputs = !isActualizacion || isEditMode;
+                const archivos = archivosPendientes[s.id_servicio_ext] || {};
+                const errores = erroresCampos[s.id_servicio_ext] || [];
+                
+                return (
                 <div key={s.id_servicio_ext} style={{ border: '1px solid #e2e8f0', padding: '20px', borderRadius: '12px', background: '#f8fafc', transition: 'all 0.2s' }} className="hover:shadow-md">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <strong style={{ fontSize: '15px', color: '#1e293b' }}>{s.tipo_servicio} <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 'normal' }}>(ID: {s.id_servicio_ext})</span></strong>
@@ -465,45 +654,132 @@ export default function FlujoAdministrativo({ usuario }) {
                       {s.estado}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: '250px' }}>
-                      <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Cotización Ganadora:</label>
-                      <select 
-                        className="form-control-premium" 
-                        defaultValue={s.id_cotizacion_adjudicada || ''}
-                        onChange={(e) => guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, s.requiere_contrato, e.target.value)}
-                      >
-                        <option value="">-- Seleccionar --</option>
-                        {cotizaciones.map(c => (
-                          <option key={c.id_cotizacion} value={c.id_cotizacion}>
-                            {c.proveedor_nombre || `ID: ${c.id_cotizacion}`} — {c.moneda || 'DOP'} {c.monto_total_detectado}
-                          </option>
-                        ))}
-                      </select>
+
+                  {showInputs ? (
+                    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: '250px' }}>
+                        <label style={{ fontSize: '12.5px', fontWeight: '600', color: errores.includes('id_cot_adj') ? '#ef4444' : '#475569', display: 'block', marginBottom: '8px' }}>Cotización Ganadora:</label>
+                        <select 
+                          className="form-control-premium" 
+                          style={ errores.includes('id_cot_adj') ? { borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444' } : {} }
+                          defaultValue={s.id_cotizacion_adjudicada || ''}
+                          onChange={(e) => setDatosOCLocal(prev => ({...prev, [s.id_servicio_ext]: {...(prev[s.id_servicio_ext]||{}), id_cotizacion_adjudicada: e.target.value}}))}
+                        >
+                          <option value="">-- Seleccionar --</option>
+                          {cotizaciones.map(c => (
+                            <option key={c.id_cotizacion} value={c.id_cotizacion}>
+                              {c.proveedor_nombre || `ID: ${c.id_cotizacion}`} — {c.moneda || 'DOP'} {c.monto_total_detectado}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ flex: 1, minWidth: '250px' }}>
+                        <label style={{ fontSize: '12.5px', fontWeight: '600', color: errores.includes('num_oc') ? '#ef4444' : '#475569', display: 'block', marginBottom: '8px' }}>Número de Orden de Compra (OC):</label>
+                        <input 
+                          type="text" 
+                          className="form-control-premium" 
+                          style={ errores.includes('num_oc') ? { borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444' } : {} }
+                          defaultValue={s.numero_orden_compra || ''}
+                          onChange={(e) => setDatosOCLocal(prev => ({...prev, [s.id_servicio_ext]: {...(prev[s.id_servicio_ext]||{}), numero_orden_compra: e.target.value}}))}
+                          placeholder="Ej: OC-2026-001"
+                        />
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <label className="btn btn-secondary" style={{ 
+                            margin: 0, 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '6px', 
+                            transition: 'all 0.3s ease',
+                            border: errores.includes('doc_cot') ? '2px solid #ef4444' : (archivos['Cotizacion'] ? '1px solid #10b981' : undefined), 
+                            color: errores.includes('doc_cot') ? '#ef4444' : (archivos['Cotizacion'] ? '#047857' : undefined),
+                            background: archivos['Cotizacion'] ? '#ecfdf5' : undefined
+                          }}>
+                            {archivos['Cotizacion'] ? <FiCheckCircle color="#10b981" /> : <FiUpload />} Cotización
+                            <input type="file" style={{ display: 'none' }} onChange={(e) => handleSelectFileLocal(e, 'Cotizacion', s.id_servicio_ext)} />
+                          </label>
+                          <label className="btn btn-secondary" style={{ 
+                            margin: 0, 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '6px', 
+                            transition: 'all 0.3s ease',
+                            border: errores.includes('doc_oc') ? '2px solid #ef4444' : (archivos['Orden de Compra'] ? '1px solid #10b981' : undefined), 
+                            color: errores.includes('doc_oc') ? '#ef4444' : (archivos['Orden de Compra'] ? '#047857' : undefined),
+                            background: archivos['Orden de Compra'] ? '#ecfdf5' : undefined
+                          }}>
+                            {archivos['Orden de Compra'] ? <FiCheckCircle color="#10b981" /> : <FiUpload />} OC Firmada
+                            <input type="file" style={{ display: 'none' }} onChange={(e) => handleSelectFileLocal(e, 'Orden de Compra', s.id_servicio_ext)} />
+                          </label>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {isActualizacion && (
+                            <button 
+                              type="button" 
+                              onClick={() => setEditMode(prev => ({...prev, [s.id_servicio_ext]: false}))}
+                              style={{ 
+                                flex: 0.5,
+                                background: '#f1f5f9', 
+                                color: '#475569', 
+                                border: 'none', 
+                                padding: '10px', 
+                                borderRadius: '8px', 
+                                fontWeight: '600', 
+                                cursor: 'pointer'
+                              }}>
+                              Cancelar
+                            </button>
+                          )}
+                          <button 
+                            type="button" 
+                            onClick={() => handleInsertarBoveda(s)}
+                            style={{ 
+                              flex: 1, 
+                              background: isActualizacion ? '#f59e0b' : '#3b82f6', 
+                              color: '#fff', 
+                              border: 'none', 
+                              padding: '10px', 
+                              borderRadius: '8px', 
+                              fontWeight: '600', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px'
+                            }}>
+                            <FiCheckCircle /> {isActualizacion ? 'Actualizar en Bóveda' : 'Insertar en Bóveda'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ flex: 1, minWidth: '250px' }}>
-                      <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>Número de Orden de Compra (OC):</label>
-                      <input 
-                        type="text" 
-                        className="form-control-premium" 
-                        defaultValue={s.numero_orden_compra || ''}
-                        onBlur={(e) => guardarCambiosServicio(s.id_servicio_ext, e.target.value, s.requiere_contrato, s.id_cotizacion_adjudicada)}
-                        placeholder="Ej: OC-2026-001"
-                      />
+                  ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', gap: '24px' }}>
+                        <div>
+                          <span style={{ fontSize: '12px', color: '#64748b', display: 'block' }}>Número de OC Asignada</span>
+                          <strong style={{ color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}><FiCheckCircle /> {s.numero_orden_compra}</strong>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '12px', color: '#64748b', display: 'block' }}>Cotización Ganadora</span>
+                          <strong style={{ color: '#0f172a' }}>{cotizaciones.find(c => c.id_cotizacion == s.id_cotizacion_adjudicada)?.proveedor_nombre || `Cotización #${s.id_cotizacion_adjudicada}`}</strong>
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setEditMode(prev => ({...prev, [s.id_servicio_ext]: true}))}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                        <FiEdit2 /> Editar OC
+                      </button>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <label className="btn btn-secondary" style={{ margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FiUpload /> Cotización
-                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Cotizacion', s.numero_orden_compra)} />
-                      </label>
-                      <label className="btn btn-primary" style={{ margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#10b981', borderColor: '#10b981' }}>
-                        <FiUpload /> OC Firmada
-                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Orden de Compra', s.numero_orden_compra)} />
-                      </label>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
@@ -808,6 +1084,42 @@ export default function FlujoAdministrativo({ usuario }) {
 
         {eventoSeleccionado && (
           <div>
+            {/* BOTÓN EXCLUSIVO DEL ADMINISTRADOR GENERAL PARA ABRIR EL MODAL */}
+            {usuario?.rol === 'Administrador' && (
+              <div style={{ marginBottom: '24px', textAlign: 'right' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowHistorialModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '9px 18px',
+                    background: '#f8fafc',
+                    color: '#0f172a',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '13.5px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.borderColor = '#94a3b8';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                  }}
+                >
+                  <FiBriefcase size={16} color="#475569" />
+                  Historial De Licitaciones
+                </button>
+              </div>
+            )}
+
             {/* Tabs de Navegación Premium */}
             <div className="flujo-tabs-nav">
               {(isComprasRole || isGeneralRole) && (
@@ -865,6 +1177,79 @@ export default function FlujoAdministrativo({ usuario }) {
           </div>
         )}
       </div>
+
+      {/* MODAL HISTORIAL GLOBAL DE LICITACIONES */}
+      {showHistorialModal && usuario?.rol === 'Administrador' && ReactDOM.createPortal(
+        <div className="ia-modal-overlay fade-in" onClick={() => setShowHistorialModal(false)}>
+          <div className="ia-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            <div className="ia-modal-header" style={{ background: '#f8fafc', padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FiBriefcase /> Historial Global de Licitaciones
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Vista exclusiva de control y auditoría gerencial</p>
+              <button className="ia-modal-close" onClick={() => setShowHistorialModal(false)}>×</button>
+            </div>
+            <div className="ia-modal-body" style={{ padding: '0', maxHeight: '60vh', overflowY: 'auto' }}>
+              <table className="modern-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', margin: 0 }}>
+                <thead style={{ background: '#e2e8f0', position: 'sticky', top: 0, zIndex: 1 }}>
+                  <tr>
+                    <th style={{ padding: '12px 16px', color: '#334155', textAlign: 'left' }}>ID Cotización</th>
+                    <th style={{ padding: '12px 16px', color: '#334155', textAlign: 'left' }}>Proveedor</th>
+                    <th style={{ padding: '12px 16px', color: '#334155', textAlign: 'left' }}>Monto (DOP)</th>
+                    <th style={{ padding: '12px 16px', color: '#334155', textAlign: 'left' }}>Estado y Resoluciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cotizaciones.map(c => {
+                    const idSol = c.id_solicitud;
+                    const analisis = analisisIAs[idSol];
+                    const isRecomendada = analisis?.proveedor_recomendado_id === c.id_proveedor;
+                    const isSeleccionada = servicios.some(s => s.id_cotizacion_adjudicada === c.id_cotizacion);
+                    
+                    let colorFondo = 'transparent';
+                    let colorBorde = 'transparent';
+                    if (isRecomendada && isSeleccionada) {
+                      colorFondo = '#fdf4ff'; // Morado suave
+                      colorBorde = '#c026d3';
+                    } else if (isRecomendada) {
+                      colorFondo = '#f0fdf4'; // Verde
+                      colorBorde = '#22c55e';
+                    } else if (isSeleccionada) {
+                      colorFondo = '#eff6ff'; // Azul
+                      colorBorde = '#3b82f6';
+                    }
+
+                    return (
+                      <tr key={c.id_cotizacion} style={{ background: colorFondo, borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '12px 16px', borderLeft: colorBorde !== 'transparent' ? `4px solid ${colorBorde}` : '4px solid transparent' }}>#{c.id_cotizacion}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: '500', color: '#0f172a' }}>{c.proveedor_nombre}</td>
+                        <td style={{ padding: '12px 16px', color: '#475569' }}>RD$ {c.monto_total_detectado}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {isRecomendada && <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '4px', width: 'fit-content' }}>(Recomendada por la IA)</span>}
+                            {isSeleccionada && <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', background: '#dbeafe', padding: '2px 8px', borderRadius: '4px', width: 'fit-content' }}>(Seleccionada por el encargado)</span>}
+                            {!isRecomendada && !isSeleccionada && <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>Oferta Evaluada</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {cotizaciones.length === 0 && (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No hay licitaciones recibidas para este evento.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="ia-modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', background: '#f8fafc', borderRadius: '0 0 12px 12px' }}>
+              <button className="ia-btn-cancelar" onClick={() => setShowHistorialModal(false)}>Cerrar</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 }
