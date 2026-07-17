@@ -39,7 +39,7 @@ function MisTareasApoyo({ usuario }) {
     try {
       const res = await fetch(`${API}/cronograma/${id_actividad}/estado`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
         body: JSON.stringify({ estado: 'Completada' })
       });
       if (res.ok) cargarTareas();

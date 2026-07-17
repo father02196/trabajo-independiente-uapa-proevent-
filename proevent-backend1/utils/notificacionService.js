@@ -228,10 +228,13 @@ const notificarUmbralPOA = async (db, id_poa, porcentajeDisponible, crearNotific
         );
 
         // Registrar en bitácora para idempotencia
-        await queryAsync(
-            `INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (NULL, 'ALERTA_POA_20', ?)`,
-            [`Notificación generada por límite del 20% (POA ID: ${id_poa}).`]
-        );
+        const BitacoraService = require('../services/bitacora.service');
+        const { AUDIT_CRITICALITY } = require('../constants/bitacora.actions');
+        BitacoraService.auditSystem({
+            accion: { code: 'ALERTA_POA_20', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+            metadata: { cambios: { legacyDetalles: `Notificación generada por límite del 20% (POA ID: ${id_poa}).` } }
+        });
+
 
     } catch (error) {
         console.error('Error al notificar umbral POA:', error);

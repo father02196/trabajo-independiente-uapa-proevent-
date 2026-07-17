@@ -110,7 +110,10 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
 
   const confirmSubsanar = async () => {
     try {
-      const res = await fetch(`${API}/api/eventos/${eventoSubsanar.id_evento}/subsanar`, { method: 'PUT' });
+      const res = await fetch(`${API}/api/eventos/${eventoSubsanar.id_evento}/subsanar`, { 
+        method: 'PUT',
+        headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+      });
       if (res.ok) {
         toast.success("Evento subsanado y reenviado a revisión.");
         setModalSubsanar(false);
