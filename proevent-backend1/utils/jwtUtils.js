@@ -7,7 +7,15 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'secreto_refresh_mu
 // Generar Access Token (Tiempo de vida corto: 15 minutos)
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { id_usuario: user.id_usuario, rol: user.rol, correo: user.correo, nombre: user.nombre, token_version: user.token_version || 0 },
+    { 
+      id_usuario: user.id_usuario, 
+      id_rol: user.id_rol,
+      rol: user.rol, 
+      tipo_actor: user.id_proveedor ? 'PROVEEDOR' : 'INTERNO',
+      correo: user.correo, 
+      nombre: user.nombre, 
+      token_version: user.token_version || 0 
+    },
     JWT_SECRET,
     { expiresIn: '15m' }
   );
@@ -16,7 +24,15 @@ const generateAccessToken = (user) => {
 // Generar Refresh Token (Tiempo de vida largo: 7 días)
 const generateRefreshToken = (user) => {
   return jwt.sign(
-    { id_usuario: user.id_usuario, rol: user.rol, correo: user.correo, nombre: user.nombre, token_version: user.token_version || 0 },
+    { 
+      id_usuario: user.id_usuario, 
+      id_rol: user.id_rol,
+      rol: user.rol, 
+      tipo_actor: user.id_proveedor ? 'PROVEEDOR' : 'INTERNO',
+      correo: user.correo, 
+      nombre: user.nombre, 
+      token_version: user.token_version || 0 
+    },
     JWT_REFRESH_SECRET,
     { expiresIn: '7d' }
   );
