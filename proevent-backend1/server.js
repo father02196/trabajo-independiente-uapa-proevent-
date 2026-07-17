@@ -13,11 +13,16 @@ const { generateAccessToken, generateRefreshToken, verificarToken } = require('.
 const { procesarDescuentoPOA, reconciliarDescuentoPOA } = require('./utils/poaService'); // Servicio centralizado de actualización y notificación POA
 const bcrypt = require('bcryptjs'); // Librería de encriptación segura para contraseñas
 
+const BitacoraService = require('./services/bitacora.service');
+const { AUDIT_ACTIONS, AUDIT_CRITICALITY } = require('./constants/bitacora.actions');
+const requestIdMiddleware = require('./middlewares/requestId');
+
 // --- FUNCIÓN DE UTILIDAD ---
 // Elimina datos sensibles del objeto de usuario antes de enviarlo al cliente mediante construcción estricta
 function sanitizeUser(user) {
     return {
         id_usuario: user.id_usuario,
+        id_rol: user.id_rol,
         nombre: user.nombre,
         correo: user.correo,
         rol: user.rol || user.id_rol,
@@ -32,6 +37,15 @@ const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID); // Inicializa el client
 
 // --- CONFIGURACIÓN DEL SERVIDOR EXPRESS ---
 const app = express(); // Instancia un nuevo servidor Express
+
+const environment = process.env.NODE_ENV || 'development';
+if (environment === 'production') {
+  app.set('trust proxy', '10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16');
+} else {
+  app.set('trust proxy', 'loopback');
+}
+
+app.use(requestIdMiddleware);
 app.use(cors({ origin: 'http://localhost:3000', credentials: true })); // Habilitar CORS con envío de cookies
 app.use(express.json()); // Middleware global que parsea cualquier body JSON recibido en las peticiones entrantes
 app.use(cookieParser()); // Middleware para extraer cookies fácilmente en req.cookies
@@ -91,6 +105,17 @@ app.post('/api/documentos/upload', verificarToken, upload.single('archivo'), (re
   db.query('INSERT INTO documento_evento (id_evento, tipo_documento, numero_orden_compra, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?, ?)',
     [id_evento, tipo_documento, numero_orden_compra || null, req.file.originalname, ruta_archivo, id_usuario_subio || null], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+
+      const id_usuario = req.headers['x-usuario-id'] || req.user?.id || id_usuario_subio;
+      if (id_usuario) {
+        BitacoraService.auditBestEffort({
+          req,
+          accion: { code: 'SUBIDA_DOCUMENTO_BOVEDA', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+          metadata: { id_evento, tipo_documento, id_documento: result.insertId, numero_orden_compra },
+          actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
+        });
+      }
+
       res.json({ mensaje: 'Documento subido con éxito', id_documento: result.insertId, ruta_archivo });
     });
 });
@@ -103,12 +128,42 @@ app.get('/api/documentos/:id_evento', verificarToken, (req, res) => {
   });
 });
 
-app.delete('/api/documentos/:id_documento', verificarToken, (req, res) => {
-  // En lugar de borrar físicamente (por auditoría), marcamos como Archivado
-  db.query('UPDATE documento_evento SET estado = "Archivado" WHERE id_documento = ?', [req.params.id_documento], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ mensaje: 'Documento archivado' });
-  });
+app.delete('/api/documentos/:id_documento', verificarToken, async (req, res) => {
+  const poolPromise = req.app.locals.db.promise();
+  let connection;
+  let transactionStarted = false;
+  let responseSent = false;
+  const sendRes = (status, data) => { if (!responseSent) { res.status(status).json(data); responseSent = true; } };
+
+  try {
+    connection = await poolPromise.getConnection();
+    await connection.beginTransaction();
+    transactionStarted = true;
+
+    const { id_documento } = req.params;
+    const [docs] = await connection.query(`SELECT estado FROM documento_evento WHERE id_documento = ? FOR UPDATE`, [id_documento]);
+
+    if (docs.length === 0) { await connection.rollback(); return sendRes(404, { mensaje: 'No encontrado' }); }
+    if (docs[0].estado === 'Archivado') { await connection.rollback(); return sendRes(400, { mensaje: 'Ya archivado' }); }
+
+    const [updateResult] = await connection.query(`UPDATE documento_evento SET estado = 'Archivado' WHERE id_documento = ?`, [id_documento]);
+    if (updateResult.affectedRows === 0) throw new Error('AffectedRows 0');
+
+    await BitacoraService.auditCritical({
+      req, accion: AUDIT_ACTIONS.DOCUMENTO_ARCHIVADO,
+      metadata: { modulo: 'DOCUMENTOS', id_entidad: id_documento, cambios: { estadoAnterior: docs[0].estado, estadoNuevo: 'Archivado' } },
+      connection
+    });
+
+    await connection.commit();
+    sendRes(200, { mensaje: 'Archivado exitosamente' });
+
+  } catch (error) {
+    if (transactionStarted) try { await connection.rollback(); } catch(e){}
+    sendRes(500, { error: 'Fallo interno' });
+  } finally {
+    if (connection) try { connection.release(); } catch(e){}
+  }
 });
 
 // --- CONFIGURACIÓN DE LA BASE DE DATOS MÚLTIPLES-CONEXIONES (POOL) ---
@@ -124,6 +179,7 @@ const db = mysql.createPool({ // El Pool mantiene las conexiones vivas y las reu
   queueLimit: 0 // Sin límite en la cola de peticiones en espera (0 = infinito)
 });
 app.locals.db = db; // Exponer pool a los middlewares externos
+BitacoraService.init(db); // Inyectar dependencia central de persistencia al Servicio de Bitácora Empresarial
 
 // Prueba de la conexión inicial extrayendo un worker del pool de MySQL
 db.getConnection((err, connection) => {
@@ -204,28 +260,7 @@ function crearNotificacion({ id_usuario_destino = null, rol_destino = null, titu
   });
 }
 
-// Función reutilizable (Helper): Registra una acción administrativa o del sistema en la base de datos auditable (Bitácora)
-function registrarMovimiento(id_usuario, id_rol, accion, detalles = '') {
-  if (!id_usuario) return; // Validación de seguridad: no puede registrarse nada sin un responsable directo asociado (id_usuario)
 
-  // Sub-función interna (Closure) que realiza la inserción física real en la base de datos
-  const registrar = (id_usr, id_rl) => {
-    // Sentencia SQL insertando el log de forma parametrizada explícita (usando signaturas '?' para prevenir ataques de inyección SQL)
-    const sql = 'INSERT INTO bitacora_movimiento (id_usuario, id_rol, accion, detalles) VALUES (?, ?, ?, ?)';
-    db.query(sql, [id_usr, id_rl, accion, detalles], (err) => {
-      // Manejo silencioso de errores para garantizar que si falla la bitácora, NO derribe la petición en curso del usuario
-      if (err) console.error('Error registrando bitácora:', err);
-    });
-  };
-
-  if (!id_rol) { // Si la función padre fue llamada sin proveer un ID de rol, el sistema asume hacer una consulta extra para encontrarlo
-    db.query('SELECT id_rol FROM usuario WHERE id_usuario = ?', [id_usuario], (err, res) => {
-      if (!err && res.length > 0) registrar(id_usuario, res[0].id_rol); // Una vez obtenido de la base de datos, ejecuta el insert interno asincrónico
-    });
-  } else {
-    registrar(id_usuario, id_rol); // Si la información requerida ya estaba provista plenamente, la registra de manera inmediata y sincrónica
-  }
-}
 
 // --- PROCESOS EN SEGUNDO PLANO (CRON JOBS SIMULADOS) ---
 // ── AUTO-FINALIZACIÓN DE EVENTOS ─────────────────────────
@@ -270,12 +305,11 @@ function autoFinalizarEventos() {
         eventos.forEach(e => {
           if (e.id_usuario) { // Garantiza seguridad asegurando que genuinamente existió en el row el ID del originado humano
             notificarAutoFinalizacion(db, e.id_evento, e.nombre, e.id_usuario, crearNotificacion).then(count => {
-              registrarMovimiento(
-                e.id_usuario, // Culpabilidad técnica virtual auto-asignable como creador del originante inicial
-                null, // Rol es null forzando auto-resolver el callback helper db para leer su row 
-                'AUTO_FINALIZACION_EVENTO', // Bandera unívoca clave sobre operación computacional sistemática programada
-                `El evento "${e.nombre}" (ID: ${e.id_evento}) fue auto-finalizado. Se generaron ${count} notificaciones para los departamentos y roles correspondientes.` // Relato traducido plenamente legible a usuario corriente en la tabla visual de las bitácoras
-              );
+              BitacoraService.auditBestEffort({
+                accion: AUDIT_ACTIONS.AUTO_FINALIZACION_EVENTO,
+                metadata: { id_entidad: e.id_evento, cambios: { notificaciones_generadas: count } },
+                actorOverride: { tipo_actor: 'SISTEMA' }
+              });
             });
           }
         });
@@ -295,7 +329,7 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
   if (!correo || !contrasena) return res.status(400).json({ mensaje: 'Faltan credenciales' });
 
   db.query(
-    `SELECT u.id_usuario, u.nombre, u.correo, r.nombre AS rol, u.estado, u.contrasena, u.password_hash, u.locked_until, u.failed_login_attempts, u.token_version
+    `SELECT u.id_usuario, u.id_rol, u.nombre, u.correo, r.nombre AS rol, u.estado, u.contrasena, u.password_hash, u.locked_until, u.failed_login_attempts, u.token_version
      FROM usuario u
      JOIN rol r ON u.id_rol = r.id_rol
      WHERE u.correo = ?`, 
@@ -303,6 +337,12 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
     async (err, results) => { 
       if (err) return res.status(500).json({ mensaje: 'Error del servidor' }); 
       if (results.length === 0) { 
+        BitacoraService.auditBestEffort({
+            req,
+            accion: AUDIT_ACTIONS.LOGIN_FALLIDO,
+            metadata: { correoIntentado: correo },
+            actorOverride: { tipo_actor: 'ANONIMO' }
+        });
         return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' }); 
       }
       
@@ -343,6 +383,12 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
            queryUpdate = 'UPDATE usuario SET failed_login_attempts = ?, locked_until = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE id_usuario = ?';
         }
         db.query(queryUpdate, paramsUpdate);
+        BitacoraService.auditBestEffort({
+            req,
+            accion: AUDIT_ACTIONS.LOGIN_FALLIDO,
+            metadata: { correoIntentado: correo },
+            actorOverride: { tipo_actor: 'ANONIMO' }
+        });
         return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' });
       }
 
@@ -356,7 +402,20 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
       res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); 
       
-      registrarMovimiento(user.id_usuario, null, 'LOGIN', `Sesión Inicada (Manual). Autenticado como ${user.nombre} (${correo}) bajo el rol de ${user.rol}.`);
+      const poolConn = await req.app.locals.db.promise().getConnection();
+      try {
+        await BitacoraService.auditCritical({ 
+            req, 
+            accion: AUDIT_ACTIONS.LOGIN_EXITOSO, 
+            metadata: { user: usuarioData },
+            actorOverride: { id_usuario: user.id_usuario, id_rol: user.id_rol, tipo_actor: 'INTERNO' },
+            connection: poolConn 
+        });
+      } catch (errLog) {
+        console.error('Fallo auditCritical login:', errLog);
+      } finally {
+        poolConn.release();
+      }
     }
   );
 });
@@ -384,7 +443,7 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
        JOIN rol r ON u.id_rol = r.id_rol
        WHERE u.correo = ?`, // Busca estrictamente en columnario por correo ignorando contraseñas tradicionales
       [correo], // Sustituye con el email validado internacionalmente en la red
-      (err, results) => {
+      async (err, results) => {
         if (err) return res.status(500).json({ mensaje: 'Error del servidor' }); // Captura fallos directos a nivel de infraestructura de base de datos
         if (results.length === 0) { // Si el Array evaluado está hueco, asume tajantemente que el Google Account es válido pero no pertenece ni ha sido creado empleado de la institución local preexistente
           // Si el correo genuino devuelto por Google no existe explícitamente en la base de datos MySQL local actual
@@ -400,8 +459,21 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
         res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
         res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); // Permite entrada pasiva y le dispensa paralelamente su información de acceso interior en estructura JSON al app cliente reactivo
-        // Emplaza y archiva operativamente este acceso exterior exitoso de manera singular en el reporte histórico imborrable del sistema corporativo (Bitácora) 
-        registrarMovimiento(usuarioData.id_usuario, usuarioData.id_rol, 'LOGIN_GOOGLE', `Sesión Inicada (Google OAuth). Autenticado como ${usuarioData.nombre} (${correo}) bajo el rol de ${usuarioData.rol}.`);
+        
+        const poolConn = await req.app.locals.db.promise().getConnection();
+        try {
+          await BitacoraService.auditCritical({ 
+              req, 
+              accion: AUDIT_ACTIONS.LOGIN_GOOGLE, 
+              metadata: { user: usuarioData },
+              actorOverride: { id_usuario: usuarioData.id_usuario, id_rol: usuarioData.id_rol, tipo_actor: 'INTERNO' },
+              connection: poolConn 
+          });
+        } catch (errLog) {
+          console.error('Fallo auditCritical login-google:', errLog);
+        } finally {
+          poolConn.release();
+        }
       }
     );
   } catch (error) { // Atrapa las crisis asíncronas impredecibles o exepciones latentes provenientes de la verificación foránea Google en verifyIdToken() global
@@ -515,6 +587,14 @@ app.post('/solicitar-restablecimiento', (req, res) => { // Endpoint de disparo i
 
         sendMailCentralizado(mailOptions).then(info => {
           console.log(`✅ Correo enviado a: ${correo} (ID: ${info.messageId})`); // Rastreo feliz Server Node Terminal log monitor process trace uid ID messageid
+          
+          BitacoraService.auditBestEffort({
+            req,
+            accion: { code: 'ACTUALIZACION_USUARIO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+            metadata: { correo_objetivo: correo, detalle: 'Solicitud de restablecimiento de contraseña vía Email' },
+            actorOverride: { tipo_actor: 'ANONIMO' }
+          });
+
           res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' }); // Respuesta final HTTP STATUS 200 al UI solicitante de paciencia para revisión Inbox
         }).catch(errMail => {
           console.error('❌ Error enviando correo:', errMail.message); // Consola verbose local log failure
@@ -568,6 +648,13 @@ app.post('/restablecer-contrasena', (req, res) => { // Endpoint Definitivo Mutad
             // 3. Destruir e incinerar el token usado para asegurar su condición "Uso Único Desechable Limitado"
             db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => { }); 
 
+            BitacoraService.auditBestEffort({
+              req,
+              accion: { code: 'ACTUALIZACION_USUARIO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+              metadata: { correo_objetivo: correo, detalle: 'Completó restablecimiento de contraseña' },
+              actorOverride: { tipo_actor: 'ANONIMO' }
+            });
+
             res.json({ mensaje: 'Contraseña actualizada con éxito' }); 
           }
         );
@@ -596,25 +683,26 @@ app.get('/usuarios', (req, res) => { // Establece ruta HTTP GET universal en '/u
 });
 
 // OBTENER TODOS LOS HISTORIALES DE ACTIVIDAD CONTINUA (Vista principal de bitácora referenciando movimientos y huellas completas unificadas)
-app.get('/bitacora', (req, res) => { // Construye y expone la ruta vital GET '/bitacora'
-  const query = `
-    SELECT 
-      b.id_bitacora, 
-      b.id_usuario,
-      u.nombre AS nombre_usuario, 
-      r.nombre AS rol_usuario, 
-      b.accion, 
-      b.detalles, 
-      b.fecha
-    FROM bitacora_movimiento b
-    LEFT JOIN usuario u ON b.id_usuario = u.id_usuario -- Se anexa el usuario atenuadamente y cruzando de forma holandesa parcial/izquierda para que estructuralmente no desaparezca la iteración original si un usuario gestor eventualmente fue permanentemente borrado del disco (Left Join DB Strategy)
-    LEFT JOIN rol r ON b.id_rol = r.id_rol -- Lo mismo ocurre conceptualmente idéntico abogando la existencia perenne o nula temporal con el Rol referenciado
-    ORDER BY b.fecha DESC; -- Ordena visualmente y operativamente siempre mostrando los eventos de actividad más frescos y transaccionales temporalmente recientes priorizados en la cima alta
-  `;
-  db.query(query, (err, results) => { // Efectúa internamente la lectura pasiva profunda del hilo MySQL
-    if (err) return res.status(500).json({ error: err }); // Delegación estándar de abort failure handling
-    res.json(results); // Encapsula y envía la respuesta global cruda generada por todos los registros clasificados en cascada tipo JSON Object Array al cliente virtual UI Frontend
-  });
+app.get('/bitacora', verificarToken, async (req, res) => { // Construye y expone la ruta vital GET '/bitacora'
+  if (req.user && req.user.rol !== 'Administrador') {
+    return res.status(403).json({ error: 'Acceso denegado: Se requiere rol de Administrador.' });
+  }
+
+  try {
+    const BitacoraService = require('./services/bitacora.service');
+    const result = await BitacoraService.getAuditLogs(req.query);
+
+    if (req.query.export_format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="bitacora_export.csv"');
+      return res.send(result);
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error al obtener bitácora:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // OBTENER el compendio inmutable de ROLES estáticos disponibles listos para ser usados en el engranaje del sistema (Normalmente selectores Select/Combobox Modales)
@@ -650,7 +738,12 @@ app.post('/usuarios', async (req, res) => { // Asigna protocolo procedimental PO
         res.status(201).json({ mensaje: 'Usuario creado con éxito', id: result.insertId }); 
 
         const adminId = req.headers['x-usuario-id']; 
-        if (adminId) registrarMovimiento(adminId, null, 'CREACION_USUARIO', `Registro de nuevo usuario. ID asignado: ${result.insertId}, Nombre: ${nombre}, Correo: ${correo}, Nivel de Rol ID: ${id_rol}.`); 
+        if (adminId) BitacoraService.auditBestEffort({
+          req,
+          accion: AUDIT_ACTIONS.CREACION_USUARIO,
+          metadata: { id_entidad: result.insertId, cambios: { nombre, correo, id_rol } },
+          actorOverride: { id_usuario: adminId, tipo_actor: 'INTERNO' }
+        });
       }
     );
   } catch (error) {
@@ -675,7 +768,12 @@ app.put('/usuarios/:id', async (req, res) => {
           if (err) return res.status(500).json({ mensaje: 'Error al actualizar usuario', error: err }); 
           res.json({ mensaje: 'Usuario actualizado con éxito' }); 
           const adminId = req.headers['x-usuario-id']; 
-          if (adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Contraseña modificada)`); 
+          if (adminId) BitacoraService.auditBestEffort({
+            req,
+            accion: AUDIT_ACTIONS.ACTUALIZACION_USUARIO,
+            metadata: { id_entidad: id, cambios: { nombre, correo, id_rol, contrasena_modificada: true } },
+            actorOverride: { id_usuario: adminId, tipo_actor: 'INTERNO' }
+          });
         }
       );
     } catch (error) {
@@ -689,7 +787,12 @@ app.put('/usuarios/:id', async (req, res) => {
         if (err) return res.status(500).json({ mensaje: 'Error al actualizar usuario', error: err });
         res.json({ mensaje: 'Usuario actualizado con éxito' });
         const adminId = req.headers['x-usuario-id'];
-        if (adminId) registrarMovimiento(adminId, null, 'ACTUALIZACION_USUARIO', `Modificación de Perfil. ID afectado: ${id}. Nuevos datos -> Nombre: ${nombre}, Correo: ${correo}, Rol ID: ${id_rol}. (Sin alterar contraseña)`);
+        if (adminId) BitacoraService.auditBestEffort({
+          req,
+          accion: AUDIT_ACTIONS.ACTUALIZACION_USUARIO,
+          metadata: { id_entidad: id, cambios: { nombre, correo, id_rol, contrasena_modificada: false } },
+          actorOverride: { id_usuario: adminId, tipo_actor: 'INTERNO' }
+        });
       }
     );
   }
@@ -701,8 +804,24 @@ app.delete('/usuarios/:id', (req, res) => { // Enruta peticiones Delete apuntand
   db.query('DELETE FROM usuario WHERE id_usuario = ?', [id], (err) => { // Ejecuta sentencia irrecuperable paramétrica de borrado físico del registro en tabla 'usuario'
     if (err) return res.status(500).json({ mensaje: 'Error al eliminar usuario', error: err }); // Fracaso por llave foránea atada o fallo motor MySQL
     res.json({ mensaje: 'Usuario eliminado con éxito' }); // Éxito en borrado
-    const adminId = req.headers['x-usuario-id']; // Identificador del autor (El administrador que presionó el botón de borrado)
-    if (adminId) registrarMovimiento(adminId, null, 'ELIMINACION_USUARIO', `Eliminación permanente de cuenta de usuario. ID del usuario erradicado: ${id}.`); // Bitácora de extrema sensibilidad para justificar la desaparición de usuarios (Traceability total)
+    const adminId = req.headers['x-usuario-id']; 
+    if (adminId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_USUARIO,
+            metadata: { id_entidad: id, cambios: { usuario_erradicado: true } },
+            actorOverride: { id_usuario: adminId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) {
+          console.error('Fallo auditCritical elim:', e);
+        }
+      })();
+    }
   });
 });
 
@@ -721,7 +840,12 @@ app.put('/usuarios/:id/estado', (req, res) => {
 
     const adminId = req.headers['x-usuario-id'];
     if (adminId) {
-      registrarMovimiento(adminId, null, 'CAMBIO_ESTADO_USUARIO', `El estado del usuario con ID ${id} cambió a: ${estado.toUpperCase()}.`);
+      BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.CAMBIO_ESTADO_USUARIO,
+        metadata: { id_entidad: id, cambios: { estado_nuevo: estado.toUpperCase() } },
+        actorOverride: { id_usuario: adminId, tipo_actor: 'INTERNO' }
+      });
     }
   });
 });
@@ -869,7 +993,12 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
       // CONCLUSIÓN DE MÚLTIPLES HITOS INSERCIONALES EXITOSA (END)
       res.status(201).json({ mensaje: 'Evento creado con éxito', id_evento });
       const reqUserId = req.headers['x-usuario-id'] || id_usuario;
-      if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_EVENTO', `Nueva Solicitud de Evento. ID generado: ${id_evento}. Título: "${nombre}".`);
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.CREACION_EVENTO,
+        metadata: { id_entidad: id_evento, cambios: { nombre, modalidad, cantidad_asistentes, tipo_evento, monto_poa } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
 
       // ── NOTIFICACIONES FASE 1: Nueva solicitud de evento ─────────────────
       // Alerta a los Administradores de Eventos para que revisen la nueva solicitud
@@ -925,7 +1054,12 @@ app.post('/poa', (req, res) => { // Declara la ruta POST '/poa'
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message }); // Escape en caso de error SQL
       res.status(201).json({ mensaje: 'POA Creado', id_poa: result.insertId }); // Respuesta exitosa con ID insertado
-      if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_POA', `Nuevo presupuesto POA por ${monto_total}.`); // Log bitácora obligatoria
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.CREACION_POA,
+        metadata: { id_entidad: result.insertId, cambios: { monto_total } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
     }
   );
 });
@@ -980,7 +1114,12 @@ app.put('/poa/movimiento/:id/estado', (req, res) => { // Metodo PUT apuntando a 
         }
 
         res.json({ mensaje: 'Estado del movimiento POA actualizado' }); // Success output client
-        if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_POA', `Movimiento ${id} cambiado a ${estado}.`); // Bitácora audit trail
+        if (reqUserId) BitacoraService.auditBestEffort({
+          req,
+          accion: AUDIT_ACTIONS.ACTUALIZACION_POA,
+          metadata: { id_entidad: id, cambios: { estado_nuevo: estado } },
+          actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+        });
       });
   });
 });
@@ -1127,7 +1266,12 @@ app.put('/eventos/:id', async (req, res) => { // Asignación de Endpoint dinámi
     });
 
     res.json({ mensaje: 'Evento actualizado correctamente y POA conciliado' });
-    if (reqUserId) registrarMovimiento(reqUserId, null, 'EDICION_EVENTO', `Evento ${id} actualizado. Presupuesto nuevo: ${montoPOA} ${moneda || 'DOP'}.`);
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.EDICION_EVENTO,
+      metadata: { id_entidad: id, cambios: { monto_poa: montoPOA, moneda: moneda || 'DOP' } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
 
   } catch (err) {
     console.error('Error en reconciliacion PUT /eventos:', err.message);
@@ -1281,7 +1425,12 @@ app.put('/eventos/:id/estado', (req, res) => {
 
         res.json({ mensaje: 'Estado actualizado con éxito' });
         const reqUserId = req.headers['x-usuario-id'];
-        if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_EVENTO', `Resolución de Estado del Evento. El Evento con ID ${id} ha pasado al estado: "${estado}".`);
+        if (reqUserId) BitacoraService.auditBestEffort({
+          req,
+          accion: AUDIT_ACTIONS.ACTUALIZACION_EVENTO,
+          metadata: { id_entidad: id, cambios: { estado_nuevo: estado } },
+          actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+        });
       });
     });
   };
@@ -1340,8 +1489,24 @@ app.delete('/eventos/:id', (req, res) => { // Ruta explícita DELETE masivo de c
         db.query('DELETE FROM evento WHERE id_evento=?', [id], (err) => { // Fin de cascada Callback Hell piramidal manual: Extinción del Padre/Tronco Matrix del suceso central
           if (err) return res.status(500).json({ mensaje: 'Error al eliminar evento', error: err.message }); // Falla de sustracción profunda
           res.json({ mensaje: 'Evento eliminado con éxito' }); // Respuesta limpia tras purga
-          const reqUserId = req.headers['x-usuario-id']; // Autoria identificativa
-          if (reqUserId) registrarMovimiento(reqUserId, null, 'ELIMINACION_EVENTO', `Cancelación y Borrado de Evento. Evento afectado ID: ${id}.`); // Confirmacion Bitacora de borrado de root tree evento
+          const reqUserId = req.headers['x-usuario-id'];
+          if (reqUserId) {
+            (async () => {
+              try {
+                const poolConn = await req.app.locals.db.promise().getConnection();
+                await BitacoraService.auditCritical({
+                  req,
+                  accion: AUDIT_ACTIONS.ELIMINACION_EVENTO,
+                  metadata: { id_entidad: id, cambios: { evento_cancelado_borrado: true } },
+                  actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+                  connection: poolConn
+                });
+                poolConn.release();
+              } catch (e) {
+                console.error('Fallo auditCritical elim_evento:', e);
+              }
+            })();
+          }
         });
       });
     });
@@ -1395,7 +1560,12 @@ app.post('/audiovisual', (req, res) => { // Endpoint de generacion POST /audiovi
       if (errInsert) return res.status(500).json({ mensaje: 'Error al registrar servicios', error: errInsert.message });
       res.status(201).json({ mensaje: 'Solicitud audiovisual registrada con éxito' });
       const reqUserId = req.headers['x-usuario-id'];
-      if (reqUserId) registrarMovimiento(reqUserId, null, 'CREACION_AUDIOVISUAL', `Se levantó una Solicitud de Servicios Audiovisuales. Evento Asociado ID: ${id_evento}. Equipos requeridos: ${servicios.map(s => s.equipo).join(', ')}.`);
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.CREACION_AUDIOVISUAL,
+        metadata: { id_entidad: id_evento, cambios: { equipos: servicios.map(s => s.equipo) } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
     });
   });
 });
@@ -1485,12 +1655,14 @@ app.put('/audiovisual/:id/estado', (req, res) => { // Endpoint de mutabilidad di
         return res.status(400).json({ mensaje: 'Transición inválida: El equipo ya fue entregado.' });
       }
     }
-
-    db.query('UPDATE servicio_audiovisual SET estado=? WHERE id_servicio=?', [estado, id], (err, result) => {
-      if (err) return res.status(500).json({ mensaje: 'Error al actualizar estado', error: err.message });
-      res.json({ mensaje: 'Estado audiovisual actualizado con éxito', affectedRows: result.affectedRows }); 
-      const reqUserId = req.headers['x-usuario-id'];
-      if (reqUserId) registrarMovimiento(reqUserId, null, 'ACTUALIZACION_AUDIOVISUAL', `Resolución Audiovisual (ID ${id}). Transición: ${estadoActual} -> ${estado}.`);
+    console.log(`Update Result for id ${id}:`, result); // Logger satisfactorio de depuracion 
+    res.json({ mensaje: 'Estado audiovisual actualizado con éxito', affectedRows: result.affectedRows }); // HTTP response emite cuantas filas exactas se alteraron (deberia ser 1 siempre)
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_AUDIOVISUAL,
+      metadata: { id_entidad: id, cambios: { estado_nuevo: estado } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
     });
   });
 });
@@ -1504,26 +1676,18 @@ app.put('/audiovisual/evento/:id_evento/estado', (req, res) => {
   if (!estadosValidos.includes(estado))
     return res.status(400).json({ mensaje: 'Estado audiovisual no válido' });
 
-  // Primero obtener el estado actual para la bitácora y validación adicional si es necesario
-  db.query('SELECT estado FROM servicio_audiovisual WHERE id_evento = ? LIMIT 1', [id_evento], (errPrior, resultsPrior) => {
-    if (errPrior) return res.status(500).json({ mensaje: 'Error al consultar estado previo', error: errPrior.message });
-    if (resultsPrior.length === 0) return res.status(404).json({ mensaje: 'No se encontraron equipos para este evento.' });
-    
-    const estadoAnterior = resultsPrior[0].estado || 'Pendiente';
-
-    db.query('UPDATE servicio_audiovisual SET estado=? WHERE id_evento=?', [estado, id_evento], (err, result) => {
-      if (err) return res.status(500).json({ mensaje: 'Error al actualizar estado', error: err.message });
-      if (result.affectedRows === 0)
-        return res.status(404).json({ mensaje: 'No se encontraron equipos para actualizar.' });
-
-      res.json({ mensaje: 'Estado actualizado con éxito', affectedRows: result.affectedRows, estadoAnterior, nuevoEstado: estado });
-      
-      const reqUserId = req.headers['x-usuario-id'];
-      if (reqUserId) {
-        // La función registrarMovimiento asume que se guarda la fecha automáticamente en la BD
-        registrarMovimiento(reqUserId, null, 'ACTUALIZACION_AUDIOVISUAL_GLOBAL',
-          `Cambio de estado (Evento ${id_evento}). Anterior: "${estadoAnterior}" → Nuevo: "${estado}". Equipos afectados: ${result.affectedRows}.`);
-      }
+  db.query('UPDATE servicio_audiovisual SET estado=? WHERE id_evento=?', [estado, id_evento], (err, result) => { // Sobrescribe implacablemente con una sola Query a N cantidad multiplicada de sub elementos adosados todos coincidentemente a un mismo Foraneo id_evento
+    if (err) { // Manejador basico error
+      console.error('Update All Error:', err); // Trace terminal error Node JS Process instance PM2
+      return res.status(500).json({ mensaje: 'Error al actualizar estado general', error: err.message }); // HTTP Stop error database unreachable
+    }
+    res.json({ mensaje: 'Estado audiovisual del evento actualizado con éxito', affectedRows: result.affectedRows }); // Respuesta victoriosa HTTP Front 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_AUDIOVISUAL_GLOBAL,
+      metadata: { id_entidad: id_evento, cambios: { estado_nuevo_global: estado } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
     });
   });
 });
@@ -1729,11 +1893,13 @@ app.post('/evaluaciones', (req, res) => { // Via POST API graba encuesta final d
     (err, result) => { // Node JS lambda Callback
       if (err) return res.status(500).json({ mensaje: 'Error al registrar la evaluación', error: err.message }); // Fallback control de base de datos error (Fallo en constraint llave foránea si el evento no existe)
       res.status(201).json({ mensaje: 'Evaluación enviada con éxito', id_evaluacion: result.insertId }); // Okey verde HTTP 201 Created Status Devuelve UUID nuevo auto num generado al vuelo en MySQL Server
-      const reqUserId = req.headers['x-usuario-id']; // Busca Head Admin ID para historial (Puede ser nulo u opcional dependiendo de quién dispara si es logueado)
-      if (reqUserId) registrarMovimiento( // Apunta function call Historial Bitacora Transversal Global
-        reqUserId, null, 'CREACION_EVALUACION', // Dispara el evento nomenclado
-        `Nueva evaluación registrada. ID: ${result.insertId}. Evento ID: ${id_evento}. Recinto: ${recinto}. Valoración: ${valoracion_respuesta}. Satisfacción: ${satisfaccion}/5.` // Trazo detallado metrico log audit template string con variables concatenadas para rastreo analógico histórico forense.
-      );
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.CREACION_EVALUACION,
+        metadata: { id_entidad: id_evento, cambios: { id_evaluacion: result.insertId, recinto, valoracion_respuesta, satisfaccion } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
     }
   );
 });
@@ -1770,6 +1936,13 @@ app.post('/equipos-audiovisuales', (req, res) => { // Creacion de Item de Catál
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Condicion 0 validation rules blank logic guard fail bypass trigger
   db.query('INSERT INTO equipo_audiovisual (nombre, icono, cantidad_total) VALUES (?, ?, ?)', [nombre, icono || 'FiMonitor', cantidad_total || 0], (err, result) => { // Instancia fisicamente con iconos feather react default FiMonitor icon fallback default parameter text string array insert in mysql parameter object array value struct
     if (err) return res.status(500).json({ error: err.message }); // HTTP Exception catcher JSON send out return 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.CREACION_CATALOGO,
+      metadata: { entidad_catalogo: 'equipo_audiovisual', id_entidad: result.insertId, cambios: { nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({ mensaje: 'Equipo Creado', id: result.insertId }); // Ok 201 Created Inserted id fetch global parameter object ID assign index
   });
 });
@@ -1777,12 +1950,35 @@ app.put('/equipos-audiovisuales/:id', (req, res) => { // Edita existencia metada
   const { nombre, icono, cantidad_total } = req.body; // Cosechadora req body object param element properties destruct obj js target keys vars constants extract assignment data string array number
   db.query('UPDATE equipo_audiovisual SET nombre=?, icono=?, cantidad_total=? WHERE id_equipo=?', [nombre, icono, cantidad_total || 0, req.params.id], (err) => { // Update estatico param string replacement index target where equals strict math int sql native syntax execute connection string payload transmit variable mapping 
     if (err) return res.status(500).json({ error: err.message }); // error boundary stop execution logic chain return object json content type text
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_CATALOGO,
+      metadata: { entidad_catalogo: 'equipo_audiovisual', id_entidad: req.params.id, cambios: { nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Equipo Actualizado' }); // Ok 200 return object text 
   });
 });
 app.delete('/equipos-audiovisuales/:id', (req, res) => { // API Backend server Delete Endpoint Router parameter express method destructure
   db.query('DELETE FROM equipo_audiovisual WHERE id_equipo=?', [req.params.id], (err) => { // Desvanece item fisico dictionary delete wipe erase action function database table action native execution run commit delete math 
     if (err) return res.status(500).json({ error: err.message }); // Falla por FK constraint constraint de evento previo en foreign rules (foreign key constraint error mysql native failure code prevention crash loop block mechanism return code string)
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_CATALOGO,
+            metadata: { entidad_catalogo: 'equipo_audiovisual', id_entidad: req.params.id, cambios: { catalogo_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({ mensaje: 'Equipo Eliminado' }); // Success Result Out JSON body string text response status 200 HTTP API Standard return
   });
 });
@@ -1831,18 +2027,48 @@ app.post('/tipos-evento', (req, res) => { // Add new type
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Bouncer vacio
   db.query('INSERT INTO tipo_evento_master (nombre) VALUES (?)', [nombre], (err, result) => { // Insert Table
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.CREACION_CATALOGO,
+      metadata: { entidad_catalogo: 'tipo_evento_master', id_entidad: result.insertId, cambios: { nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({ mensaje: 'Tipo Creado', id: result.insertId }); // Exito
   });
 });
 app.put('/tipos-evento/:id', (req, res) => { // Modificador Metadata
   db.query('UPDATE tipo_evento_master SET nombre=? WHERE id_tipo_evento=?', [req.body.nombre, req.params.id], (err) => { // Update row
     if (err) return res.status(500).json({ error: err.message }); // Error throw handler
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_CATALOGO,
+      metadata: { entidad_catalogo: 'tipo_evento_master', id_entidad: req.params.id, cambios: { nombre: req.body.nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Tipo Actualizado' }); // Success return message string object JSON HTTP 200
   });
 });
 app.delete('/tipos-evento/:id', (req, res) => { // Borrado duro
   db.query('DELETE FROM tipo_evento_master WHERE id_tipo_evento=?', [req.params.id], (err) => { // Destructor
     if (err) return res.status(500).json({ error: err.message }); // Bloqueo de Foreign Key Restrict si algun evento viejo usa este tipo master 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_CATALOGO,
+            metadata: { entidad_catalogo: 'tipo_evento_master', id_entidad: req.params.id, cambios: { catalogo_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({ mensaje: 'Tipo Eliminado' }); // Success 200 OK 
   });
 });
@@ -1859,18 +2085,48 @@ app.post('/tipos-detalle-corporativo', (req, res) => { // Ruta insercion base
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Regex not null check false bypass prevent
   db.query('INSERT INTO tipo_detalle_corporativo (nombre) VALUES (?)', [nombre], (err, result) => { // SQL Ejecucion
     if (err) return res.status(500).json({ error: err.message }); // Caida DB MySQL Log error string parse
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.CREACION_CATALOGO,
+      metadata: { entidad_catalogo: 'tipo_detalle_corporativo', id_entidad: result.insertId, cambios: { nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({ mensaje: 'Detalle Creado', id: result.insertId }); // Send Object Response
   });
 });
 app.put('/tipos-detalle-corporativo/:id', (req, res) => { // Alter param row 
   db.query('UPDATE tipo_detalle_corporativo SET nombre=? WHERE id_detalle_corp=?', [req.body.nombre, req.params.id], (err) => { // Update Setter target mapping match
     if (err) return res.status(500).json({ error: err.message }); // Error
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_CATALOGO,
+      metadata: { entidad_catalogo: 'tipo_detalle_corporativo', id_entidad: req.params.id, cambios: { nombre: req.body.nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Detalle Actualizado' }); // Return UI msg string
   });
 });
 app.delete('/tipos-detalle-corporativo/:id', (req, res) => { // Destruction Drop delete node row
   db.query('DELETE FROM tipo_detalle_corporativo WHERE id_detalle_corp=?', [req.params.id], (err) => { // Purga 
     if (err) return res.status(500).json({ error: err.message }); // SQL Restrict prevent crash log text error code mysql backend query
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_CATALOGO,
+            metadata: { entidad_catalogo: 'tipo_detalle_corporativo', id_entidad: req.params.id, cambios: { catalogo_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({ mensaje: 'Detalle Eliminado' }); // Send
   });
 });
@@ -1887,18 +2143,48 @@ app.post('/alimentos', (req, res) => { // Añade Elemento
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' }); // Filtra vacios null string undefined 
   db.query('INSERT INTO alimento (nombre) VALUES (?)', [nombre], (err, result) => { // Dispara Query
     if (err) return res.status(500).json({ error: err.message }); // Throw log node app error
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.CREACION_CATALOGO,
+      metadata: { entidad_catalogo: 'alimento', id_entidad: result.insertId, cambios: { nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({ mensaje: 'Alimento Creado', id: result.insertId }); // Good path
   });
 });
 app.put('/alimentos/:id', (req, res) => { // Edita String texto Metadata 
   db.query('UPDATE alimento SET nombre=? WHERE id_alimento=?', [req.body.nombre, req.params.id], (err) => { // Modifica
     if (err) return res.status(500).json({ error: err.message }); // Handler log text response function 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_CATALOGO,
+      metadata: { entidad_catalogo: 'alimento', id_entidad: req.params.id, cambios: { nombre: req.body.nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Alimento Actualizado' }); // Send back ok status code 200 normal text string object 
   });
 });
 app.delete('/alimentos/:id', (req, res) => { // Remueve Item fisico de sistema global
   db.query('DELETE FROM alimento WHERE id_alimento=?', [req.params.id], (err) => { // Delete action execute query commit MySQL Storage Engine trigger match target ID PK Primary key filter search row delete math function log transaction node router
     if (err) return res.status(500).json({ error: err.message }); // Evita colapso si un Evento historico ya lo seleccionó previamente y tiene FK Lock table rules constraint trigger abort 
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_CATALOGO,
+            metadata: { entidad_catalogo: 'alimento', id_entidad: req.params.id, cambios: { catalogo_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({ mensaje: 'Alimento Eliminado' }); // Terminado HTTP End response write socket close output message
   });
 });
@@ -1913,6 +2199,13 @@ app.post('/recintos', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe un recinto con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.CREACION_CATALOGO,
+      metadata: { entidad_catalogo: 'recinto', id_entidad: result.insertId, cambios: { nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({ mensaje: 'Recinto creado exitosamente.', id: result.insertId });
   });
 });
@@ -1924,6 +2217,13 @@ app.put('/recintos/:id', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe un recinto con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_CATALOGO,
+      metadata: { entidad_catalogo: 'recinto', id_entidad: req.params.id, cambios: { nombre: req.body.nombre } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Recinto actualizado exitosamente.' });
   });
 });
@@ -1934,6 +2234,22 @@ app.delete('/recintos/:id', (req, res) => {
         return res.status(409).json({ mensaje: 'No se puede eliminar este recinto porque tiene eventos registrados. Debe reasignar o eliminar esos eventos primero.' });
       }
       return res.status(500).json({ error: err.message });
+    }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_CATALOGO,
+            metadata: { entidad_catalogo: 'recinto', id_entidad: req.params.id, cambios: { catalogo_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
     }
     res.json({ mensaje: 'Recinto eliminado exitosamente.' });
   });
@@ -1949,6 +2265,13 @@ app.post('/dependencias', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe una dependencia con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.CREACION_CATALOGO,
+      metadata: { entidad_catalogo: 'dependencia', id_entidad: result.insertId, cambios: { nombre, responsable } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({ mensaje: 'Dependencia creada exitosamente.', id: result.insertId });
   });
 });
@@ -1960,6 +2283,13 @@ app.put('/dependencias/:id', (req, res) => {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ mensaje: 'Ya existe una dependencia con ese nombre.' });
       return res.status(500).json({ error: err.message });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_CATALOGO,
+      metadata: { entidad_catalogo: 'dependencia', id_entidad: req.params.id, cambios: { nombre: req.body.nombre, responsable: req.body.responsable } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Dependencia actualizada exitosamente.' });
   });
 });
@@ -1970,6 +2300,22 @@ app.delete('/dependencias/:id', (req, res) => {
         return res.status(409).json({ mensaje: 'No se puede eliminar esta dependencia porque tiene eventos registrados. Debe reasignar o eliminar esos eventos primero.' });
       }
       return res.status(500).json({ error: err.message });
+    }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_CATALOGO,
+            metadata: { entidad_catalogo: 'dependencia', id_entidad: req.params.id, cambios: { catalogo_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
     }
     res.json({ mensaje: 'Dependencia eliminada exitosamente.' });
   });
@@ -1999,6 +2345,13 @@ app.post('/api/eventos/:id/documentos', upload.single('archivo'), (req, res) => 
       console.error("Error al registrar documento:", err);
       return res.status(500).json({ error: 'Error al registrar el documento en la base de datos' });
     }
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.SUBIDA_DOCUMENTO_BOVEDA,
+      metadata: { id_entidad: id_evento, cambios: { nombre_archivo: nombre_original, tipo_documento } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({
       mensaje: 'Documento subido y registrado con éxito',
       ruta: ruta_archivo,
@@ -2024,6 +2377,13 @@ app.post('/tipos-servicio-externo', (req, res) => {
   if (!nombre) return res.status(400).json({ mensaje: 'Nombre requerido' });
   db.query('INSERT INTO tipo_servicio_externo (nombre, clasificacion) VALUES (?, ?)', [nombre, clasificacion || 'Corriente'], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.CREACION_CATALOGO,
+      metadata: { entidad_catalogo: 'tipo_servicio_externo', id_entidad: result.insertId, cambios: { nombre, clasificacion } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.status(201).json({ mensaje: 'Tipo de Servicio Creado', id: result.insertId });
   });
 });
@@ -2031,12 +2391,35 @@ app.put('/tipos-servicio-externo/:id', (req, res) => {
   const { nombre, clasificacion } = req.body;
   db.query('UPDATE tipo_servicio_externo SET nombre=?, clasificacion=? WHERE id_tipo_servicio=?', [nombre, clasificacion, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_CATALOGO,
+      metadata: { entidad_catalogo: 'tipo_servicio_externo', id_entidad: req.params.id, cambios: { nombre, clasificacion } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Tipo de Servicio Actualizado' });
   });
 });
 app.delete('/tipos-servicio-externo/:id', (req, res) => {
   db.query('DELETE FROM tipo_servicio_externo WHERE id_tipo_servicio=?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_CATALOGO,
+            metadata: { entidad_catalogo: 'tipo_servicio_externo', id_entidad: req.params.id, cambios: { catalogo_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({ mensaje: 'Tipo de Servicio Eliminado' });
   });
 });
@@ -2059,6 +2442,13 @@ app.post('/servicios-externos', (req, res) => {
   db.query('INSERT INTO servicio_externo (id_evento, id_tipo_servicio, detalles, cantidad) VALUES (?, ?, ?, ?)',
     [id_evento, id_tipo_servicio, detalles || '', cantidad || 1], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.SOLICITUD_SERVICIO_EXTERNO,
+        metadata: { id_entidad: id_evento, cambios: { id_servicio_ext: result.insertId, id_tipo_servicio, cantidad } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
       res.status(201).json({ mensaje: 'Servicio Externo Solicitado', id: result.insertId });
     });
 });
@@ -2066,12 +2456,35 @@ app.put('/servicios-externos/:id/estado', (req, res) => {
   const { estado } = req.body;
   db.query('UPDATE servicio_externo SET estado=? WHERE id_servicio_ext=?', [estado, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_SERVICIO_EXTERNO,
+      metadata: { id_entidad: req.params.id, cambios: { estado } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Estado de Servicio Actualizado' });
   });
 });
 app.delete('/servicios-externos/:id', (req, res) => {
   db.query('DELETE FROM servicio_externo WHERE id_servicio_ext=?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_SERVICIO_EXTERNO,
+            metadata: { id_entidad: req.params.id, cambios: { servicio_eliminado: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({ mensaje: 'Servicio Externo Eliminado' });
   });
 });
@@ -2093,12 +2506,26 @@ app.post('/organizadores', (req, res) => {
   db.query('INSERT INTO evento_organizador (id_evento, id_usuario, rol_organizacion) VALUES (?, ?, ?)',
     [id_evento, id_usuario, rol_organizacion], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.ASIGNACION_ORGANIZADOR,
+        metadata: { id_entidad: id_evento, cambios: { id_usuario, rol_organizacion } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
       res.status(201).json({ mensaje: 'Organizador asignado' });
     });
 });
 app.delete('/organizadores/:id_evento_org', (req, res) => {
   db.query('DELETE FROM evento_organizador WHERE id_evento_org=?', [req.params.id_evento_org], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.REMOCION_ORGANIZADOR,
+      metadata: { id_entidad: req.params.id_evento_org, cambios: { organizador_removido: true } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Organizador removido' });
   });
 });
@@ -2148,6 +2575,13 @@ app.post('/cronograma', (req, res) => {
   db.query('INSERT INTO actividad_cronograma (id_evento, nombre_actividad, id_usuario_responsable, fecha_cumplimiento) VALUES (?, ?, ?, ?)',
     [id_evento, nombre_actividad, id_usuario_responsable || null, fecha_cumplimiento], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.CREACION_TAREA_CRONOGRAMA,
+        metadata: { id_entidad: id_evento, cambios: { nombre_actividad, id_usuario_responsable, fecha_cumplimiento } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
       res.status(201).json({ mensaje: 'Actividad agregada al cronograma' });
     });
 });
@@ -2155,12 +2589,35 @@ app.put('/cronograma/:id_actividad/estado', (req, res) => {
   const { estado } = req.body;
   db.query('UPDATE actividad_cronograma SET estado=? WHERE id_actividad=?', [estado, req.params.id_actividad], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.ACTUALIZACION_TAREA_CRONOGRAMA,
+      metadata: { id_entidad: req.params.id_actividad, cambios: { estado } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Estado de actividad actualizado' });
   });
 });
 app.delete('/cronograma/:id_actividad', (req, res) => {
   db.query('DELETE FROM actividad_cronograma WHERE id_actividad=?', [req.params.id_actividad], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_TAREA_CRONOGRAMA,
+            metadata: { id_entidad: req.params.id_actividad, cambios: { tarea_eliminada: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({ mensaje: 'Actividad eliminada' });
   });
 });
@@ -2241,7 +2698,12 @@ app.put('/servicios-externos/:id/proveedor', (req, res) => {
 
           // Registrar en bitácora
           const reqUserId = req.headers['x-usuario-id'];
-          if (reqUserId) registrarMovimiento(reqUserId, null, 'ENVIO_ORDEN_PROVEEDOR', `Orden enviada para servicio externo ID ${id} del evento ID ${servicio.id_evento}. Solicitud de cotización creada.`);
+          if (reqUserId) BitacoraService.auditBestEffort({
+            req,
+            accion: AUDIT_ACTIONS.ENVIO_ORDEN_PROVEEDOR,
+            metadata: { id_entidad: id, cambios: { id_evento: servicio.id_evento, id_solicitud: errSol ? null : solResult.insertId } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+          });
         }
       );
     });
@@ -2274,17 +2736,18 @@ app.post('/documentos/:id_evento', upload.single('archivo'), (req, res) => {
   db.query(`INSERT INTO documento_evento (id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio) VALUES (?, ?, ?, ?, ?)`,
     [id_evento, tipo_documento, nombre_archivo, ruta_archivo, id_usuario_subio || null], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.SUBIDA_DOCUMENTO_BOVEDA,
+        metadata: { id_entidad: id_evento, cambios: { nombre_archivo, tipo_documento } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
       res.status(201).json({ mensaje: 'Documento subido con éxito', id: result.insertId, ruta_archivo });
     });
 });
 
-app.delete('/documentos/:id_documento', (req, res) => {
-  // Lógica de borrado suave (Soft Delete) o archivo
-  db.query(`UPDATE documento_evento SET estado = 'Archivado' WHERE id_documento = ?`, [req.params.id_documento], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ mensaje: 'Documento archivado' });
-  });
-});
+
 
 // 2. Flujo de Aprobación Legal
 app.get('/flujo-legal/:id_evento', (req, res) => {
@@ -2301,6 +2764,17 @@ app.post('/flujo-legal/:id_evento', (req, res) => {
   db.query(`INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal) VALUES (?, 'Pendiente') ON DUPLICATE KEY UPDATE estado_legal='Pendiente'`,
     [id_evento], (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
+      
+      const id_usuario = req.headers['x-usuario-id'] || req.user?.id;
+      if (id_usuario) {
+        BitacoraService.auditBestEffort({
+          req,
+          accion: { code: 'APERTURA_FLUJO_LEGAL', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+          metadata: { id_evento },
+          actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
+        });
+      }
+
       res.status(201).json({ mensaje: 'Flujo legal iniciado' });
     });
 });
@@ -2312,6 +2786,13 @@ app.put('/flujo-legal/:id_evento/resolucion', (req, res) => {
   db.query(`UPDATE flujo_aprobacion_legal SET estado_legal=?, observacion_legal=?, id_usuario_revisor=? WHERE id_evento=?`,
     [estado_legal, observacion_legal || '', id_usuario_revisor, id_evento], (err) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.RESOLUCION_LEGAL,
+        metadata: { id_entidad: id_evento, cambios: { estado_legal } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
       res.json({ mensaje: 'Resolución legal actualizada' });
     });
 });
@@ -2324,6 +2805,13 @@ app.put('/servicios-externos/:id/recepcion', (req, res) => {
   db.query('UPDATE servicio_externo SET estado_recepcion = ?, incidencias = ?, fecha_recepcion = NOW() WHERE id_servicio_ext = ?',
     [estado_recepcion || 'Recibido', incidencias || '', id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.RECEPCION_SERVICIO,
+        metadata: { id_entidad: id, cambios: { estado_recepcion } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
       res.json({ mensaje: 'Recepción del servicio registrada' });
     });
 });
@@ -2334,6 +2822,13 @@ app.put('/servicios-externos/:id/pago', (req, res) => {
   const { estado_pago } = req.body;
   db.query('UPDATE servicio_externo SET estado_pago = ? WHERE id_servicio_ext = ?', [estado_pago, id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.PAGO_SERVICIO,
+      metadata: { id_entidad: id, cambios: { estado_pago } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({ mensaje: 'Estado contable del pago actualizado' });
   });
 });
@@ -2362,6 +2857,24 @@ app.put('/eventos/:id/cerrar-expediente', (req, res) => {
 
     db.query('UPDATE evento SET estado = ? WHERE id_evento = ?', ['Finalizado', id], (errUpd) => {
       if (errUpd) return res.status(500).json({ error: errUpd.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) {
+        (async () => {
+          try {
+            const poolConn = await req.app.locals.db.promise().getConnection();
+            await BitacoraService.auditCritical({
+              req,
+              accion: AUDIT_ACTIONS.CIERRE_EXPEDIENTE,
+              metadata: { id_entidad: id, cambios: { expediente_cerrado: true } },
+              actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+              connection: poolConn
+            });
+            poolConn.release();
+          } catch (e) {
+            console.error('Fallo auditCritical cierre:', e);
+          }
+        })();
+      }
       res.json({ mensaje: 'Expediente del evento cerrado correctamente.' });
     });
   });
@@ -2382,15 +2895,69 @@ app.get('/servicios-externos-all', (req, res) => {
 });
 
 // --- ENDPOINTS ADMINISTRATIVOS FASE 2 ---
-app.put('/api/servicio_externo/:id/admin', (req, res) => {
+app.put('/api/servicio_externo/:id/admin', async (req, res) => {
   const { numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada } = req.body;
   const id_usuario = req.headers['x-usuario-id'];
-  db.query('UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ?, id_cotizacion_adjudicada = ? WHERE id_servicio_ext = ?',
-    [numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada, req.params.id], (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'ACTUALIZAR_OC_SERVICIO', `OC asignada a servicio ext ID ${req.params.id}`]);
-      res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
-    });
+  let connection;
+  
+  try {
+    connection = await db.promise().getConnection();
+    await connection.beginTransaction();
+    
+    const [rows] = await connection.execute('SELECT numero_orden_compra FROM servicio_externo WHERE id_servicio_ext = ?', [req.params.id]);
+    const old_oc = rows.length > 0 ? rows[0].numero_orden_compra : null;
+
+    await connection.execute(
+      'UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ?, id_cotizacion_adjudicada = ? WHERE id_servicio_ext = ?',
+      [numero_orden_compra, requiere_contrato, id_cotizacion_adjudicada, req.params.id]
+    );
+
+    if (id_usuario) {
+      // 1. Auditoría Best Effort (no frena la transacción principal si falla el hilo)
+      BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.ACTUALIZACION_SERVICIO_EXTERNO,
+        metadata: { id_entidad: req.params.id, cambios: { numero_orden_compra, requiere_contrato } },
+        actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
+      });
+      
+      // 2. Auditoría Crítica de Adjudicación (Fase 4: Sellado Criptográfico / Alta Integridad)
+      if (id_cotizacion_adjudicada) {
+        await BitacoraService.auditCritical({
+          req,
+          accion: AUDIT_ACTIONS.ADJUDICACION_LICITACION,
+          metadata: { 
+            id_entidad: req.params.id, 
+            cambios: { adjudicacion: true, id_cotizacion_adjudicada } 
+          },
+          actorOverride: { id_usuario, tipo_actor: 'INTERNO' },
+          connection
+        });
+      }
+
+      // 3. Auditoría Crítica de Edición de Orden de Compra
+      if (old_oc && numero_orden_compra && old_oc !== numero_orden_compra) {
+        await BitacoraService.auditCritical({
+          req,
+          accion: AUDIT_ACTIONS.EDICION_ORDEN_COMPRA,
+          metadata: {
+            id_entidad: req.params.id,
+            cambios: { oc_anterior: old_oc, oc_nueva: numero_orden_compra }
+          },
+          actorOverride: { id_usuario, tipo_actor: 'INTERNO' },
+          connection
+        });
+      }
+    }
+    
+    await connection.commit();
+    res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
 });
 
 app.put('/api/presupuesto/:id_evento', (req, res) => {
@@ -2407,14 +2974,28 @@ app.put('/api/flujo_legal/:id_evento', (req, res) => {
       db.query('INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal, observacion_legal, id_usuario_revisor) VALUES (?, ?, ?, ?)',
         [req.params.id_evento, estado_legal, observacion_legal, id_usuario_revisor], (err2) => {
           if (err2) return res.status(500).json({ error: err2.message });
-          if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL', `Dictamen Legal: ${estado_legal} para evento ${req.params.id_evento}`]);
+          if (id_usuario) {
+            BitacoraService.auditBestEffort({
+              req,
+              accion: AUDIT_ACTIONS.RESOLUCION_LEGAL,
+              metadata: { id_entidad: req.params.id_evento, cambios: { estado_legal } },
+              actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
+            });
+          }
           res.json({ mensaje: 'Flujo legal creado y actualizado' });
         });
     } else {
       db.query('UPDATE flujo_aprobacion_legal SET estado_legal = ?, observacion_legal = ?, id_usuario_revisor = ? WHERE id_evento = ?',
         [estado_legal, observacion_legal, id_usuario_revisor, req.params.id_evento], (err2) => {
           if (err2) return res.status(500).json({ error: err2.message });
-          if (id_usuario) db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', [id_usuario, 'DICTAMEN_LEGAL_ACTUALIZADO', `Dictamen actualizado a ${estado_legal} para evento ${req.params.id_evento}`]);
+          if (id_usuario) {
+            BitacoraService.auditBestEffort({
+              req,
+              accion: AUDIT_ACTIONS.RESOLUCION_LEGAL,
+              metadata: { id_entidad: req.params.id_evento, cambios: { estado_legal } },
+              actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
+            });
+          }
           res.json({ mensaje: 'Flujo legal actualizado' });
         });
     }
@@ -2431,10 +3012,17 @@ app.get('/api/admin_evento/:id_evento', (req, res) => {
         JOIN solicitud_cotizacion sc ON cr.id_solicitud = sc.id_solicitud
         JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
         WHERE sc.id_evento = ?`, [id_evento], (e3, r3) => {
-        res.json({
-          presupuesto: r1[0] || { estado: 'No Asignado' },
-          legal: r2[0] || { estado_legal: 'Pendiente', observacion_legal: '' },
-          cotizaciones: r3 || []
+        db.query(`
+          SELECT a.* 
+          FROM analisis_ia_comparativo a
+          JOIN solicitud_cotizacion sc ON a.id_solicitud = sc.id_solicitud
+          WHERE sc.id_evento = ?`, [id_evento], (e4, r4) => {
+          res.json({
+            presupuesto: r1[0] || { estado: 'No Asignado' },
+            legal: r2[0] || { estado_legal: 'Pendiente', observacion_legal: '' },
+            cotizaciones: r3 || [],
+            analisis_ia: r4 || []
+          });
         });
       });
     });
@@ -2572,6 +3160,13 @@ app.put('/api/eventos/:id/observar-presupuesto', (req, res) => {
           if(!e4 && r.length > 0) {
             crearNotificacion({ id_usuario_destino: r[0].id_usuario, titulo: '⚠️ Evento Observado por Presupuesto', cuerpo: `Tu evento (#EVT-${id}) fue devuelto con observaciones: ${comentario}`, enlace_accion: 'mis-eventos' });
           }
+          const reqUserId = req.headers['x-usuario-id'] || id_usuario;
+          if (reqUserId) BitacoraService.auditBestEffort({
+            req,
+            accion: AUDIT_ACTIONS.OBSERVACION_PRESUPUESTO,
+            metadata: { id_entidad: id, cambios: { observacion: comentario } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+          });
           res.json({mensaje: 'Evento observado por presupuesto'});
         });
       });
@@ -2597,6 +3192,17 @@ app.put('/api/legal/:id/observar', (req, res) => {
           if(!e4 && r.length > 0) {
             crearNotificacion({ id_usuario_destino: r[0].id_usuario, titulo: '⚠️ Evento Observado por Legal', cuerpo: `Tu evento (#EVT-${id}) tiene observaciones legales: ${comentario}`, enlace_accion: 'mis-eventos' });
           }
+          
+          const reqUserId = req.headers['x-usuario-id'] || id_usuario;
+          if (reqUserId) {
+            BitacoraService.auditBestEffort({
+              req,
+              accion: { code: 'DICTAMEN_LEGAL', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+              metadata: { id_entidad: id, cambios: { estado: 'Observado', comentario } },
+              actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+            });
+          }
+
           res.json({mensaje: 'Evento observado por legal'});
         });
       });
@@ -2614,6 +3220,16 @@ app.put('/api/eventos/:id/subsanar', (req, res) => {
     crearNotificacion({ rol_destino: 'Presupuesto', titulo: '🔄 Evento Subsanado', cuerpo: `El evento (#EVT-${id}) ha sido corregido por el solicitante.`, enlace_accion: 'poa-admin' });
     crearNotificacion({ rol_destino: 'Legal', titulo: '🔄 Evento Subsanado', cuerpo: `El evento (#EVT-${id}) ha sido corregido por el solicitante.`, enlace_accion: 'flujo-administrativo' });
     
+    const id_usuario = req.headers['x-usuario-id'];
+    if (id_usuario) {
+      BitacoraService.auditBestEffort({
+        req,
+        accion: { code: 'ACTUALIZACION_EVENTO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+        metadata: { id_entidad: id, cambios: { estado: 'Pendiente', detalle: 'Evento subsanado por el solicitante' } },
+        actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
+      });
+    }
+
     res.json({mensaje: 'Evento subsanado y reenviado'});
   });
 });
@@ -2626,6 +3242,13 @@ app.post('/api/logistica/:id_servicio/evidencia-contabilidad', upload.single('ar
   
   db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=? WHERE id_servicio_ext=?`, [rutaRelativa, id_servicio], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.SUBIDA_EVIDENCIA_CONTABLE,
+      metadata: { id_entidad: id_servicio, cambios: { ruta: rutaRelativa } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({mensaje: 'Evidencia subida correctamente', ruta: rutaRelativa});
   });
 });
@@ -2636,6 +3259,22 @@ app.delete('/api/logistica/:id_servicio/evidencia-contabilidad', (req, res) => {
   
   db.query(`UPDATE servicio_externo SET evidencia_contabilidad_ruta=NULL WHERE id_servicio_ext=?`, [id_servicio], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
+    const reqUserId = req.headers['x-usuario-id'];
+    if (reqUserId) {
+      (async () => {
+        try {
+          const poolConn = await req.app.locals.db.promise().getConnection();
+          await BitacoraService.auditCritical({
+            req,
+            accion: AUDIT_ACTIONS.ELIMINACION_EVIDENCIA_CONTABLE,
+            metadata: { id_entidad: id_servicio, cambios: { evidencia_eliminada: true } },
+            actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+            connection: poolConn
+          });
+          poolConn.release();
+        } catch (e) { console.error('Fallo auditCritical:', e); }
+      })();
+    }
     res.json({mensaje: 'Evidencia eliminada correctamente'});
   });
 });
@@ -2649,6 +3288,13 @@ app.put('/api/logistica/:id_servicio/resolver-incidencia', (req, res) => {
   db.query(`UPDATE servicio_externo SET estado_recepcion='Recibido', usuario_resolucion_incidencia=?, comentario_resolucion=? WHERE id_servicio_ext=?`, 
   [id_usuario, comentario_resolucion, id_servicio], (e1) => {
     if(e1) return res.status(500).json({error: e1.message});
+    const reqUserId = req.headers['x-usuario-id'] || id_usuario;
+    if (reqUserId) BitacoraService.auditBestEffort({
+      req,
+      accion: AUDIT_ACTIONS.RESOLUCION_INCIDENCIA_LOGISTICA,
+      metadata: { id_entidad: id_servicio, cambios: { comentario_resolucion } },
+      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+    });
     res.json({mensaje: 'Incidencia resuelta satisfactoriamente'});
   });
 });

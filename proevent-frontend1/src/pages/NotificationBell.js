@@ -15,6 +15,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FiBell } from 'react-icons/fi';
 import './../css/NotificationBell.css';
+import axios from '../api/axios'; // [NUEVO] Importamos la instancia configurada de axios
 
 const API = 'http://localhost:8080';
 
@@ -44,14 +45,14 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
   const fetchNotifications = useCallback(() => {
     if (!id_usuario && !rol) return;
     setLoading(true);
-    fetch(`${API}/api/notificaciones?id_usuario=${id_usuario || ''}&rol=${encodeURIComponent(rol || '')}`)
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setNotifications(data);
+    // [MODIFICADO] Usamos axios.get en lugar de fetch
+    axios.get(`/api/notificaciones?id_usuario=${id_usuario || ''}&rol=${encodeURIComponent(rol || '')}`)
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          setNotifications(res.data);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [id_usuario, rol]);
 
@@ -67,8 +68,9 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
   // --- FUNCIÓN: markRead ---
   // Marca una notificación como leída en la BD y navega a su sección destino
   const markRead = (notif) => {
-    fetch(`${API}/api/notificaciones/${notif.id_notificacion}/leer`, { method: 'PUT' })
-      .catch(() => {});
+    // [MODIFICADO] Usamos axios.put
+    axios.put(`/api/notificaciones/${notif.id_notificacion}/leer`)
+      .catch(() => { });
     setNotifications(prev => prev.filter(n => n.id_notificacion !== notif.id_notificacion));
     setOpen(false);
 
@@ -92,12 +94,11 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
   // --- FUNCIÓN: markAllRead ---
   // Marca todas las notificaciones pendientes como leídas
   const markAllRead = () => {
-    fetch(`${API}/api/notificaciones/marcar-todas-leidas`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id_usuario, rol })
-    }).catch(() => {});
+    // [MODIFICADO] Usamos axios.put enviando el body directamente
+    axios.put(`/api/notificaciones/marcar-todas-leidas`, { id_usuario, rol })
+      .catch(() => { });
     setNotifications([]);
+    setOpen(false);
   };
 
   // --- UTILIDAD: formatFecha ---

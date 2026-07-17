@@ -117,7 +117,7 @@ export default function GestionPresupuestaria({ usuario }) {
     try {
       const res = await fetch(`${API}/api/eventos/${movObservar.id_evento}/observar-presupuesto`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'x-usuario-id': usuario?.id_usuario || '' },
         body: JSON.stringify({ id_usuario: usuario.id_usuario, comentario: motivoObservacion })
       });
       if (res.ok) {
