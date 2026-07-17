@@ -43,7 +43,8 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
       filename:     `Ficha_Tecnica_EVT_${evento.id_evento}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak:    { mode: ['css', 'legacy'], avoid: ['section', 'tr', '.avoid-break'] }
     };
 
     html2pdf().set(opt).from(element).save();
@@ -103,7 +104,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             </div>
 
             {/* 1. Información General */}
-            <section style={{ marginBottom: '30px' }}>
+            <section className="avoid-break" style={{ pageBreakInside: 'avoid', marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>1. Información General del Evento</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', fontSize: '14px' }}>
                 <div><strong>Nombre del Evento:</strong> {evento.nombre}</div>
@@ -117,7 +118,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             </section>
 
             {/* 2. Situación Administrativa y Legal */}
-            <section style={{ marginBottom: '30px' }}>
+            <section className="avoid-break" style={{ pageBreakInside: 'avoid', marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>2. Estatus Presupuestario y Legal</h2>
               <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '6px', fontSize: '14px' }}>
                 <div style={{ marginBottom: '10px' }}><strong>Estado del Presupuesto (VAF):</strong> {presupuesto?.estado || 'No Asignado'}</div>
@@ -129,7 +130,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             </section>
 
             {/* 3. Personal Operativo Asignado */}
-            <section style={{ marginBottom: '30px' }}>
+            <section className="avoid-break" style={{ pageBreakInside: 'avoid', marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>3. Estructura Organizativa</h2>
               {organizadores && organizadores.length > 0 ? (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -142,7 +143,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                   </thead>
                   <tbody>
                     {organizadores.map((org, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <tr key={i} className="avoid-break" style={{ pageBreakInside: 'avoid', borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '10px' }}>{org.nombre}</td>
                         <td style={{ padding: '10px', fontWeight: 'bold', color: '#2563eb' }}>{org.rol_organizacion}</td>
                         <td style={{ padding: '10px' }}>{org.correo}</td>
@@ -156,7 +157,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             </section>
 
             {/* 3.5 Cronograma Operativo */}
-            <section style={{ marginBottom: '30px' }}>
+            <section className="avoid-break" style={{ pageBreakInside: 'avoid', marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>Cronograma Logístico Operativo</h2>
               {cronograma && cronograma.length > 0 ? (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -170,7 +171,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                   </thead>
                   <tbody>
                     {cronograma.map((act, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <tr key={i} className="avoid-break" style={{ pageBreakInside: 'avoid', borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '10px' }}>{act.nombre_actividad}</td>
                         <td style={{ padding: '10px', fontWeight: 'bold' }}>{act.responsable || 'No asignado'}</td>
                         <td style={{ padding: '10px' }}>{new Date(act.fecha_cumplimiento).toLocaleDateString()}</td>
@@ -185,7 +186,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             </section>
 
             {/* 4. Logística y Servicios Externos */}
-            <section style={{ marginBottom: '30px' }}>
+            <section className="avoid-break" style={{ pageBreakInside: 'avoid', marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>4. Requerimientos de Logística</h2>
               {servicios && servicios.length > 0 ? (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -199,7 +200,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
                   </thead>
                   <tbody>
                     {servicios.map((s, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <tr key={i} className="avoid-break" style={{ pageBreakInside: 'avoid', borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '10px' }}>{s.tipo_servicio}</td>
                         <td style={{ padding: '10px' }}>{s.estado}</td>
                         <td style={{ padding: '10px' }}>{s.clasificacion}</td>
@@ -214,7 +215,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             </section>
 
             {/* 5. Historial de Observaciones */}
-            <section style={{ marginBottom: '30px' }}>
+            <section className="avoid-break" style={{ pageBreakInside: 'avoid', marginBottom: '30px' }}>
               <h2 style={{ fontSize: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px', color: '#1e293b' }}>5. Historial de Observaciones</h2>
               {observaciones && observaciones.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -234,7 +235,7 @@ export default function FichaTecnicaPDF({ evento, presupuesto, legal, servicios,
             </section>
 
             {/* Pie de Firma */}
-            <div style={{ marginTop: '60px', paddingTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', textAlign: 'center' }}>
+            <div className="avoid-break" style={{ pageBreakInside: 'avoid', marginTop: '60px', paddingTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', textAlign: 'center' }}>
               <div>
                 <div style={{ borderTop: '1px solid #94a3b8', width: '80%', margin: '0 auto', paddingTop: '10px', fontSize: '12px' }}>Firma del Solicitante</div>
               </div>
