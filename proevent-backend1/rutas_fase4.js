@@ -1,4 +1,6 @@
 const express = require('express');
+const BitacoraService = require('./services/bitacora.service');
+const { AUDIT_CRITICALITY } = require('./constants/bitacora.actions');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -55,6 +57,17 @@ module.exports = (db) => {
           text: `Hola ${persona_contacto},\n\nSe ha creado tu cuenta en el Portal de Proveedores de la UAPA.\nCredenciales:\nCorreo: ${correo}\nContraseña: ${contrasena}\n\nPuedes ingresar en el portal.`
         }).catch(console.error);
 
+        const id_usuario = req.headers['x-usuario-id'] || (req.user ? req.user.id : null);
+        if (id_usuario) {
+          BitacoraService.auditCritical({
+            req, 
+            accion: { code: 'CREACION_PROVEEDOR', criticality: AUDIT_CRITICALITY.CRITICAL },
+            metadata: { entidad_catalogo: 'proveedor_externo', id_entidad: results.insertId, cambios: { nombre_empresa, rnc_cedula } },
+            actorOverride: { id_usuario, id_rol: null, tipo_actor: 'INTERNO' },
+            connection: db.promise()
+          }).catch(console.error);
+        }
+
         res.json({ message: 'Proveedor creado con éxito', id: results.insertId });
       });
     } catch (error) {
@@ -86,10 +99,7 @@ module.exports = (db) => {
       }
       const id_usuario = req.headers['x-usuario-id'] || (req.user ? req.user.id : null);
       if (id_usuario) {
-        db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', 
-        [id_usuario, 'ACTUALIZACION_PROVEEDOR', `Proveedor ID ${id} actualizado. Empresa: ${nombre_empresa}, Categoria ID: ${id_tipo_servicio}`], (errLog) => {
-          if (errLog) console.error('Error registrando bitácora:', errLog);
-        });
+        BitacoraService.auditBestEffort({ req, accion: { code: 'ACTUALIZACION_PROVEEDOR', criticality: AUDIT_CRITICALITY.BEST_EFFORT }, metadata: { cambios: { legacyDetalles: `Proveedor ID ${id} actualizado. Empresa: ${nombre_empresa}, Categoria ID: ${id_tipo_servicio}` } }, actorOverride: { id_usuario, id_rol: null, tipo_actor: 'INTERNO' } });
       }
       res.json({ message: 'Proveedor actualizado con éxito' });
     });
@@ -103,10 +113,7 @@ module.exports = (db) => {
       if (err) return res.status(500).json({ error: err.message });
       const id_usuario = req.headers['x-usuario-id'] || (req.user ? req.user.id : null);
       if (id_usuario) {
-        db.query('INSERT INTO bitacora_movimiento (id_usuario, accion, detalles) VALUES (?, ?, ?)', 
-        [id_usuario, 'CAMBIO_ESTADO_PROVEEDOR', `Proveedor ID ${id} marcado como ${estado}`], (errLog) => {
-          if (errLog) console.error('Error registrando bitácora:', errLog);
-        });
+        BitacoraService.auditBestEffort({ req, accion: { code: 'CAMBIO_ESTADO_PROVEEDOR', criticality: AUDIT_CRITICALITY.BEST_EFFORT }, metadata: { cambios: { legacyDetalles: `Proveedor ID ${id} marcado como ${estado}` } }, actorOverride: { id_usuario, id_rol: null, tipo_actor: 'INTERNO' } });
       }
       res.json({ message: `Proveedor marcado como ${estado}` });
     });
@@ -150,6 +157,16 @@ module.exports = (db) => {
           });
         });
 
+        const id_usuario = req.headers['x-usuario-id'] || (req.user ? req.user.id : null);
+        if (id_usuario) {
+          BitacoraService.auditBestEffort({
+            req, 
+            accion: { code: 'SOLICITUD_SERVICIO_EXTERNO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+            metadata: { entidad_catalogo: 'solicitud_cotizacion', id_entidad: results.insertId, cambios: { id_evento, descripcion_requerimientos } },
+            actorOverride: { id_usuario, id_rol: null, tipo_actor: 'INTERNO' }
+          });
+        }
+
         res.json({ message: 'Solicitud abierta y notificaciones enviadas a proveedores.', id: results.insertId });
       }
     );
@@ -178,13 +195,34 @@ module.exports = (db) => {
     const { correo, contrasena } = req.body;
     db.query('SELECT * FROM proveedor_externo WHERE correo = ?', [correo], async (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
-      if (results.length === 0) return res.status(401).json({ error: 'Credenciales inválidas' });
+      if (results.length === 0) {
+        BitacoraService.auditBestEffort({
+          req, accion: { code: 'LOGIN_FALLIDO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+          metadata: { correoIntentado: correo, razon: 'No encontrado' },
+          actorOverride: { tipo_actor: 'ANONIMO' }
+        });
+        return res.status(401).json({ error: 'Credenciales inválidas' });
+      }
       
       const proveedor = results[0];
       const validPassword = await bcrypt.compare(contrasena, proveedor.contrasena_hash);
       
-      if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas' });
-      if (proveedor.estado !== 'Activo') return res.status(403).json({ error: 'Cuenta inactiva o suspendida.' });
+      if (!validPassword) {
+        BitacoraService.auditBestEffort({
+          req, accion: { code: 'LOGIN_FALLIDO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+          metadata: { correoIntentado: correo, razon: 'Contraseña incorrecta' },
+          actorOverride: { id_proveedor: proveedor.id_proveedor, tipo_actor: 'PROVEEDOR' }
+        });
+        return res.status(401).json({ error: 'Credenciales inválidas' });
+      }
+      if (proveedor.estado !== 'Activo') {
+        BitacoraService.auditBestEffort({
+          req, accion: { code: 'LOGIN_FALLIDO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+          metadata: { correoIntentado: correo, razon: 'Cuenta inactiva' },
+          actorOverride: { id_proveedor: proveedor.id_proveedor, tipo_actor: 'PROVEEDOR' }
+        });
+        return res.status(403).json({ error: 'Cuenta inactiva o suspendida.' });
+      }
 
       const jwt = require('jsonwebtoken');
       const { JWT_SECRET } = require('./utils/jwtUtils');
@@ -197,6 +235,14 @@ module.exports = (db) => {
       const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '15m' });
       
       res.cookie('accessToken', token, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+
+      BitacoraService.auditCritical({
+        req, 
+        accion: { code: 'LOGIN_EXITOSO', criticality: AUDIT_CRITICALITY.CRITICAL },
+        metadata: { portal: 'B2B', proveedor_nombre: proveedor.nombre_empresa },
+        actorOverride: { id_proveedor: proveedor.id_proveedor, tipo_actor: 'PROVEEDOR' },
+        connection: db.promise()
+      }).catch(console.error);
 
       res.json({ message: 'Login exitoso', proveedor: { id: proveedor.id_proveedor, nombre: proveedor.nombre_empresa, id_tipo: proveedor.id_tipo_servicio } });
     });
@@ -310,6 +356,14 @@ module.exports = (db) => {
 
           sendMailCentralizado(mailOptions).then(info => {
             console.log(`✅ Correo enviado a proveedor: ${correo} (ID: ${info.messageId})`);
+            
+            BitacoraService.auditBestEffort({
+              req,
+              accion: { code: 'ACTUALIZACION_PROVEEDOR', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+              metadata: { proveedor_correo: correo, detalle: 'Solicitó restablecimiento de contraseña B2B' },
+              actorOverride: { tipo_actor: 'ANONIMO' }
+            });
+
             res.json({ mensaje: 'Se ha enviado un enlace a su correo electrónico.' });
           }).catch(errMail => {
             console.error('Error enviando correo a proveedor:', errMail.message);
@@ -353,6 +407,14 @@ module.exports = (db) => {
             if (errUpdate) return res.status(500).json({ mensaje: 'Error al actualizar la contraseña' });
 
             db.query('DELETE FROM restablecimiento_token WHERE correo = ?', [correo], () => {});
+            
+            BitacoraService.auditBestEffort({
+              req,
+              accion: { code: 'ACTUALIZACION_PROVEEDOR', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+              metadata: { proveedor_correo: correo, detalle: 'Completó restablecimiento de contraseña B2B' },
+              actorOverride: { tipo_actor: 'PROVEEDOR' }
+            });
+
             res.json({ mensaje: 'Contraseña actualizada con éxito' });
           }
         );
@@ -436,6 +498,14 @@ module.exports = (db) => {
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [id_solicitud, id_proveedor, moneda, fecha_vigencia, comentarios, uploadPath, monto_detectado], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
+
+        BitacoraService.auditBestEffort({
+          req,
+          accion: { code: 'SUBIDA_COTIZACION', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+          metadata: { entidad_catalogo: 'cotizacion_recibida', id_entidad: results.insertId, monto_detectado, moneda },
+          actorOverride: { id_proveedor: id_proveedor, tipo_actor: 'PROVEEDOR' }
+        });
+
         res.json({ message: 'Cotización subida correctamente.', monto_extraido: monto_detectado });
       });
 
@@ -462,7 +532,7 @@ module.exports = (db) => {
         
         // AuditService: Registrar el pago
         const reqUserId = req.headers['x-usuario-id'];
-        if(reqUserId) db.query('INSERT INTO bitacora_movimiento (id_usuario, id_rol, accion, detalles) VALUES (?, ?, ?, ?)', [reqUserId, 1, 'PAGO_FACTURA_B2B', `Se ha subido el comprobante de pago para la cotización ID ${id_cotizacion}`]);
+        if(reqUserId) BitacoraService.auditBestEffort({ req: null, accion: { code: 'PAGO_FACTURA_B2B', criticality: AUDIT_CRITICALITY.BEST_EFFORT }, metadata: { cambios: { legacyDetalles: `Se ha subido el comprobante de pago para la cotización ID ${id_cotizacion}` } }, actorOverride: { id_usuario: reqUserId, id_rol: 1, tipo_actor: 'INTERNO' } });
         
         res.json({ message: 'Factura subida y marcada como pagada correctamente.' });
       });
@@ -475,7 +545,30 @@ module.exports = (db) => {
 
   // --- RUTAS DE INTELIGENCIA ARTIFICIAL Y LISTADO B2B (ADMIN) ---
 
-  // Nueva ruta para obtener licitaciones evaluadas/adjudicadas para mostrar en ModuloProveedores
+  // Nueva ruta para obtener licitaciones ELEGIDAS (adjudicadas por el encargado) para el historial global
+  router.get('/admin/licitaciones-elegidas', verificarToken, (req, res) => {
+    db.query(`
+      SELECT 
+        se.numero_orden_compra,
+        e.id_evento, e.nombre as nombre_evento, e.fecha_inicio as fecha_evento,
+        cr.id_cotizacion, cr.monto_total_detectado, cr.moneda, cr.ruta_documento_pdf,
+        pe.id_proveedor, pe.nombre_empresa as proveedor_nombre,
+        de.id_usuario_subio as oc_id_usuario, de.fecha_subida as oc_fecha_subida,
+        u.nombre as oc_nombre_usuario
+      FROM servicio_externo se
+      JOIN cotizacion_recibida cr ON se.id_cotizacion_adjudicada = cr.id_cotizacion
+      JOIN evento e ON se.id_evento = e.id_evento
+      JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
+      LEFT JOIN documento_evento de ON de.numero_orden_compra = se.numero_orden_compra AND de.tipo_documento = 'Orden de Compra' AND de.estado = 'Activo'
+      LEFT JOIN usuario u ON de.id_usuario_subio = u.id_usuario
+      ORDER BY se.id_servicio_ext DESC
+    `, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
+  });
+
+  // Ruta para obtener licitaciones evaluadas por IA
   router.get('/admin/licitaciones-adjudicadas', verificarToken, (req, res) => {
     db.query(`
       SELECT a.id_analisis, a.id_solicitud, a.proveedor_recomendado_id, a.fecha_analisis, 
@@ -564,6 +657,18 @@ module.exports = (db) => {
           matriz_comparativa_json = VALUES(matriz_comparativa_json)
         `, [id_solicitud, veredicto.proveedor_recomendado_id, veredicto.justificacion, JSON.stringify(veredicto.matriz_comparativa)], (errInsert) => {
           if (errInsert) return res.status(500).json({ error: errInsert.message });
+
+          const id_usuario = req.headers['x-usuario-id'] || (req.user ? req.user.id : null);
+          if (id_usuario) {
+            BitacoraService.auditCritical({
+              req,
+              accion: { code: 'EVALUACION_COTIZACION', criticality: AUDIT_CRITICALITY.CRITICAL },
+              metadata: { entidad_catalogo: 'analisis_ia_comparativo', id_entidad: id_solicitud, id_proveedor_recomendado: veredicto.proveedor_recomendado_id },
+              actorOverride: { id_usuario, id_rol: null, tipo_actor: 'INTERNO' },
+              connection: db.promise()
+            }).catch(console.error);
+          }
+
           res.json({ message: 'Análisis de IA completado.', veredicto });
         });
 
@@ -586,6 +691,10 @@ module.exports = (db) => {
     const { nombre, clasificacion } = req.body;
     db.query('INSERT INTO tipo_servicio_externo (nombre, clasificacion) VALUES (?, ?)', [nombre, clasificacion || 'Corriente'], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+      BitacoraService.auditBestEffort({
+        req, accion: { code: 'CREACION_CATALOGO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+        metadata: { cambios: { legacyDetalles: `Categoría creada: ${nombre}` } }
+      });
       res.json({ message: 'Categoría creada', id: results.insertId });
     });
   });
@@ -594,6 +703,10 @@ module.exports = (db) => {
     const { nombre, clasificacion } = req.body;
     db.query('UPDATE tipo_servicio_externo SET nombre = ?, clasificacion = ? WHERE id_tipo_servicio = ?', [nombre, clasificacion, req.params.id], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+      BitacoraService.auditBestEffort({
+        req, accion: { code: 'ACTUALIZACION_CATALOGO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+        metadata: { cambios: { legacyDetalles: `Categoría ID ${req.params.id} actualizada: ${nombre}` } }
+      });
       res.json({ message: 'Categoría actualizada' });
     });
   });
@@ -602,6 +715,10 @@ module.exports = (db) => {
     const { estado } = req.body;
     db.query('UPDATE tipo_servicio_externo SET estado = ? WHERE id_tipo_servicio = ?', [estado, req.params.id], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+      BitacoraService.auditBestEffort({
+        req, accion: { code: 'ACTUALIZACION_CATALOGO', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+        metadata: { cambios: { legacyDetalles: `Estado de Categoría ID ${req.params.id} cambiado a: ${estado}` } }
+      });
       res.json({ message: `Categoría marcada como ${estado}` });
     });
   });
