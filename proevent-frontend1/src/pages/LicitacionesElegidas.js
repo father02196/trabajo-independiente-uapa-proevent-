@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../api/axios';
 import { toast } from 'react-hot-toast';
-import { FiCheckCircle, FiExternalLink, FiSearch } from 'react-icons/fi';
+import { FiCheckCircle, FiExternalLink, FiSearch, FiDownload } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
+import html2pdf from 'html2pdf.js';
 import '../css/Dashboard.css';
 
 const API = "http://localhost:8080";
@@ -49,6 +51,56 @@ export default function LicitacionesElegidas() {
   const totalPages = Math.ceil(filtradas.length / itemsPerPage);
   const currentItems = filtradas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const exportarExcel = () => {
+    try {
+      if (currentItems.length === 0) return toast.error('No hay datos para exportar.');
+      
+      const dataToExport = currentItems.map(l => ({
+        'Fecha Evento': formatearFecha(l.fecha_evento),
+        'ID Evento': l.id_evento,
+        'Nombre Evento': l.nombre_evento,
+        'Subido Por': l.oc_nombre_usuario ? `${l.oc_nombre_usuario} (ID: ${l.oc_id_usuario})` : 'N/A',
+        'Orden Compra': l.numero_orden_compra || 'Pendiente',
+        'Fecha Subida OC': l.oc_fecha_subida ? formatearFecha(l.oc_fecha_subida) : 'N/A',
+        'ID Prov': l.id_proveedor,
+        'Proveedor Adjudicado': l.proveedor_nombre,
+        'ID Cotización': l.id_cotizacion,
+        'Monto (DOP)': l.monto_total_detectado
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Licitaciones");
+      
+      XLSX.writeFile(workbook, `Licitaciones_Pagina${currentPage}.xlsx`);
+      toast.success('Excel exportado correctamente');
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al generar el archivo Excel. Por favor, inténtelo de nuevo.');
+    }
+  };
+
+  const exportarPDF = () => {
+    try {
+      const element = document.getElementById('tabla-licitaciones');
+      if (!element) return toast.error('No se pudo encontrar la tabla.');
+      
+      const opt = {
+        margin:       10,
+        filename:     `Licitaciones_Pagina${currentPage}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+      
+      html2pdf().set(opt).from(element).save();
+      toast.success('PDF exportado correctamente');
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al generar el archivo PDF. Por favor, inténtelo de nuevo.');
+    }
+  };
+
   return (
     <div className="admin-page-container fade-in">
       <div className="admin-controls-card">
@@ -63,7 +115,7 @@ export default function LicitacionesElegidas() {
         </div>
 
         <div className="panel-body">
-          <div style={{ padding: '20px 22px', display: 'flex', justifyContent: 'flex-start' }}>
+          <div style={{ padding: '20px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="search-bar" style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', borderRadius: '8px', padding: '8px 16px', width: '350px' }}>
               <FiSearch style={{ color: '#64748b', marginRight: '8px' }} />
               <input
@@ -77,12 +129,44 @@ export default function LicitacionesElegidas() {
                 style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '14px' }}
               />
             </div>
+
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <button 
+                type="button"
+                onClick={(e) => {
+                  const menu = e.currentTarget.nextElementSibling;
+                  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', background: '#0f172a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '13.5px', fontWeight: '500' }}
+              >
+                <FiDownload /> Exportar Vista
+              </button>
+              <div 
+                className="dropdown-export" 
+                style={{ display: 'none', position: 'absolute', right: 0, top: '40px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '160px', overflow: 'hidden' }}
+              >
+                <button 
+                  onClick={(e) => { exportarPDF(); e.currentTarget.parentElement.style.display='none'; }} 
+                  onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                  style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', borderBottom: '1px solid #e2e8f0', fontSize: '13.5px', color: '#334155' }}>
+                  📄 Exportar a PDF
+                </button>
+                <button 
+                  onClick={(e) => { exportarExcel(); e.currentTarget.parentElement.style.display='none'; }} 
+                  onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                  style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '13.5px', color: '#334155' }}>
+                  📊 Exportar a Excel
+                </button>
+              </div>
+            </div>
           </div>
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando historial...</div>
           ) : (
-            <div className="table-responsive" style={{ padding: '0 22px 22px 22px', overflowX: 'auto' }}>
+            <div id="tabla-licitaciones" className="table-responsive" style={{ padding: '0 22px 22px 22px', overflowX: 'auto', background: '#fff' }}>
               <table className="modern-table" style={{ width: '100%', minWidth: '1150px', fontSize: '13px', whiteSpace: 'nowrap' }}>
                 <thead>
                   <tr>
