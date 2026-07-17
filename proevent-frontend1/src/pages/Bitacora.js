@@ -7,7 +7,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText, FiClock } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiUser, FiActivity, FiFileText, FiClock, FiRefreshCw } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
 import './../css/Dashboard.css'; // Reutilizamos estilos base
 import './../css/Bitacora.css';
@@ -170,6 +170,16 @@ export default function Bitacora() {
                         <option value="este_año">Este Año</option>
                         <option value="año_pasado">Año Pasado</option>
                     </select>
+                </div>
+                <div style={{ marginLeft: 'auto' }}>
+                    <button 
+                        onClick={cargarBitacora} 
+                        disabled={loading}
+                        className="btn-reload"
+                    >
+                        <FiRefreshCw className={loading ? "spin-animation" : ""} />
+                        {loading ? 'Cargando...' : 'Recargar Bitácora'}
+                    </button>
                 </div>
             </div>
 
