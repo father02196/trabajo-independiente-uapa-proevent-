@@ -13,6 +13,7 @@ export default function LicitacionesElegidas() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const itemsPerPage = 15;
 
   useEffect(() => {
@@ -82,19 +83,28 @@ export default function LicitacionesElegidas() {
 
   const exportarPDF = () => {
     try {
-      const element = document.getElementById('tabla-licitaciones');
-      if (!element) return toast.error('No se pudo encontrar la tabla.');
+      const tableDiv = document.getElementById('tabla-licitaciones');
+      if (!tableDiv) return toast.error('No se pudo encontrar la tabla.');
+      
+      const cloneDiv = tableDiv.cloneNode(true);
+      cloneDiv.style.overflowX = 'visible';
+      cloneDiv.style.width = 'max-content';
+      cloneDiv.style.position = 'absolute';
+      cloneDiv.style.left = '-9999px';
+      document.body.appendChild(cloneDiv);
       
       const opt = {
         margin:       10,
         filename:     `Licitaciones_Pagina${currentPage}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' }
       };
       
-      html2pdf().set(opt).from(element).save();
-      toast.success('PDF exportado correctamente');
+      html2pdf().set(opt).from(cloneDiv).save().then(() => {
+        document.body.removeChild(cloneDiv);
+        toast.success('PDF exportado correctamente');
+      });
     } catch (error) {
       console.error(error);
       toast.error('Hubo un error al generar el archivo PDF. Por favor, inténtelo de nuevo.');
@@ -133,33 +143,34 @@ export default function LicitacionesElegidas() {
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <button 
                 type="button"
-                onClick={(e) => {
-                  const menu = e.currentTarget.nextElementSibling;
-                  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', background: '#0f172a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '13.5px', fontWeight: '500' }}
+                className="btn btn-secondary"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <FiDownload /> Exportar Vista
               </button>
-              <div 
-                className="dropdown-export" 
-                style={{ display: 'none', position: 'absolute', right: 0, top: '40px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '160px', overflow: 'hidden' }}
-              >
-                <button 
-                  onClick={(e) => { exportarPDF(); e.currentTarget.parentElement.style.display='none'; }} 
-                  onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                  style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', borderBottom: '1px solid #e2e8f0', fontSize: '13.5px', color: '#334155' }}>
-                  📄 Exportar a PDF
-                </button>
-                <button 
-                  onClick={(e) => { exportarExcel(); e.currentTarget.parentElement.style.display='none'; }} 
-                  onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                  style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '13.5px', color: '#334155' }}>
-                  📊 Exportar a Excel
-                </button>
-              </div>
+              
+              {showExportMenu && (
+                <div 
+                  className="dropdown-export" 
+                  style={{ position: 'absolute', right: 0, top: '100%', marginTop: '5px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '160px', overflow: 'hidden' }}
+                >
+                  <button 
+                    onClick={() => { exportarPDF(); setShowExportMenu(false); }} 
+                    onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                    style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', borderBottom: '1px solid #e2e8f0', fontSize: '13.5px', color: '#334155' }}>
+                    📄 Exportar a PDF
+                  </button>
+                  <button 
+                    onClick={() => { exportarExcel(); setShowExportMenu(false); }} 
+                    onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                    style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '13.5px', color: '#334155' }}>
+                    📊 Exportar a Excel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
