@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -24,6 +25,10 @@
     "nodemailer": "^8.0.2",
     "openai": "^6.39.0",
     "pdf-parse": "^1.1.1",
-    "resend": "^6.9.3"
+    "resend": "^6.9.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3"
   }
 }
