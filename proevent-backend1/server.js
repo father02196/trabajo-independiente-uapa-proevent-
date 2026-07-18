@@ -1632,7 +1632,7 @@ app.get('/audiovisual', (req, res) => { // Endpoint de lectura gerencial adminis
 app.put('/audiovisual/:id/estado', (req, res) => { // Endpoint de mutabilidad dinámica de micro-estatus PUT Unitario individual 
   const { id } = req.params; // Desentrama ID URL parameter
   const { estado } = req.body; // Pospone el paquete de decisión estatus
-  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Entregado']; // Listas Blancas validadoras
+  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Completado']; // Listas Blancas validadoras
 
   if (!estadosValidos.includes(estado)) // Caza Fake States
     return res.status(400).json({ mensaje: 'Estado audiovisual no válido' }); 
@@ -1649,10 +1649,10 @@ app.put('/audiovisual/:id/estado', (req, res) => { // Endpoint de mutabilidad di
         return res.status(400).json({ mensaje: 'Transición inválida: De Pendiente solo puede pasar a En revisión.' });
       } else if (estadoActual === 'En revisión' && estado !== 'Aprobado') {
         return res.status(400).json({ mensaje: 'Transición inválida: De En revisión solo puede pasar a Aprobado.' });
-      } else if (estadoActual === 'Aprobado' && estado !== 'Entregado') {
-        return res.status(400).json({ mensaje: 'Transición inválida: De Aprobado solo puede pasar a Entregado.' });
-      } else if (estadoActual === 'Entregado') {
-        return res.status(400).json({ mensaje: 'Transición inválida: El equipo ya fue entregado.' });
+      } else if (estadoActual === 'Aprobado' && estado !== 'Completado') {
+        return res.status(400).json({ mensaje: 'Transición inválida: De Aprobado solo puede pasar a Completado.' });
+      } else if (estadoActual === 'Completado') {
+        return res.status(400).json({ mensaje: 'Transición inválida: El equipo ya fue completado.' });
       }
     }
     console.log(`Update Result for id ${id}:`, result); // Logger satisfactorio de depuracion 
@@ -1671,7 +1671,7 @@ app.put('/audiovisual/:id/estado', (req, res) => { // Endpoint de mutabilidad di
 app.put('/audiovisual/evento/:id_evento/estado', (req, res) => {
   const { id_evento } = req.params;
   const { estado } = req.body;
-  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Entregado'];
+  const estadosValidos = ['Pendiente', 'En revisión', 'Aprobado', 'Rechazado', 'Completado'];
 
   if (!estadosValidos.includes(estado))
     return res.status(400).json({ mensaje: 'Estado audiovisual no válido' });
@@ -3094,11 +3094,11 @@ app.get('/api/aprobaciones-evento/:id_evento', (req, res) => {
           },
           {
             area: 'Audiovisual',
-            estado: av.total === 0 ? 'No aplica'
-              : av.rechazados > 0 ? 'Rechazado'
-                : av.aprobados === av.total ? 'Aprobado'
+            estado: Number(av.total) === 0 ? 'No aplica'
+              : Number(av.rechazados) > 0 ? 'Rechazado'
+                : Number(av.aprobados) === Number(av.total) ? 'Aprobado'
                   : 'Pendiente',
-            requerido: av.total > 0
+            requerido: Number(av.total) > 0
           }
         ];
 

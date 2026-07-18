@@ -43,7 +43,7 @@ export default function FlujoAdministrativo({ usuario }) {
   const [documentos, setDocumentos] = useState([]);             // Documentos en la Bóveda Digital del evento
   const [analisisIAs, setAnalisisIAs] = useState({});           // Resultados del análisis de IA sobre cotizaciones (key: id_solicitud)
   const [certFile, setCertFile] = useState(null);               // Archivo local de certificación de fondos
-  const [contratoFile, setContratoFile] = useState(null);       // Archivo local para el contrato
+  const [contratosFiles, setContratosFiles] = useState({});     // Diccionario { id_servicio_ext: File } para contratos
 
   // --- DETECCIÓN DE ROL DEL USUARIO ---
   // Determina qué paneles se muestran según el rol del usuario logueado.
@@ -264,12 +264,18 @@ export default function FlujoAdministrativo({ usuario }) {
     }
   };
 
-  const handleInsertarContrato = async () => {
-    if (!contratoFile) return;
-    const contratosEnBoveda = documentos.filter(d => d.tipo_documento?.trim().toLowerCase().includes('contrato'));
+  const handleInsertarContratoPorServicio = async (servicio) => {
+    const file = contratosFiles[servicio.id_servicio_ext];
+    if (!file) return;
+
+    // Solo reemplaza contratos que pertenezcan a la MISMA Orden de Compra
+    const contratosMismoServicio = documentos.filter(d => 
+      d.tipo_documento?.trim().toLowerCase().includes('contrato') &&
+      d.numero_orden_compra === servicio.numero_orden_compra
+    );
     
-    if (contratosEnBoveda.length > 0) {
-      for (const doc of contratosEnBoveda) {
+    if (contratosMismoServicio.length > 0) {
+      for (const doc of contratosMismoServicio) {
         try {
           await fetch(`${API}/api/documentos/${doc.id_documento}`, { 
             method: 'DELETE', 
@@ -280,9 +286,10 @@ export default function FlujoAdministrativo({ usuario }) {
     }
 
     const formData = new FormData();
-    formData.append('archivo', contratoFile);
+    formData.append('archivo', file);
     formData.append('id_evento', eventoSeleccionado.id_evento);
     formData.append('tipo_documento', 'Contrato');
+    formData.append('numero_orden_compra', servicio.numero_orden_compra || '');
     formData.append('id_usuario_subio', usuario?.id_usuario);
 
     const loadToast = toast.loading('Guardando Contrato en Bóveda...');
@@ -295,7 +302,11 @@ export default function FlujoAdministrativo({ usuario }) {
       if(res.ok) {
         toast.success('Contrato guardado en la bóveda', {id: loadToast});
         cargarDocumentos(eventoSeleccionado.id_evento);
-        setContratoFile(null);
+        setContratosFiles(prev => {
+          const next = {...prev};
+          delete next[servicio.id_servicio_ext];
+          return next;
+        });
       } else {
         toast.error('Error al guardar', {id: loadToast});
       }
@@ -1043,71 +1054,82 @@ export default function FlujoAdministrativo({ usuario }) {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {servicios.map(s => (
-                  <div key={s.id_servicio_ext} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#334155' }}>{s.tipo_servicio}</span>
-                    <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={s.requiere_contrato} 
-                        onChange={(e) => {
-                          const updated = [...servicios];
-                          const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
-                          updated[idx].requiere_contrato = e.target.checked;
-                          setServicios(updated);
-                          guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
-                        }}
-                        style={{ width: '18px', height: '18px', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                    </label>
+                {servicios.map(s => {
+                  const contratoFile = contratosFiles[s.id_servicio_ext];
+                  const hasContratoEnBoveda = documentos.find(d => d.tipo_documento?.trim().toLowerCase().includes('contrato') && d.numero_orden_compra === s.numero_orden_compra);
+
+                  return (
+                  <div key={s.id_servicio_ext} style={{ display: 'flex', flexDirection: 'column', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                        {s.tipo_servicio} 
+                        {s.numero_orden_compra && <span style={{ color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>(OC: {s.numero_orden_compra})</span>}
+                      </span>
+                      <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={s.requiere_contrato} 
+                          onChange={(e) => {
+                            const updated = [...servicios];
+                            const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
+                            updated[idx].requiere_contrato = e.target.checked;
+                            setServicios(updated);
+                            guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
+                          }}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                    
+                    {s.requiere_contrato && (
+                      <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <label style={{ 
+                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '10px 20px', margin: 0, 
+                            background: contratoFile ? '#ecfdf5' : '#ffffff', 
+                            border: `1px solid ${contratoFile ? '#10b981' : '#3b82f6'}`, 
+                            borderRadius: '8px',
+                            color: contratoFile ? '#047857' : '#3b82f6',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: contratoFile ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
+                          }}>
+                          <FiUpload style={{ fontSize: '16px' }} /> {contratoFile ? 'Contrato Listo' : 'Seleccionar Contrato PDF'}
+                          <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                                setContratosFiles(prev => ({ ...prev, [s.id_servicio_ext]: e.target.files[0] }));
+                            }
+                          }} />
+                        </label>
+
+                        <button 
+                          type="button" 
+                          disabled={!contratoFile}
+                          onClick={() => handleInsertarContratoPorServicio(s)}
+                          style={{ 
+                            padding: '10px 20px', 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '10px', 
+                            borderRadius: '8px',
+                            background: contratoFile ? '#3b82f6' : '#e2e8f0',
+                            color: contratoFile ? '#ffffff' : '#94a3b8',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            border: contratoFile ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                            boxShadow: contratoFile ? '0 4px 12px rgba(59, 130, 246, 0.25)' : 'none',
+                            cursor: contratoFile ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <FiFileText style={{ fontSize: '16px' }} /> {hasContratoEnBoveda ? 'Actualizar en Bóveda' : 'Insertar en Bóveda'}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
+                );})}
               </div>
             )}
-          </div>
-          
-          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-              <label style={{ 
-                  cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '12px 24px', margin: 0, 
-                  background: contratoFile ? '#ecfdf5' : '#ffffff', 
-                  border: `1px solid ${contratoFile ? '#10b981' : '#3b82f6'}`, 
-                  borderRadius: '8px',
-                  color: contratoFile ? '#047857' : '#3b82f6',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
-                  boxShadow: contratoFile ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
-                }}>
-                <FiUpload style={{ fontSize: '18px' }} /> {contratoFile ? 'Documento Listo' : 'Cargar Contrato PDF'}
-                <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                      setContratoFile(e.target.files[0]);
-                  }
-                }} />
-              </label>
-
-              <button 
-                type="button" 
-                disabled={!contratoFile}
-                onClick={handleInsertarContrato}
-                style={{ 
-                  padding: '12px 24px', 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '10px', 
-                  borderRadius: '8px',
-                  background: contratoFile ? '#3b82f6' : '#e2e8f0',
-                  color: contratoFile ? '#ffffff' : '#94a3b8',
-                  fontWeight: '600',
-                  border: contratoFile ? '1px solid #2563eb' : '1px solid #cbd5e1',
-                  boxShadow: contratoFile ? '0 4px 12px rgba(59, 130, 246, 0.25)' : 'none',
-                  cursor: contratoFile ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <FiFileText style={{ fontSize: '18px' }} /> {documentos.find(d => d.tipo_documento?.trim().toLowerCase().includes('contrato')) ? 'Actualizar en Bóveda' : 'Insertar en Bóveda'}
-              </button>
-            </div>
           </div>
         </div>
       </div>
