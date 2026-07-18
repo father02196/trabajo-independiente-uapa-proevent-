@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo, FiEye, FiEyeOff, FiDownload, FiTrash2 } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
+import axiosAuth from '../api/axios';
 import './../css/ModuloProveedores.css';
 
 // ============================================================
@@ -86,11 +87,11 @@ function ModuloProveedores({ usuario }) {
 
     const cargarLicitacionesAdjudicadas = async () => {
         try {
-            const res = await fetch(`${API}/admin/licitaciones-adjudicadas`);
-            const data = await res.json();
-            setLicitacionesAdjudicadas(Array.isArray(data) ? data : []);
+            const res = await axiosAuth.get(`/api/admin/licitaciones-adjudicadas`);
+            setLicitacionesAdjudicadas(Array.isArray(res.data) ? res.data : []);
         } catch(e) {
-            console.error(e);
+            console.error("Error cargando licitaciones:", e);
+            setLicitacionesAdjudicadas([]);
         }
     };
 
@@ -758,7 +759,14 @@ function ModuloProveedores({ usuario }) {
                                 ) : sortedLicitaciones.map(lic => (
                                     <tr key={lic.id_analisis}>
                                         <td>
-                                            <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '3px' }}>{lic.nombre_evento}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                                <span style={{ fontSize: '12px', fontWeight: '800', color: '#3B82F6' }}>
+                                                    #EVT-{lic.id_evento}
+                                                </span>
+                                                <div style={{ fontWeight: '700', color: '#0F172A' }}>
+                                                    {lic.nombre_evento}
+                                                </div>
+                                            </div>
                                             <div style={{ fontSize: '12px', color: '#94A3B8', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {lic.requisitos}
                                             </div>
