@@ -574,7 +574,7 @@ module.exports = (db) => {
       SELECT a.id_analisis, a.id_solicitud, a.proveedor_recomendado_id, a.fecha_analisis, 
              s.id_evento, s.descripcion_requerimientos as requisitos, e.nombre as nombre_evento, 
              p.nombre_empresa as proveedor_nombre,
-             c.monto_total_detectado, c.estado_pago, c.id_cotizacion
+             c.monto_total_detectado, c.estado_pago, c.id_cotizacion, c.factura_pdf
       FROM analisis_ia_comparativo a
       JOIN solicitud_cotizacion s ON a.id_solicitud = s.id_solicitud
       JOIN evento e ON s.id_evento = e.id_evento
