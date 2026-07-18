@@ -2587,17 +2587,41 @@ app.post('/cronograma', (req, res) => {
 });
 app.put('/cronograma/:id_actividad/estado', (req, res) => {
   const { estado } = req.body;
-  db.query('UPDATE actividad_cronograma SET estado=? WHERE id_actividad=?', [estado, req.params.id_actividad], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    const reqUserId = req.headers['x-usuario-id'];
-    if (reqUserId) BitacoraService.auditBestEffort({
-      req,
-      accion: AUDIT_ACTIONS.ACTUALIZACION_TAREA_CRONOGRAMA,
-      metadata: { id_entidad: req.params.id_actividad, cambios: { estado } },
-      actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+  const id_actividad = req.params.id_actividad;
+  
+  const updateEstado = () => {
+    db.query('UPDATE actividad_cronograma SET estado=? WHERE id_actividad=?', [estado, id_actividad], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const reqUserId = req.headers['x-usuario-id'];
+      if (reqUserId) BitacoraService.auditBestEffort({
+        req,
+        accion: AUDIT_ACTIONS.ACTUALIZACION_TAREA_CRONOGRAMA,
+        metadata: { id_entidad: id_actividad, cambios: { estado } },
+        actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
+      });
+      res.json({ mensaje: 'Estado de actividad actualizado' });
     });
-    res.json({ mensaje: 'Estado de actividad actualizado' });
-  });
+  };
+
+  if (estado === 'Completada') {
+    db.query('SELECT fecha_cumplimiento FROM actividad_cronograma WHERE id_actividad = ?', [id_actividad], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.length === 0) return res.status(404).json({ error: 'Actividad no encontrada' });
+      
+      const fecha = results[0].fecha_cumplimiento;
+      const hoy = new Date();
+      hoy.setHours(0,0,0,0);
+      const fechaC = new Date(fecha);
+      fechaC.setHours(0,0,0,0);
+      
+      if (hoy < fechaC) {
+        return res.status(403).json({ error: 'No se puede completar esta tarea antes de la fecha programada.' });
+      }
+      updateEstado();
+    });
+  } else {
+    updateEstado();
+  }
 });
 app.delete('/cronograma/:id_actividad', (req, res) => {
   db.query('DELETE FROM actividad_cronograma WHERE id_actividad=?', [req.params.id_actividad], (err) => {
