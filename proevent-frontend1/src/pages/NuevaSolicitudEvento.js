@@ -10,6 +10,17 @@ import './../css/Eventos.css';
 
 const API = "http://localhost:8080";
 
+const getDaysDifference = (startDateStr) => {
+  if (!startDateStr) return 0;
+  const [y, m, d] = startDateStr.split('-');
+  const start = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  const diffTime = start.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
 export default function NuevaSolicitudEvento({ activeSection, setActiveSection, usuario, editingEvent, setEditingEvent }) {
   const [data, setData] = useState({
     titulo: "",
@@ -87,6 +98,31 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     fetchPoa();
   }, []);
 
+  // Validación en tiempo real para días de anticipación
+  useEffect(() => {
+    if (!data.inicio) return;
+    const dias = getDaysDifference(data.inicio);
+    const tieneAlimentos = data.catering && data.catering.length > 0;
+    const tieneExternos = data.sugerencias_externas && data.sugerencias_externas.trim().length > 0;
+
+    let errMsg = "";
+    if (tieneAlimentos && tieneExternos && dias < 20) {
+      errMsg = "Este evento incluye Servicios de Alimentos, por lo que debe registrarse con al menos 20 días de anticipación.";
+    } else if (tieneAlimentos && dias < 20) {
+      errMsg = "Este evento incluye Servicios de Alimentos, por lo que debe registrarse con al menos 20 días de anticipación.";
+    } else if (tieneExternos && dias < 15) {
+      errMsg = "Este evento requiere Proveedores Externos, por lo que debe registrarse con al menos 15 días de anticipación.";
+    }
+
+    if (errMsg) {
+      setError(errMsg);
+    } else {
+      if (error && (error.includes("anticipación") || error.includes("Proveedores Externos") || error.includes("Servicios de Alimentos"))) {
+        setError("");
+      }
+    }
+  }, [data.inicio, data.catering, data.sugerencias_externas]);
+
   const validarSeccion = (seccion) => {
     if (seccion === "Información General") {
       if (!data.titulo.trim()) return "El título del evento es obligatorio.";
@@ -146,6 +182,21 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     if (seccion === "Presupuesto y POA") {
       if (!data.presupuesto || Number(data.presupuesto) <= 0) return "El presupuesto estimado debe ser mayor a 0.";
     }
+
+    // Validación global de días de anticipación
+    if (data.inicio) {
+      const dias = getDaysDifference(data.inicio);
+      const tieneAlimentos = data.catering && data.catering.length > 0;
+      const tieneExternos = data.sugerencias_externas && data.sugerencias_externas.trim().length > 0;
+
+      if (tieneAlimentos && dias < 20) {
+        return "Este evento incluye Servicios de Alimentos, por lo que debe registrarse con al menos 20 días de anticipación.";
+      }
+      if (tieneExternos && dias < 15) {
+        return "Este evento requiere Proveedores Externos, por lo que debe registrarse con al menos 15 días de anticipación.";
+      }
+    }
+
     return null;
   };
 
