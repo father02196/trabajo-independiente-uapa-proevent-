@@ -93,8 +93,8 @@ export default function Audiovisual({ usuario }) {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          // Prioridad de estado: Pendiente > En revisión > Aprobado > Entregado > Rechazado
-          const prioridad = { 'Pendiente': 1, 'En revisión': 2, 'Aprobado': 3, 'Entregado': 4, 'Rechazado': 5 };
+          // Prioridad de estado: Pendiente > En revisión > Aprobado > Completado > Rechazado
+          const prioridad = { 'Pendiente': 1, 'En revisión': 2, 'Aprobado': 3, 'Completado': 4, 'Rechazado': 5 };
           const agrupadas = Object.values(data.reduce((acc, req) => {
             if (!acc[req.id_evento]) {
               acc[req.id_evento] = {
@@ -135,7 +135,7 @@ export default function Audiovisual({ usuario }) {
 
   // --- FUNCIÓN: handleCambiarEstado (Vista Admin AV) ---
   // Cambia el estado de la solicitud AV con validación de flujo estricto:
-  // Pendiente → En revisión → Aprobado → Entregado
+  // Pendiente → En revisión → Aprobado → Completado
   const handleCambiarEstado = async (id_evento, nuevoEstado) => {
     const solicitud = solicitudesAV.find(s => s.id_evento === id_evento);
     const estadoActual = solicitud ? solicitud.estado_av : 'Pendiente';
@@ -149,12 +149,12 @@ export default function Audiovisual({ usuario }) {
         alert(`Transición inválida. De "En revisión" solo puede pasar a "Aprobado".`);
         return;
       }
-      if (estadoActual === 'Aprobado' && nuevoEstado !== 'Entregado') {
-        alert(`Transición inválida. De "Aprobado" solo puede pasar a "Entregado".`);
+      if (estadoActual === 'Aprobado' && nuevoEstado !== 'Completado') {
+        alert(`Transición inválida. De "Aprobado" solo puede pasar a "Completado".`);
         return;
       }
-      if (estadoActual === 'Entregado') {
-        alert('El equipo ya fue entregado y no puede cambiar de estado.');
+      if (estadoActual === 'Completado') {
+        alert('El equipo ya fue completado y no puede cambiar de estado.');
         return;
       }
     }
@@ -460,8 +460,8 @@ export default function Audiovisual({ usuario }) {
                         const transiciones = {
                           'Pendiente':   ['En revisión', 'Rechazado'],
                           'En revisión': ['Aprobado', 'Rechazado'],
-                          'Aprobado':    ['Entregado', 'Rechazado'],
-                          'Entregado':   [],
+                          'Aprobado':    ['Completado', 'Rechazado'],
+                          'Completado':  [],
                           'Rechazado':   [],
                         };
                         const colores = {
@@ -469,9 +469,9 @@ export default function Audiovisual({ usuario }) {
                           'En revisión': { bg: '#dbeafe', text: '#1e3a8a', border: '#93c5fd' },
                           'Aprobado':    { bg: '#dcfce7', text: '#166534', border: '#86efac' },
                           'Rechazado':   { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' },
-                          'Entregado':   { bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0' },
+                          'Completado':  { bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0' },
                         };
-                        const todosLosEstados = ['Pendiente', 'En revisión', 'Aprobado', 'Entregado', 'Rechazado'];
+                        const todosLosEstados = ['Pendiente', 'En revisión', 'Aprobado', 'Completado', 'Rechazado'];
                         const permitidas = transiciones[estadoActual] || [];
                         const c = colores[estadoActual] || colores['Pendiente'];
 

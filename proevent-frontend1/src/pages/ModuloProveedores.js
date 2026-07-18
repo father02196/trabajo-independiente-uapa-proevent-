@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiSend, FiCheckSquare, FiDollarSign, FiUserPlus, FiFileText, FiCpu, FiEdit, FiPower, FiFilter, FiSearch, FiPackage, FiRefreshCw, FiUpload, FiCheckCircle, FiAlertTriangle, FiInfo, FiEye, FiEyeOff, FiDownload, FiTrash2 } from 'react-icons/fi';
 import { useSortableData } from '../hooks/useSortableData';
+import axiosAuth from '../api/axios';
 import './../css/ModuloProveedores.css';
 
 // ============================================================
@@ -34,12 +35,15 @@ function ModuloProveedores({ usuario }) {
     const [proveedores, setProveedores] = useState([]);           // Directorio de suplidores
     const [categoriasActivas, setCategoriasActivas] = useState([]); // Categorías disponibles para asignar suplidor
     const [licitacionesAdjudicadas, setLicitacionesAdjudicadas] = useState([]); // Resultados de la IA
-    const [fileFactura, setFileFactura] = useState(null);         // PDF de la factura a subir
+    const [fileFacturas, setFileFacturas] = useState({});                       // PDFs de facturas a subir por id_cotizacion
+    const [editModeFactura, setEditModeFactura] = useState({});                 // Controla si se está reemplazando una factura
     
     // --- ESTADOS DE FILTROS ---
     const [filtroEstadoRecepcion, setFiltroEstadoRecepcion] = useState('Todos'); // Logística
     const [searchTermDirectorio, setSearchTermDirectorio] = useState("");        // Directorio
     const [filtroCategoria, setFiltroCategoria] = useState("Todas");             // Directorio
+    const [filtroEventoId, setFiltroEventoId] = useState("");                    // IA Adjudicadas
+    const [currentPage, setCurrentPage] = useState(1);                           // Paginación IA
     
     // --- ESTADOS PARA MODALES CRUD (Directorio) ---
     const [modalConfig, setModalConfig] = useState({ open: false, type: null, data: null });
@@ -86,11 +90,11 @@ function ModuloProveedores({ usuario }) {
 
     const cargarLicitacionesAdjudicadas = async () => {
         try {
-            const res = await fetch(`${API}/admin/licitaciones-adjudicadas`);
-            const data = await res.json();
-            setLicitacionesAdjudicadas(Array.isArray(data) ? data : []);
+            const res = await axiosAuth.get(`/api/admin/licitaciones-adjudicadas`);
+            setLicitacionesAdjudicadas(Array.isArray(res.data) ? res.data : []);
         } catch(e) {
-            console.error(e);
+            console.error("Error cargando licitaciones:", e);
+            setLicitacionesAdjudicadas([]);
         }
     };
 
@@ -427,7 +431,17 @@ function ModuloProveedores({ usuario }) {
     });
     const sortedProveedores = [...proveedoresFiltrados].sort((a, b) => (a.nombre_empresa || '').localeCompare(b.nombre_empresa || ''));
 
-    const sortedLicitaciones = [...licitacionesAdjudicadas].sort((a, b) => (a.nombre_evento || '').localeCompare(b.nombre_evento || ''));
+    const filteredLicitaciones = licitacionesAdjudicadas.filter(lic => {
+        if (!filtroEventoId) return true;
+        return String(lic.id_evento).includes(filtroEventoId);
+    });
+    const sortedLicitaciones = [...filteredLicitaciones].sort((a, b) => (a.nombre_evento || '').localeCompare(b.nombre_evento || ''));
+
+    const itemsPerPage = 15;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentLicitaciones = sortedLicitaciones.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(sortedLicitaciones.length / itemsPerPage);
 
     return (
         <div className="proveedores-container">
@@ -721,7 +735,8 @@ function ModuloProveedores({ usuario }) {
 
             {/* TAB: LICITACIONES IA Y FACTURAS B2B */}
             {activeTab === 'ia' && (
-                <div className="licitaciones-ia-card">
+                <>
+                    <div className="licitaciones-ia-card">
                     {/* Header premium */}
                     <div className="licitaciones-ia-header">
                         <div className="ia-icon-wrapper">
@@ -734,6 +749,28 @@ function ModuloProveedores({ usuario }) {
                         </p>
                     </div>
 
+                    {/* Barra de Búsqueda sobre Columna 1 */}
+                    <div style={{ padding: '16px 24px 16px', display: 'flex', justifyContent: 'flex-start' }}>
+                        <div style={{ position: 'relative', width: '280px' }}>
+                            <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                            <input 
+                                type="text" 
+                                placeholder="Filtrar evento por ID..." 
+                                value={filtroEventoId}
+                                onChange={(e) => {
+                                    setFiltroEventoId(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                style={{ 
+                                    width: '100%', padding: '8px 12px 8px 36px', 
+                                    borderRadius: '8px', border: '1px solid #E2E8F0', 
+                                    fontSize: '13px', outline: 'none', transition: 'border-color 0.2s',
+                                    backgroundColor: '#F8FAFC'
+                                }}
+                            />
+                        </div>
+                    </div>
+
                     {/* Tabla */}
                     <div className="table-container" style={{ borderRadius: '0', border: 'none', boxShadow: 'none' }}>
                         <table className="modern-table">
@@ -743,22 +780,30 @@ function ModuloProveedores({ usuario }) {
                                     <th>Proveedor Ganador</th>
                                     <th>Monto Total</th>
                                     <th>Estado Pago</th>
-                                    <th>Acción</th>
+                                    <th>Comprobante</th>
+                                    <th>Gestión</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {sortedLicitaciones.length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" style={{ textAlign: 'center', padding: '60px 24px' }}>
+                                        <td colSpan="6" style={{ textAlign: 'center', padding: '60px 24px' }}>
                                             <FiCpu style={{ fontSize: '40px', color: '#CBD5E1', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
                                             <div style={{ fontWeight: '700', color: '#475569', fontSize: '15px', marginBottom: '6px' }}>No hay licitaciones adjudicadas</div>
                                             <div style={{ fontSize: '13px', color: '#94A3B8' }}>Las licitaciones procesadas por IA aparecerán aquí</div>
                                         </td>
                                     </tr>
-                                ) : sortedLicitaciones.map(lic => (
+                                ) : currentLicitaciones.map(lic => (
                                     <tr key={lic.id_analisis}>
                                         <td>
-                                            <div style={{ fontWeight: '700', color: '#0F172A', marginBottom: '3px' }}>{lic.nombre_evento}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                                <span style={{ fontSize: '12px', fontWeight: '800', color: '#3B82F6' }}>
+                                                    #EVT-{lic.id_evento}
+                                                </span>
+                                                <div style={{ fontWeight: '700', color: '#0F172A' }}>
+                                                    {lic.nombre_evento}
+                                                </div>
+                                            </div>
                                             <div style={{ fontSize: '12px', color: '#94A3B8', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {lic.requisitos}
                                             </div>
@@ -792,46 +837,65 @@ function ModuloProveedores({ usuario }) {
                                             </span>
                                         </td>
                                         <td>
-                                            {lic.estado_pago !== 'Pagado' ? (
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                    <label style={{
-                                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                                        padding: '8px 12px',
-                                                        background: '#F8FAFC',
-                                                        border: '1.5px solid #E2E8F0',
-                                                        borderRadius: '10px',
-                                                        cursor: 'pointer',
-                                                        fontSize: '12.5px',
-                                                        fontWeight: '600',
-                                                        color: '#475569',
-                                                        transition: 'all 0.15s'
-                                                    }}>
-                                                        <FiUpload size={13} />
-                                                        {fileFactura ? fileFactura.name.substring(0, 16) + '...' : 'Seleccionar PDF'}
-                                                        <input 
-                                                            type="file" 
-                                                            accept="application/pdf" 
-                                                            onChange={e => setFileFactura(e.target.files[0])} 
-                                                            style={{ display: 'none' }}
-                                                        />
-                                                    </label>
+                                            {lic.estado_pago !== 'Pagado' || editModeFactura[lic.id_cotizacion] ? (
+                                                <label 
+                                                    className="btn btn-secondary btn-sm" 
+                                                    style={{ 
+                                                        cursor: 'pointer', 
+                                                        margin: 0,
+                                                        backgroundColor: fileFacturas[lic.id_cotizacion] ? '#dcfce7' : undefined,
+                                                        borderColor: fileFacturas[lic.id_cotizacion] ? '#86efac' : undefined,
+                                                        color: fileFacturas[lic.id_cotizacion] ? '#166534' : undefined,
+                                                        transition: 'all 0.3s ease',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
+                                                    }}
+                                                >
+                                                    <FiUpload size={13} />
+                                                    {fileFacturas[lic.id_cotizacion] ? fileFacturas[lic.id_cotizacion].name.substring(0, 16) + '...' : 'Seleccionar PDF'}
+                                                    <input 
+                                                        type="file" 
+                                                        accept="application/pdf" 
+                                                        onChange={e => setFileFacturas(prev => ({ ...prev, [lic.id_cotizacion]: e.target.files[0] }))} 
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                </label>
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', height: '31px' }}>
+                                                    <span style={{color: '#2ecc71', fontSize: '13.5px'}}><strong>✓ Pagado</strong></span>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {lic.estado_pago !== 'Pagado' || editModeFactura[lic.id_cotizacion] ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                     <button 
                                                         type="button"
                                                         className="btn btn-primary btn-sm"
-                                                        disabled={!fileFactura}
+                                                        disabled={!fileFacturas[lic.id_cotizacion]}
+                                                        style={{ width: 'fit-content' }}
                                                         onClick={async () => {
-                                                            if (!fileFactura) return;
+                                                            const currentFile = fileFacturas[lic.id_cotizacion];
+                                                            if (!currentFile) return;
                                                             const fd = new FormData();
-                                                            fd.append('archivo_factura', fileFactura);
+                                                            fd.append('archivo_factura', currentFile);
                                                             try {
-                                                                const res = await fetch(`${API}/admin/factura-proveedor/${lic.id_cotizacion}`, {
+                                                                const res = await fetch(`${API}/api/admin/factura-proveedor/${lic.id_cotizacion}`, {
                                                                     method: 'POST',
                                                                     headers: { 'x-usuario-id': usuario?.id_usuario || '' },
                                                                     body: fd
                                                                 });
                                                                 if (res.ok) {
                                                                     alert("Factura subida correctamente.");
-                                                                    setFileFactura(null);
+                                                                    setFileFacturas(prev => {
+                                                                        const copy = { ...prev };
+                                                                        delete copy[lic.id_cotizacion];
+                                                                        return copy;
+                                                                    });
+                                                                    if (editModeFactura[lic.id_cotizacion]) {
+                                                                        setEditModeFactura(prev => ({ ...prev, [lic.id_cotizacion]: false }));
+                                                                    }
                                                                     cargarLicitacionesAdjudicadas();
                                                                 } else {
                                                                     const err = await res.json();
@@ -844,19 +908,89 @@ function ModuloProveedores({ usuario }) {
                                                     >
                                                         <FiCheckSquare size={13} /> Subir
                                                     </button>
+                                                    {editModeFactura[lic.id_cotizacion] && (
+                                                        <button 
+                                                            type="button"
+                                                            className="btn btn-sm"
+                                                            style={{ color: '#94A3B8', border: '1px solid #E2E8F0', background: 'white', width: 'fit-content' }}
+                                                            onClick={() => {
+                                                                setEditModeFactura(prev => ({ ...prev, [lic.id_cotizacion]: false }));
+                                                                setFileFacturas(prev => {
+                                                                    const copy = { ...prev };
+                                                                    delete copy[lic.id_cotizacion];
+                                                                    return copy;
+                                                                });
+                                                            }}
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    )}
                                                 </div>
                                             ) : (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#059669', fontWeight: '700', fontSize: '13.5px' }}>
-                                                    <FiCheckCircle size={16} /> Pagado
-                                                </span>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    {lic.factura_pdf && (
+                                                        <button 
+                                                            type="button"
+                                                            title="Ver comprobante de pago"
+                                                            className="btn btn-secondary btn-sm"
+                                                            style={{ backgroundColor: '#F0F9FF', color: '#0369A1', borderColor: '#BAE6FD', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', padding: '0' }}
+                                                            onClick={() => {
+                                                                const url = lic.factura_pdf.replace('./', '/');
+                                                                window.open(`${API}${url}`, '_blank');
+                                                            }}
+                                                        >
+                                                            <FiEye size={15} />
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        type="button"
+                                                        title="Reemplazar comprobante"
+                                                        className="btn btn-secondary btn-sm"
+                                                        style={{ backgroundColor: '#F8FAFC', color: '#475569', borderColor: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', padding: '0' }}
+                                                        onClick={() => setEditModeFactura(prev => ({ ...prev, [lic.id_cotizacion]: true }))}
+                                                    >
+                                                        <FiEdit size={15} />
+                                                    </button>
+                                                </div>
                                             )}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                        
+                        {/* Paginación UI */}
+                        {totalPages > 1 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderTop: '1px solid #E2E8F0', backgroundColor: '#fff' }}>
+                                <span style={{ fontSize: '13px', color: '#64748B' }}>
+                                    Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, sortedLicitaciones.length)} de {sortedLicitaciones.length} licitaciones
+                                </span>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+                                        disabled={currentPage === 1}
+                                        className="btn btn-secondary btn-sm"
+                                    >
+                                        Anterior
+                                    </button>
+                                    <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: '13px', fontWeight: '600', color: '#475569' }}>
+                                        Página {currentPage} de {totalPages}
+                                    </span>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+                                        disabled={currentPage === totalPages}
+                                        className="btn btn-secondary btn-sm"
+                                    >
+                                        Siguiente
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
+                </>
             )}
 
             {/* MODAL ENVIAR ORDEN AL PROVEEDOR */}

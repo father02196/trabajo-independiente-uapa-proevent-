@@ -42,6 +42,9 @@ export default function FlujoAdministrativo({ usuario }) {
   const [cotizaciones, setCotizaciones] = useState([]);         // Cotizaciones B2B recibidas de proveedores
   const [documentos, setDocumentos] = useState([]);             // Documentos en la Bóveda Digital del evento
   const [analisisIAs, setAnalisisIAs] = useState({});           // Resultados del análisis de IA sobre cotizaciones (key: id_solicitud)
+  const [certFile, setCertFile] = useState(null);               // Archivo local de certificación de fondos
+  const [contratosFiles, setContratosFiles] = useState({});     // Diccionario { id_servicio_ext: File } para contratos
+
   // --- DETECCIÓN DE ROL DEL USUARIO ---
   // Determina qué paneles se muestran según el rol del usuario logueado.
   // isGeneralRole: muestra todo (para Administrador General o roles desconocidos)
@@ -217,6 +220,99 @@ export default function FlujoAdministrativo({ usuario }) {
       toast.error('Error de conexión al subir archivo', { id: loadToast });
     }
     e.target.value = null; // Limpia el input file para permitir subir el mismo archivo de nuevo
+  };
+
+  const handleInsertarCertificacion = async () => {
+    if (!certFile) return;
+    // Buscamos cualquier documento que sea de certificación (ignorando mayúsculas y acentos o espacios extra)
+    const certsEnBoveda = documentos.filter(d => d.tipo_documento?.trim().toLowerCase().includes('certificaci'));
+    
+    if (certsEnBoveda.length > 0) {
+      // Eliminamos todos los que existan para limpiar duplicados
+      for (const cert of certsEnBoveda) {
+        try {
+          await fetch(`${API}/api/documentos/${cert.id_documento}`, { 
+            method: 'DELETE', 
+            headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+          });
+        } catch(e) { console.error(e) }
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('archivo', certFile);
+    formData.append('id_evento', eventoSeleccionado.id_evento);
+    formData.append('tipo_documento', 'Certificación Presupuestaria');
+    formData.append('id_usuario_subio', usuario?.id_usuario);
+
+    const loadToast = toast.loading('Guardando Certificación en Bóveda...');
+    try {
+      const res = await fetch(`${API}/api/documentos/upload`, {
+        method: 'POST',
+        headers: { 'x-usuario-id': usuario?.id_usuario || '' },
+        body: formData
+      });
+      if(res.ok) {
+        toast.success('Certificación guardada en la bóveda', {id: loadToast});
+        cargarDocumentos(eventoSeleccionado.id_evento);
+        setCertFile(null);
+      } else {
+        toast.error('Error al guardar', {id: loadToast});
+      }
+    } catch(e) {
+      toast.error('Error de red', {id: loadToast});
+    }
+  };
+
+  const handleInsertarContratoPorServicio = async (servicio) => {
+    const file = contratosFiles[servicio.id_servicio_ext];
+    if (!file) return;
+
+    // Solo reemplaza contratos que pertenezcan a la MISMA Orden de Compra
+    const contratosMismoServicio = documentos.filter(d => 
+      d.tipo_documento?.trim().toLowerCase().includes('contrato') &&
+      d.numero_orden_compra === servicio.numero_orden_compra
+    );
+    
+    if (contratosMismoServicio.length > 0) {
+      for (const doc of contratosMismoServicio) {
+        try {
+          await fetch(`${API}/api/documentos/${doc.id_documento}`, { 
+            method: 'DELETE', 
+            headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+          });
+        } catch(e) { console.error(e) }
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('archivo', file);
+    formData.append('id_evento', eventoSeleccionado.id_evento);
+    formData.append('tipo_documento', 'Contrato');
+    formData.append('numero_orden_compra', servicio.numero_orden_compra || '');
+    formData.append('id_usuario_subio', usuario?.id_usuario);
+
+    const loadToast = toast.loading('Guardando Contrato en Bóveda...');
+    try {
+      const res = await fetch(`${API}/api/documentos/upload`, {
+        method: 'POST',
+        headers: { 'x-usuario-id': usuario?.id_usuario || '' },
+        body: formData
+      });
+      if(res.ok) {
+        toast.success('Contrato guardado en la bóveda', {id: loadToast});
+        cargarDocumentos(eventoSeleccionado.id_evento);
+        setContratosFiles(prev => {
+          const next = {...prev};
+          delete next[servicio.id_servicio_ext];
+          return next;
+        });
+      } else {
+        toast.error('Error al guardar', {id: loadToast});
+      }
+    } catch(e) {
+      toast.error('Error de red', {id: loadToast});
+    }
   };
 
   // --- FUNCIÓN: archivarDocumento ---
@@ -802,34 +898,93 @@ export default function FlujoAdministrativo({ usuario }) {
         </div>
 
         <div className="panel-body" style={{ padding: '30px' }}>
-          <div style={{ background: '#fffbeb', padding: '24px', borderRadius: '12px', border: '1px solid #fef3c7', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div>
-              <label style={{ fontWeight: '600', fontSize: '14px', color: '#92400e', display: 'block', marginBottom: '12px' }}>
-                Estado de Asignación Presupuestaria (Libro Mayor):
-              </label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ 
-                  padding: '8px 16px', 
-                  borderRadius: '99px', 
-                  fontWeight: 'bold', 
-                  fontSize: '14px',
-                  backgroundColor: presupuesto.estado === 'Aprobado' ? '#d1fae5' : (presupuesto.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7'),
-                  color: presupuesto.estado === 'Aprobado' ? '#047857' : (presupuesto.estado === 'Rechazado' ? '#b91c1c' : '#b45309')
-                }}>
-                  {presupuesto.estado}
-                </span>
-                <span style={{ fontSize: '12.5px', color: '#b45309', maxWidth: '300px', lineHeight: '1.4' }}>Las aprobaciones se gestionan exclusivamente desde la pestaña "Gestión Presupuestaria".</span>
+          <div style={{ 
+            background: 'linear-gradient(to right, #ffffff, #f8fafc)', 
+            padding: '28px', 
+            borderRadius: '16px', 
+            border: '1px solid #e2e8f0', 
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '28px' 
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <label style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <FiDollarSign style={{ color: '#3b82f6' }} /> Estado de Asignación Presupuestaria
+                </label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ 
+                    padding: '8px 18px', 
+                    borderRadius: '99px', 
+                    fontWeight: '700', 
+                    fontSize: '14px',
+                    backgroundColor: presupuesto.estado === 'Aprobado' ? '#ecfdf5' : (presupuesto.estado === 'Rechazado' ? '#fef2f2' : '#fefce8'),
+                    color: presupuesto.estado === 'Aprobado' ? '#059669' : (presupuesto.estado === 'Rechazado' ? '#dc2626' : '#ca8a04'),
+                    border: `1px solid ${presupuesto.estado === 'Aprobado' ? '#a7f3d0' : (presupuesto.estado === 'Rechazado' ? '#fecaca' : '#fef08a')}`,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                  }}>
+                    {presupuesto.estado === 'Aprobado' ? <FiCheckCircle style={{ display: 'inline', marginRight: '6px', marginBottom: '-2px' }} /> : null}
+                    {presupuesto.estado}
+                  </span>
+                  <span style={{ fontSize: '13px', color: '#64748b', maxWidth: '350px', lineHeight: '1.5' }}>
+                    Las aprobaciones se gestionan de manera centralizada desde la pestaña <strong>"Gestión Presupuestaria"</strong>.
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div style={{ borderTop: '1px dashed #fde68a', paddingTop: '20px' }}>
-              <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 20px', margin: 0, background: '#fff', borderColor: '#fcd34d', color: '#b45309' }}>
-                <FiUpload /> Cargar Certificación de Fondos
-                <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Certificacion de Fondos')} />
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
+              <label style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <FiBriefcase style={{ color: '#8b5cf6' }} /> Certificación de Fondos
               </label>
-              <p style={{ fontSize: '13px', color: '#b45309', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <FiFileText /> Suba el PDF de la certificación firmada por Contabilidad o la VAF.
-              </p>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ 
+                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '12px 24px', margin: 0, 
+                    background: certFile ? '#ecfdf5' : '#ffffff', 
+                    border: `1px solid ${certFile ? '#10b981' : '#3b82f6'}`, 
+                    borderRadius: '8px',
+                    color: certFile ? '#047857' : '#3b82f6',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease',
+                    boxShadow: certFile ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
+                  }}>
+                  <FiUpload style={{ fontSize: '18px' }} /> {certFile ? 'Documento Listo para Subir' : 'Cargar Certificación PDF'}
+                  <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                        setCertFile(e.target.files[0]);
+                    }
+                  }} />
+                </label>
+
+                <button 
+                  type="button" 
+                  disabled={!certFile}
+                  onClick={handleInsertarCertificacion}
+                  style={{ 
+                    padding: '12px 24px', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '10px', 
+                    borderRadius: '8px',
+                    background: certFile ? '#3b82f6' : '#e2e8f0',
+                    color: certFile ? '#ffffff' : '#94a3b8',
+                    fontWeight: '600',
+                    border: certFile ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                    boxShadow: certFile ? '0 4px 12px rgba(59, 130, 246, 0.25)' : 'none',
+                    cursor: certFile ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <FiFileText style={{ fontSize: '18px' }} /> {documentos.find(d => d.tipo_documento?.trim().toLowerCase().includes('certificaci')) ? 'Actualizar en Bóveda' : 'Insertar en Bóveda'}
+                </button>
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ padding: '6px', background: '#f1f5f9', borderRadius: '50%', display: 'flex' }}>
+                  <FiAlertCircle style={{ color: '#3b82f6', fontSize: '14px' }} />
+                </div>
+                <span>Suba el PDF de la <strong>certificación firmada</strong> por Contabilidad o la VAF para que esté disponible en la Bóveda Digital.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -899,34 +1054,82 @@ export default function FlujoAdministrativo({ usuario }) {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {servicios.map(s => (
-                  <div key={s.id_servicio_ext} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#334155' }}>{s.tipo_servicio}</span>
-                    <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={s.requiere_contrato} 
-                        onChange={(e) => {
-                          const updated = [...servicios];
-                          const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
-                          updated[idx].requiere_contrato = e.target.checked;
-                          setServicios(updated);
-                          guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
-                        }}
-                        style={{ width: '18px', height: '18px', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                    </label>
+                {servicios.map(s => {
+                  const contratoFile = contratosFiles[s.id_servicio_ext];
+                  const hasContratoEnBoveda = documentos.find(d => d.tipo_documento?.trim().toLowerCase().includes('contrato') && d.numero_orden_compra === s.numero_orden_compra);
+
+                  return (
+                  <div key={s.id_servicio_ext} style={{ display: 'flex', flexDirection: 'column', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                        {s.tipo_servicio} 
+                        {s.numero_orden_compra && <span style={{ color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>(OC: {s.numero_orden_compra})</span>}
+                      </span>
+                      <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={s.requiere_contrato} 
+                          onChange={(e) => {
+                            const updated = [...servicios];
+                            const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
+                            updated[idx].requiere_contrato = e.target.checked;
+                            setServicios(updated);
+                            guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
+                          }}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                    
+                    {s.requiere_contrato && (
+                      <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <label style={{ 
+                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '10px 20px', margin: 0, 
+                            background: contratoFile ? '#ecfdf5' : '#ffffff', 
+                            border: `1px solid ${contratoFile ? '#10b981' : '#3b82f6'}`, 
+                            borderRadius: '8px',
+                            color: contratoFile ? '#047857' : '#3b82f6',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: contratoFile ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
+                          }}>
+                          <FiUpload style={{ fontSize: '16px' }} /> {contratoFile ? 'Contrato Listo' : 'Seleccionar Contrato PDF'}
+                          <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                                setContratosFiles(prev => ({ ...prev, [s.id_servicio_ext]: e.target.files[0] }));
+                            }
+                          }} />
+                        </label>
+
+                        <button 
+                          type="button" 
+                          disabled={!contratoFile}
+                          onClick={() => handleInsertarContratoPorServicio(s)}
+                          style={{ 
+                            padding: '10px 20px', 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '10px', 
+                            borderRadius: '8px',
+                            background: contratoFile ? '#3b82f6' : '#e2e8f0',
+                            color: contratoFile ? '#ffffff' : '#94a3b8',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            border: contratoFile ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                            boxShadow: contratoFile ? '0 4px 12px rgba(59, 130, 246, 0.25)' : 'none',
+                            cursor: contratoFile ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <FiFileText style={{ fontSize: '16px' }} /> {hasContratoEnBoveda ? 'Actualizar en Bóveda' : 'Insertar en Bóveda'}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
+                );})}
               </div>
             )}
-          </div>
-          
-          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
-            <label className="btn btn-secondary" style={{ width: '100%', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', margin: 0 }}>
-              <FiUpload /> Subir Contrato Firmado a Bóveda
-              <input type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e, 'Contrato')} />
-            </label>
           </div>
         </div>
       </div>

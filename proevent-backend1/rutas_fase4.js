@@ -572,9 +572,9 @@ module.exports = (db) => {
   router.get('/admin/licitaciones-adjudicadas', verificarToken, (req, res) => {
     db.query(`
       SELECT a.id_analisis, a.id_solicitud, a.proveedor_recomendado_id, a.fecha_analisis, 
-             s.id_evento, s.requisitos, e.nombre as nombre_evento, 
+             s.id_evento, s.descripcion_requerimientos as requisitos, e.nombre as nombre_evento, 
              p.nombre_empresa as proveedor_nombre,
-             c.monto_total_detectado, c.estado_pago, c.id_cotizacion
+             c.monto_total_detectado, c.estado_pago, c.id_cotizacion, c.factura_pdf
       FROM analisis_ia_comparativo a
       JOIN solicitud_cotizacion s ON a.id_solicitud = s.id_solicitud
       JOIN evento e ON s.id_evento = e.id_evento
@@ -582,7 +582,10 @@ module.exports = (db) => {
       LEFT JOIN cotizacion_recibida c ON a.proveedor_recomendado_id = c.id_proveedor AND a.id_solicitud = c.id_solicitud
       ORDER BY a.fecha_analisis DESC
     `, (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error('[LICITACIONES-ENDPOINT] Error SQL Detallado:', err.message, '| Código:', err.code);
+        return res.status(500).json({ error: err.message });
+      }
       res.json(results);
     });
   });
