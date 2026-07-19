@@ -241,4 +241,104 @@ const notificarUmbralPOA = async (db, id_poa, porcentajeDisponible, crearNotific
     }
 };
 
-module.exports = { notificarAutoFinalizacion, notificarUmbralPOA };
+// ── FLUJO 2: Recordatorio de Evaluación Pendiente (3 días tras finalizar) ─────────────────────
+// Notifica una sola vez al solicitante si su evento finalizó hace 3+ días y aún no evaluó.
+const notificarEvaluacionPendiente = async (db, crearNotificacionFn) => {
+    const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+        db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
+    });
+
+    try {
+        // Busca eventos Finalizados hace 3+ días sin evaluación registrada
+        const eventosPendientes = await queryAsync(
+            `SELECT e.id_evento, e.nombre, e.id_usuario
+             FROM evento e
+             WHERE e.estado = 'Finalizado'
+               AND DATEDIFF(NOW(), e.fecha_fin) >= 3
+               AND NOT EXISTS (SELECT 1 FROM evaluacion ev WHERE ev.id_evento = e.id_evento)`,
+            []
+        );
+
+        for (const evt of eventosPendientes) {
+            if (!evt.id_usuario) continue;
+
+            // Idempotencia: verifica que no se haya enviado ya este recordatorio
+            const [yaNotificado] = await queryAsync(
+                `SELECT COUNT(*) as cnt FROM notificacion_sistema
+                 WHERE id_usuario_destino = ?
+                   AND enlace_accion = 'evaluacion'
+                   AND titulo LIKE '%recordatorio%'
+                   AND cuerpo LIKE ?`,
+                [evt.id_usuario, `%#EVT-${evt.id_evento}%`]
+            );
+            if (yaNotificado && yaNotificado.cnt > 0) continue;
+
+            await crearNotificacionFn({
+                id_usuario_destino: evt.id_usuario,
+                rol_destino: null,
+                titulo: '🔔 Recordatorio: Evalúa tu evento',
+                cuerpo: `Llevas más de 3 días sin evaluar el evento "${evt.nombre}" (#EVT-${evt.id_evento}). Tu opinión es muy importante. ¡Solo toma un minuto!`,
+                enlace_accion: 'evaluacion'
+            });
+            console.log(`[Recordatorio Evaluación] Notificación enviada al usuario ${evt.id_usuario} para evento #${evt.id_evento}`);
+        }
+    } catch (error) {
+        console.error('[notificarEvaluacionPendiente] Error:', error.message);
+    }
+};
+
+// ── FLUJO 4: Alerta SLA — Evento Pendiente más de 48 horas sin revisar ────────────────────────
+// Detecta solicitudes estancadas y alerta al Administrador de Eventos y al solicitante.
+const notificarEventosSinRevisar = async (db, crearNotificacionFn) => {
+    const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+        db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
+    });
+
+    try {
+        // Busca eventos en Pendiente con más de 48 horas desde su creación
+        const eventosPendientes = await queryAsync(
+            `SELECT id_evento, nombre, id_usuario
+             FROM evento
+             WHERE estado = 'Pendiente'
+               AND TIMESTAMPDIFF(HOUR, fecha_creacion, NOW()) >= 48`,
+            []
+        );
+
+        for (const evt of eventosPendientes) {
+            // Idempotencia: verifica en la bitácora que esta alerta SLA no fue enviada antes
+            const [yaAlertado] = await queryAsync(
+                `SELECT COUNT(*) as cnt FROM notificacion_sistema
+                 WHERE rol_destino = 'Administrador de Eventos'
+                   AND titulo LIKE '%48h%'
+                   AND cuerpo LIKE ?`,
+                [`%#EVT-${evt.id_evento}%`]
+            );
+            if (yaAlertado && yaAlertado.cnt > 0) continue;
+
+            // Alerta al Administrador de Eventos
+            await crearNotificacionFn({
+                id_usuario_destino: null,
+                rol_destino: 'Administrador de Eventos',
+                titulo: '⏱️ Evento sin revisar +48h',
+                cuerpo: `El evento "${evt.nombre}" (#EVT-${evt.id_evento}) lleva más de 48 horas esperando revisión y aprobación. Por favor, atiéndelo a la brevedad.`,
+                enlace_accion: 'gestion-eventos'
+            });
+
+            // Notificar también al solicitante para que sepa que está en proceso
+            if (evt.id_usuario) {
+                await crearNotificacionFn({
+                    id_usuario_destino: evt.id_usuario,
+                    rol_destino: null,
+                    titulo: 'ℹ️ Tu solicitud sigue en revisión',
+                    cuerpo: `Tu evento "${evt.nombre}" (#EVT-${evt.id_evento}) está siendo revisado por el equipo de administración. Te notificaremos en cuanto haya una decisión.`,
+                    enlace_accion: 'mis-eventos'
+                });
+            }
+            console.log(`[SLA 48h] Alerta generada para evento #${evt.id_evento} — Pendiente hace más de 48h`);
+        }
+    } catch (error) {
+        console.error('[notificarEventosSinRevisar] Error:', error.message);
+    }
+};
+
+module.exports = { notificarAutoFinalizacion, notificarUmbralPOA, notificarEvaluacionPendiente, notificarEventosSinRevisar };

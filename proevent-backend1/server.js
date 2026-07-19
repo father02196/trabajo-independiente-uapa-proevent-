@@ -264,7 +264,7 @@ function crearNotificacion({ id_usuario_destino = null, rol_destino = null, titu
 
 // --- PROCESOS EN SEGUNDO PLANO (CRON JOBS SIMULADOS) ---
 // ── AUTO-FINALIZACIÓN DE EVENTOS ─────────────────────────
-const { notificarAutoFinalizacion } = require('./utils/notificacionService');
+const { notificarAutoFinalizacion, notificarEvaluacionPendiente, notificarEventosSinRevisar } = require('./utils/notificacionService');
 
 // Tarea automática: Revisa iterativamente si algún evento catalogado actualmente como 'Aprobado'
 // ya dejó atrás su fecha límite esperada (fecha_fin) en el mundo real y lo auto-marca en tabla como 'Finalizado'.
@@ -321,6 +321,16 @@ function autoFinalizarEventos() {
 // Interacción para levantar servicios cron
 autoFinalizarEventos(); // Efectúa una auto-revisión instintivamente una sola vez de inmediato en el preciso microsegundo donde se habilita en RAM el servidor backend Node
 setInterval(autoFinalizarEventos, 60 * 60 * 1000); // Dispara sub-rutina permanente a repetirse circular iterativamente eternamente con un plazo intermedio de 1 hora o 3600 segundos calculados matemáticamente
+
+// ── FLUJO 2: Recordatorio de Evaluación Pendiente (cada hora) ──────────────────────────────
+// Busca eventos finalizados hace 3+ días sin evaluación y recuerda al solicitante una sola vez.
+notificarEvaluacionPendiente(db, crearNotificacion);
+setInterval(() => notificarEvaluacionPendiente(db, crearNotificacion), 60 * 60 * 1000);
+
+// ── FLUJO 4: Alerta SLA — Eventos Pendientes sin revisar más de 48h (cada hora) ────────────
+// Detecta solicitudes estancadas y alerta al Administrador de Eventos y al solicitante.
+notificarEventosSinRevisar(db, crearNotificacion);
+setInterval(() => notificarEventosSinRevisar(db, crearNotificacion), 60 * 60 * 1000);
 
 // --- RUTAS DE AUTENTICACIÓN ---
 // INICIO DE SESIÓN TRADICIONAL (Email y Contraseña)
@@ -1483,30 +1493,51 @@ app.put('/eventos/:id/estado', (req, res) => {
 // ── EVENTOS ─ ELIMINAR MANUALMENTE UNA SOLICITUD ─────────────────────────────────
 app.delete('/eventos/:id', (req, res) => { // Ruta explícita DELETE masivo de cascada manual
   const { id } = req.params; // Saca var id foránea de URL param
-  db.query('DELETE FROM detalle_corporativo WHERE id_evento=?', [id], () => { // Cadena callback 1: Borrado de nodos adjuntos corporativos subyacentes
-    db.query('DELETE FROM evento_alimento WHERE id_evento=?', [id], () => { // Cadena callback 2: Borrado de relación de nodos puente alimentos
-      db.query('DELETE FROM detalle_montaje WHERE id_evento=?', [id], () => { // Cadena callback 3: Borrado de descripciones anexas de montaje
-        db.query('DELETE FROM evento WHERE id_evento=?', [id], (err) => { // Fin de cascada Callback Hell piramidal manual: Extinción del Padre/Tronco Matrix del suceso central
-          if (err) return res.status(500).json({ mensaje: 'Error al eliminar evento', error: err.message }); // Falla de sustracción profunda
-          res.json({ mensaje: 'Evento eliminado con éxito' }); // Respuesta limpia tras purga
-          const reqUserId = req.headers['x-usuario-id'];
-          if (reqUserId) {
-            (async () => {
-              try {
-                const poolConn = await req.app.locals.db.promise().getConnection();
-                await BitacoraService.auditCritical({
-                  req,
-                  accion: AUDIT_ACTIONS.ELIMINACION_EVENTO,
-                  metadata: { id_entidad: id, cambios: { evento_cancelado_borrado: true } },
-                  actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
-                  connection: poolConn
-                });
-                poolConn.release();
-              } catch (e) {
-                console.error('Fallo auditCritical elim_evento:', e);
+
+  // ── FLUJO 3: Notificación de Cancelación de Evento Aprobado ──────────────────────────────
+  // Antes de borrar, leer el estado actual del evento para notificar si estaba 'Aprobado'
+  db.query('SELECT nombre, estado, id_usuario FROM evento WHERE id_evento = ?', [id], (errRead, evtData) => {
+    const eraAprobado = evtData && evtData.length > 0 && evtData[0].estado === 'Aprobado';
+    const nombreEvento = evtData && evtData.length > 0 ? evtData[0].nombre : `#EVT-${id}`;
+    const idSolicitante = evtData && evtData.length > 0 ? evtData[0].id_usuario : null;
+
+    db.query('DELETE FROM detalle_corporativo WHERE id_evento=?', [id], () => { // Cadena callback 1: Borrado de nodos adjuntos corporativos subyacentes
+      db.query('DELETE FROM evento_alimento WHERE id_evento=?', [id], () => { // Cadena callback 2: Borrado de relación de nodos puente alimentos
+        db.query('DELETE FROM detalle_montaje WHERE id_evento=?', [id], () => { // Cadena callback 3: Borrado de descripciones anexas de montaje
+          db.query('DELETE FROM evento WHERE id_evento=?', [id], (err) => { // Fin de cascada Callback Hell piramidal manual: Extinción del Padre/Tronco Matrix del suceso central
+            if (err) return res.status(500).json({ mensaje: 'Error al eliminar evento', error: err.message }); // Falla de sustracción profunda
+            res.json({ mensaje: 'Evento eliminado con éxito' }); // Respuesta limpia tras purga
+
+            // Disparar notificaciones de cancelación solo si el evento estaba Aprobado
+            if (eraAprobado) {
+              if (idSolicitante) {
+                crearNotificacion({ id_usuario_destino: idSolicitante, rol_destino: null, titulo: '🚫 Evento Cancelado', cuerpo: `Tu evento "${nombreEvento}" (#EVT-${id}) ha sido cancelado por la administración. Comunícate con el equipo para más información.`, enlace_accion: 'mis-eventos' });
               }
-            })();
-          }
+              crearNotificacion({ id_usuario_destino: null, rol_destino: 'Administrador V-A-F', titulo: '🚫 Evento Cancelado — Liberar Fondos POA', cuerpo: `El evento "${nombreEvento}" (#EVT-${id}) fue cancelado. Verifica que los fondos del POA asignados hayan sido liberados correctamente.`, enlace_accion: 'poa-admin' });
+              crearNotificacion({ id_usuario_destino: null, rol_destino: 'Administrador de Legal', titulo: '🚫 Evento Cancelado — Verificar Contratos', cuerpo: `El evento "${nombreEvento}" (#EVT-${id}) fue cancelado. Revisa y cancela los contratos legales pendientes asociados a este evento.`, enlace_accion: 'flujo-administrativo' });
+              crearNotificacion({ id_usuario_destino: null, rol_destino: 'Administrador de Compras', titulo: '🚫 Evento Cancelado — Detener Cotizaciones', cuerpo: `El evento "${nombreEvento}" (#EVT-${id}) fue cancelado. Detén cualquier proceso de cotización o licitación activo para este evento.`, enlace_accion: 'compras' });
+              console.log(`[Cancelación] Notificaciones de cancelación enviadas para evento "${nombreEvento}" (#${id})`);
+            }
+
+            const reqUserId = req.headers['x-usuario-id'];
+            if (reqUserId) {
+              (async () => {
+                try {
+                  const poolConn = await req.app.locals.db.promise().getConnection();
+                  await BitacoraService.auditCritical({
+                    req,
+                    accion: AUDIT_ACTIONS.ELIMINACION_EVENTO,
+                    metadata: { id_entidad: id, cambios: { evento_cancelado_borrado: true, era_aprobado: eraAprobado } },
+                    actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' },
+                    connection: poolConn
+                  });
+                  poolConn.release();
+                } catch (e) {
+                  console.error('Fallo auditCritical elim_evento:', e);
+                }
+              })();
+            }
+          });
         });
       });
     });
@@ -1900,6 +1931,21 @@ app.post('/evaluaciones', (req, res) => { // Via POST API graba encuesta final d
         metadata: { id_entidad: id_evento, cambios: { id_evaluacion: result.insertId, recinto, valoracion_respuesta, satisfaccion } },
         actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
       });
+      // ── FLUJO 1: Alerta de Calidad Crítica (≤ 2 estrellas) ─────────────────────────────────
+      // Si la satisfaccion es critica, notifica al Administrador General para accion inmediata.
+      if (Number(satisfaccion) <= 2) {
+        db.query('SELECT nombre FROM evento WHERE id_evento = ?', [id_evento], (errEvt, evtRows) => {
+          const nomEvt = (evtRows && evtRows.length > 0) ? evtRows[0].nombre : `#EVT-${id_evento}`;
+          crearNotificacion({
+            id_usuario_destino: null,
+            rol_destino: 'Administrador',
+            titulo: '⚠️ Alerta de Calidad: Evaluación crítica',
+            cuerpo: `El evento "${nomEvt}" (#EVT-${id_evento}) recibió una calificación de ${satisfaccion}/5 estrellas. Se requiere revisión inmediata del servicio prestado.`,
+            enlace_accion: 'evaluaciones'
+          });
+          console.log(`[Alerta Calidad] Evaluación crítica (${satisfaccion}★) registrada para evento #${id_evento}`);
+        });
+      }
     }
   );
 });

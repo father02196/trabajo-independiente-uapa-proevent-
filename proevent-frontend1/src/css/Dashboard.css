@@ -49,11 +49,11 @@
 
 /* ── Sidebar Collapsed ── */
 .sidebar-collapsed .dashboard-sidebar {
-  width: 68px;
+  width: 0;
 }
 
 .dashboard-sidebar.collapsed {
-  width: 68px;
+  width: 0;
 }
 
 /* ── Brand Custom (Nuevo Logo) ── */
