@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiChevronLeft, FiEye, FiEdit2, FiFilter, FiSearch, FiTrash2, FiTrendingUp } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiChevronLeft, FiEye, FiEdit2, FiFilter, FiSearch, FiTrash2, FiTrendingUp, FiShield } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import logoIcono from './../img/logo-icono.png';
@@ -166,7 +166,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Evaluacion":
                 return "Evaluación de Servicios";
             case "Bitacora":
-                return "Actividad de Usuario";
+                return "Auditoría Corporativa";
             case "AdminAudiovisual":
                 return "Catálogo Audiovisual";
             case "InventarioAV":
@@ -405,8 +405,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                     {usuario?.rol === "Administrador" && (
                                         <>
                                             <li className={activeTab === "Bitacora" ? "active" : ""} onClick={() => setActiveTab("Bitacora")}>
-                                                <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                                Actividad de usuario
+                                                <FiShield className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                                Auditoría Corporativa
                                             </li>
                                             <li className={activeTab === "Ajustes" ? "active" : ""} onClick={() => setActiveTab("Ajustes")}>
                                                 <FiSliders className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
