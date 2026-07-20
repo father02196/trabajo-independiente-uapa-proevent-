@@ -232,9 +232,9 @@ module.exports = (db) => {
         nombre: proveedor.nombre_empresa,
         tipo_usuario: 'proveedor'
       };
-      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '15m' });
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '30m' });
       
-      res.cookie('accessToken', token, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+      res.cookie('accessToken', token, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 30 * 60 * 1000 });
 
       BitacoraService.auditCritical({
         req, 
@@ -428,11 +428,18 @@ module.exports = (db) => {
       return res.status(403).json({ error: 'Acceso denegado a estas solicitudes' });
     }
     const id_tipo = req.params.id_tipo;
+    const id_proveedor = req.user.id_proveedor || req.user.id;
+    
     db.query(`
       SELECT s.*, e.nombre as nombre_evento, e.fecha_inicio
       FROM solicitud_cotizacion s
       JOIN evento e ON s.id_evento = e.id_evento
-      WHERE s.id_tipo_servicio = ? AND s.estado = 'Abierta'`, [id_tipo], (err, results) => {
+      WHERE s.id_tipo_servicio = ? 
+        AND s.estado = 'Abierta'
+        AND s.fecha_limite > NOW()
+        AND s.id_solicitud NOT IN (
+            SELECT id_solicitud FROM cotizacion_recibida WHERE id_proveedor = ?
+        )`, [id_tipo, id_proveedor], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(results);
     });
@@ -468,6 +475,29 @@ module.exports = (db) => {
       if (!req.file) return res.status(400).json({ error: 'Debe adjuntar un PDF válido menor a 10MB.' });
       
       const { id_solicitud, id_proveedor, moneda, fecha_vigencia, comentarios } = req.body;
+
+      // SEGURIDAD: Validar en BD que el tiempo no ha expirado antes de guardar
+      const [rows] = await db.promise().query('SELECT fecha_limite FROM solicitud_cotizacion WHERE id_solicitud = ?', [id_solicitud]);
+      if (rows.length > 0 && new Date(rows[0].fecha_limite) < new Date()) {
+        return res.status(403).json({ error: 'La fecha límite para cotizar esta solicitud ha expirado.' });
+      }
+
+      // SEGURIDAD: Límite de caracteres y detección de SQL Injection
+      if (comentarios) {
+        if (comentarios.length > 1000) {
+          return res.status(400).json({ error: 'Las notas del proveedor no pueden exceder los 1000 caracteres.' });
+        }
+        const sqlRegex = /\b(SELECT\s+.*?\s+FROM|UPDATE\s+.*?\s+SET|INSERT\s+INTO|DELETE\s+FROM|DROP\s+TABLE|UNION\s+SELECT|OR\s+1\s*=\s*1)\b/i;
+        const sqlMatch = comentarios.match(sqlRegex);
+        if (sqlMatch) {
+          const palabraMaliciosa = sqlMatch[1].split(/\s+/)[0].toUpperCase();
+          return res.status(403).json({ 
+            error: 'SECURITY_ALERT', 
+            mensaje: 'Intento de Inyección SQL detectado', 
+            palabra_maliciosa: palabraMaliciosa 
+          });
+        }
+      }
 
       // 1. Guardar archivo en disco (simulado aquí, pero idealmente fs.writeFileSync)
       // Como estamos en un entorno restrictivo, usaremos el buffer para parsear, pero guardaremos un nombre simulado
@@ -509,6 +539,77 @@ module.exports = (db) => {
         res.json({ message: 'Cotización subida correctamente.', monto_extraido: monto_detectado });
       });
 
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 5.1 Historial de Cotizaciones
+  router.get('/proveedor/:id_proveedor/cotizaciones', verificarToken, (req, res) => {
+    if (req.user.tipo_usuario !== 'proveedor' || req.user.id_proveedor.toString() !== req.params.id_proveedor.toString()) {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+    const { id_proveedor } = req.params;
+    db.query(`
+      SELECT c.id_cotizacion, c.fecha_subida, c.monto_total_detectado, c.moneda, c.estado, c.ruta_documento_pdf,
+             e.nombre AS nombre_evento, s.descripcion_requerimientos AS requerimiento, s.id_evento
+      FROM cotizacion_recibida c
+      JOIN solicitud_cotizacion s ON c.id_solicitud = s.id_solicitud
+      JOIN evento e ON s.id_evento = e.id_evento
+      WHERE c.id_proveedor = ?
+      ORDER BY c.fecha_subida DESC
+      LIMIT 100
+    `, [id_proveedor], (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
+  });
+
+  // 5.2 Reemplazar Cotización (PDF)
+  router.put('/proveedor/cotizacion/:id_cotizacion/reemplazar', upload.single('archivo_pdf'), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'Debe adjuntar un PDF válido menor a 10MB.' });
+      
+      const { id_cotizacion } = req.params;
+      
+      db.query(`SELECT fecha_subida, id_solicitud, id_proveedor FROM cotizacion_recibida WHERE id_cotizacion = ?`, [id_cotizacion], async (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (results.length === 0) return res.status(404).json({ error: 'Cotización no encontrada' });
+        
+        const cotizacion = results[0];
+        const horaSubida = new Date(cotizacion.fecha_subida).getTime();
+        const horaActual = new Date().getTime();
+        const diffMinutos = (horaActual - horaSubida) / (1000 * 60);
+        
+        if (diffMinutos > 60) {
+          return res.status(403).json({ error: 'El tiempo límite de 1 hora para reemplazar la cotización ha expirado.' });
+        }
+        
+        const data = await pdfParse(req.file.buffer);
+        const rawText = data.text;
+        
+        let monto_detectado = null;
+        const regexTotal = /(total|monto|neto|pagar)[\s\S]{0,10}?\$?\s?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/gi;
+        let match;
+        while ((match = regexTotal.exec(rawText)) !== null) {
+            monto_detectado = match[2].replace(/,/g, '');
+        }
+
+        const fileName = `cotizacion_reemplazo_${id_cotizacion}_${Date.now()}.pdf`;
+        const uploadPath = './uploads/' + fileName;
+        if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
+        fs.writeFileSync(uploadPath, req.file.buffer);
+        
+        db.query(`
+          UPDATE cotizacion_recibida 
+          SET ruta_documento_pdf = ?, monto_total_detectado = ?, fecha_subida = CURRENT_TIMESTAMP
+          WHERE id_cotizacion = ?
+        `, [uploadPath, monto_detectado, id_cotizacion], (updateErr) => {
+           if (updateErr) return res.status(500).json({ error: updateErr.message });
+           res.json({ message: 'Cotización reemplazada correctamente', monto_extraido: monto_detectado });
+        });
+      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: error.message });

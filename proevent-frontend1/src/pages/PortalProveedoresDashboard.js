@@ -21,8 +21,14 @@ import { toast } from 'react-hot-toast';
 function PortalProveedoresDashboard({ proveedor, onLogout }) {
   // --- ESTADOS DE DATOS ---
   const [solicitudes, setSolicitudes] = useState([]); // Lista de licitaciones (eventos en cotización)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const [historialCurrentPage, setHistorialCurrentPage] = useState(1);
+  const historialItemsPerPage = 15;
   const [metricas, setMetricas] = useState({ enviadas: 0, pendientes: 0, ganadas: 0 }); // Métricas B2B
   const [loading, setLoading]         = useState(false); // Spinner
+  const [viewMode, setViewMode]       = useState('abiertas'); // 'abiertas' | 'historial'
+  const [cotizacionesHistorial, setCotizacionesHistorial] = useState([]);
 
   // --- ESTADOS DEL MODAL DE COTIZACIÓN ---
   const [modalOpen, setModalOpen]                         = useState(false);
@@ -32,11 +38,17 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [solicitudDetalles, setSolicitudDetalles] = useState(null);
 
-  // --- ESTADOS DEL FORMULARIO DE OFERTA (Mejora 2) ---
+  // --- ESTADOS DEL FORMULARIO DE OFERTA ---
   const [file, setFile]                   = useState(null);  // Archivo PDF de la cotización
   const [moneda, setMoneda]               = useState('DOP'); // Moneda ofertada
   const [fechaVigencia, setFechaVigencia] = useState('');    // Límite de validez de la oferta
   const [comentarios, setComentarios]     = useState('');    // Notas extras del proveedor
+  const [securityAlert, setSecurityAlert] = useState(null);  // Alerta de seguridad SQL
+
+  // --- ESTADOS EDICIÓN COTIZACIÓN ---
+  const [editModalOpen, setEditModalOpen]           = useState(false);
+  const [cotizacionEditando, setCotizacionEditando] = useState(null);
+  const [nuevoArchivo, setNuevoArchivo]             = useState(null);
 
   // --- FUNCIÓN: fetchMetricas ---
   const fetchMetricas = async () => {
@@ -59,6 +71,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       const data = await res.json();
       if (res.ok && Array.isArray(data)) {
         setSolicitudes(data);
+        setCurrentPage(1); // Reiniciar a la primera página al cargar nuevos datos
       } else {
         setSolicitudes([]);
         console.error(data?.mensaje || data?.message || data?.error || "Error al cargar solicitudes");
@@ -72,6 +85,41 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
       setLoading(false);
     }
   };
+
+  // --- FUNCIÓN: fetchHistorialCotizaciones ---
+  const fetchHistorialCotizaciones = async (showAlert = false) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8080/api/proveedor/${proveedor.id}/cotizaciones`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
+      });
+      const data = await res.json();
+      if (res.ok && Array.isArray(data)) {
+        setCotizacionesHistorial(data);
+        setHistorialCurrentPage(1); // Reiniciar paginador del historial
+      } else {
+        setCotizacionesHistorial([]);
+      }
+      if (showAlert) alert("Historial actualizado");
+    } catch (err) {
+      console.error(err);
+      if (showAlert) alert("Error al conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- LÓGICA DE PAGINACIÓN (LICITACIONES ABIERTAS) ---
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentSolicitudes = solicitudes.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(solicitudes.length / itemsPerPage);
+
+  // --- LÓGICA DE PAGINACIÓN (HISTORIAL DE COTIZACIONES) ---
+  const indexOfLastHistorialItem = historialCurrentPage * historialItemsPerPage;
+  const indexOfFirstHistorialItem = indexOfLastHistorialItem - historialItemsPerPage;
+  const currentCotizacionesHistorial = cotizacionesHistorial.slice(indexOfFirstHistorialItem, indexOfLastHistorialItem);
+  const totalHistorialPages = Math.ceil(cotizacionesHistorial.length / historialItemsPerPage);
 
   // --- EFECTO INICIAL ---
   useEffect(() => {
@@ -141,11 +189,50 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
         setComentarios('');
         fetchMetricas(); // Actualizar las tarjetas automáticamente
       } else {
+        if (res.status === 403 && data.error === 'SECURITY_ALERT') {
+          setSecurityAlert({ palabra: data.palabra_maliciosa });
+        } else {
+          alert('Error: ' + data.error);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión.');
+    }
+  };
+
+  // --- FUNCIÓN: handleReemplazarCotizacion ---
+  const handleReemplazarCotizacion = async (e) => {
+    e.preventDefault();
+    if (!nuevoArchivo) {
+      alert("Debes seleccionar un nuevo archivo PDF.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append('archivo_pdf', nuevoArchivo);
+
+    try {
+      setLoading(true);
+      const res = await fetch(`http://localhost:8080/api/proveedor/cotizacion/${cotizacionEditando.id_cotizacion}/reemplazar`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || 'Cotización actualizada con éxito');
+        setEditModalOpen(false);
+        setCotizacionEditando(null);
+        setNuevoArchivo(null);
+        fetchHistorialCotizaciones();
+      } else {
         alert('Error: ' + data.error);
       }
     } catch (error) {
       console.error(error);
       alert('Error de conexión.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -198,23 +285,48 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
           </div>
         </div>
 
-        <div className="header-card">
+        <div className="header-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginBottom: '6px' }}>Licitaciones Abiertas para tu Categoría</h1>
-            <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>A continuación se muestran las solicitudes de servicios de la UAPA que coinciden con tu perfil.</p>
+            <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginBottom: '6px' }}>
+              {viewMode === 'abiertas' ? 'Licitaciones Abiertas para tu Categoría' : 'Historial de Cotizaciones'}
+            </h1>
+            <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>
+              {viewMode === 'abiertas' 
+                ? 'A continuación se muestran las solicitudes de servicios de la UAPA que coinciden con tu perfil.'
+                : 'Registro histórico de todas tus ofertas enviadas y su estado actual.'}
+            </p>
           </div>
-          <button 
-            type="button"
-            className="btn btn-secondary btn-sm" 
-            onClick={() => fetchSolicitudes(true)} 
-            title="Recargar lista" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <FiRefreshCw /> Recargar
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              type="button"
+              className="btn btn-secondary btn-sm" 
+              onClick={() => {
+                if (viewMode === 'abiertas') {
+                  setViewMode('historial');
+                  fetchHistorialCotizaciones(false);
+                } else {
+                  setViewMode('abiertas');
+                  fetchSolicitudes(false);
+                }
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <FiFileText /> {viewMode === 'abiertas' ? 'Ver Historial de Cotizaciones' : 'Ver Licitaciones Abiertas'}
+            </button>
+            <button 
+              type="button"
+              className="btn btn-secondary btn-sm" 
+              onClick={() => viewMode === 'abiertas' ? fetchSolicitudes(true) : fetchHistorialCotizaciones(true)} 
+              title="Recargar lista" 
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <FiRefreshCw /> Recargar
+            </button>
+          </div>
         </div>
         
-        <div className="table-container">
+        {viewMode === 'abiertas' ? (
+          <div className="table-container">
           {solicitudes.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px", color: "#64748B" }}>
               <p style={{ fontWeight: '600' }}>No hay licitaciones abiertas en este momento.</p>
@@ -230,7 +342,7 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
                 </tr>
               </thead>
               <tbody>
-                {solicitudes.map(sol => (
+                {currentSolicitudes.map(sol => (
                   <tr key={sol.id_solicitud}>
                     <td>
                       <div className="b2b-event-title">{sol.nombre_evento}</div>
@@ -257,9 +369,130 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
                   </tr>
                 ))}
               </tbody>
+              {/* --- CONTROLES DE PAGINACIÓN DENTRO DE LA TABLA --- */}
+              {totalPages > 1 && (
+                <tfoot>
+                  <tr>
+                    <td colSpan="4" style={{ backgroundColor: '#F8FAFC', borderTop: '1px solid #E2E8F0', padding: '12px 24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '14px', color: '#64748B', fontWeight: '500' }}>
+                          Página {currentPage} de {totalPages}
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            className="btn btn-secondary btn-sm" 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            style={{ backgroundColor: '#ffffff', border: '1px solid #E2E8F0' }}
+                          >
+                            Anterior
+                          </button>
+                          <button 
+                            className="btn btn-secondary btn-sm" 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            style={{ backgroundColor: '#ffffff', border: '1px solid #E2E8F0' }}
+                          >
+                            Siguiente
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           )}
         </div>
+        ) : (
+          <div className="table-container">
+            {cotizacionesHistorial.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "#64748B" }}>
+                <p style={{ fontWeight: '600' }}>No tienes cotizaciones en el historial.</p>
+              </div>
+            ) : (
+              <table className="b2b-modern-table">
+                <thead>
+                  <tr>
+                    <th>COTIZACIÓN</th>
+                    <th>FECHA Y ESTADO</th>
+                    <th>EVENTO RELACIONADO</th>
+                    <th>MONTO OFERTADO</th>
+                    <th style={{ textAlign: 'center' }}>DOCUMENTO Y ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentCotizacionesHistorial.map(cot => {
+                    const diffMinutos = (new Date().getTime() - new Date(cot.fecha_subida).getTime()) / (1000 * 60);
+                    const canEdit = diffMinutos <= 60;
+                    return (
+                      <tr key={cot.id_cotizacion}>
+                        <td>
+                          <div className="b2b-event-id">#COT-{cot.id_cotizacion}</div>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '14px', color: '#475569', marginBottom: '4px' }}>
+                            {new Date(cot.fecha_subida).toLocaleString()}
+                          </div>
+                          <span className={`badge badge-${cot.estado === 'Seleccionada' ? 'green' : cot.estado === 'Rechazada' ? 'red' : cot.estado === 'Evaluada' ? 'blue' : 'yellow'}`}>
+                            {cot.estado}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="b2b-event-title">{cot.nombre_evento}</div>
+                          <div className="b2b-event-id">#EVT-{cot.id_evento}</div>
+                          <div style={{ color: '#475569', fontSize: '13px', marginTop: '4px' }}>{cot.requerimiento}</div>
+                        </td>
+                        <td>
+                          <strong style={{ color: '#0F172A' }}>{cot.moneda} ${cot.monto_total_detectado ? Number(cot.monto_total_detectado).toLocaleString() : 'N/A'}</strong>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                            <a href={`http://localhost:8080/${cot.ruta_documento_pdf?.replace('./', '')}`} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                              <FiEye /> Ver PDF
+                            </a>
+                            {canEdit ? (
+                              <button type="button" className="btn btn-primary btn-sm" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '6px', backgroundColor: '#3B82F6', borderColor: '#3B82F6', color: 'white' }} onClick={() => { setCotizacionEditando(cot); setEditModalOpen(true); }}>
+                                <FiUploadCloud /> Cambiar PDF
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '12px', color: '#94A3B8' }}>Tiempo agotado</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan="5">
+                      <div className="b2b-pagination">
+                        <button 
+                          className="btn btn-secondary btn-sm" 
+                          onClick={() => setHistorialCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={historialCurrentPage === 1}
+                        >
+                          Anterior
+                        </button>
+                        <span className="b2b-pagination-info">
+                          Página <strong>{historialCurrentPage}</strong> de {totalHistorialPages || 1}
+                        </span>
+                        <button 
+                          className="btn btn-secondary btn-sm" 
+                          onClick={() => setHistorialCurrentPage(prev => Math.min(prev + 1, totalHistorialPages))}
+                          disabled={historialCurrentPage === totalHistorialPages || totalHistorialPages === 0}
+                        >
+                          Siguiente
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Modal de Detalles del Evento (Ficha Técnica B2B) */}
@@ -334,53 +567,59 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
             
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
-                <div className="info-card" style={{ marginBottom: '24px' }}>
-                  <div className="info-row">
-                    <span className="info-label">Evento Relacionado</span>
-                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '15px' }}>
+                <div className="info-card" style={{ marginBottom: '16px', padding: '12px 16px' }}>
+                  <div className="info-row" style={{ margin: 0 }}>
+                    <span className="info-label" style={{ marginBottom: 0 }}>Evento Relacionado</span>
+                    <span className="info-value" style={{ color: '#3B82F6', fontSize: '14px', marginTop: '4px' }}>
                       {solicitudSeleccionada.nombre_evento}
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* 1. Archivo PDF */}
                   <div>
-                    <label className="block text-sm font-bold text-text-main mb-2">1. Archivo PDF (Max 10MB)</label>
+                    <label className="block text-sm font-bold text-text-main mb-1">1. Archivo PDF (Max 10MB)</label>
                     <div 
                       className="file-drop-area" 
                       onClick={() => document.getElementById('pdf-upload').click()}
-                      style={{ border: '2px dashed #CBD5E1', borderRadius: '8px', padding: '32px 20px', textAlign: 'center', cursor: 'pointer', background: '#F8FAFC', transition: 'all 0.2s ease' }}
+                      style={{ border: '2px dashed #CBD5E1', borderRadius: '8px', padding: '16px 20px', textAlign: 'center', cursor: 'pointer', background: '#F8FAFC', transition: 'all 0.2s ease' }}
                     >
-                      <FiUploadCloud size={32} color="#94A3B8" style={{ margin: '0 auto 12px auto' }} />
-                      <p style={{ color: '#475569', margin: 0, fontSize: '14px', fontWeight: '500' }}>Haz clic para seleccionar el archivo PDF de la cotización</p>
+                      <FiUploadCloud size={24} color="#94A3B8" style={{ margin: '0 auto 8px auto' }} />
+                      <p style={{ color: '#475569', margin: 0, fontSize: '13px', fontWeight: '500' }}>Haz clic para seleccionar el archivo PDF</p>
                       <input id="pdf-upload" type="file" accept=".pdf" style={{display: 'none'}} onChange={handleFileChange} />
                     </div>
-                    {file && <div className="file-info" style={{ marginTop: '8px', fontSize: '13px', color: '#10B981', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {file && <div className="file-info" style={{ marginTop: '4px', fontSize: '12px', color: '#10B981', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       ✓ Archivo seleccionado: {file.name}
                     </div>}
                   </div>
 
-                  {/* 5. Moneda */}
-                  <div>
-                    <label className="block text-sm font-bold text-text-main mb-2">Moneda de Cotización</label>
-                    <select className="input-base" value={moneda} onChange={e => setMoneda(e.target.value)}>
-                      <option value="DOP">Pesos Dominicanos (DOP)</option>
-                      <option value="USD">Dólares (USD)</option>
-                      <option value="EUR">Euros (EUR)</option>
-                    </select>
-                  </div>
+                  {/* Fila agrupada: Moneda y Fecha */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {/* 5. Moneda */}
+                    <div>
+                      <label className="block text-sm font-bold text-text-main mb-1">Moneda de Cotización</label>
+                      <select className="input-base" style={{ padding: '8px 12px' }} value={moneda} onChange={e => setMoneda(e.target.value)}>
+                        <option value="DOP">Pesos Dominicanos (DOP)</option>
+                        <option value="USD">Dólares (USD)</option>
+                        <option value="EUR">Euros (EUR)</option>
+                      </select>
+                    </div>
 
-                  {/* 6. Fecha de Vigencia */}
-                  <div>
-                    <label className="block text-sm font-bold text-text-main mb-2">Válida Hasta</label>
-                    <input type="date" className="input-base" value={fechaVigencia} onChange={e => setFechaVigencia(e.target.value)} required />
+                    {/* 6. Fecha de Vigencia */}
+                    <div>
+                      <label className="block text-sm font-bold text-text-main mb-1">Válida Hasta</label>
+                      <input type="date" className="input-base" style={{ padding: '8px 12px' }} value={fechaVigencia} onChange={e => setFechaVigencia(e.target.value)} required />
+                    </div>
                   </div>
 
                   {/* 4. Comentarios Opcionales */}
                   <div>
-                    <label className="block text-sm font-bold text-text-main mb-2">Notas del Proveedor (Opcional)</label>
-                    <textarea className="input-base" rows="3" value={comentarios} onChange={e => setComentarios(e.target.value)} placeholder="Ej: La instalación incluye soporte técnico presencial..." />
+                    <label className="block text-sm font-bold text-text-main mb-1">Notas del Proveedor (Opcional)</label>
+                    <textarea className="input-base" rows="2" style={{ padding: '8px 12px' }} maxLength="1000" value={comentarios} onChange={e => setComentarios(e.target.value)} placeholder="Ej: La instalación incluye soporte técnico presencial..." />
+                    <div style={{ fontSize: '11px', color: '#64748B', textAlign: 'right', marginTop: '2px' }}>
+                      {comentarios.length}/1000
+                    </div>
                   </div>
                 </div>
               </div>
@@ -392,6 +631,64 @@ function PortalProveedoresDashboard({ proveedor, onLogout }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal Disuasorio de Seguridad (SQL Injection) */}
+      {securityAlert && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', borderTop: '5px solid #EF4444' }}>
+            <h3 style={{ color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              ⚠️ Alerta de Seguridad
+            </h3>
+            <p style={{ marginTop: '12px', color: '#333' }}>
+              Se ha detectado una sentencia o comando de base de datos no permitido en su comentario.
+            </p>
+            <p style={{ marginTop: '8px', color: '#333' }}>
+              El cuadro de comentario <strong>será bloqueado</strong> si intenta nuevamente una acción maliciosa utilizando la palabra: <strong style={{ color: '#EF4444', fontSize: '16px' }}>{securityAlert.palabra}</strong>
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button className="btn btn-secondary" onClick={() => setSecurityAlert(null)}>Entendido</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal para Reemplazar Cotización (Límite 1 hr) */}
+      {editModalOpen && cotizacionEditando && createPortal(
+        <div className="modal-overlay" onClick={() => setEditModalOpen(false)}>
+          <div className="modal-content modal-premium" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <div>
+                <h3 className="modal-title">Reemplazar Cotización</h3>
+                <span className="modal-subtitle">Actualiza el archivo PDF antes de que expire el límite de 1 hora.</span>
+              </div>
+            </div>
+            
+            <div className="modal-body">
+              <form onSubmit={handleReemplazarCotizacion}>
+                <div className="b2b-form-group">
+                  <label>Selecciona el nuevo PDF (Max 10MB)</label>
+                  <div className="b2b-file-upload">
+                    <input type="file" accept=".pdf" onChange={(e) => setNuevoArchivo(e.target.files[0])} required id="nuevo-pdf" />
+                    <label htmlFor="nuevo-pdf" className="b2b-file-label">
+                      <FiUploadCloud size={24} style={{ marginBottom: '8px', color: '#3B82F6' }} />
+                      {nuevoArchivo ? nuevoArchivo.name : 'Haz clic para seleccionar el nuevo archivo PDF'}
+                    </label>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setEditModalOpen(false)}>Cancelar</button>
+                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? 'Subiendo...' : 'Actualizar Cotización'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>,
         document.body
