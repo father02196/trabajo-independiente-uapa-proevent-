@@ -67,13 +67,22 @@ function ModuloProveedores({ usuario }) {
     const [modalEvidencia, setModalEvidencia] = useState({ open: false, servicioId: null });
     const [evidenciaFile, setEvidenciaFile] = useState(null);
 
+    // --- ESTADO PARA PAGINACIÓN DE LOGÍSTICA ---
+    const [paginaLogistica, setPaginaLogistica] = useState(1);
+    const [offsetDatos, setOffsetDatos] = useState(0);
+    const [hayMasDatosBD, setHayMasDatosBD] = useState(true);
+
     // --- EFECTOS: Carga dinámica según la pestaña ---
     useEffect(() => {
-        if (activeTab === 'logistica') fetchServicios();
+        if (activeTab === 'logistica') fetchServicios(true);
         if (activeTab === 'directorio') fetchProveedores();
         if (activeTab === 'ia') cargarLicitacionesAdjudicadas();
         fetchCategoriasActivas(); // Siempre cargar categorías para los modales
     }, [activeTab]);
+
+    useEffect(() => {
+        setPaginaLogistica(1);
+    }, [filtroEstadoRecepcion, servicios]);
 
     // --- FUNCIÓN: fetchCategoriasActivas ---
     // Obtiene categorías de proveedor para los combos (ej. Floristería, Catering)
@@ -100,11 +109,20 @@ function ModuloProveedores({ usuario }) {
 
     // --- FUNCIÓN: fetchServicios ---
     // Obtiene las órdenes de servicio que necesitan ser enviadas a suplidores
-    const fetchServicios = async () => {
+    const fetchServicios = async (reset = true, customOffset = 0) => {
+        if (typeof reset !== 'boolean') reset = true; // Handle React onClick events
         try {
-            const response = await fetch('http://localhost:8080/servicios-externos-all');
+            const offsetToUse = reset ? 0 : customOffset;
+            const response = await fetch(`http://localhost:8080/servicios-externos-all?limit=200&offset=${offsetToUse}`);
             const data = await response.json();
-            setServicios(data);
+            
+            if (reset) {
+                setServicios(data.data || []);
+            } else {
+                setServicios(prev => [...prev, ...(data.data || [])]);
+            }
+            setOffsetDatos(offsetToUse);
+            setHayMasDatosBD(data.hasMore);
         } catch (error) { console.error('Error fetching servicios:', error); }
     };
 
@@ -417,6 +435,19 @@ function ModuloProveedores({ usuario }) {
     const serviciosList = servicios.filter(s => filtroEstadoRecepcion === 'Todos' || (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor));
     const sortedServicios = [...serviciosList].sort((a, b) => (a.nombre_evento || '').localeCompare(b.nombre_evento || ''));
 
+    const EVENTOS_POR_PAGINA_LOGISTICA = 10;
+    const totalPaginasLogistica = Math.ceil(sortedServicios.length / EVENTOS_POR_PAGINA_LOGISTICA);
+    const startIndexLogistica = (paginaLogistica - 1) * EVENTOS_POR_PAGINA_LOGISTICA;
+    const serviciosPaginados = sortedServicios.slice(startIndexLogistica, startIndexLogistica + EVENTOS_POR_PAGINA_LOGISTICA);
+
+    const handleSiguientePagina = () => {
+        const nextPag = paginaLogistica + 1;
+        setPaginaLogistica(nextPag);
+        if (nextPag >= totalPaginasLogistica && hayMasDatosBD) {
+            fetchServicios(false, offsetDatos + 200);
+        }
+    };
+
     // Directorio:
     const categoriasUnicas = [...new Set(proveedores.map(p => p.categoria))];
     const proveedoresFiltrados = proveedores.filter(p => {
@@ -500,7 +531,7 @@ function ModuloProveedores({ usuario }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedServicios.length === 0 ? (
+                                {serviciosPaginados.length === 0 ? (
                                     <tr>
                                         <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
                                             <FiPackage style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
@@ -509,7 +540,7 @@ function ModuloProveedores({ usuario }) {
                                         </td>
                                     </tr>
                                 ) : (
-                                    sortedServicios.map(s => (
+                                    serviciosPaginados.map(s => (
                                             <tr key={s.id_servicio_ext}>
                                                 <td>
                                                     <div style={{ fontSize: '14px', color: '#64748B', fontWeight: '600' }}>#EVT-{s.id_evento}</div>
@@ -606,6 +637,41 @@ function ModuloProveedores({ usuario }) {
                                         ))
                                 )}
                             </tbody>
+                            {/* NUEVA FILA DE PAGINACIÓN INTEGRADAS AL FINAL DE LA TABLA */}
+                            {(totalPaginasLogistica > 1 || hayMasDatosBD) && (
+                                <tfoot>
+                                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                        <td colSpan="6" style={{ padding: '10px 16px', fontWeight: 'normal', textTransform: 'none', letterSpacing: 'normal' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '13px', color: '#64748b' }}>
+                                                    Mostrando {startIndexLogistica + 1} - {Math.min(startIndexLogistica + EVENTOS_POR_PAGINA_LOGISTICA, sortedServicios.length)} de {sortedServicios.length} servicios {hayMasDatosBD && '(Más datos disponibles)'}
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => setPaginaLogistica(p => Math.max(1, p - 1))}
+                                                        disabled={paginaLogistica === 1}
+                                                        style={{ padding: '4px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: paginaLogistica === 1 ? '#f1f5f9' : '#fff', color: paginaLogistica === 1 ? '#94a3b8' : '#334155', cursor: paginaLogistica === 1 ? 'not-allowed' : 'pointer', fontSize: '13px' }}
+                                                    >
+                                                        Atrás
+                                                    </button>
+                                                    <span style={{ fontSize: '13px', color: '#475569', fontWeight: '600' }}>
+                                                        Pág. {paginaLogistica} {totalPaginasLogistica > 0 ? `de ${totalPaginasLogistica}` : ''}
+                                                    </span>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={handleSiguientePagina}
+                                                        disabled={paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD}
+                                                        style={{ padding: '4px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: (paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD) ? '#f1f5f9' : '#fff', color: (paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD) ? '#94a3b8' : '#334155', cursor: (paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD) ? 'not-allowed' : 'pointer', fontSize: '13px' }}
+                                                    >
+                                                        Siguiente
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 </>

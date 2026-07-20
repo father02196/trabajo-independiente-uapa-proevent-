@@ -2956,15 +2956,19 @@ app.put('/eventos/:id/cerrar-expediente', (req, res) => {
 
 // 5. Endpoint global para Módulo Proveedores (Frontend)
 app.get('/servicios-externos-all', (req, res) => {
+  const limit = parseInt(req.query.limit) || 200;
+  const offset = parseInt(req.query.offset) || 0;
+
   db.query(`
     SELECT se.*, tse.nombre as tipo_servicio, tse.clasificacion, e.nombre as nombre_evento, e.fecha_inicio
     FROM servicio_externo se
     JOIN tipo_servicio_externo tse ON se.id_tipo_servicio = tse.id_tipo_servicio
     JOIN evento e ON se.id_evento = e.id_evento
     ORDER BY e.fecha_inicio DESC, se.fecha_solicitud DESC
-  `, (err, results) => {
+    LIMIT ? OFFSET ?
+  `, [limit, offset], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+    res.json({ data: results, hasMore: results.length === limit });
   });
 });
 
