@@ -1372,7 +1372,7 @@ app.put('/eventos/:id/estado', (req, res) => {
   // --- Módulo: Eventos | Función: Actualizar estado y asignar coordinador (Fase 1 del Relevo) ---
   const { id } = req.params;
   const { estado, id_coordinador } = req.body;
-  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado'];
+  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado', 'En Progreso'];
 
   if (!estadosValidos.includes(estado))
     return res.status(400).json({ mensaje: 'Estado no válido' });
