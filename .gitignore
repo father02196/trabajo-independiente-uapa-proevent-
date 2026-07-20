@@ -24,3 +24,5 @@ node_modules/
 # Carpetas privadas y scripts temporales
 uploads/
 scratch/
+google_tokens.json
+proevent-backend1/config/google_tokens.json

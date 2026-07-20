@@ -32,7 +32,7 @@ function sanitizeUser(user) {
 }
 
 // --- CONFIGURACIÓN DE GOOGLE OAUTH ---
-const GOOGLE_CLIENT_ID = '426335318098-v39ood0lcapc22lgoq3lons62hbf507m.apps.googleusercontent.com'; // Credencial pública de la App en Google Cloud
+const GOOGLE_CLIENT_ID = '426335318098-fjl9m98i4ufsvt9qjerlf7815nlt9idi.apps.googleusercontent.com'; // Credencial pública de la App en Google Cloud
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID); // Inicializa el cliente oficial de Google para validar inicio de sesión
 
 // --- CONFIGURACIÓN DEL SERVIDOR EXPRESS ---

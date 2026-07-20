@@ -12,6 +12,7 @@ import {
   FiList, FiCheck, FiAlertCircle, FiStar,
   FiMapPin, FiUser, FiRefreshCw, FiEye, FiChevronRight
 } from "react-icons/fi";
+import { createPortal } from "react-dom";
 
 import './../../css/Dashboard.css';
 
@@ -34,6 +35,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
   const [activeEventsSortId, setActiveEventsSortId]       = useState("");     // Orden por ID: asc | desc | "" (sin orden por ID)
   const [completandoId, setCompletandoId] = useState(null); // ID de tarea en proceso de completar
   const [modalEvento, setModalEvento]     = useState(null); // Evento activo en modal
+  const [confirmarTarea, setConfirmarTarea] = useState(null); // ID de la tarea a confirmar
 
   // --- FUNCIÓN: cargarDatos ---
   const cargarDatos = useCallback(async (silent = false) => {
@@ -366,7 +368,7 @@ function DashboardApoyo({ usuario, setActiveTab }) {
                       </div>
                       <button
                         type="button"
-                        onClick={() => completarTarea(t.id_actividad)}
+                        onClick={() => setConfirmarTarea(t.id_actividad)}
                         disabled={isCompleting}
                         style={{
                           background: isCompleting ? '#94a3b8' : '#10b981',
@@ -715,6 +717,71 @@ function DashboardApoyo({ usuario, setActiveTab }) {
           </div>
         </div>
       )}
+
+      {/* ── MODAL CONFIRMACIÓN TAREA ── */}
+      {confirmarTarea && typeof document !== 'undefined' && createPortal(
+        <div 
+          onClick={() => setConfirmarTarea(null)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+            zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}
+        >
+          <div 
+            className="modal-premium"
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#ffffff', width: '100%', maxWidth: '420px', 
+              borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              animation: 'fadeInUp 0.3s ease-out forwards'
+            }}
+          >
+            <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 className="modal-title" style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Confirmar Tarea</h3>
+                <span className="modal-subtitle" style={{ fontSize: '13px', color: '#64748b' }}>Cambio de estado operativo</span>
+              </div>
+              <div style={{ background: '#dcfce7', color: '#10b981', padding: '10px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FiCheckCircle size={22} />
+              </div>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '17px', color: '#1e293b', margin: '0 0 12px 0', fontWeight: '600' }}>
+                ¿Desea marcar esta tarea como realizada?
+              </p>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.6' }}>
+                Al confirmar, el sistema registrará tu progreso y la tarea pasará al listado de completadas.
+              </p>
+            </div>
+            
+            <div className="modal-footer" style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                type="button" 
+                onClick={() => setConfirmarTarea(null)} 
+                style={{ padding: '10px 16px', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#475569', fontWeight: '600', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.background = '#f1f5f9'; e.target.style.color = '#0f172a'; }}
+                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#475569'; }}
+              >
+                No, cancelar
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { completarTarea(confirmarTarea); setConfirmarTarea(null); }}
+                style={{ padding: '10px 18px', background: '#10b981', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', transition: 'all 0.2s' }}
+                onMouseEnter={e => e.target.style.background = '#059669'}
+                onMouseLeave={e => e.target.style.background = '#10b981'}
+              >
+                <FiCheck size={16} /> Sí, marcar lista
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 }
