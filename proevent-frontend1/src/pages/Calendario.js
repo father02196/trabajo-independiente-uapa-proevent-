@@ -32,7 +32,7 @@ function Calendario({ usuario }) {
   const calendarRef = useRef(null);
 
   // Hook de Google Calendar
-  const { loading: loadingGCal, authorized, checkAuthStatus, authorize, exportarEvento } = useGoogleCalendar();
+  const { loading: loadingGCal, authorized, authEmail, checkAuthStatus, authorize, exportarEvento } = useGoogleCalendar();
 
   useEffect(() => {
     checkAuthStatus();
@@ -343,7 +343,7 @@ function Calendario({ usuario }) {
               transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' 
             }}
           >
-            <FiCalendar size={16} /> {loadingGCal ? 'Cargando...' : authorized ? 'Google Calendar Vinculado' : 'Vincular Google Calendar'}
+            <FiCalendar size={16} /> {loadingGCal ? 'Cargando...' : authorized ? (authEmail ? `Vinculado: ${authEmail}` : 'Google Calendar Vinculado') : 'Vincular Google Calendar'}
           </button>
         </div>
       </div>
@@ -422,6 +422,7 @@ function Calendario({ usuario }) {
               meridiem: false
             }}
             allDayText="Todo el día"
+            eventDisplay="list-item"
           />
         )}
       </div>

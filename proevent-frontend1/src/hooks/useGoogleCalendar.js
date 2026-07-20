@@ -13,6 +13,7 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 export const useGoogleCalendar = () => {
   const [loading, setLoading] = useState(false);
   const [authorized, setAuthorized] = useState(null); // null = desconocido, true/false = verificado
+  const [authEmail, setAuthEmail] = useState('');
 
   /**
    * Verifica si el sistema ya está autorizado con Google Calendar.
@@ -22,9 +23,11 @@ export const useGoogleCalendar = () => {
       const res = await fetch(`${API_BASE}/google-calendar/auth-status`);
       const data = await res.json();
       setAuthorized(data.authorized);
+      setAuthEmail(data.email || '');
       return data.authorized;
     } catch {
       setAuthorized(false);
+      setAuthEmail('');
       return false;
     }
   }, []);
@@ -116,6 +119,7 @@ export const useGoogleCalendar = () => {
   return {
     loading,
     authorized,
+    authEmail,
     checkAuthStatus,
     authorize,
     exportarEvento,

@@ -11,6 +11,10 @@ const router = express.Router();
 const { google } = require('googleapis');
 const mysql = require('mysql2');
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+const TOKEN_PATH = path.join(__dirname, '../config/google_tokens.json');
 
 // ── CONEXIÓN A BASE DE DATOS ──────────────────────────────────────────────────
 const db = mysql.createPool({
@@ -31,9 +35,24 @@ const createOAuthClient = () => {
   );
 };
 
-// ── ALMACÉN DE TOKENS EN MEMORIA (para cuenta institucional) ──────────────────
-// En producción, guardar los tokens en base de datos o archivo seguro.
+// ── ALMACÉN DE TOKENS EN ARCHIVO (para cuenta institucional) ──────────────────
 let storedTokens = null;
+try {
+  if (fs.existsSync(TOKEN_PATH)) {
+    storedTokens = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
+  }
+} catch (e) {
+  console.error('[GCal] Error leyendo tokens:', e);
+}
+
+const saveTokens = (tokens) => {
+  storedTokens = { ...storedTokens, ...tokens };
+  try {
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(storedTokens));
+  } catch (e) {
+    console.error('[GCal] Error guardando tokens:', e);
+  }
+};
 
 // ── HELPER: Obtener cliente autenticado ───────────────────────────────────────
 const getAuthenticatedClient = () => {
@@ -45,12 +64,7 @@ const getAuthenticatedClient = () => {
 
   // Renovar token automáticamente si está próximo a expirar
   oAuth2Client.on('tokens', (tokens) => {
-    if (tokens.refresh_token) {
-      storedTokens = { ...storedTokens, ...tokens };
-    }
-    if (tokens.access_token) {
-      storedTokens = { ...storedTokens, access_token: tokens.access_token };
-    }
+    saveTokens(tokens);
   });
 
   return oAuth2Client;
@@ -58,12 +72,14 @@ const getAuthenticatedClient = () => {
 
 // ── HELPER: Construir objeto de evento para Google Calendar ───────────────────
 const buildGoogleEvent = (evento) => {
-  const fechaInicio = evento.fecha_inicio
-    ? evento.fecha_inicio.substring(0, 10)
-    : new Date().toISOString().substring(0, 10);
-  const fechaFin = evento.fecha_fin
-    ? evento.fecha_fin.substring(0, 10)
-    : fechaInicio;
+  const formatFecha = (fecha) => {
+    if (!fecha) return new Date().toISOString().substring(0, 10);
+    if (fecha instanceof Date) return fecha.toISOString().substring(0, 10);
+    return String(fecha).substring(0, 10);
+  };
+
+  const fechaInicio = formatFecha(evento.fecha_inicio);
+  const fechaFin = formatFecha(evento.fecha_fin);
 
   const horaInicio = evento.hora_inicio || '08:00:00';
   const horaFin = evento.hora_fin || '10:00:00';
@@ -147,12 +163,20 @@ router.get('/callback', async (req, res) => {
   try {
     const oAuth2Client = createOAuthClient();
     const { tokens } = await oAuth2Client.getToken(code);
-    storedTokens = tokens;
+    saveTokens(tokens);
     console.log('[GCal] ✅ Tokens OAuth guardados correctamente.');
 
-    // Redirigir al usuario de vuelta al sistema
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}?google_auth=success`);
+    // Devolver HTML para cerrar la ventana popup automáticamente
+    res.send(`
+      <html>
+        <body>
+          <p>Autenticación exitosa. Esta ventana se cerrará automáticamente...</p>
+          <script>
+            window.close();
+          </script>
+        </body>
+      </html>
+    `);
   } catch (error) {
     console.error('[GCal] Error en callback OAuth:', error);
     res.status(500).send('Error al procesar autorización de Google.');
@@ -161,10 +185,26 @@ router.get('/callback', async (req, res) => {
 
 /**
  * GET /google-calendar/auth-status
- * Verifica si ya hay tokens de autorización guardados.
+ * Verifica si ya hay tokens de autorización guardados y devuelve info de la cuenta.
  */
-router.get('/auth-status', (req, res) => {
-  res.json({ authorized: !!storedTokens });
+router.get('/auth-status', async (req, res) => {
+  if (!storedTokens) {
+    return res.json({ authorized: false });
+  }
+  try {
+    const oAuth2Client = getAuthenticatedClient();
+    const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
+    // Hacemos una llamada ligera a la API de Calendar para verificar que el token es válido
+    await calendar.calendarList.list({ maxResults: 1 });
+    res.json({ 
+      authorized: true, 
+      email: 'Cuenta Institucional', 
+      name: 'Google Calendar' 
+    });
+  } catch (error) {
+    console.error('[GCal] Error verificando el token:', error.message);
+    res.json({ authorized: false });
+  }
 });
 
 /**

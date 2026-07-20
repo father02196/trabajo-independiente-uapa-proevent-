@@ -59,7 +59,7 @@ function Login({ onLogin, onBackClick, onForgotPasswordClick }) {
     script.onload  = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: "426335318098-v39ood0lcapc22lgoq3lons62hbf507m.apps.googleusercontent.com",
+          client_id: "426335318098-fjl9m98i4ufsvt9qjerlf7815nlt9idi.apps.googleusercontent.com",
           callback:  handleGoogleCallback,
         });
         window.google.accounts.id.renderButton(googleButtonRef.current, {
