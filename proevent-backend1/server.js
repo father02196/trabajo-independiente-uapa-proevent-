@@ -17,6 +17,10 @@ const BitacoraService = require('./services/bitacora.service');
 const { AUDIT_ACTIONS, AUDIT_CRITICALITY } = require('./constants/bitacora.actions');
 const requestIdMiddleware = require('./middlewares/requestId');
 
+// --- CRON JOBS ---
+const { initCronJobs } = require('./cron_jobs');
+
+
 // --- FUNCIÓN DE UTILIDAD ---
 // Elimina datos sensibles del objeto de usuario antes de enviarlo al cliente mediante construcción estricta
 function sanitizeUser(user) {
@@ -408,8 +412,8 @@ app.post('/login', (req, res) => { // Define el endpoint HTTP POST para procesar
       const usuarioData = sanitizeUser(user);
       const accessToken = generateAccessToken(usuarioData);
       const refreshToken = generateRefreshToken(usuarioData);
-      res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
-      res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
+      res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 30 * 60 * 1000 });
+      res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 8 * 60 * 60 * 1000 });
       res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); 
       
       const poolConn = await req.app.locals.db.promise().getConnection();
@@ -466,8 +470,8 @@ app.post('/login-google', async (req, res) => { // Endpoint POST independiente d
         }
         const accessToken = generateAccessToken(usuarioData);
         const refreshToken = generateRefreshToken(usuarioData);
-        res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 30 * 60 * 1000 });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 8 * 60 * 60 * 1000 });
         res.json({ mensaje: 'Login exitoso', usuario: usuarioData }); // Permite entrada pasiva y le dispensa paralelamente su información de acceso interior en estructura JSON al app cliente reactivo
         
         const poolConn = await req.app.locals.db.promise().getConnection();
@@ -501,7 +505,7 @@ app.post('/api/auth/refresh', (req, res) => {
   try {
     const decodificado = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
     const nuevoAccessToken = generateAccessToken(decodificado);
-    res.cookie('accessToken', nuevoAccessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+    res.cookie('accessToken', nuevoAccessToken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 30 * 60 * 1000 });
     res.json({ mensaje: 'Token renovado' });
   } catch (err) {
     res.status(401).json({ mensaje: 'Refresh token inválido o expirado' });
@@ -3380,6 +3384,7 @@ app.get('/api/eventos/:id/historial-observaciones', (req, res) => {
 
 app.listen(8080, () => { // Bucle infinito Server Boot Initialization process process.env.PORT || 8080 Start Listen TCP Socket Interface Binding Local Network Address Loopback Loop Listen Loop Cycle
   console.log('🚀â Servidor corriendo en http://localhost:8080'); // Terminal Print Output Message Banner Ready System OK Green Light Go Online Broadcast Network Server JS Master
+  initCronJobs(db); // Iniciar tareas automáticas programadas (vencimientos B2B)
 });
 // -- MODULO DE NOTIFICACIONES DEL SISTEMA --
 // GET: Notificaciones no leidas del usuario activo (por ID y por rol)

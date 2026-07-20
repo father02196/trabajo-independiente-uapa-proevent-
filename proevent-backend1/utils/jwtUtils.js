@@ -17,7 +17,7 @@ const generateAccessToken = (user) => {
       token_version: user.token_version || 0 
     },
     JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: '30m' }
   );
 };
 
@@ -34,7 +34,7 @@ const generateRefreshToken = (user) => {
       token_version: user.token_version || 0 
     },
     JWT_REFRESH_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '8h' }
   );
 };
 
