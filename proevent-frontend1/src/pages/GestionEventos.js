@@ -47,7 +47,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   const [eventRequests, setEventRequests] = useState([]);
   const [loading, setLoading] = useState(true); // Indicador de carga inicial
   const [error, setError] = useState("");        // Mensaje de error si falla la API
-  
+
   // --- PAGINACIÓN DE LA TABLA ---
   // Controla qué página de resultados se muestra (8 eventos por página)
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,15 +92,20 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   const handleVerDetalles = async (req) => {
     setSelectedRequest(req); // Establece el evento activo en el modal
     setIsModalOpen(true);    // Abre el modal de la Ficha Técnica
-    
+
     // Pre-carga de datos enriquecidos para la vista de detalle y el PDF
+    if (!aprobacionesMap[req.id_evento]) {
+      cargarAprobacionesEvento(req.id_evento);
+    }
+
     try {
       const resAdmin = await fetch(`${API}/api/admin_evento/${req.id_evento}`);
       const dataAdmin = await resAdmin.json();
-      
+
       const resServ = await fetch(`${API}/servicios-externos-all`);
       const dataServ = await resServ.json();
-      const servicios = Array.isArray(dataServ) ? dataServ.filter(s => s.id_evento === req.id_evento) : [];
+      const actualDataServ = dataServ.data || dataServ;
+      const servicios = Array.isArray(actualDataServ) ? actualDataServ.filter(s => s.id_evento === req.id_evento) : [];
 
       const resOrg = await fetch(`${API}/organizadores/${req.id_evento}`);
       const dataOrg = await resOrg.json();
@@ -142,7 +147,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   // Gestionan el modal para asignar un servicio externo (Catering, Audio, etc.) al evento
   const [tiposServicioExterno, setTiposServicioExterno] = useState([]); // Catálogo de tipos de servicio disponibles
   const [servicioForm, setServicioForm] = useState({ id_tipo_servicio: "", detalles: "", cantidad: 1 }); // Formulario del nuevo servicio
-  
+
   // --- ESTADOS DE LA FICHA TÉCNICA PDF ---
   // Controlan si se muestra el componente FichaTecnicaPDF y los datos que alimenta
   const [showFichaPDF, setShowFichaPDF] = useState(false);
@@ -287,7 +292,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     setError("");
     try {
       // URL condicional según el rol del usuario logueado
-      const url = usuario?.rol === "Solicitante" 
+      const url = usuario?.rol === "Solicitante"
         ? `${API}/eventos?usuario_id=${usuario.id_usuario}` // Solo sus eventos
         : `${API}/eventos`;                                  // Todos los eventos
       const res = await fetch(url);
@@ -334,7 +339,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     try {
       const res = await fetch(`${API}/eventos/${id_evento}/estado`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${usuario?.token || ""}`,
           "x-usuario-id": usuario?.id_usuario || "" // Auditoría: quién hizo el cambio
@@ -343,16 +348,16 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       });
       if (res.ok) {
         toast.success(`Estado actualizado a ${nuevoEstado}`);
-        
+
         // Efecto Cascada UI: Si se rechaza, el POA también se rechaza visualmente sin esperar recarga
-        setEventRequests(prev => prev.map(e => e.id_evento === id_evento 
-            ? { ...e, estado: nuevoEstado, ...(nuevoEstado === 'Rechazado' ? { estado_poa: 'Rechazado' } : {}) } 
-            : e));
-        
+        setEventRequests(prev => prev.map(e => e.id_evento === id_evento
+          ? { ...e, estado: nuevoEstado, ...(nuevoEstado === 'Rechazado' ? { estado_poa: 'Rechazado' } : {}) }
+          : e));
+
         if (selectedRequest && selectedRequest.id_evento === id_evento) {
-           setSelectedRequest(prev => ({ ...prev, estado: nuevoEstado, ...(nuevoEstado === 'Rechazado' ? { estado_poa: 'Rechazado' } : {}) }));
+          setSelectedRequest(prev => ({ ...prev, estado: nuevoEstado, ...(nuevoEstado === 'Rechazado' ? { estado_poa: 'Rechazado' } : {}) }));
         }
-        
+
         cargarEventos(); // Refresca la tabla completa en background
       } else {
         toast.error("Error al cambiar el estado del evento.");
@@ -372,7 +377,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     try {
       const res = await fetch(`${API}/eventos/${id_evento}`, {
         method: "DELETE",
-        headers: { 
+        headers: {
           "Authorization": `Bearer ${usuario?.token || ""}`,
           "x-usuario-id": usuario?.id_usuario || "" // Auditoría del usuario que elimina
         }
@@ -401,7 +406,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset()); // Corrección de zona horaria local
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
   };
-  
+
   // --- FUNCIÓN UTILITARIA: formatHora ---
   // Extrae y devuelve la hora en formato 24h (HH:mm) eliminando los segundos ("14:30:00" -> "14:30")
   // Se usa para mostrar las horas de inicio y fin del evento en la Ficha Técnica.
@@ -416,11 +421,12 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   // Estas clases están definidas en Dashboard.css y controlan el color del badge de estado.
   const getStatusClass = (estado) => {
     switch (estado) {
-      case "Pendiente":  return "pending";  // Amarillo
-      case "Aprobado":   return "approved"; // Verde
-      case "Rechazado":  return "rejected"; // Rojo
+      case "Pendiente": return "pending";  // Amarillo
+      case "Aprobado": return "approved"; // Verde
+      case "Rechazado": return "rejected"; // Rojo
       case "Finalizado": return "approved"; // Verde (mismo que aprobado)
-      default:           return "pending";  // Amarillo por defecto
+      case "En Progreso": return "in-progress"; // Azul
+      default: return "pending";  // Amarillo por defecto
     }
   };
 
@@ -428,7 +434,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
   const filteredRequests = eventRequests
     .filter((req) => {
-      const matchSearch = searchTerm === "" || 
+      const matchSearch = searchTerm === "" ||
         req.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         `#EVT-${req.id_evento}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.solicitante?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -436,7 +442,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
       const matchEstado = filtroEstado === 'Todos los estados' || req.estado === filtroEstado;
       const matchDept = filtroDepartamento === 'Todos los Departamentos' || req.dependencia === filtroDepartamento;
       const matchFecha = !filtroFecha || (req.fecha_inicio && req.fecha_inicio.startsWith(filtroFecha));
-      
+
       return matchSearch && matchEstado && matchDept && matchFecha;
     });
 
@@ -459,8 +465,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div>
               <h3>{usuario?.rol === "Solicitante" ? "Mi Historial de Solicitudes" : "Panel de Control de Solicitudes"}</h3>
               <p className="subtitle">
-                {usuario?.rol === "Solicitante" 
-                  ? "Consulta todas las solicitudes de eventos que has creado." 
+                {usuario?.rol === "Solicitante"
+                  ? "Consulta todas las solicitudes de eventos que has creado."
                   : "Filtra, aprueba y administra todas las solicitudes de eventos institucionales"}
               </p>
             </div>
@@ -474,7 +480,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
         <div className="filters-grid">
           <div className="filter-item">
-            <label><FiFilter style={{marginRight:'4px',verticalAlign:'middle'}}/>Estado</label>
+            <label><FiFilter style={{ marginRight: '4px', verticalAlign: 'middle' }} />Estado</label>
             <select value={filtroEstado} onChange={e => { setFiltroEstado(e.target.value); setCurrentPage(1); }}>
               <option>Todos los estados</option>
               <option>Pendiente</option>
@@ -486,19 +492,19 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
           </div>
 
           <div className="filter-item">
-            <label><FiGrid style={{marginRight:'4px',verticalAlign:'middle'}}/>Departamento / Dependencia</label>
+            <label><FiGrid style={{ marginRight: '4px', verticalAlign: 'middle' }} />Departamento / Dependencia</label>
             <select value={filtroDepartamento} onChange={e => { setFiltroDepartamento(e.target.value); setCurrentPage(1); }}>
               {departamentosUnicos.map(d => <option key={d}>{d}</option>)}
             </select>
           </div>
 
           <div className="filter-item">
-            <label><FiCalendar style={{marginRight:'4px',verticalAlign:'middle'}}/>Fecha del Evento</label>
+            <label><FiCalendar style={{ marginRight: '4px', verticalAlign: 'middle' }} />Fecha del Evento</label>
             <input type="date" value={filtroFecha} onChange={e => { setFiltroFecha(e.target.value); setCurrentPage(1); }} />
           </div>
 
-          <div className="filter-item" style={{display:'flex', flexDirection:'column', justifyContent:'flex-end'}}>
-            <label style={{marginBottom:'6px', fontSize:'12px', color:'#64748b', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em'}}>
+          <div className="filter-item" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            <label style={{ marginBottom: '6px', fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               &#8645; Ordenar por Fecha
             </label>
             <button
@@ -524,8 +530,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               }}
             >
               {sortConfig?.direction === 'ascending'
-                ? <><span style={{fontSize:'16px'}}>&#8593;</span> Más antiguos</>
-                : <><span style={{fontSize:'16px'}}>&#8595;</span> Más recientes</>
+                ? <><span style={{ fontSize: '16px' }}>&#8593;</span> Más antiguos</>
+                : <><span style={{ fontSize: '16px' }}>&#8595;</span> Más recientes</>
               }
             </button>
           </div>
@@ -614,22 +620,22 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                         <div className="actions-cell">
                           {usuario?.rol === "Solicitante" ? (
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              <button 
+                              <button
                                 type="button"
-                                className="action-icon-btn edit" 
+                                className="action-icon-btn edit"
                                 onClick={() => onEditEvent(req)}
-                                disabled={req.estado !== "Pendiente"}
-                                title={req.estado !== "Pendiente" ? "Solo puedes editar solicitudes pendientes" : "Editar solicitud"}
+                                disabled={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado")}
+                                title={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado") ? "Solo puedes editar solicitudes pendientes u observadas" : "Editar solicitud"}
                                 aria-label="Editar solicitud"
                               >
                                 <FiEdit2 />
                               </button>
-                              <button 
+                              <button
                                 type="button"
-                                className="action-icon-btn delete" 
+                                className="action-icon-btn delete"
                                 onClick={() => handleEliminarEvento(req.id_evento)}
-                                disabled={req.estado !== "Pendiente"}
-                                title={req.estado !== "Pendiente" ? "Solo puedes eliminar solicitudes pendientes" : "Eliminar solicitud"}
+                                disabled={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado")}
+                                title={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado") ? "Solo puedes eliminar solicitudes pendientes u observadas" : "Eliminar solicitud"}
                                 aria-label="Eliminar solicitud"
                               >
                                 <FiTrash2 />
@@ -654,9 +660,9 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                 const hayRechazos = aprobInfo?.hay_rechazos;
                                 return (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <button 
+                                    <button
                                       type="button"
-                                      className={`btn btn-sm ${ puedeIniciar ? '' : 'btn-secondary'}`}
+                                      className={`btn btn-sm ${puedeIniciar ? '' : 'btn-secondary'}`}
                                       style={{
                                         padding: '6px 12px', width: '100%',
                                         backgroundColor: puedeIniciar ? '#0ea5e9' : hayRechazos ? '#fef2f2' : '#f1f5f9',
@@ -700,7 +706,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                                 </button>
                               )}
                               {["Finalizado", "Rechazado", "Cancelado"].includes(req.estado) && (
-                                <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: '600', textAlign: 'center', display: 'block' }}>Sin acciones</span>
+                                <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: '600', textAlign: 'center', display: 'block' }}>Finalizado</span>
                               )}
                             </div>
                           )}
@@ -720,22 +726,22 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
             <div className="pagination-info">
               Mostrando <strong>{indexOfFirstItem + 1}</strong> - <strong>{Math.min(indexOfLastItem, filteredRequests.length)}</strong> de <strong>{filteredRequests.length}</strong> solicitudes
             </div>
-            <div className="pagination-controls" style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-              <button 
+            <div className="pagination-controls" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button
                 type="button"
-                className="btn btn-secondary btn-sm" 
+                className="btn btn-secondary btn-sm"
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 aria-label="Ir a la página anterior"
               >
                 <FiChevronLeft /> Anterior
               </button>
-              <span style={{fontWeight: 700, color: 'var(--text-main)', fontSize: '13px'}}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px' }}>
                 Pág. {currentPage} de {totalPages || 1}
               </span>
-              <button 
+              <button
                 type="button"
-                className="btn btn-secondary btn-sm" 
+                className="btn btn-secondary btn-sm"
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
                 aria-label="Ir a la página siguiente"
@@ -760,7 +766,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               </div>
               <span className="badge badge-blue" style={{ fontSize: '15px', padding: '8px 16px', fontWeight: '700', letterSpacing: '0.5px' }}>#EVT-{selectedRequest.id_evento}</span>
             </div>
-            
+
             <div className="modal-body" style={{ padding: '32px', flex: 1 }}>
               <div className="modal-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
                 {/* Columna 1: Info General */}
@@ -783,14 +789,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   <div className="info-row" style={{ marginBottom: '12px' }}>
                     <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Fechas</span>
                     <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>
-                      {formatFecha(selectedRequest.fecha_inicio)} 
+                      {formatFecha(selectedRequest.fecha_inicio)}
                       {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` al ${formatFecha(selectedRequest.fecha_fin)}` : ""}
                     </span>
                   </div>
                   <div className="info-row">
                     <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Horario</span>
                     <span className="info-value" style={{ display: 'block', color: '#334155', fontSize: '14px', fontWeight: '500' }}>
-                      {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} 
+                      {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"}
                       {selectedRequest.hora_fin ? ` a ${formatHora(selectedRequest.hora_fin)}` : ""}
                     </span>
                   </div>
@@ -826,12 +832,12 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   <div className="info-row" style={{ marginBottom: '12px' }}>
                     <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Presupuesto POA Solicitado</span>
                     <span className="info-value" style={{ display: 'block', color: '#10b981', fontSize: '15px', fontWeight: '600' }}>
-                      {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", {minimumFractionDigits: 2})} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
+                      {selectedRequest.monto_poa ? `${Number(selectedRequest.monto_poa).toLocaleString("en-US", { minimumFractionDigits: 2 })} ${selectedRequest.moneda || 'DOP'}` : "Sin Presupuesto POA"}
                     </span>
                   </div>
                   <div className="info-row" style={{ marginBottom: '12px' }}>
                     <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Estado de la Solicitud</span>
-                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' || selectedRequest.estado === 'Finalizado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : selectedRequest.estado === 'En Progreso' ? 'badge-blue' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
                       {selectedRequest.estado || "Pendiente"}
                     </span>
                   </div>
@@ -841,6 +847,27 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       {selectedRequest.estado_poa || "Pendiente"}
                     </span>
                   </div>
+                  {(() => {
+                    const aprobInfo = aprobacionesMap[selectedRequest.id_evento];
+                    const avStatus = aprobInfo?.aprobaciones?.find(a => a.area === 'Audiovisual')?.estado;
+                    
+                    return (
+                      <div className="info-row" style={{ marginTop: '12px' }}>
+                        <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Estado Audiovisual</span>
+                        <span className={`badge ${
+                          !selectedRequest.necesita_audiovisual 
+                            ? 'badge-gray' 
+                            : avStatus === 'Aprobado' 
+                              ? 'badge-green' 
+                              : avStatus === 'Rechazado' 
+                                ? 'badge-red' 
+                                : 'badge-yellow'
+                        }`} style={{ width: 'fit-content', padding: '6px 12px', backgroundColor: !selectedRequest.necesita_audiovisual ? '#e2e8f0' : undefined, color: !selectedRequest.necesita_audiovisual ? '#475569' : undefined }}>
+                          {!selectedRequest.necesita_audiovisual ? "No Aplica" : (avStatus || "Pendiente")}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -861,8 +888,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     <div className="info-row">
                       <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Compras y Logística (B2B)</span>
                       <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '14px', fontWeight: '600' }}>
-                        {pdfData.servicios?.length > 0 
-                          ? `${pdfData.servicios.length} servicio(s) gestionado(s)` 
+                        {pdfData.servicios?.length > 0
+                          ? `${pdfData.servicios.length} servicio(s) gestionado(s)`
                           : "Ninguno en proceso"}
                       </span>
                     </div>
@@ -922,14 +949,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     <div className="info-row">
                       <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Equipos Audiovisuales</span>
                       <span className="info-value" style={{ display: 'block', color: '#475569', fontSize: '13.5px' }}>
-                        {selectedRequest.necesita_audiovisual 
-                          ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
+                        {selectedRequest.necesita_audiovisual
+                          ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)")
                           : "Ninguno"}
                       </span>
                     </div>
                   </div>
                 </div>
-                
+
                 {selectedRequest.observaciones && (
                   <div className="info-card">
                     <div className="info-card-title">
@@ -954,7 +981,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                     )}
                   </div>
                 )}
-                
+
                 {/* Historial de Observaciones FASE 2 */}
                 {pdfData.observaciones && pdfData.observaciones.length > 0 && (
                   <div className="info-card" style={{ marginTop: '24px' }}>
@@ -1005,8 +1032,8 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
       {/* RENDER FICHA PDF OCULTO/MODAL */}
       {showFichaPDF && selectedRequest && (
-        <FichaTecnicaPDF 
-          evento={selectedRequest} 
+        <FichaTecnicaPDF
+          evento={selectedRequest}
           presupuesto={pdfData.presupuesto}
           legal={pdfData.legal}
           servicios={pdfData.servicios}
@@ -1032,10 +1059,10 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               <form onSubmit={handleSubmitServicio} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-2">Tipo de Servicio</label>
-                  <select 
-                    className="input-base" 
+                  <select
+                    className="input-base"
                     value={servicioForm.id_tipo_servicio}
-                    onChange={(e) => setServicioForm({...servicioForm, id_tipo_servicio: e.target.value})}
+                    onChange={(e) => setServicioForm({ ...servicioForm, id_tipo_servicio: e.target.value })}
                     required
                   >
                     <option value="">-- Seleccionar --</option>
@@ -1046,22 +1073,22 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-2">Detalles / Especificaciones</label>
-                  <textarea 
-                    className="input-base" 
+                  <textarea
+                    className="input-base"
                     placeholder="Ej: Necesitamos una tarima de 4x4m..."
                     value={servicioForm.detalles}
-                    onChange={(e) => setServicioForm({...servicioForm, detalles: e.target.value})}
+                    onChange={(e) => setServicioForm({ ...servicioForm, detalles: e.target.value })}
                     rows={3}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-2">Cantidad</label>
-                  <input 
-                    type="number" 
-                    className="input-base" 
-                    min="1" 
+                  <input
+                    type="number"
+                    className="input-base"
+                    min="1"
                     value={servicioForm.cantidad}
-                    onChange={(e) => setServicioForm({...servicioForm, cantidad: parseInt(e.target.value) || 1})}
+                    onChange={(e) => setServicioForm({ ...servicioForm, cantidad: parseInt(e.target.value) || 1 })}
                     required
                   />
                 </div>
@@ -1090,9 +1117,9 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                 <div>
                   <h3 className="modal-title">Estado de Aprobaciones</h3>
                   <span className="modal-subtitle">
-                    {modalAprobaciones.hay_rechazos 
+                    {modalAprobaciones.hay_rechazos
                       ? 'El evento ha sido rechazado por una o más áreas.'
-                      : modalAprobaciones.puede_iniciar 
+                      : modalAprobaciones.puede_iniciar
                         ? 'Todas las áreas han aprobado. Listo para iniciar.'
                         : 'Aún hay áreas pendientes de revisión.'}
                   </span>
@@ -1100,14 +1127,14 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
               </div>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => setModalAprobaciones(null)} aria-label="Cerrar estado de aprobaciones">X</button>
             </div>
-            
+
             <div className="modal-body" style={{ padding: '24px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {modalAprobaciones.aprobaciones.map((aprob, index) => (
-                  <div key={index} style={{ 
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                    padding: '12px 16px', 
-                    backgroundColor: '#f8fafc', 
+                  <div key={index} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '12px 16px',
+                    backgroundColor: '#f8fafc',
                     borderRadius: '8px',
                     border: '1px solid #e2e8f0',
                     opacity: aprob.requerido ? 1 : 0.6
@@ -1116,7 +1143,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                       <span style={{ fontWeight: '600', color: '#334155', fontSize: '14px' }}>{aprob.area}</span>
                       {!aprob.requerido && <span style={{ fontSize: '11px', color: '#94a3b8', backgroundColor: '#e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>No requerido</span>}
                     </div>
-                    
+
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {aprob.estado === 'Aprobado' && <><FiCheckCircle color="#10b981" /><span style={{ color: '#10b981', fontWeight: '600', fontSize: '13px' }}>Aprobado</span></>}
                       {aprob.estado === 'Rechazado' && <><FiXCircle color="#ef4444" /><span style={{ color: '#ef4444', fontWeight: '600', fontSize: '13px' }}>Rechazado</span></>}
@@ -1141,9 +1168,9 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
 
             <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
               {modalAprobaciones.puede_iniciar ? (
-                <button 
+                <button
                   type="button"
-                  className="btn btn-primary" 
+                  className="btn btn-primary"
                   onClick={() => {
                     handleCambiarEstado(modalAprobaciones.id_evento, 'En Progreso');
                     setModalAprobaciones(null);
