@@ -170,7 +170,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
   // Si se selecciona orden por ID, tiene prioridad sobre el de fecha.
   const proximosEventos = eventRequests
     .filter(e =>
-      (e.estado === "Aprobado" || e.estado === "Pendiente") &&
+      (e.estado === "Aprobado" || e.estado === "En Progreso" || e.estado === "Pendiente") &&
       String(e.id_usuario) === String(usuario?.id_usuario)
     )
     .sort((a, b) => {
@@ -630,7 +630,7 @@ function DashboardSolicitante({ usuario, onEditEvent, setActiveTab }) {
                   </div>
                   <div className="info-row" style={{ marginTop: '12px' }}>
                     <span className="info-label">Estado de la Solicitud</span>
-                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' || selectedRequest.estado === 'Finalizado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : selectedRequest.estado === 'En Progreso' ? 'badge-blue' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px', marginTop: '4px' }}>
                       {selectedRequest.estado || "Pendiente"}
                     </span>
                   </div>

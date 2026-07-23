@@ -128,12 +128,12 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
   // Contadores para las 4 tarjetas de indicadores del dashboard.
   const totalSolicitudes = eventRequests.length;
   const pendientes  = eventRequests.filter((e) => e.estado === "Pendiente").length;
-  const aprobados   = eventRequests.filter((e) => e.estado === "Aprobado").length;
+  const aprobados   = eventRequests.filter((e) => e.estado === "Aprobado" || e.estado === "En Progreso").length;
   const finalizados = eventRequests.filter((e) => e.estado === "Finalizado").length;
 
   // Suma del presupuesto POA de eventos aprobados y finalizados
   const totalPresupuestoUtilizado = eventRequests
-    .filter(e => e.estado === "Aprobado" || e.estado === "Finalizado")
+    .filter(e => e.estado === "Aprobado" || e.estado === "En Progreso" || e.estado === "Finalizado")
     .reduce((acc, curr) => acc + (parseFloat(curr.monto_poa) || 0), 0);
 
   // --- DATOS PARA GRÁFICO DONUT ---
@@ -149,7 +149,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
   // Agrupa montos POA aprobados por nombre de recinto.
   const venueBudgets = {};
   eventRequests.forEach(req => {
-    if (req.estado === "Aprobado" || req.estado === "Finalizado") {
+    if (req.estado === "Aprobado" || req.estado === "En Progreso" || req.estado === "Finalizado") {
       const recinto = req.recinto || "Otros";
       const monto = parseFloat(req.monto_poa) || 0;
       venueBudgets[recinto] = (venueBudgets[recinto] || 0) + monto;
@@ -168,7 +168,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
   // --- TIMELINE: PRÓXIMOS 5 EVENTOS APROBADOS/PENDIENTES ---
   // Ordenados por fecha de inicio ascendente (más próximos primero).
   const proximosEventos = eventRequests
-    .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
+    .filter(e => e.estado === "Aprobado" || e.estado === "En Progreso" || e.estado === "Pendiente")
     .sort((a, b) => {
       if (sortId === "asc")  return Number(a.id_evento) - Number(b.id_evento);
       if (sortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
@@ -703,7 +703,7 @@ function DashboardAdmin({ usuario, searchTerm = "", onEditEvent, setActiveTab })
                   </div>
                   <div className="info-row" style={{ marginBottom: '12px' }}>
                     <span className="info-label" style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Estado de la Solicitud</span>
-                    <span className={`badge ${selectedRequest.estado === 'Aprobado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
+                    <span className={`badge ${selectedRequest.estado === 'Aprobado' || selectedRequest.estado === 'Finalizado' ? 'badge-green' : selectedRequest.estado === 'Rechazado' ? 'badge-red' : selectedRequest.estado === 'En Progreso' ? 'badge-blue' : 'badge-yellow'}`} style={{ width: 'fit-content', padding: '6px 12px' }}>
                       {selectedRequest.estado || "Pendiente"}
                     </span>
                   </div>

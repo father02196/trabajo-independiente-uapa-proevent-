@@ -122,7 +122,7 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
   // --- CÁLCULOS ESTADÍSTICOS (sobre solicitudes relevantes) ---
   const totalSolicitudes = solicitudesRelevantes.length;
   const pendientes  = solicitudesRelevantes.filter((e) => e.estado === "Pendiente").length;
-  const aprobados   = solicitudesRelevantes.filter((e) => e.estado === "Aprobado").length;
+  const aprobados   = solicitudesRelevantes.filter((e) => e.estado === "Aprobado" || e.estado === "En Progreso").length;
   const finalizados = solicitudesRelevantes.filter((e) => e.estado === "Finalizado").length;
 
   // --- DATOS PARA GRÁFICA DONUT ---
@@ -159,7 +159,7 @@ function DashboardAdminEventos({ usuario, onEditEvent, setActiveTab }) {
 
   // --- TIMELINE: PRÓXIMOS 5 EVENTOS ACTIVOS ---
   const proximosEventos = solicitudesRelevantes
-    .filter(e => e.estado === "Aprobado" || e.estado === "Pendiente")
+    .filter(e => e.estado === "Aprobado" || e.estado === "En Progreso" || e.estado === "Pendiente")
     .sort((a, b) => {
       if (sortId === "asc")  return Number(a.id_evento) - Number(b.id_evento);
       if (sortId === "desc") return Number(b.id_evento) - Number(a.id_evento);
