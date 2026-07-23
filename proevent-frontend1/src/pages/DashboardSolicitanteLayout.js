@@ -22,6 +22,7 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [editingEvent, setEditingEvent] = useState(null);
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
     const toggleUserMenu = () => setUserMenuOpen(!userMenuOpen);
@@ -135,8 +136,8 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
                         <Routes>
                         <Route path="/" element={<DashboardSolicitante usuario={usuario} setActiveTab={mockSetActiveTab} />} />
                         <Route path="calendario" element={<Calendario usuario={usuario} />} />
-                        <Route path="eventos/solicitud" element={<Eventos usuario={usuario} />} />
-                        <Route path="eventos/historial" element={<HistorialSolicitudes usuario={usuario} />} />
+                        <Route path="eventos/solicitud" element={<Eventos usuario={usuario} editingEvent={editingEvent} setEditingEvent={setEditingEvent} />} />
+                        <Route path="eventos/historial" element={<HistorialSolicitudes usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); navigate('/solicitante/eventos/solicitud'); }} setActiveTab={mockSetActiveTab} />} />
                         <Route path="evaluacion" element={<Evaluacion usuario={usuario} />} />
                         <Route path="soporte" element={<SoporteHome usuario={usuario} />} />
 
