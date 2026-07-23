@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiMonitor, FiCalendar, FiMapPin, FiCoffee, FiDollarSign } from "react-icons/fi";
 import InformacionGeneral from "./InformacionGeneral";
@@ -72,6 +72,14 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const [loading, setLoading] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [error, setError] = useState("");
+  const errorRef = useRef(null);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.focus();
+    }
+  }, [error]);
+
   const [exito, setExito] = useState("");
   const [needsAV, setNeedsAV] = useState(null);
   const [omitirServicios, setOmitirServicios] = useState(false);
@@ -476,7 +484,12 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       )}
 
       {error && (
-        <div className="form-alert form-alert-error" style={{ marginBottom: '20px' }}>
+        <div 
+          ref={errorRef}
+          tabIndex={-1}
+          className="form-alert form-alert-error" 
+          style={{ marginBottom: '20px', outline: 'none' }}
+        >
           <FiAlertTriangle size={18} aria-hidden="true" />
           <span>{error}</span>
         </div>
