@@ -64,16 +64,38 @@ function ModuloProveedores({ usuario }) {
     // --- ESTADOS PARA INCIDENCIAS Y EVIDENCIAS ---
     const [modalIncidencia, setModalIncidencia] = useState({ open: false, servicio: null });
     const [resolucionForm, setResolucionForm] = useState("");
-    const [modalEvidencia, setModalEvidencia] = useState({ open: false, servicioId: null });
+    const [modalEvidencia, setModalEvidencia] = useState({ open: false, deudaActual: null });
     const [evidenciaFile, setEvidenciaFile] = useState(null);
+
+    // --- ESTADO PARA PAGINACIÓN DE LOGÍSTICA ---
+    const [paginaLogistica, setPaginaLogistica] = useState(1);
+    const [offsetDatos, setOffsetDatos] = useState(0);
+    const [hayMasDatosBD, setHayMasDatosBD] = useState(true);
+
+    // --- ESTADOS PARA FILTROS DE LOGÍSTICA ---
+    const [filtroIdEventoLogistica, setFiltroIdEventoLogistica] = useState('');
+    const [filtroFechaInicioLogistica, setFiltroFechaInicioLogistica] = useState('');
+    const [filtroFechaFinLogistica, setFiltroFechaFinLogistica] = useState('');
+
+    const limpiarFiltrosLogistica = () => {
+        setFiltroEstadoRecepcion('Todos');
+        setFiltroIdEventoLogistica('');
+        setFiltroFechaInicioLogistica('');
+        setFiltroFechaFinLogistica('');
+        setPaginaLogistica(1);
+    };
 
     // --- EFECTOS: Carga dinámica según la pestaña ---
     useEffect(() => {
-        if (activeTab === 'logistica') fetchServicios();
+        if (activeTab === 'logistica') fetchServicios(true);
         if (activeTab === 'directorio') fetchProveedores();
         if (activeTab === 'ia') cargarLicitacionesAdjudicadas();
         fetchCategoriasActivas(); // Siempre cargar categorías para los modales
     }, [activeTab]);
+
+    useEffect(() => {
+        setPaginaLogistica(1);
+    }, [filtroEstadoRecepcion, filtroIdEventoLogistica, filtroFechaInicioLogistica, filtroFechaFinLogistica, servicios]);
 
     // --- FUNCIÓN: fetchCategoriasActivas ---
     // Obtiene categorías de proveedor para los combos (ej. Floristería, Catering)
@@ -100,11 +122,20 @@ function ModuloProveedores({ usuario }) {
 
     // --- FUNCIÓN: fetchServicios ---
     // Obtiene las órdenes de servicio que necesitan ser enviadas a suplidores
-    const fetchServicios = async () => {
+    const fetchServicios = async (reset = true, customOffset = 0) => {
+        if (typeof reset !== 'boolean') reset = true; // Handle React onClick events
         try {
-            const response = await fetch('http://localhost:8080/servicios-externos-all');
+            const offsetToUse = reset ? 0 : customOffset;
+            const response = await fetch(`http://localhost:8080/servicios-externos-all?limit=200&offset=${offsetToUse}`);
             const data = await response.json();
-            setServicios(data);
+            
+            if (reset) {
+                setServicios(data.data || []);
+            } else {
+                setServicios(prev => [...prev, ...(data.data || [])]);
+            }
+            setOffsetDatos(offsetToUse);
+            setHayMasDatosBD(data.hasMore);
         } catch (error) { console.error('Error fetching servicios:', error); }
     };
 
@@ -194,30 +225,45 @@ function ModuloProveedores({ usuario }) {
         }
     };
 
-    // --- LOGÍSTICA: Subir Evidencia Contabilidad ---
-    const handleSubirEvidencia = async (e) => {
+    // --- LOGÍSTICA / PAGOS: Subir Evidencia Contabilidad ---
+    const handleSubirEvidenciaUnificada = async (e) => {
         e.preventDefault();
         if (!evidenciaFile) return alert("Debe seleccionar un archivo.");
+        
+        const { id_deuda, origen } = modalEvidencia.deudaActual;
         const formData = new FormData();
-        formData.append("archivo_evidencia", evidenciaFile);
-        formData.append("id_usuario", usuario?.id_usuario || "");
+        
+        // La API antigua espera diferentes nombres de campo, los mantenemos para no romper el backend
+        if (origen === 'Logistica') {
+            formData.append("archivo_evidencia", evidenciaFile);
+        } else {
+            formData.append("archivo_factura", evidenciaFile);
+        }
+
+        // Decidir el endpoint correcto basado en el origen
+        const endpoint = origen === 'Logistica' 
+            ? `${API}/api/logistica/${id_deuda}/evidencia-contabilidad`
+            : `${API}/api/admin/factura-proveedor/${id_deuda}`;
 
         try {
-            const res = await fetch(`${API}/api/logistica/${modalEvidencia.servicioId}/evidencia-contabilidad`, {
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'x-usuario-id': usuario?.id_usuario || '' },
                 body: formData
             });
+
             if (res.ok) {
-                alert("Evidencia subida correctamente.");
-                setModalEvidencia({ open: false, servicioId: null });
+                alert("Comprobante de pago subido correctamente.");
+                setModalEvidencia({ open: false, deudaActual: null });
                 setEvidenciaFile(null);
-                fetchServicios();
+                cargarLicitacionesAdjudicadas(); // Recargar la tabla unificada
             } else {
-                alert("Error al subir evidencia.");
+                const err = await res.json();
+                alert(err.error || "Error al subir evidencia.");
             }
         } catch (error) {
             console.error(error);
+            alert("Error de red al subir la evidencia.");
         }
     };
 
@@ -414,8 +460,34 @@ function ModuloProveedores({ usuario }) {
 
     // --- FUNCIONES DE FILTRO Y ORDENAMIENTO DE TABLAS ---
     // Logística:
-    const serviciosList = servicios.filter(s => filtroEstadoRecepcion === 'Todos' || (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor));
+    const serviciosList = servicios.filter(s => {
+        const matchEstado = filtroEstadoRecepcion === 'Todos' || (filtroEstadoRecepcion === 'Recibido' ? s.fecha_envio_proveedor : !s.fecha_envio_proveedor);
+        
+        const matchId = filtroIdEventoLogistica === '' || 
+                        String(s.id_evento).includes(filtroIdEventoLogistica.replace(/\D/g, ''));
+        
+        const eventoDate = s.fecha_inicio ? new Date(s.fecha_inicio).getTime() : 0;
+        const fromDate = filtroFechaInicioLogistica ? new Date(filtroFechaInicioLogistica).getTime() : 0;
+        const toDate = filtroFechaFinLogistica ? new Date(filtroFechaFinLogistica).getTime() + 86400000 : Infinity;
+        
+        const matchRango = (!fromDate || eventoDate >= fromDate) && (!toDate || eventoDate <= toDate);
+        
+        return matchEstado && matchId && matchRango;
+    });
     const sortedServicios = [...serviciosList].sort((a, b) => (a.nombre_evento || '').localeCompare(b.nombre_evento || ''));
+
+    const EVENTOS_POR_PAGINA_LOGISTICA = 10;
+    const totalPaginasLogistica = Math.ceil(sortedServicios.length / EVENTOS_POR_PAGINA_LOGISTICA);
+    const startIndexLogistica = (paginaLogistica - 1) * EVENTOS_POR_PAGINA_LOGISTICA;
+    const serviciosPaginados = sortedServicios.slice(startIndexLogistica, startIndexLogistica + EVENTOS_POR_PAGINA_LOGISTICA);
+
+    const handleSiguientePagina = () => {
+        const nextPag = paginaLogistica + 1;
+        setPaginaLogistica(nextPag);
+        if (nextPag >= totalPaginasLogistica && hayMasDatosBD) {
+            fetchServicios(false, offsetDatos + 200);
+        }
+    };
 
     // Directorio:
     const categoriasUnicas = [...new Set(proveedores.map(p => p.categoria))];
@@ -462,17 +534,46 @@ function ModuloProveedores({ usuario }) {
                     Directorio de Suplidores
                 </button>
                 <button type="button" className={activeTab === 'ia' ? 'active' : ''} onClick={() => setActiveTab('ia')}>
-                    <FiCpu style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
-                    Licitaciones (IA)
+                    <FiDollarSign style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                    Gestión de Pagos y Licitaciones
                 </button>
             </div>
 
             {/* TAB: LOGÍSTICA */}
             {activeTab === 'logistica' && (
                 <>
-                    <div className="filtros-proveedores">
+                    <div className="filtros-proveedores" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
                         <div className="filtro-grupo">
-                            <label><FiFilter style={{ display: 'inline', marginRight: '4px' }} />Estado de Recepción</label>
+                            <label>ID Evento</label>
+                            <input 
+                                type="text" 
+                                className="input-base" 
+                                placeholder="Ej. 179" 
+                                value={filtroIdEventoLogistica} 
+                                onChange={e => setFiltroIdEventoLogistica(e.target.value)} 
+                                style={{ width: '100px' }} 
+                            />
+                        </div>
+                        <div className="filtro-grupo">
+                            <label>Fecha Desde</label>
+                            <input 
+                                type="date" 
+                                className="input-base" 
+                                value={filtroFechaInicioLogistica} 
+                                onChange={e => setFiltroFechaInicioLogistica(e.target.value)} 
+                            />
+                        </div>
+                        <div className="filtro-grupo">
+                            <label>Fecha Hasta</label>
+                            <input 
+                                type="date" 
+                                className="input-base" 
+                                value={filtroFechaFinLogistica} 
+                                onChange={e => setFiltroFechaFinLogistica(e.target.value)} 
+                            />
+                        </div>
+                        <div className="filtro-grupo">
+                            <label><FiFilter style={{ display: 'inline', marginRight: '4px' }} />Estado Recepción</label>
                             <select value={filtroEstadoRecepcion} onChange={e => setFiltroEstadoRecepcion(e.target.value)}>
                                 <option value="Todos">Todos los estados</option>
                                 <option value="Pendiente">⏳ Pendiente</option>
@@ -480,8 +581,11 @@ function ModuloProveedores({ usuario }) {
                                 <option value="Con Incidencias">⚠️ Con Incidencias</option>
                             </select>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', marginLeft: 'auto' }}>
-                            <button type="button" className="btn btn-secondary btn-sm" onClick={fetchServicios} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginLeft: 'auto' }}>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={limpiarFiltrosLogistica} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Limpiar
+                            </button>
+                            <button type="button" className="btn btn-primary btn-sm" onClick={fetchServicios} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <FiRefreshCw size={13} /> Actualizar
                             </button>
                         </div>
@@ -500,16 +604,29 @@ function ModuloProveedores({ usuario }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedServicios.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
-                                            <FiPackage style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
-                                            <div style={{ fontWeight: '600', color: '#64748B', marginBottom: '4px' }}>No hay órdenes en logística</div>
-                                            <div style={{ fontSize: '13px' }}>Los servicios externos aparecerán aquí cuando sean asignados a eventos</div>
-                                        </td>
-                                    </tr>
+                                {serviciosPaginados.length === 0 ? (
+                                    filtroIdEventoLogistica && hayMasDatosBD ? (
+                                        <tr>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                                                <FiSearch style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
+                                                <div style={{ fontWeight: '600', color: '#64748B', marginBottom: '4px' }}>Evento no encontrado en los registros actuales</div>
+                                                <div style={{ fontSize: '13px', maxWidth: '400px', margin: '0 auto' }}>
+                                                    El evento <b>#EVT-{filtroIdEventoLogistica.replace(/\D/g, '')}</b> no está entre los servicios cargados en memoria. <br/><br/>
+                                                    <b>Acción Requerida:</b> Avanza la paginación haciendo clic en "Siguiente" abajo para descargar los siguientes bloques desde el servidor.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                                                <FiPackage style={{ fontSize: '32px', marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
+                                                <div style={{ fontWeight: '600', color: '#64748B', marginBottom: '4px' }}>No hay órdenes con estos filtros</div>
+                                                <div style={{ fontSize: '13px' }}>Ajusta los filtros o asegúrate de tener órdenes asignadas</div>
+                                            </td>
+                                        </tr>
+                                    )
                                 ) : (
-                                    sortedServicios.map(s => (
+                                    serviciosPaginados.map(s => (
                                             <tr key={s.id_servicio_ext}>
                                                 <td>
                                                     <div style={{ fontSize: '14px', color: '#64748B', fontWeight: '600' }}>#EVT-{s.id_evento}</div>
@@ -573,39 +690,47 @@ function ModuloProveedores({ usuario }) {
                                                                 <FiAlertTriangle size={13} /> Resolver Incidencia
                                                             </button>
                                                         )}
-                                                        {s.evidencia_contabilidad_ruta ? (
-                                                            <div className="action-pill-bar" style={{ display: 'flex', gap: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4px' }}>
-                                                                <button type="button" onClick={() => window.open(`${API}${s.evidencia_contabilidad_ruta}`, '_blank')} style={{ color: '#10b981', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }} title="Visualizar">
-                                                                    <FiEye size={16} />
-                                                                </button>
-                                                                <button type="button" onClick={() => {
-                                                                    const a = document.createElement('a');
-                                                                    a.href = `${API}${s.evidencia_contabilidad_ruta}`;
-                                                                    a.download = s.evidencia_contabilidad_ruta.split('/').pop();
-                                                                    a.click();
-                                                                }} style={{ color: '#3b82f6', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }} title="Descargar">
-                                                                    <FiDownload size={16} />
-                                                                </button>
-                                                                <button type="button" onClick={() => eliminarEvidencia(s.id_servicio_ext)} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }} title="Eliminar">
-                                                                    <FiTrash2 size={16} />
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <button 
-                                                                type="button"
-                                                                className="btn btn-secondary btn-sm" 
-                                                                onClick={() => setModalEvidencia({ open: true, servicioId: s.id_servicio_ext })}
-                                                                title="Subir evidencia de envío a CxP"
-                                                            >
-                                                                <FiUpload size={13} /> Evidencia CxP
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
                                         ))
                                 )}
                             </tbody>
+                            {/* NUEVA FILA DE PAGINACIÓN INTEGRADAS AL FINAL DE LA TABLA */}
+                            {(totalPaginasLogistica > 1 || hayMasDatosBD) && (
+                                <tfoot>
+                                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                        <td colSpan="6" style={{ padding: '10px 16px', fontWeight: 'normal', textTransform: 'none', letterSpacing: 'normal' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '13px', color: '#64748b' }}>
+                                                    Mostrando {startIndexLogistica + 1} - {Math.min(startIndexLogistica + EVENTOS_POR_PAGINA_LOGISTICA, sortedServicios.length)} de {sortedServicios.length} servicios {hayMasDatosBD && '(Más datos disponibles)'}
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => setPaginaLogistica(p => Math.max(1, p - 1))}
+                                                        disabled={paginaLogistica === 1}
+                                                        style={{ padding: '4px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: paginaLogistica === 1 ? '#f1f5f9' : '#fff', color: paginaLogistica === 1 ? '#94a3b8' : '#334155', cursor: paginaLogistica === 1 ? 'not-allowed' : 'pointer', fontSize: '13px' }}
+                                                    >
+                                                        Atrás
+                                                    </button>
+                                                    <span style={{ fontSize: '13px', color: '#475569', fontWeight: '600' }}>
+                                                        Pág. {paginaLogistica} {totalPaginasLogistica > 0 ? `de ${totalPaginasLogistica}` : ''}
+                                                    </span>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={handleSiguientePagina}
+                                                        disabled={paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD}
+                                                        style={{ padding: '4px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: (paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD) ? '#f1f5f9' : '#fff', color: (paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD) ? '#94a3b8' : '#334155', cursor: (paginaLogistica >= totalPaginasLogistica && !hayMasDatosBD) ? 'not-allowed' : 'pointer', fontSize: '13px' }}
+                                                    >
+                                                        Siguiente
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 </>
@@ -740,12 +865,12 @@ function ModuloProveedores({ usuario }) {
                     {/* Header premium */}
                     <div className="licitaciones-ia-header">
                         <div className="ia-icon-wrapper">
-                            <FiCpu size={28} color="#fff" />
+                            <FiDollarSign size={28} color="#fff" />
                         </div>
-                        <h3>Licitaciones Adjudicadas — Evaluación IA</h3>
+                        <h3>Centralización de Pagos (CxP)</h3>
                         <p>
-                            Las licitaciones evaluadas y adjudicadas por inteligencia artificial aparecen aquí. 
-                            Como Encargado de Compras, puede subir la factura saldada para finalizar el evento logísticamente.
+                            Gestión de cuentas por pagar: incluye licitaciones adjudicadas por IA y servicios de logística operativa.
+                            Como Encargado de Compras, puede subir los comprobantes para finalizar el flujo contable.
                         </p>
                     </div>
 
@@ -776,25 +901,41 @@ function ModuloProveedores({ usuario }) {
                         <table className="modern-table">
                             <thead>
                                 <tr>
+                                    <th>Origen</th>
                                     <th>Evento / Requisitos</th>
                                     <th>Proveedor Ganador</th>
                                     <th>Monto Total</th>
                                     <th>Estado Pago</th>
                                     <th>Comprobante</th>
-                                    <th>Gestión</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {sortedLicitaciones.length === 0 ? (
                                     <tr>
                                         <td colSpan="6" style={{ textAlign: 'center', padding: '60px 24px' }}>
-                                            <FiCpu style={{ fontSize: '40px', color: '#CBD5E1', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
-                                            <div style={{ fontWeight: '700', color: '#475569', fontSize: '15px', marginBottom: '6px' }}>No hay licitaciones adjudicadas</div>
-                                            <div style={{ fontSize: '13px', color: '#94A3B8' }}>Las licitaciones procesadas por IA aparecerán aquí</div>
+                                            <FiDollarSign style={{ fontSize: '40px', color: '#CBD5E1', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                                            <div style={{ fontWeight: '700', color: '#475569', fontSize: '15px', marginBottom: '6px' }}>No hay pagos pendientes</div>
+                                            <div style={{ fontSize: '13px', color: '#94A3B8' }}>Las obligaciones de pago aparecerán aquí</div>
                                         </td>
                                     </tr>
                                 ) : currentLicitaciones.map(lic => (
-                                    <tr key={lic.id_analisis}>
+                                    <tr key={lic.id_analisis + '-' + lic.origen}>
+                                        <td>
+                                            <span style={{
+                                                fontSize: '11px',
+                                                color: lic.origen === 'Licitacion' ? '#6d28d9' : '#0369a1',
+                                                background: lic.origen === 'Licitacion' ? '#ede9fe' : '#e0f2fe',
+                                                padding: '4px 8px',
+                                                borderRadius: '6px',
+                                                fontWeight: '600',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}>
+                                                {lic.origen === 'Licitacion' ? <FiCpu size={12} /> : <FiPackage size={12} />}
+                                                {lic.origen === 'Licitacion' ? 'Licitación' : 'Logística'}
+                                            </span>
+                                        </td>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                                                 <span style={{ fontSize: '12px', fontWeight: '800', color: '#3B82F6' }}>
@@ -837,95 +978,15 @@ function ModuloProveedores({ usuario }) {
                                             </span>
                                         </td>
                                         <td>
-                                            {lic.estado_pago !== 'Pagado' || editModeFactura[lic.id_cotizacion] ? (
-                                                <label 
+                                            {lic.estado_pago !== 'Pagado' ? (
+                                                <button 
+                                                    type="button"
                                                     className="btn btn-secondary btn-sm" 
-                                                    style={{ 
-                                                        cursor: 'pointer', 
-                                                        margin: 0,
-                                                        backgroundColor: fileFacturas[lic.id_cotizacion] ? '#dcfce7' : undefined,
-                                                        borderColor: fileFacturas[lic.id_cotizacion] ? '#86efac' : undefined,
-                                                        color: fileFacturas[lic.id_cotizacion] ? '#166534' : undefined,
-                                                        transition: 'all 0.3s ease',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px'
-                                                    }}
+                                                    onClick={() => setModalEvidencia({ open: true, deudaActual: lic })}
+                                                    title="Subir comprobante de pago"
                                                 >
-                                                    <FiUpload size={13} />
-                                                    {fileFacturas[lic.id_cotizacion] ? fileFacturas[lic.id_cotizacion].name.substring(0, 16) + '...' : 'Seleccionar PDF'}
-                                                    <input 
-                                                        type="file" 
-                                                        accept="application/pdf" 
-                                                        onChange={e => setFileFacturas(prev => ({ ...prev, [lic.id_cotizacion]: e.target.files[0] }))} 
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                </label>
-                                            ) : (
-                                                <div style={{ display: 'flex', alignItems: 'center', height: '31px' }}>
-                                                    <span style={{color: '#2ecc71', fontSize: '13.5px'}}><strong>✓ Pagado</strong></span>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td>
-                                            {lic.estado_pago !== 'Pagado' || editModeFactura[lic.id_cotizacion] ? (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                    <button 
-                                                        type="button"
-                                                        className="btn btn-primary btn-sm"
-                                                        disabled={!fileFacturas[lic.id_cotizacion]}
-                                                        style={{ width: 'fit-content' }}
-                                                        onClick={async () => {
-                                                            const currentFile = fileFacturas[lic.id_cotizacion];
-                                                            if (!currentFile) return;
-                                                            const fd = new FormData();
-                                                            fd.append('archivo_factura', currentFile);
-                                                            try {
-                                                                const res = await fetch(`${API}/api/admin/factura-proveedor/${lic.id_cotizacion}`, {
-                                                                    method: 'POST',
-                                                                    headers: { 'x-usuario-id': usuario?.id_usuario || '' },
-                                                                    body: fd
-                                                                });
-                                                                if (res.ok) {
-                                                                    alert("Factura subida correctamente.");
-                                                                    setFileFacturas(prev => {
-                                                                        const copy = { ...prev };
-                                                                        delete copy[lic.id_cotizacion];
-                                                                        return copy;
-                                                                    });
-                                                                    if (editModeFactura[lic.id_cotizacion]) {
-                                                                        setEditModeFactura(prev => ({ ...prev, [lic.id_cotizacion]: false }));
-                                                                    }
-                                                                    cargarLicitacionesAdjudicadas();
-                                                                } else {
-                                                                    const err = await res.json();
-                                                                    alert(err.error || "Error al subir");
-                                                                }
-                                                            } catch(e) {
-                                                                alert("Error de red");
-                                                            }
-                                                        }}
-                                                    >
-                                                        <FiCheckSquare size={13} /> Subir
-                                                    </button>
-                                                    {editModeFactura[lic.id_cotizacion] && (
-                                                        <button 
-                                                            type="button"
-                                                            className="btn btn-sm"
-                                                            style={{ color: '#94A3B8', border: '1px solid #E2E8F0', background: 'white', width: 'fit-content' }}
-                                                            onClick={() => {
-                                                                setEditModeFactura(prev => ({ ...prev, [lic.id_cotizacion]: false }));
-                                                                setFileFacturas(prev => {
-                                                                    const copy = { ...prev };
-                                                                    delete copy[lic.id_cotizacion];
-                                                                    return copy;
-                                                                });
-                                                            }}
-                                                        >
-                                                            Cancelar
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                    <FiUpload size={13} /> Subir
+                                                </button>
                                             ) : (
                                                 <div style={{ display: 'flex', gap: '8px' }}>
                                                     {lic.factura_pdf && (
@@ -947,7 +1008,7 @@ function ModuloProveedores({ usuario }) {
                                                         title="Reemplazar comprobante"
                                                         className="btn btn-secondary btn-sm"
                                                         style={{ backgroundColor: '#F8FAFC', color: '#475569', borderColor: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', padding: '0' }}
-                                                        onClick={() => setEditModeFactura(prev => ({ ...prev, [lic.id_cotizacion]: true }))}
+                                                        onClick={() => setModalEvidencia({ open: true, deudaActual: lic })}
                                                     >
                                                         <FiEdit size={15} />
                                                     </button>
@@ -1270,15 +1331,15 @@ function ModuloProveedores({ usuario }) {
             `}</style>
             {/* Modal Evidencia CxP */}
             {modalEvidencia.open && createPortal(
-                <div className="modal-overlay" onClick={() => setModalEvidencia({ open: false, servicioId: null })}>
+                <div className="modal-overlay" onClick={() => setModalEvidencia({ open: false, deudaActual: null })}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2>Subir Evidencia CxP</h2>
+                            <h2>Subir Comprobante de Pago</h2>
                         </div>
-                        <form onSubmit={handleSubirEvidencia}>
+                        <form onSubmit={handleSubirEvidenciaUnificada}>
                             <div className="modal-body">
                                 <p style={{marginBottom: '10px', fontSize: '14px', color: '#64748B'}}>
-                                    Sube el comprobante de que la factura de este evento fue enviada al departamento de Contabilidad.
+                                    Sube el comprobante de que esta deuda fue saldada o enviada a Contabilidad.
                                 </p>
                                 <input 
                                     type="file" 
@@ -1288,7 +1349,7 @@ function ModuloProveedores({ usuario }) {
                                 />
                             </div>
                             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setModalEvidencia({ open: false, servicioId: null })}>Cancelar</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalEvidencia({ open: false, deudaActual: null })}>Cancelar</button>
                                 <button type="submit" className="btn btn-primary">Subir Archivo</button>
                             </div>
                         </form>

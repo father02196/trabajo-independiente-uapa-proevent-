@@ -498,28 +498,33 @@ export default function GestionSolicitudesAV({ usuario }) {
               </tr>
             )}
           </tbody>
+          {/* CONTROLES DE PAGINACIÓN INTEGRADAS AL FINAL DE LA TABLA */}
+          {sortedSolicitudes.length > 0 && (
+            <tfoot>
+                <tr style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                    <td colSpan="6" style={{ padding: '10px 16px', fontWeight: 'normal', textTransform: 'none', letterSpacing: 'normal' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ fontSize: '13px', color: '#64748B' }}>
+                            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, sortedSolicitudes.length)} de {sortedSolicitudes.length} solicitudes
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+                              Atrás
+                            </button>
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
+                              Pág. {currentPage} de {totalPages || 1}
+                            </span>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
+                              Siguiente
+                            </button>
+                          </div>
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
+          )}
         </table>
       </div>
-
-      {/* CONTROLES DE PAGINACIÓN */}
-      {sortedSolicitudes.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
-          <div style={{ fontSize: '13px', color: '#64748B' }}>
-            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, sortedSolicitudes.length)} de {sortedSolicitudes.length} solicitudes
-          </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
-              Anterior
-            </button>
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#0F172A' }}>
-              Página {currentPage} de {totalPages || 1}
-            </span>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
-              Siguiente
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* MODAL DETALLES AUDIOVISUAL */}
       {isModalOpen && selectedRequest && createPortal(

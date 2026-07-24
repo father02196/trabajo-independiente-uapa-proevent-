@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiEye, FiEdit2, FiSearch, FiFilter, FiCalendar, FiList, FiFileText, FiGrid, FiArrowLeft, FiMonitor, FiClock, FiStar, FiActivity, FiRefreshCw } from "react-icons/fi";
+import { FiEye, FiEdit2, FiTrash2, FiSearch, FiFilter, FiCalendar, FiList, FiFileText, FiGrid, FiArrowLeft, FiMonitor, FiClock, FiStar, FiActivity, FiRefreshCw } from "react-icons/fi";
 import { useSortableData } from '../hooks/useSortableData';
 import SortableHeader from '../components/SortableHeader';
 import { toast } from "react-hot-toast";
@@ -125,7 +125,34 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
     } catch (e) {
       toast.error("Error de conexión");
     }
-  };  const indexOfFirstItemForDisplay = currentItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  };
+
+  const handleEliminarEvento = async (id_evento) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta solicitud? Esta acción no se puede deshacer.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/eventos/${id_evento}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${usuario?.token || ""}`,
+          "x-usuario-id": usuario?.id_usuario || ""
+        }
+      });
+      if (res.ok) {
+        toast.success("Evento eliminado exitosamente.");
+        cargarHistorial();
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.mensaje || "Error al eliminar el evento.");
+      }
+    } catch (err) {
+      toast.error("Error de conexión al eliminar.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const indexOfFirstItemForDisplay = currentItems.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const indexOfLastItemForDisplay = Math.min(currentPage * itemsPerPage, filteredData.length);
 
   return (
@@ -269,16 +296,22 @@ export default function HistorialSolicitudes({ usuario, onEditEvent, setActiveTa
                         <button type="button" className="action-icon-btn view" onClick={() => handleView(sol)} title="Ver Detalles de Solicitud" style={{ color: '#0ea5e9', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd' }}>
                           <FiEye />
                         </button>
-                        {sol.estado === 'Pendiente' ? (
-                          <button type="button" className="action-icon-btn edit" onClick={() => handleEdit(sol)} title="Editar Solicitud">
-                            <FiEdit2 />
-                          </button>
-                        ) : sol.estado === 'Observado' ? (
+                        {(!sol.estado || sol.estado === 'Pendiente' || sol.estado === 'Observado') ? (
+                          <>
+                            <button type="button" className="action-icon-btn edit" onClick={() => handleEdit(sol)} title="Editar Solicitud">
+                              <FiEdit2 />
+                            </button>
+                            <button type="button" className="action-icon-btn delete" onClick={() => handleEliminarEvento(sol.id_evento)} title="Eliminar Solicitud" style={{ color: '#ef4444', backgroundColor: '#fee2e2', border: '1px solid #fecaca' }}>
+                              <FiTrash2 />
+                            </button>
+                          </>
+                        ) : (
+                          <div style={{ width: '32px', height: '32px' }}></div>
+                        )}
+                        {sol.estado === 'Observado' && (
                           <button type="button" className="action-icon-btn" onClick={() => openSubsanar(sol)} title="Ver Observaciones y Subsanar" style={{ color: '#d97706', backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}>
                             <FiRefreshCw />
                           </button>
-                        ) : (
-                          <div style={{ width: '32px', height: '32px' }}></div>
                         )}
                       </div>
                     </td>

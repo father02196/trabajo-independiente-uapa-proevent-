@@ -279,7 +279,7 @@ function autoFinalizarEventos() {
   const sql = `
     SELECT e.id_evento, e.nombre, e.id_usuario
     FROM evento e
-    WHERE e.estado = 'Aprobado'
+    WHERE (e.estado = 'Aprobado' OR e.estado = 'En Progreso')
       AND DATE(e.fecha_fin) < ? -- Filtro restrictivo condicional evaluando si ya transcurrió en el calendario la fecha límite
       AND NOT EXISTS (SELECT 1 FROM actividad_cronograma ac WHERE ac.id_evento = e.id_evento AND ac.estado != 'Completada')
       AND NOT EXISTS (SELECT 1 FROM servicio_externo se WHERE se.id_evento = e.id_evento AND se.estado_pago != 'Completado')
@@ -965,8 +965,8 @@ app.post('/eventos', async (req, res) => { // Declaración Async para el Endpoin
   // --- INSERCIÓN EN TABLA PADRE: EVENTO ---
   db.query( // Si la transacción superó incólume las verificaciones monetarias pasadas, comienza el registro físico vital de la solicitud cruda en evento
     `INSERT INTO evento (nombre, modalidad, fecha_inicio, fecha_fin, hora_inicio, hora_fin,
-      cantidad_asistentes, tipo_evento, monto_poa, moneda, id_usuario, id_dependencia, id_recinto)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Estructura un insert multi-paramétrico estricto de valores
+      cantidad_asistentes, tipo_evento, monto_poa, moneda, id_usuario, id_dependencia, id_recinto, estado)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente')`, // Estructura un insert multi-paramétrico estricto de valores
     [nombre, modalidad, fecha_inicio, fecha_fin, hora_inicio, hora_fin,
       cantidad_asistentes, tipo_evento, monto_poa, moneda, id_usuario, id_dependencia, id_recinto], // Despliega la matriz asociativa estricta hacia SQL crudo nativo
     (err, result) => { // Callback lambda
@@ -1372,7 +1372,7 @@ app.put('/eventos/:id/estado', (req, res) => {
   // --- Módulo: Eventos | Función: Actualizar estado y asignar coordinador (Fase 1 del Relevo) ---
   const { id } = req.params;
   const { estado, id_coordinador } = req.body;
-  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado'];
+  const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado', 'Finalizado', 'En Progreso'];
 
   if (!estadosValidos.includes(estado))
     return res.status(400).json({ mensaje: 'Estado no válido' });
@@ -2956,15 +2956,19 @@ app.put('/eventos/:id/cerrar-expediente', (req, res) => {
 
 // 5. Endpoint global para Módulo Proveedores (Frontend)
 app.get('/servicios-externos-all', (req, res) => {
+  const limit = parseInt(req.query.limit) || 200;
+  const offset = parseInt(req.query.offset) || 0;
+
   db.query(`
     SELECT se.*, tse.nombre as tipo_servicio, tse.clasificacion, e.nombre as nombre_evento, e.fecha_inicio
     FROM servicio_externo se
     JOIN tipo_servicio_externo tse ON se.id_tipo_servicio = tse.id_tipo_servicio
     JOIN evento e ON se.id_evento = e.id_evento
     ORDER BY e.fecha_inicio DESC, se.fecha_solicitud DESC
-  `, (err, results) => {
+    LIMIT ? OFFSET ?
+  `, [limit, offset], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+    res.json({ data: results, hasMore: results.length === limit });
   });
 });
 
