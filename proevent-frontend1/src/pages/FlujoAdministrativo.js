@@ -14,7 +14,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
 // Iconos de Feather Icons usados en la UI de los paneles y botones
-import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye, FiRefreshCw, FiEdit2 } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye, FiRefreshCw, FiEdit2, FiX, FiCalendar } from 'react-icons/fi';
 
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from 'react-hot-toast';
@@ -64,6 +64,7 @@ export default function FlujoAdministrativo({ usuario }) {
   const [loading, setLoading] = useState(false); // Indicador de carga al cambiar de evento
   const [recargandoEventos, setRecargandoEventos] = useState(false); // Indicador de recarga del selector
   const [showHistorialModal, setShowHistorialModal] = useState(false); // Modal de historial global
+  const [legalContextService, setLegalContextService] = useState(null); // Guarda el servicio a inspeccionar en Legal
 
   // Nuevos estados para inserción por lotes en Órdenes de Compra
   const [archivosPendientes, setArchivosPendientes] = useState({});
@@ -151,8 +152,9 @@ export default function FlujoAdministrativo({ usuario }) {
       // 2. Servicios externos del evento (para OC y control de contratos B2B)
       const resServ = await fetch(`${API}/servicios-externos-all`);
       const dataServ = await resServ.json();
-      if (Array.isArray(dataServ)) {
-        setServicios(dataServ.filter(s => s.id_evento.toString() === id_evento.toString()));
+      if (resServ.ok) {
+        const actualDataServ = dataServ.data || dataServ;
+        setServicios(actualDataServ.filter(s => s.id_evento.toString() === id_evento.toString()));
       }
 
       // 3. Documentos de la Bóveda Digital
@@ -1065,20 +1067,31 @@ export default function FlujoAdministrativo({ usuario }) {
                         {s.tipo_servicio} 
                         {s.numero_orden_compra && <span style={{ color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>(OC: {s.numero_orden_compra})</span>}
                       </span>
-                      <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={s.requiere_contrato} 
-                          onChange={(e) => {
-                            const updated = [...servicios];
-                            const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
-                            updated[idx].requiere_contrato = e.target.checked;
-                            setServicios(updated);
-                            guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
-                          }}
-                        />
-                        <span className="toggle-slider"></span>
-                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button 
+                          type="button"
+                          className="btn-modern btn-outline" 
+                          onClick={() => setLegalContextService(s)}
+                          style={{ padding: '4px 10px', fontSize: '12px' }}
+                          title="Ver especificaciones y proveedor ganador"
+                        >
+                          <FiEye style={{ marginRight: '6px' }} /> Ver Detalles
+                        </button>
+                        <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={s.requiere_contrato} 
+                            onChange={(e) => {
+                              const updated = [...servicios];
+                              const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
+                              updated[idx].requiere_contrato = e.target.checked;
+                              setServicios(updated);
+                              guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
+                            }}
+                          />
+                          <span className="toggle-slider"></span>
+                        </label>
+                      </div>
                     </div>
                     
                     {s.requiere_contrato && (
@@ -1448,6 +1461,154 @@ export default function FlujoAdministrativo({ usuario }) {
             <div className="ia-modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', background: '#f8fafc', borderRadius: '0 0 12px 12px' }}>
               <button className="ia-btn-cancelar" onClick={() => setShowHistorialModal(false)}>Cerrar</button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL DE CONTEXTO JURÍDICO — inyectado en document.body via Portal para evitar modal trapping */}
+      {(isLegalRole || isGeneralRole) && legalContextService && ReactDOM.createPortal(
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '580px', borderRadius: '20px', overflow: 'hidden' }}>
+
+            {/* ── HEADER con gradiente azul institucional ── */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
+              padding: '22px 26px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                }}>
+                  <FiFileText size={20} color="#fff" />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.70)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Expediente de Contrato
+                  </p>
+                  <h4 style={{ margin: '2px 0 0 0', fontSize: '17px', fontWeight: '700', color: '#fff', letterSpacing: '-0.2px' }}>
+                    {legalContextService.tipo_servicio}
+                  </h4>
+                </div>
+              </div>
+              <button
+                onClick={() => setLegalContextService(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '8px',
+                  width: '32px', height: '32px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0,
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+
+            {/* ── BODY ── */}
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+              {/* BLOQUE 1 — Proveedor y Finanzas */}
+              {(() => {
+                const cotizacionGanadora = cotizaciones.find(c => c.id_cotizacion === legalContextService.id_cotizacion_adjudicada);
+                return (
+                  <div style={{ background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(59,130,246,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FiBriefcase size={14} color="#3B82F6" />
+                      </div>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Proveedor y Finanzas</span>
+                    </div>
+                    {cotizacionGanadora ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div className="detail-group">
+                          <label>Proveedor Adjudicado</label>
+                          <p style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A', margin: 0 }}>{cotizacionGanadora.proveedor_nombre}</p>
+                        </div>
+                        <div className="detail-group">
+                          <label>Monto Acordado (RD$)</label>
+                          <p style={{ fontSize: '15px', fontWeight: '700', color: '#059669', margin: 0 }}>
+                            RD$ {Number(cotizacionGanadora.monto_total_detectado).toLocaleString('es-DO')}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '8px', padding: '10px 14px' }}>
+                        <FiAlertCircle size={15} color="#92400E" />
+                        <span style={{ fontSize: '13px', color: '#92400E', fontWeight: '500' }}>Cotización pendiente o no enlazada a este servicio.</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* BLOQUE 2 — Requerimientos del Solicitante */}
+              <div style={{ borderRadius: '12px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+                <div style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(139,92,246,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FiFileText size={14} color="#8B5CF6" />
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Requerimientos del Solicitante</span>
+                </div>
+                <div style={{ background: '#fff', padding: '14px 16px', minHeight: '70px' }}>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: '#334155', lineHeight: '1.65', whiteSpace: 'pre-wrap' }}>
+                    {legalContextService.detalles || <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>No hay detalles registrados para este servicio.</span>}
+                  </p>
+                </div>
+              </div>
+
+              {/* BLOQUE 3 — Condiciones del Evento */}
+              {eventoSeleccionado && (
+                <div style={{ borderRadius: '12px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+                  <div style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(16,185,129,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FiCalendar size={14} color="#10B981" />
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Condiciones del Evento</span>
+                  </div>
+                  <div style={{ background: '#fff', padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    {[
+                      { label: 'Fecha de Montaje', val: eventoSeleccionado.fecha_montaje
+                        ? new Date(eventoSeleccionado.fecha_montaje).toLocaleDateString('es-DO', { day:'2-digit', month:'long', year:'numeric' })
+                        : '—' },
+                      { label: 'Fecha de Inicio', val: eventoSeleccionado.fecha_inicio
+                        ? new Date(eventoSeleccionado.fecha_inicio).toLocaleDateString('es-DO', { day:'2-digit', month:'long', year:'numeric' })
+                        : '—' },
+                      { label: 'Sede (Campus)', val: eventoSeleccionado.campus || '—' },
+                      { label: 'Salón / Espacio', val: eventoSeleccionado.espacio || '—' },
+                    ].map(({ label, val }) => (
+                      <div className="detail-group" key={label}>
+                        <label>{label}</label>
+                        <p style={{ fontSize: '13.5px', fontWeight: '600', color: '#1E293B', margin: 0 }}>{val}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* ── FOOTER ── */}
+            <div className="modal-footer">
+              <button className="close-btn" onClick={() => setLegalContextService(null)}>
+                Cerrar
+              </button>
+              <button
+                className="btn-primary"
+                style={{ marginLeft: '8px', padding: '10px 22px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', border: 'none' }}
+                onClick={() => setLegalContextService(null)}
+              >
+                Entendido
+              </button>
+            </div>
+
           </div>
         </div>,
         document.body
