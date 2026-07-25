@@ -1,6 +1,10 @@
 // ============================================================
-// MÓDULO DE BITÁCORA DE MOVIMIENTOS (AUDITORÍA FASE 4)
-// Paginación y Filtrado 100% en el Backend
+// PÁGINA: Bitacora
+// Pertenece a: Módulo de Auditoría del Sistema
+// Propósito: Interfaz de consulta y exportación de la bitácora de
+// movimientos del sistema. Toda la paginación y el filtrado se
+// procesan en el backend para manejar volúmenes grandes sin
+// saturar el cliente. Disponible solo para el rol Administrador.
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';

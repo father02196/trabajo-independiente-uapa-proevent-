@@ -1,3 +1,10 @@
+// ============================================================
+// LAYOUT: DashboardAudiovisualLayout
+// Pertenece a: Arquitectura de Navegación (Layouts por Rol)
+// Propósito: Envuelve el dashboard del Administrador de Audiovisual
+// con la barra lateral y rutas anidadas. Gestiona el inventario
+// de equipos, solicitudes AV y el cronograma de reservas.
+// ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiHeadphones, FiActivity, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiMenu } from "react-icons/fi";

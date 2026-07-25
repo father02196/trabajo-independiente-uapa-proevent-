@@ -1,3 +1,11 @@
+// ============================================================
+// LAYOUT: DashboardResponsableLayout
+// Pertenece a: Arquitectura de Navegación (Layouts por Rol)
+// Propósito: Envuelve el dashboard del Responsable de Eventos
+// con la barra lateral y rutas anidadas. El responsable tiene
+// visibilidad de los eventos que coordina y puede gestionar
+// el cronograma y los recursos audiovisuales asignados.
+// ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiHeadphones, FiActivity, FiCalendar, FiChevronDown, FiMenu } from "react-icons/fi";

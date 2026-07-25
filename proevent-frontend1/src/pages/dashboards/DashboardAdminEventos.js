@@ -1,10 +1,11 @@
 // ============================================================
-// DASHBOARD ESPECIALISTA - Panel para Especialistas de Área
-// Pertenece a: Módulo de Inicio (ProEvent - Roles técnicos)
-// Propósito: Dashboard para roles técnicos: Especialistas,
-// Responsables de Área Audiovisual, etc. Muestra eventos
-// globales del sistema, con filtro especial para Administradores
-// de Audiovisual (solo eventos que necesitan equipo AV).
+// DASHBOARD ADMIN EVENTOS - Panel del Administrador de Eventos
+// Pertenece a: Módulo de Inicio (ProEvent - Rol Admin de Eventos)
+// Propósito: Panel principal del Administrador de Eventos.
+// Muestra estadísticas globales de todas las solicitudes,
+// gráficos de distribución por estado, próximos eventos,
+// alertas de revisión pendiente y accesos rápidos al módulo
+// de Gestión de Eventos para aprobar o rechazar solicitudes.
 // ============================================================
 
 // Importaciones de React y hooks necesarios

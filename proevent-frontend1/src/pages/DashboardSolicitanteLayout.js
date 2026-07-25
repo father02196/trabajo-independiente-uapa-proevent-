@@ -1,3 +1,13 @@
+// ============================================================
+// LAYOUT: DashboardSolicitanteLayout
+// Pertenece a: Arquitectura de Navegación (Layouts por Rol)
+// Propósito: Envuelve el dashboard del rol Solicitante con la
+// barra lateral (sidebar), la barra superior y el sistema de
+// rutas anidadas. Solo accesible para usuarios con rol 'Solicitante'.
+// Gestiona el estado de edición de eventos (editingEvent) para
+// pasar la solicitud de edición desde HistorialSolicitudes al
+// formulario NuevaSolicitudEvento.
+// ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle } from "react-icons/fi";

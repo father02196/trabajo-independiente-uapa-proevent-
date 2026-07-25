@@ -1,3 +1,20 @@
+// ============================================================
+// COMPONENTE: NuevaSolicitudEvento
+// Pertenece a: Módulo de Solicitudes de Eventos
+// Propósito: Formulario wizard multipaso para registrar o editar
+// una solicitud de evento institucional en UAPA-ProEvent.
+//
+// Pasos del wizard:
+//   1. Información General    - Datos básicos del evento
+//   2. Modalidad y Lugar      - Recinto, modalidad, fecha/hora
+//   3. Servicios Alimenticios - Catering (activa regla de 20 días)
+//   4. Servicios Audiovisuales- Equipos AV (activa regla de 5 días)
+//   5. Presupuesto POA        - Monto solicitado al fondo anual
+//
+// El componente también funciona en modo edición cuando recibe
+// la prop `editingEvent` con los datos del evento a modificar.
+// ============================================================
+
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiMonitor, FiCalendar, FiMapPin, FiCoffee, FiDollarSign } from "react-icons/fi";
@@ -10,6 +27,14 @@ import './../css/Eventos.css';
 
 const API = "http://localhost:8080";
 
+/**
+ * Calcula la diferencia en días entre hoy y la fecha de inicio del evento.
+ * Usado para validar las reglas de anticipación mínima:
+ *   - 20 días si el evento incluye servicios alimenticios.
+ *   - 5 días si incluye servicios audiovisuales.
+ * @param {string} startDateStr - Fecha de inicio en formato 'YYYY-MM-DD'
+ * @returns {number} Días restantes hasta la fecha (negativo si ya pasó)
+ */
 const getDaysDifference = (startDateStr) => {
   if (!startDateStr) return 0;
   const [y, m, d] = startDateStr.split('-');
