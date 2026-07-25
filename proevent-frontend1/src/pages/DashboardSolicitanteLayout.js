@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle } from "react-icons/fi";
 import "./../css/Dashboard.css";
@@ -6,6 +6,7 @@ import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import logoIcono from './../img/logo-icono.png';
 import dashboardIcon from "./../img/dashboard.png";
 import eventosIcon from "./../img/eventos.png";
+import axios from "../api/axios";
 
 import DashboardSolicitante from "./dashboards/DashboardSolicitante";
 import Eventos from "./Eventos";
@@ -23,9 +24,32 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
+    const pendingEditNav = useRef(false);
+
+    // Navigate to solicitud form AFTER editingEvent state is actually set
+    useEffect(() => {
+        if (pendingEditNav.current && editingEvent) {
+            pendingEditNav.current = false;
+            navigate('/solicitante/eventos/solicitud');
+        }
+    }, [editingEvent, navigate]);
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
     const toggleUserMenu = () => setUserMenuOpen(!userMenuOpen);
+
+    const handleEditFromNotification = async (idEvento) => {
+        try {
+            const res = await axios.get(`/api/eventos/${idEvento}`);
+            if (res.data) {
+                pendingEditNav.current = true; // Signal that we should navigate after state update
+                setEditingEvent(res.data);
+            } else {
+                console.error("No se pudo obtener el evento:", idEvento);
+            }
+        } catch (err) {
+            console.error("Error fetching event for edit", err);
+        }
+    };
 
     const handleNavigate = (path) => {
         navigate(path);
@@ -112,11 +136,9 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
             <main className="dashboard-main">
                 <header className="dashboard-header">
                     <div className="header-left">
-                        <button
-                            type="button"
-                            className="hamburger-btn"
+                        <button 
+                            className="sidebar-toggle-btn"
                             onClick={toggleSidebar}
-                            title={isSidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
                             aria-label="Toggle sidebar"
                         >
                             <FiMenu size={22} />
@@ -127,6 +149,7 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
                         <NotificationBell 
                             usuario={usuario} 
                             onGoToEvaluacion={() => handleNavigate('/solicitante/evaluacion')} 
+                            onGoToEditEvent={handleEditFromNotification}
                         />
                     </div>
                 </header>
