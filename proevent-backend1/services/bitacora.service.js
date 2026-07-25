@@ -1,3 +1,13 @@
+// ============================================================
+// SERVICIO: BitacoraService
+// Pertenece a: Capa de Auditoría (services)
+// Propósito: Clase estática centralizada para registrar todos los
+// eventos de auditoría del sistema UAPA-ProEvent en la tabla
+// `bitacora_movimiento`. Ofrece dos modos de registro:
+//   - auditCritical: transaccional, garantizado o lanza excepción.
+//   - auditBestEffort: no bloquea el flujo principal; falla silenciosamente.
+// ============================================================
+
 const { validateAction, AUDIT_CRITICALITY, AUDIT_ACTIONS } = require('../constants/bitacora.actions');
 const { normalizeAndValidateActor, AUDIT_ACTOR_TYPES } = require('../constants/bitacora.actors');
 const { serializeDetails } = require('../utils/sanitizer');
@@ -6,10 +16,25 @@ class BitacoraService {
 
   static pool = null;
 
+  /**
+   * Inicializa el servicio inyectando el pool de conexiones MySQL.
+   * Debe llamarse una sola vez al arrancar el servidor (server.js).
+   * @param {Object} dbPool - Pool de conexiones creado con mysql2.createPool()
+   */
   static init(dbPool) {
     this.pool = dbPool;
   }
 
+  /**
+   * Construye el payload de detalles que se persistirá en la bitácora.
+   * Extrae contexto HTTP (IP, método, ruta, User-Agent) y lo combina
+   * con los metadatos del evento de negocio.
+   * @private
+   * @param {Object|null} req - Objeto request de Express (null para acciones del sistema)
+   * @param {Object} actor - Actor normalizado
+   * @param {Object} metadata - Metadatos del evento de auditoría
+   * @returns {{ requestId: string|null, detalles: string }} Payload serializado
+   */
   static _buildPayload(req, actor, metadata) {
     return {
       requestId: req ? req.requestId : null,
@@ -27,6 +52,18 @@ class BitacoraService {
     };
   }
 
+  /**
+   * Registra un evento de auditoría crítico dentro de una transacción activa.
+   * Falla explícitamente (lanza excepción) si algo sale mal, para que el
+   * proceso padre pueda hacer ROLLBACK y mantener consistencia de datos.
+   * Solo acepta acciones con criticality === CRITICAL.
+   *
+   * @param {Object} req - Request de Express (para extraer IP y User-Agent)
+   * @param {Object} accion - Acción del catálogo AUDIT_ACTIONS
+   * @param {Object} metadata - Metadatos del evento
+   * @param {Object} connection - Conexión transaccional activa (mysql2 pool connection)
+   * @param {Object} [actorOverride] - Actor alternativo si no debe tomarse de req.user
+   */
   static async auditCritical({ req, accion, metadata, connection, actorOverride }) {
     validateAction(accion);
     if (accion.criticality !== AUDIT_CRITICALITY.CRITICAL) throw new Error('Acción no crítica.');
@@ -42,6 +79,18 @@ class BitacoraService {
     await connection.execute(query, [actor.id_usuario, actor.id_rol, actor.id_proveedor, actor.tipo_actor, accion.code, detalles, requestId]);
   }
 
+  /**
+   * Registra un evento de auditoría de forma no bloqueante (fire-and-forget).
+   * Usa una conexión separada del pool, no interfiere con la transacción principal.
+   * Si falla, solo imprime en consola. Nunca lanza excepción al llamador.
+   * Solo acepta acciones con criticality === BEST_EFFORT.
+   *
+   * @param {Object} req - Request de Express
+   * @param {Object} accion - Acción del catálogo AUDIT_ACTIONS
+   * @param {Object} metadata - Metadatos del evento
+   * @param {Object} [actorOverride] - Actor alternativo si no debe tomarse de req.user
+   * @returns {Promise<void>}
+   */
   static auditBestEffort({ req, accion, metadata, actorOverride }) {
     return new Promise((resolve) => {
       (async () => {
@@ -74,6 +123,12 @@ class BitacoraService {
   }
 
   // --- MÉTODOS ESPECIALIZADOS FASE 2 ---
+  // --- MÉTODOS ESPECIALIZADOS FASE 2 ---
+
+  /**
+   * Atajo para registrar acciones originadas por el propio sistema (cron jobs, scripts).
+   * Usa actor tipo SISTEMA, sin req ni usuario asociado.
+   */
   static auditSystem({ accion, metadata }) {
     return this.auditBestEffort({
       req: null,
@@ -83,6 +138,10 @@ class BitacoraService {
     });
   }
 
+  /**
+   * Atajo para registrar acciones de usuarios no autenticados (ej. login fallido).
+   * Usa actor tipo ANONIMO, sin id_usuario ni id_rol.
+   */
   static auditAnonymous({ req, accion, metadata }) {
     return this.auditBestEffort({
       req,
@@ -92,6 +151,13 @@ class BitacoraService {
     });
   }
 
+  /**
+   * Enmascara una dirección de correo para registrarla de forma segura
+   * en la bitácora sin exponer el usuario completo. Ej: 'ju***@uapa.edu.do'
+   * @private
+   * @param {string} email - Correo a enmascarar
+   * @returns {string} Correo enmascarado o marcador de error si el formato es inválido
+   */
   static _maskEmail(email) {
     if (!email || typeof email !== 'string') return '[INVALID_EMAIL]';
     const parts = email.split('@');
@@ -99,6 +165,12 @@ class BitacoraService {
     return `${parts[0].length > 2 ? parts[0].substring(0, 2) + '***' : parts[0] + '***'}@${parts[1]}`;
   }
 
+  /**
+   * Registra un intento de inicio de sesión fallido.
+   * El correo intentado se enmascara antes de persistirse.
+   * @param {Object} req - Request de Express
+   * @param {string} correoIntentado - Correo con el que se intentó el login
+   */
   static logLoginFailure({ req, correoIntentado }) {
     this.auditAnonymous({
       req, accion: AUDIT_ACTIONS.LOGIN_FALLIDO,
@@ -106,6 +178,13 @@ class BitacoraService {
     });
   }
 
+  /**
+   * Registra un inicio de sesión exitoso dentro de la transacción de login.
+   * Es crítico y debe ejecutarse en la misma transacción para garantizar consistencia.
+   * @param {Object} req - Request de Express
+   * @param {Object} user - Objeto usuario autenticado
+   * @param {Object} connection - Conexión transaccional activa
+   */
   static async logLoginSuccess({ req, user, connection }) {
     await this.auditCritical({
       req,
@@ -121,6 +200,14 @@ class BitacoraService {
   }
 
   // --- FASE 4: CONSULTAS AVANZADAS, PAGINACIÓN Y EXPORTACIÓN ---
+  // --- FASE 4: CONSULTAS AVANZADAS, PAGINACIÓN Y EXPORTACIÓN ---
+
+  /**
+   * Consulta la bitácora con filtros dinámicos, paginación y soporte de exportación CSV.
+   * @param {Object} queryParams - Filtros opcionales: page, limit, fecha_inicio, fecha_fin,
+   *   id_usuario, tipo_actor, accion, modulo, entidad, resultado, request_id, export_format.
+   * @returns {Object|string} Objeto con `data` y `pagination`, o string CSV si export_format === 'csv'.
+   */
   static async getAuditLogs(queryParams) {
     if (!this.pool) throw new Error('BitacoraService no inicializado con la base de datos.');
     
@@ -195,6 +282,12 @@ class BitacoraService {
     };
   }
 
+  /**
+   * Convierte un array de registros de bitácora a formato CSV para descarga.
+   * @private
+   * @param {Array} rows - Registros de bitácora obtenidos de la BD
+   * @returns {string} Cadena CSV con cabecera y filas de datos
+   */
   static _generateCSV(rows) {
     if (rows.length === 0) return 'Sin datos';
     const fields = ['ID', 'Fecha', 'Actor', 'Usuario/Proveedor', 'Acción', 'Módulo', 'Entidad', 'Resultado', 'Detalles JSON', 'Request ID'];
