@@ -1,3 +1,20 @@
+// ============================================================
+// MÓDULO: rutas_fase4
+// Pertenece a: Capa de API REST (raíz del backend)
+// Propósito: Router secundario de Express que agrupa los endpoints
+// de las funcionalidades avanzadas del sistema (Fase 4):
+//
+//   - Gestión de Proveedores (CRUD admin y portal B2B)
+//   - Solicitudes de Cotización y Licitaciones
+//   - Módulo de Inventario Audiovisual
+//   - Asignación de Personal Operativo
+//   - Portal de Evaluaciones
+//   - Análisis de PDFs con OpenAI (extracción de cotizaciones)
+//   - Servicios de Catering y Alimentación
+//
+// Se registra en server.js con: app.use('/api', rutas_fase4(db))
+// ============================================================
+
 const express = require('express');
 const BitacoraService = require('./services/bitacora.service');
 const { AUDIT_CRITICALITY } = require('./constants/bitacora.actions');
