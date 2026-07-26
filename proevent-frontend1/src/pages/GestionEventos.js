@@ -9,6 +9,7 @@
 // Importaciones de React y hooks necesarios
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
 
 // Iconos de Feather Icons usados en la UI de la tabla y modales
 import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiFilter, FiSearch, FiSliders, FiTrash2, FiGrid, FiDollarSign, FiBriefcase, FiSend, FiActivity, FiPlay, FiLock, FiAlertCircle, FiXCircle, FiInfo, FiAlertTriangle, FiList } from "react-icons/fi";
@@ -130,6 +131,20 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
     }
     cargarOrganizadoresAsignados(req.id_evento); // También carga los organizadores asignados
   };
+
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const idEventoQuery = searchParams.get('id_evento');
+
+  // --- EFECTO: AUTO ABRIR MODAL DESDE URL ---
+  useEffect(() => {
+    if (idEventoQuery && eventRequests.length > 0 && !isModalOpen && !selectedRequest) {
+      const targetReq = eventRequests.find(r => r.id_evento === parseInt(idEventoQuery));
+      if (targetReq) {
+        handleVerDetalles(targetReq);
+      }
+    }
+  }, [idEventoQuery, eventRequests, isModalOpen, selectedRequest]);
 
   // --- FUNCIÓN: closeModal ---
   // Cierra el modal de la Ficha Técnica y limpia todos los estados
