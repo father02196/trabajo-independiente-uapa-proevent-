@@ -9,8 +9,6 @@
 // formulario NuevaSolicitudEvento.
 // ============================================================
 import React, { useState, useEffect, useRef } from "react";
-
-import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle } from "react-icons/fi";
 import "./../css/Dashboard.css";
@@ -83,7 +81,7 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
             "Evaluacion": "/solicitante/evaluacion",
             "Soporte": "/solicitante/soporte"
         };
-        if(routesMap[tab]) navigate(routesMap[tab]);
+        if (routesMap[tab]) navigate(routesMap[tab]);
     };
 
     return (
@@ -91,7 +89,7 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
             <aside className={`dashboard-sidebar${isSidebarOpen ? '' : ' sidebar-hidden'}`}>
                 <div className="sidebar-brand-custom">
                     <div className="brand-emblem-crop">
-                      <img src={logoIcono} alt="Emblema UAPA" className="brand-emblem-img" />
+                        <img src={logoIcono} alt="Emblema UAPA" className="brand-emblem-img" />
                     </div>
                     <div className="brand-text-block">
                         <span className="brand-title">
@@ -148,7 +146,7 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
             <main className="dashboard-main">
                 <header className="dashboard-header">
                     <div className="header-left">
-                        <button 
+                        <button
                             className="sidebar-toggle-btn"
                             onClick={toggleSidebar}
                             aria-label="Toggle sidebar"
@@ -158,9 +156,9 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
                         <h1>{getPageTitle()}</h1>
                     </div>
                     <div className="header-actions">
-                        <NotificationBell 
-                            usuario={usuario} 
-                            onGoToEvaluacion={() => handleNavigate('/solicitante/evaluacion')} 
+                        <NotificationBell
+                            usuario={usuario}
+                            onGoToEvaluacion={() => handleNavigate('/solicitante/evaluacion')}
                             onGoToEditEvent={handleEditFromNotification}
                         />
                     </div>
@@ -169,14 +167,14 @@ function DashboardSolicitanteLayout({ usuario, onLogoutClick }) {
                 <div className="dashboard-content">
                     <div className="dashboard-content">
                         <Routes>
-                        <Route path="/" element={<DashboardSolicitante usuario={usuario} setActiveTab={mockSetActiveTab} />} />
-                        <Route path="calendario" element={<Calendario usuario={usuario} />} />
-                        <Route path="eventos/solicitud" element={<Eventos usuario={usuario} editingEvent={editingEvent} setEditingEvent={setEditingEvent} />} />
-                        <Route path="eventos/historial" element={<HistorialSolicitudes usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); navigate('/solicitante/eventos/solicitud'); }} setActiveTab={mockSetActiveTab} />} />
-                        <Route path="evaluacion" element={<Evaluacion usuario={usuario} />} />
-                        <Route path="soporte" element={<SoporteHome usuario={usuario} />} />
+                            <Route path="/" element={<DashboardSolicitante usuario={usuario} setActiveTab={mockSetActiveTab} />} />
+                            <Route path="calendario" element={<Calendario usuario={usuario} />} />
+                            <Route path="eventos/solicitud" element={<Eventos usuario={usuario} editingEvent={editingEvent} setEditingEvent={setEditingEvent} />} />
+                            <Route path="eventos/historial" element={<HistorialSolicitudes usuario={usuario} onEditEvent={(evt) => { setEditingEvent(evt); navigate('/solicitante/eventos/solicitud'); }} setActiveTab={mockSetActiveTab} />} />
+                            <Route path="evaluacion" element={<Evaluacion usuario={usuario} />} />
+                            <Route path="soporte" element={<SoporteHome usuario={usuario} />} />
 
-                        <Route path="*" element={<Navigate to="/solicitante" replace />} />
+                            <Route path="*" element={<Navigate to="/solicitante" replace />} />
                         </Routes>
                     </div>
                 </div>
