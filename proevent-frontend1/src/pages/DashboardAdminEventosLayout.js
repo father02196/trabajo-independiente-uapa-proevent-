@@ -156,6 +156,7 @@ function DashboardAdminEventosLayout({ usuario, onLogoutClick }) {
                         <NotificationBell 
                             usuario={usuario} 
                             onGoToGestionEventos={() => handleNavigate('/admin-eventos/eventos/gestion')}
+                            onGoToGestionEventosFicha={(id) => handleNavigate(`/admin-eventos/eventos/gestion?id_evento=${id}`)}
                         />
                     </div>
                 </header>

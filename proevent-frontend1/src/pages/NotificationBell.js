@@ -19,7 +19,7 @@ import axios from '../api/axios'; // [NUEVO] Importamos la instancia configurada
 
 const API = 'http://localhost:8080';
 
-export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones, onGoToPoaAdmin, onGoToGestionEventos, onGoToGestionSolicitudesAV, onGoToEditEvent }) {
+export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisualizarEvaluaciones, onGoToPoaAdmin, onGoToGestionEventos, onGoToGestionSolicitudesAV, onGoToEditEvent, onGoToGestionEventosFicha }) {
   // --- ESTADOS ---
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -89,6 +89,11 @@ export default function NotificationBell({ usuario, onGoToEvaluacion, onGoToVisu
       onGoToGestionSolicitudesAV && onGoToGestionSolicitudesAV();
     } else if (accion === 'gestion-eventos-compras') {
       onGoToGestionEventos && onGoToGestionEventos();
+    } else if (accion && accion.startsWith('gestion-eventos-ficha?id=')) {
+      const idEvento = accion.split('=')[1];
+      if (idEvento && onGoToGestionEventosFicha) {
+        onGoToGestionEventosFicha(idEvento);
+      }
     } else if (accion && accion.startsWith('editar-evento-')) {
       const idEvento = accion.substring('editar-evento-'.length);
       if (idEvento && onGoToEditEvent) {

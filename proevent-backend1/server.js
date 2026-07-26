@@ -3344,6 +3344,8 @@ app.put('/api/eventos/:id/subsanar', (req, res) => {
     
     crearNotificacion({ rol_destino: 'Presupuesto', titulo: '🔄 Evento Subsanado', cuerpo: `El evento (#EVT-${id}) ha sido corregido por el solicitante.`, enlace_accion: 'poa-admin' });
     crearNotificacion({ rol_destino: 'Legal', titulo: '🔄 Evento Subsanado', cuerpo: `El evento (#EVT-${id}) ha sido corregido por el solicitante.`, enlace_accion: 'flujo-administrativo' });
+    crearNotificacion({ rol_destino: 'Administrador de Eventos', titulo: '🔄 Evento Modificado (Subsanado)', cuerpo: `El evento (#EVT-${id}) ha sido modificado y subsanado por el solicitante.`, enlace_accion: `gestion-eventos-ficha?id=${id}` });
+
     
     const id_usuario = req.headers['x-usuario-id'];
     if (id_usuario) {
