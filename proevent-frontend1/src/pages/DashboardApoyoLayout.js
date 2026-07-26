@@ -1,3 +1,10 @@
+// ============================================================
+// LAYOUT: DashboardApoyoLayout
+// Pertenece a: Arquitectura de Navegación (Layouts por Rol)
+// Propósito: Envuelve el dashboard del Personal de Apoyo con
+// la barra lateral y rutas anidadas. Da acceso a las tareas
+// asignadas y al calendario institucional de eventos.
+// ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle } from "react-icons/fi";

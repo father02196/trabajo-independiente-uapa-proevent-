@@ -1,3 +1,11 @@
+// ============================================================
+// LAYOUT: DashboardAdminEventosLayout
+// Pertenece a: Arquitectura de Navegación (Layouts por Rol)
+// Propósito: Envuelve el dashboard del Administrador de Eventos
+// con la barra lateral y rutas anidadas. Este rol es el principal
+// revisor y aprobador de las solicitudes de eventos institucionales.
+// Tiene acceso a GestionEventos, evaluaciones y cronograma global.
+// ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiStar, FiHeadphones, FiActivity, FiList, FiCalendar, FiChevronDown, FiChevronRight, FiMenu, FiClipboard } from "react-icons/fi";

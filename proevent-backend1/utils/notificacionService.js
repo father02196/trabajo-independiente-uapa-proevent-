@@ -1,3 +1,35 @@
+// ============================================================
+// SERVICIO: notificacionService
+// Pertenece a: Capa de Utilidades (utils)
+// Propósito: Centraliza los flujos de notificación automática
+// del sistema. Cada función implementa idempotencia consultando
+// la bitácora antes de emitir para no generar notificaciones
+// duplicadas en múltiples ejecuciones del mismo trigger.
+//
+// Flujos implementados:
+//   1. notificarAutoFinalizacion - Cierre automático de un evento al vencer su fecha.
+//   2. notificarUmbralPOA        - Alerta cuando el POA cae por debajo del 20%.
+//   3. notificarEvaluacionPendiente - Recordatorio 3 días después de finalizar.
+//   4. notificarEventosSinRevisar  - Alerta SLA si una solicitud lleva +48h sin respuesta.
+// ============================================================
+
+/**
+ * Notifica a todos los actores relevantes cuando un evento es finalizado
+ * automáticamente por el sistema (cron job) al vencer su fecha y hora.
+ * Incluye validación de idempotencia: si el evento ya fue notificado
+ * previamente, la función sale sin generar duplicados.
+ *
+ * Notifica a: Solicitante, Administrador de Eventos, Organizadores (Responsable/Coordinador/Apoyo),
+ *             Departamentos administrativos (VAF, Compras, Legal) si corresponde,
+ *             Audiovisual si corresponde, Proveedores involucrados.
+ *
+ * @param {Object} db - Conexión/pool de MySQL
+ * @param {number} id_evento - ID del evento finalizado
+ * @param {string} nombre_evento - Nombre del evento para los mensajes
+ * @param {number} id_solicitante - ID del usuario que registró el evento
+ * @param {Function} crearNotificacionFn - Función helper para crear notificaciones en BD
+ * @returns {Promise<number>} Número de notificaciones generadas exitosamente
+ */
 const notificarAutoFinalizacion = async (db, id_evento, nombre_evento, id_solicitante, crearNotificacionFn) => {
     let notificacionesGeneradas = 0;
 
@@ -158,6 +190,16 @@ const notificarAutoFinalizacion = async (db, id_evento, nombre_evento, id_solici
     }
 };
 
+/**
+ * Notifica a los responsables financieros cuando el saldo disponible
+ * de un POA fiscal cae por debajo del umbral del 20%.
+ * Usa idempotencia para no repetir la alerta si ya fue enviada.
+ *
+ * @param {Object} db - Conexión/pool de MySQL
+ * @param {number} id_poa - ID del registro en poa_fiscal
+ * @param {number} porcentajeDisponible - Porcentaje del saldo disponible al momento del trigger
+ * @param {Function} crearNotificacionFn - Función helper para crear notificaciones en BD
+ */
 const notificarUmbralPOA = async (db, id_poa, porcentajeDisponible, crearNotificacionFn) => {
     // Wrapper para notificar
     const crearNotificacion = async (id_usuario_destino, rol_destino, titulo, cuerpo, enlace_accion) => {
@@ -243,6 +285,16 @@ const notificarUmbralPOA = async (db, id_poa, porcentajeDisponible, crearNotific
 
 // ── FLUJO 2: Recordatorio de Evaluación Pendiente (3 días tras finalizar) ─────────────────────
 // Notifica una sola vez al solicitante si su evento finalizó hace 3+ días y aún no evaluó.
+// ── FLUJO 3: Recordatorio de Evaluación Pendiente (3 días tras finalizar) ─────────────────────
+/**
+ * Detecta eventos finalizados hace más de 3 días que aún no tienen
+ * evaluación registrada, y envía un recordatorio único al solicitante.
+ * Usa idempotencia consultando notificaciones previas del mismo tipo.
+ * Diseñado para ejecutarse diariamente mediante un cron job.
+ *
+ * @param {Object} db - Conexión/pool de MySQL
+ * @param {Function} crearNotificacionFn - Función helper para crear notificaciones en BD
+ */
 const notificarEvaluacionPendiente = async (db, crearNotificacionFn) => {
     const queryAsync = (sql, params) => new Promise((resolve, reject) => {
         db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
@@ -289,6 +341,17 @@ const notificarEvaluacionPendiente = async (db, crearNotificacionFn) => {
 
 // ── FLUJO 4: Alerta SLA — Evento Pendiente más de 48 horas sin revisar ────────────────────────
 // Detecta solicitudes estancadas y alerta al Administrador de Eventos y al solicitante.
+// ── FLUJO 4: Alerta SLA — Evento Pendiente más de 48 horas sin revisar ────────────────────────
+/**
+ * Detecta solicitudes de eventos que llevan más de 48 horas en estado Pendiente
+ * sin ninguna revisión administrativa. Notifica al Administrador de Eventos
+ * para impulsar la atención, y al solicitante para mantenerlo informado.
+ * Usa idempotencia consultando notificaciones previas del mismo evento.
+ * Diseñado para ejecutarse diariamente mediante un cron job.
+ *
+ * @param {Object} db - Conexión/pool de MySQL
+ * @param {Function} crearNotificacionFn - Función helper para crear notificaciones en BD
+ */
 const notificarEventosSinRevisar = async (db, crearNotificacionFn) => {
     const queryAsync = (sql, params) => new Promise((resolve, reject) => {
         db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));

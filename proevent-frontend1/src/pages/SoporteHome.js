@@ -1,3 +1,11 @@
+// ============================================================
+// COMPONENTE: SoporteHome
+// Pertenece a: Módulo de Ayuda y Soporte al Usuario
+// Propósito: Centro de ayuda interno del sistema. Muestra una
+// sección de FAQs (preguntas frecuentes) organizadas por categorías
+// y un formulario de contacto con el equipo de soporte técnico.
+// Accesible desde la barra lateral de todos los roles del sistema.
+// ============================================================
 import React, { useState } from 'react';
 import { 
     FiHelpCircle, FiChevronDown, FiCheckCircle, FiClock, FiMail, FiInfo, FiUser, FiBriefcase, FiMonitor, FiTruck, FiVideo, FiDollarSign, FiShoppingCart, FiShield

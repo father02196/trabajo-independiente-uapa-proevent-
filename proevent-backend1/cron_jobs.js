@@ -1,6 +1,17 @@
+// ============================================================
+// MÓDULO: cron_jobs
+// Pertenece a: Capa de Automatización (raíz del backend)
+// Propósito: Inicializa y registra todos los trabajos programados
+// (cron jobs) del sistema. Actualmente gestiona:
+//   - Recordatorio de cotizaciones próximas a vencer (diario a las 8:00 AM).
+// Este módulo se importa en server.js y se inicializa pasándole
+// la instancia de la base de datos para ejecutar las consultas necesarias.
+// ============================================================
+
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 
+// Configuración del transporte de correo usando las credenciales del .env
 const transporter = nodemailer.createTransport({
   service: 'gmail', // Usando Gmail Service
   auth: { 
@@ -9,9 +20,15 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Helper para pausas tácticas entre envíos de correo y no sobrecargar el servidor de Gmail
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-// Exportamos una función para inicializar todos los crons
+/**
+ * Registra e inicializa todos los cron jobs del sistema.
+ * Debe llamarse una vez al arrancar el servidor, después de que
+ * la conexión a la base de datos esté lista.
+ * @param {Object} db - Pool de conexiones MySQL2 (promisificado)
+ */
 function initCronJobs(db) {
   console.log('[CRON] Iniciando programador de tareas automáticas...');
 

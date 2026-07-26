@@ -1,3 +1,10 @@
+// ============================================================
+// LAYOUT: DashboardAdminLayout
+// Pertenece a: Arquitectura de Navegación (Layouts por Rol)
+// Propósito: Envuelve el dashboard del Administrador General con
+// la barra lateral y rutas anidadas. Tiene acceso a todos los
+// módulos del sistema (eventos, usuarios, audiovisual, bitácora, POA).
+// ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle } from "react-icons/fi";
