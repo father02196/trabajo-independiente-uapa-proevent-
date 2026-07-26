@@ -1331,6 +1331,38 @@ app.get('/eventos', (req, res) => { // Declara la gran ruta HTTP GET '/eventos'
   });
 });
 
+// ── EVENTOS ─ OBTENER POR ID ──────────────────────────────────────
+app.get('/api/eventos/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = `SELECT
+       e.id_evento, e.nombre, e.modalidad, e.fecha_inicio, e.fecha_fin,
+       e.hora_inicio, e.hora_fin, e.cantidad_asistentes, e.tipo_evento,
+       e.monto_poa, e.moneda, e.estado, e.fecha_creacion,
+       e.id_recinto, e.id_dependencia,
+       pm.estado AS estado_poa, pm.motivo_rechazo AS motivo_rechazo_poa,
+       u.nombre  AS solicitante,
+       u.id_usuario,
+       d.nombre  AS dependencia,
+       r.nombre  AS recinto,
+       (SELECT GROUP_CONCAT(dc.tipo SEPARATOR ', ') FROM detalle_corporativo dc WHERE dc.id_evento = e.id_evento) AS detalles_corporativos,
+       (SELECT GROUP_CONCAT(a.nombre SEPARATOR ', ') FROM evento_alimento ea JOIN alimento a ON ea.id_alimento = a.id_alimento WHERE ea.id_evento = e.id_evento) AS alimentos,
+       (SELECT GROUP_CONCAT(dm.descripcion SEPARATOR ' | ') FROM detalle_montaje dm WHERE dm.id_evento = e.id_evento) AS observaciones,
+       IF((SELECT COUNT(*) FROM servicio_audiovisual sa WHERE sa.id_evento = e.id_evento) > 0, 1, 0) AS necesita_audiovisual,
+       (SELECT GROUP_CONCAT(CONCAT(sa.cantidad, 'x ', sa.tipo_servicio) SEPARATOR ', ') FROM servicio_audiovisual sa WHERE sa.id_evento = e.id_evento AND sa.estado != 'Rechazado') AS equipos_audiovisuales
+     FROM evento e
+     LEFT JOIN (SELECT id_evento, estado, motivo_rechazo FROM poa_movimiento WHERE id_evento = ? ORDER BY id_movimiento DESC LIMIT 1) pm ON e.id_evento = pm.id_evento
+     LEFT JOIN usuario     u ON e.id_usuario     = u.id_usuario
+     LEFT JOIN dependencia d ON e.id_dependencia = d.id_dependencia
+     LEFT JOIN recinto     r ON e.id_recinto     = r.id_recinto
+     WHERE e.id_evento = ?`;
+
+  db.query(sql, [id, id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) return res.status(404).json({ mensaje: 'Evento no encontrado' });
+    res.json(results[0]);
+  });
+});
+
 // ── EVENTOS ─ CALENDARIO PRIVADO (UI SCHEDULING INTERFACE) ───────────────────────
 app.get('/calendario-eventos', (req, res) => { // Endpoint dedicado a despachar metadatos para llenar componentes gráficos tipo FullCalendar o BigCalendar
   const { usuario_id } = req.query; // ID del usuario local que activamente consulta (Viene del JWT Decode Front o Token Storage)
@@ -1724,6 +1756,21 @@ app.put('/audiovisual/evento/:id_evento/estado', (req, res) => {
       metadata: { id_entidad: id_evento, cambios: { estado_nuevo_global: estado } },
       actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
     });
+  });
+});
+
+// ── AUDIOVISUAL ─ OBTENER POR EVENTO ─
+app.get('/audiovisual/evento/:id_evento', (req, res) => {
+  const { id_evento } = req.params;
+  const sql = `
+    SELECT s.*, e.id_equipo 
+    FROM servicio_audiovisual s 
+    LEFT JOIN equipo_audiovisual e ON s.tipo_servicio = e.nombre 
+    WHERE s.id_evento = ?
+  `;
+  db.query(sql, [id_evento], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
   });
 });
 
@@ -3236,7 +3283,7 @@ app.put('/api/eventos/:id/observar-presupuesto', (req, res) => {
         
         db.query(`SELECT id_usuario FROM evento WHERE id_evento=?`, [id], (e4, r) => {
           if(!e4 && r.length > 0) {
-            crearNotificacion({ id_usuario_destino: r[0].id_usuario, titulo: '⚠️ Evento Observado por Presupuesto', cuerpo: `Tu evento (#EVT-${id}) fue devuelto con observaciones: ${comentario}`, enlace_accion: 'mis-eventos' });
+            crearNotificacion({ id_usuario_destino: r[0].id_usuario, titulo: '⚠️ Evento Observado por Presupuesto', cuerpo: `Tu evento (#EVT-${id}) fue devuelto con observaciones: ${comentario}`, enlace_accion: `editar-evento-${id}` });
           }
           const reqUserId = req.headers['x-usuario-id'] || id_usuario;
           if (reqUserId) BitacoraService.auditBestEffort({

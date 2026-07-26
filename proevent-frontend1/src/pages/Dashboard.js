@@ -75,6 +75,19 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
         setIsSidebarOpen(!isSidebarOpen);
     };
 
+    const handleEditFromNotification = async (idEvento) => {
+        try {
+            const res = await fetch(`http://localhost:8080/api/eventos/${idEvento}`);
+            if (res.ok) {
+                const eventData = await res.json();
+                setEditingEvent(eventData);
+                setActiveTab('NuevaSolicitud');
+            }
+        } catch (err) {
+            console.error("Error fetching event for edit", err);
+        }
+    };
+
     const toggleUserMenu = () => {
         setUserMenuOpen(!userMenuOpen);
     };
@@ -483,6 +496,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             onGoToPoaAdmin={() => setActiveTab("PoaAdmin")}
                             onGoToGestionEventos={() => setActiveTab("GestionEventos")}
                             onGoToGestionSolicitudesAV={() => setActiveTab("GestionSolicitudes")}
+                            onGoToEditEvent={handleEditFromNotification}
                         />
                     </div>
                 </header>

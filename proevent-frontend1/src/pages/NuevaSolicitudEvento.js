@@ -69,6 +69,20 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     sugerencias_externas: ""
   });
 
+  const [loading, setLoading] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [error, setError] = useState("");
+  const errorRef = useRef(null);
+  const [exito, setExito] = useState("");
+  const [needsAV, setNeedsAV] = useState(null);
+  const [omitirServicios, setOmitirServicios] = useState(false);
+  const [validationModal, setValidationModal] = useState({ isOpen: false, message: "", targetSection: "" });
+  const [archivo, setArchivo] = useState(null); 
+  const [avData, setAvData] = useState({ equipos: [], observaciones: "" });
+  const [poaFiscal, setPoaFiscal] = useState(null);
+
+  const [observacionVAF, setObservacionVAF] = useState(null);
+
   useEffect(() => {
     if (editingEvent) {
       setData({
@@ -91,30 +105,48 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         observaciones: editingEvent.observaciones || "",
         sugerencias_externas: "" // No se mapea porque se guarda dentro de observaciones
       });
+
+      if (editingEvent.estado === 'Observado') {
+        fetch(`${API}/api/eventos/${editingEvent.id_evento}/historial-observaciones`)
+          .then(res => res.json())
+          .then(dataList => {
+            if (dataList && dataList.length > 0) {
+              setObservacionVAF(dataList[0]);
+            }
+          })
+          .catch(err => console.error("Error fetching observaciones", err));
+      } else {
+        setObservacionVAF(null);
+      }
+
+      setNeedsAV(editingEvent.necesita_audiovisual === 1);
+      if (editingEvent.necesita_audiovisual === 1) {
+        fetch(`${API}/audiovisual/evento/${editingEvent.id_evento}`)
+          .then(res => res.json())
+          .then(avList => {
+            if (Array.isArray(avList) && avList.length > 0) {
+              const equiposMap = avList.map(item => ({
+                id_equipo: item.id_equipo,
+                equipo: item.tipo_servicio,
+                cantidad: item.cantidad || 1,
+                ubicacion: item.ubicacion || "",
+                observaciones: item.observaciones || ""
+              }));
+              setAvData({ equipos: equiposMap, observaciones: avList[0].observaciones || "" });
+            }
+          })
+          .catch(err => console.error("Error fetching AV details", err));
+      } else {
+        setAvData({ equipos: [], observaciones: "" });
+      }
     }
   }, [editingEvent]);
-
-  const [loading, setLoading] = useState(false);
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [error, setError] = useState("");
-  const errorRef = useRef(null);
 
   useEffect(() => {
     if (error && errorRef.current) {
       errorRef.current.focus();
     }
   }, [error]);
-
-  const [exito, setExito] = useState("");
-  const [needsAV, setNeedsAV] = useState(null);
-  const [omitirServicios, setOmitirServicios] = useState(false);
-  const [validationModal, setValidationModal] = useState({ isOpen: false, message: "", targetSection: "" });
-
-  const [archivo, setArchivo] = useState(null); // Nuevo estado para Flujo Documental
-
-  const [avData, setAvData] = useState({ equipos: [], observaciones: "" });
-
-  const [poaFiscal, setPoaFiscal] = useState(null);
 
   useEffect(() => {
     const fetchPoa = async () => {
@@ -259,25 +291,39 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const seccionLabels = ["Información", "Lugar", "Servicios", "Presupuesto", "Audiovisual"];
 
   const handleSiguiente = () => {
-    const err = validarSeccion(activeSection);
-    if (err) {
-      if (err.includes("Llene el recuadro se servicios externos")) {
-        setShowServiceModal(true);
+    const siguienteSeccion = secciones[seccionActualIndex + 1];
+
+    // Si la siguiente sección es Audiovisual, permitir avanzar sin validar
+    // El usuario decide allí si necesita o no equipos audiovisuales
+    if (siguienteSeccion !== "Audiovisual") {
+      const err = validarSeccion(activeSection);
+      if (err) {
+        if (err.includes("Llene el recuadro se servicios externos")) {
+          setShowServiceModal(true);
+          return;
+        }
+        setError(err);
         return;
       }
-      setError(err);
-      return;
     }
+
     setError("");
     if (seccionActualIndex < secciones.length - 1) {
-      setActiveSection(secciones[seccionActualIndex + 1]);
+      setActiveSection(siguienteSeccion);
     }
   };
+
 
   const handleAnterior = () => {
     setError("");
     if (seccionActualIndex > 0) {
       setActiveSection(secciones[seccionActualIndex - 1]);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+      e.preventDefault();
     }
   };
 
@@ -288,7 +334,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     // Validate all sections before final submission
     for (let i = 0; i < secciones.length; i++) {
       const section = secciones[i];
-      if (section === "Audiovisual") continue; // Validado abajo
+      if (section === "Audiovisual") continue; // Audiovisual es opcional
       const err = validarSeccion(section);
       if (err) {
         setValidationModal({
@@ -300,23 +346,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       }
     }
 
-    if (needsAV === null) {
-      setValidationModal({
-        isOpen: true,
-        message: "Por favor, selecciona si deseas gestionar equipos audiovisuales.",
-        targetSection: "Audiovisual"
-      });
-      return;
-    }
-    if (needsAV === true && avData.equipos.length === 0) {
-      setValidationModal({
-        isOpen: true,
-        message: "Selecciona al menos un equipo o marca que no necesitas.",
-        targetSection: "Audiovisual"
-      });
-      return;
-    }
-
+    // Si el usuario no seleccionó nada en Audiovisual, se trata como que no necesita AV
     ejecutarEnvioFinal();
   };
 
@@ -446,7 +476,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const esUltimaSeccion = seccionActualIndex === secciones.length - 1;
 
   return (
-    <form onSubmit={handleSubmit} className="form-container">
+    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="form-container">
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <h2>
@@ -459,6 +489,27 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
           }
         </p>
       </div>
+
+      {observacionVAF && (
+        <div style={{
+          backgroundColor: '#fff3cd',
+          color: '#856404',
+          padding: '16px',
+          borderRadius: '8px',
+          marginBottom: '24px',
+          borderLeft: '4px solid #ffeeba',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '18px' }}>⚠️</span> 
+            Devuelto para Subsanación por {observacionVAF.departamento}
+          </div>
+          <p style={{ margin: 0 }}><strong>Observaciones:</strong> {observacionVAF.comentario}</p>
+          <small style={{ color: '#666' }}>Revisado por: {observacionVAF.revisor || observacionVAF.id_usuario}</small>
+        </div>
+      )}
 
       {/* Step Wizard Premium */}
       <div className="step-wizard">
@@ -554,7 +605,12 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
                 <button 
                   type="button" 
                   className="av-no-btn"
-                  onClick={() => setNeedsAV(false)}
+                  onClick={() => {
+                    setNeedsAV(false);
+                    setTimeout(() => {
+                      handleSubmit();
+                    }, 50);
+                  }}
                 >
                   No, solo el evento
                 </button>

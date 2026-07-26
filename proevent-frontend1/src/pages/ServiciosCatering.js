@@ -33,15 +33,40 @@ export default function ServiciosyDetalles({ data, setData }) {
   // Agrega o remueve un elemento (alimento/detalle) de la lista de selección
   const toggleItem = (item, listName) => {
     const list = data[listName] || [];
-    if (list.includes(item)) {
-      setData({ ...data, [listName]: list.filter(i => i !== item) });
+
+    if (listName === "items" || listName === "catering") {
+      const isNoAplica = item.trim().toLowerCase() === "no aplica";
+      if (isNoAplica) {
+        if (list.includes(item)) {
+          // Desmarcar "No Aplica" limpia la lista
+          setData({ ...data, [listName]: [] });
+        } else {
+          // Marcar "No Aplica" limpia todo lo demás y solo deja "No Aplica"
+          setData({ ...data, [listName]: [item] });
+        }
+      } else {
+        if (list.includes(item)) {
+          // Desmarcar opción regular
+          setData({ ...data, [listName]: list.filter(i => i !== item) });
+        } else {
+          // Marcar opción regular: agregarla y remover "No Aplica" si estuviera
+          const newList = [...list.filter(i => i.trim().toLowerCase() !== "no aplica"), item];
+          setData({ ...data, [listName]: newList });
+        }
+      }
     } else {
-      setData({ ...data, [listName]: [...list, item] });
+      // Comportamiento normal para otros
+      if (list.includes(item)) {
+        setData({ ...data, [listName]: list.filter(i => i !== item) });
+      } else {
+        setData({ ...data, [listName]: [...list, item] });
+      }
     }
   };
 
   return (
     <div className="space-y-6 animate-fade">
+      {/* Header */}
       <div>
         <h3 className="text-xl font-bold text-text-main mb-1">Servicios alimenticios y Detalles corporativos</h3>
         <p className="text-sm text-text-secondary">Selecciona los elementos extra que requerirá el evento.</p>
@@ -60,17 +85,36 @@ export default function ServiciosyDetalles({ data, setData }) {
             <div className="checklist-grid">
               {detallesCorp.map((d) => {
                 const isChecked = data.items?.includes(d.nombre) || false;
+                const isNoAplicaOption = d.nombre.trim().toLowerCase() === "no aplica";
+                const isNoAplicaSelected = data.items?.some(i => i.trim().toLowerCase() === "no aplica") || false;
+                const isDisabled = !isNoAplicaOption && isNoAplicaSelected;
+
                 return (
-                  <label key={d.id_detalle_corp} className="check-item" style={{ gap: '16px', padding: '14px 20px', minHeight: '52px' }}>
+                  <label 
+                    key={d.id_detalle_corp} 
+                    className="check-item" 
+                    style={{ 
+                      gap: '16px', 
+                      padding: '14px 20px', 
+                      minHeight: '52px',
+                      opacity: isDisabled ? 0.5 : 1,
+                      cursor: isDisabled ? 'not-allowed' : 'pointer'
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={isChecked}
+                      disabled={isDisabled}
                       onChange={() => toggleItem(d.nombre, "items")}
-                      style={{ transform: 'scale(1.15)', cursor: 'pointer', flexShrink: 0 }}
+                      style={{ 
+                        transform: 'scale(1.15)', 
+                        cursor: isDisabled ? 'not-allowed' : 'pointer', 
+                        flexShrink: 0 
+                      }}
                     />
                     <span style={{ 
                       marginLeft: '8px',
-                      color: isChecked ? '#2563EB' : '#334155', 
+                      color: isChecked ? '#2563EB' : (isDisabled ? '#94A3B8' : '#334155'), 
                       fontWeight: isChecked ? 600 : 500,
                       lineHeight: '1.4'
                     }}>
@@ -100,17 +144,36 @@ export default function ServiciosyDetalles({ data, setData }) {
             <div className="checklist-grid">
               {alimentos.map((a) => {
                 const isChecked = data.catering?.includes(a.nombre) || false;
+                const isNoAplicaOption = a.nombre.trim().toLowerCase() === "no aplica";
+                const isNoAplicaSelected = data.catering?.some(i => i.trim().toLowerCase() === "no aplica") || false;
+                const isDisabled = !isNoAplicaOption && isNoAplicaSelected;
+
                 return (
-                  <label key={a.id_alimento} className="check-item" style={{ gap: '16px', padding: '14px 20px', minHeight: '52px' }}>
+                  <label 
+                    key={a.id_alimento} 
+                    className="check-item" 
+                    style={{ 
+                      gap: '16px', 
+                      padding: '14px 20px', 
+                      minHeight: '52px',
+                      opacity: isDisabled ? 0.5 : 1,
+                      cursor: isDisabled ? 'not-allowed' : 'pointer'
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={isChecked}
+                      disabled={isDisabled}
                       onChange={() => toggleItem(a.nombre, "catering")}
-                      style={{ transform: 'scale(1.15)', cursor: 'pointer', flexShrink: 0 }}
+                      style={{ 
+                        transform: 'scale(1.15)', 
+                        cursor: isDisabled ? 'not-allowed' : 'pointer', 
+                        flexShrink: 0 
+                      }}
                     />
                     <span style={{ 
                       marginLeft: '8px',
-                      color: isChecked ? '#2563EB' : '#334155', 
+                      color: isChecked ? '#2563EB' : (isDisabled ? '#94A3B8' : '#334155'), 
                       fontWeight: isChecked ? 600 : 500,
                       lineHeight: '1.4'
                     }}>
