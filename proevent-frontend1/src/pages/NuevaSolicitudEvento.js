@@ -85,6 +85,15 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
 
   useEffect(() => {
     if (editingEvent) {
+      let obs = editingEvent.observaciones || "";
+      let sugerencias = "";
+      
+      const sugerenciasIndex = obs.indexOf("[SUGERENCIAS EXTERNAS]:");
+      if (sugerenciasIndex !== -1) {
+        sugerencias = obs.substring(sugerenciasIndex + "[SUGERENCIAS EXTERNAS]:".length).trim();
+        obs = obs.substring(0, sugerenciasIndex).trim();
+      }
+
       setData({
         id_evento: editingEvent.id_evento,
         titulo: editingEvent.nombre || "",
@@ -102,11 +111,11 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
         catering: editingEvent.alimentos ? editingEvent.alimentos.split(', ') : [],
         presupuesto: editingEvent.monto_poa || "",
         moneda: editingEvent.moneda || "DOP",
-        observaciones: editingEvent.observaciones || "",
-        sugerencias_externas: "" // No se mapea porque se guarda dentro de observaciones
+        observaciones: obs,
+        sugerencias_externas: sugerencias
       });
 
-      if (editingEvent.estado === 'Observado') {
+      if (editingEvent.estado === 'Observado' || editingEvent.estado === 'Devuelto para Subsanación' || editingEvent.estado === 'Devuelto') {
         fetch(`${API}/api/eventos/${editingEvent.id_evento}/historial-observaciones`)
           .then(res => res.json())
           .then(dataList => {
