@@ -13,6 +13,64 @@ import { useSortableData } from '../hooks/useSortableData';
 import axiosAuth from '../api/axios';
 import './../css/ModuloProveedores.css';
 
+// =====================================================================
+// COMPONENTE: ProveedorSelectionModal
+// Propósito: Renderiza un sub-modal para elegir múltiples proveedores.
+// =====================================================================
+const ProveedorSelectionModal = ({ isOpen, onClose, onConfirm, items, initialSelected = [] }) => {
+  const [selectedIds, setSelectedIds] = useState(initialSelected);
+
+  useEffect(() => {
+    if(isOpen) setSelectedIds(initialSelected);
+  }, [isOpen, initialSelected]);
+
+  const handleToggle = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === items.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(items.map(item => item.id_proveedor));
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="modal-overlay" style={{ zIndex: 10000 }}>
+      <div className="modal-content" style={{ maxWidth: '400px' }}>
+        <h3>Seleccionar Proveedores</h3>
+        <div style={{ margin: '15px 0', display: 'flex', gap: '10px' }}>
+          <button type="button" className="btn btn-secondary" onClick={handleSelectAll}>
+            {selectedIds.length === items.length ? 'Deseleccionar todo' : 'Seleccionar todo'}
+          </button>
+        </div>
+        <ul className="item-list" style={{ listStyle: 'none', padding: 0, maxHeight: '200px', overflowY: 'auto' }}>
+          {items.map(item => (
+            <li key={item.id_proveedor} style={{ padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={selectedIds.includes(item.id_proveedor)}
+                  onChange={() => handleToggle(item.id_proveedor)}
+                />
+                {item.nombre_empresa} - {item.persona_contacto}
+              </label>
+            </li>
+          ))}
+        </ul>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+          <button type="button" className="btn btn-primary" onClick={() => onConfirm(selectedIds)}>Confirmar Selección</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 // ============================================================
 // COMPONENTE: ModuloProveedores
 // Recibe:
@@ -58,7 +116,8 @@ function ModuloProveedores({ usuario }) {
     // --- ESTADOS PARA MODAL DE ENVÍO DE ÓRDENES (Logística) ---
     const [modalEnvio, setModalEnvio] = useState({ open: false, servicio: null });
     const [proveedoresFiltradosTipo, setProveedoresFiltradosTipo] = useState([]); // Filtrados por la cat. de la orden
-    const [envioForm, setEnvioForm] = useState({ id_proveedor: '', descripcion_requerimientos: '', fecha_limite: '' });
+    const [envioForm, setEnvioForm] = useState({ proveedores_ids: [], descripcion_requerimientos: '', fecha_limite: '' });
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [enviando, setEnviando] = useState(false);
 
     // --- ESTADOS PARA INCIDENCIAS Y EVIDENCIAS ---
@@ -165,7 +224,7 @@ function ModuloProveedores({ usuario }) {
         const fechaSugerida = new Date();
         fechaSugerida.setDate(fechaSugerida.getDate() + 7);
         const fechaStr = fechaSugerida.toISOString().split('T')[0];
-        setEnvioForm({ id_proveedor: '', descripcion_requerimientos: servicio.descripcion || '', fecha_limite: fechaStr });
+        setEnvioForm({ proveedores_ids: [], descripcion_requerimientos: servicio.descripcion || '', fecha_limite: fechaStr });
         setModalEnvio({ open: true, servicio });
     };
 
@@ -173,7 +232,7 @@ function ModuloProveedores({ usuario }) {
     const handleConfirmarEnvio = async (e) => {
         e.preventDefault();
         const { servicio } = modalEnvio;
-        if (!envioForm.id_proveedor) return alert('Selecciona un proveedor para envíarsela.');
+        if (envioForm.proveedores_ids.length === 0) return alert('Selecciona al menos un proveedor para enviarla.');
         if (!envioForm.fecha_limite) return alert('Indica la fecha límite para cotizar.');
         setEnviando(true);
         try {
@@ -182,7 +241,7 @@ function ModuloProveedores({ usuario }) {
                 headers: { 'Content-Type': 'application/json', 'x-usuario-id': usuario?.id_usuario || '' },
                 body: JSON.stringify({
                     fecha_envio: new Date().toISOString(),
-                    id_proveedor_destino: envioForm.id_proveedor,
+                    proveedores_ids_destino: envioForm.proveedores_ids,
                     descripcion_requerimientos: envioForm.descripcion_requerimientos,
                     fecha_limite: envioForm.fecha_limite
                 })
@@ -1066,23 +1125,24 @@ function ModuloProveedores({ usuario }) {
                         </div>
                         <form onSubmit={handleConfirmarEnvio} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
                             <div className="form-group">
-                                <label className="form-label">Proveedor Destinatario <span style={{ color: 'red' }}>*</span></label>
+                                <label className="form-label">Proveedores Destinatarios <span style={{ color: 'red' }}>*</span></label>
                                 {proveedoresFiltradosTipo.length === 0 ? (
                                     <div style={{ padding: '10px 14px', background: '#fef3c7', borderRadius: '8px', color: '#92400e', fontSize: '0.875rem' }}>
                                         ⚠️ No hay proveedores activos registrados para este tipo de servicio. Registra uno en la pestaña “Directorio” primero.
                                     </div>
                                 ) : (
-                                    <select
-                                        className="input-base"
-                                        value={envioForm.id_proveedor}
-                                        onChange={e => setEnvioForm(prev => ({ ...prev, id_proveedor: e.target.value }))}
-                                        required
-                                    >
-                                        <option value="">-- Selecciona un proveedor --</option>
-                                        {proveedoresFiltradosTipo.map(p => (
-                                            <option key={p.id_proveedor} value={p.id_proveedor}>{p.nombre_empresa} ({p.persona_contacto})</option>
-                                        ))}
-                                    </select>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <button 
+                                            type="button" 
+                                            className="btn btn-secondary" 
+                                            onClick={() => setIsSelectionModalOpen(true)}
+                                        >
+                                            Seleccionar Proveedores
+                                        </button>
+                                        <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '600' }}>
+                                            {envioForm.proveedores_ids.length} seleccionado(s)
+                                        </span>
+                                    </div>
                                 )}
                             </div>
                             <div className="form-group">
@@ -1118,6 +1178,17 @@ function ModuloProveedores({ usuario }) {
                 </div>,
                 document.body
             )}
+
+            <ProveedorSelectionModal 
+                isOpen={isSelectionModalOpen}
+                onClose={() => setIsSelectionModalOpen(false)}
+                items={proveedoresFiltradosTipo}
+                initialSelected={envioForm.proveedores_ids}
+                onConfirm={(ids) => {
+                    setEnvioForm(prev => ({ ...prev, proveedores_ids: ids }));
+                    setIsSelectionModalOpen(false);
+                }}
+            />
 
             {/* MODALES CRUD PROVEEDOR */}
             {modalConfig.open && (modalConfig.type === 'nuevo_proveedor' || modalConfig.type === 'editar_proveedor') && createPortal(

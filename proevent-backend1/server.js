@@ -2724,18 +2724,19 @@ app.use('/uploads', express.static(uploadDir));
 // 1. Registro de envío al proveedor + Creación automática de Solicitud de Cotización en el Portal B2B
 app.put('/servicios-externos/:id/proveedor', (req, res) => {
   const { id } = req.params;
-  const { fecha_envio, id_proveedor_destino, descripcion_requerimientos, fecha_limite } = req.body;
+  // AHORA RECIBIMOS EL ARREGLO DESDE EL FRONTEND
+  const { fecha_envio, proveedores_ids_destino, descripcion_requerimientos, fecha_limite } = req.body;
 
   // Leer el servicio externo para obtener el evento y el tipo de servicio
   db.query('SELECT se.*, e.nombre as nombre_evento FROM servicio_externo se JOIN evento e ON se.id_evento = e.id_evento WHERE se.id_servicio_ext = ?', [id], (errRead, rows) => {
     if (errRead || rows.length === 0) return res.status(404).json({ error: 'Servicio externo no encontrado' });
     const servicio = rows[0];
 
-    // Paso A: Actualizar fecha_envio_proveedor en servicio_externo
+    // Paso A: Actualizar fecha_envio_proveedor
     db.query('UPDATE servicio_externo SET fecha_envio_proveedor = ? WHERE id_servicio_ext = ?', [fecha_envio || new Date(), id], (errUpd) => {
       if (errUpd) return res.status(500).json({ error: errUpd.message });
 
-      // Paso B: Crear la solicitud de cotización para que aparezca en el Portal del Proveedor
+      // Paso B: Crear UNA ÚNICA solicitud de cotización para evitar duplicados en el B2B
       const descReq = descripcion_requerimientos || `Servicio requerido: ${servicio.tipo_servicio || 'General'}`;
       const fechaLim = fecha_limite || (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0]; })();
 
@@ -2744,38 +2745,43 @@ app.put('/servicios-externos/:id/proveedor', (req, res) => {
          VALUES (?, ?, ?, ?, 'Abierta')`,
         [servicio.id_evento, servicio.id_tipo_servicio, descReq, fechaLim],
         (errSol, solResult) => {
-          // Paso C (opcional): Notificar por correo al proveedor específico seleccionado
-          if (!errSol && id_proveedor_destino) {
-            db.query('SELECT correo, nombre_empresa, persona_contacto FROM proveedor_externo WHERE id_proveedor = ?', [id_proveedor_destino], (errProv, provRows) => {
+          
+          // Paso C: Notificar por correo a TODOS los proveedores seleccionados
+          if (!errSol && proveedores_ids_destino && Array.isArray(proveedores_ids_destino) && proveedores_ids_destino.length > 0) {
+            
+            // Convertimos el arreglo de IDs a formato seguro para la consulta SQL (ej. "?, ?, ?")
+            const placeholders = proveedores_ids_destino.map(() => '?').join(',');
+            
+            db.query(`SELECT correo, nombre_empresa FROM proveedor_externo WHERE id_proveedor IN (${placeholders})`, proveedores_ids_destino, (errProv, provRows) => {
               if (!errProv && provRows.length > 0) {
-                const prov = provRows[0];
-                // Enviar correo si el transporter está disponible
-                try {
-                  // [REFAC] Usando sendMailCentralizado de config/mailer.js
-                  sendMailCentralizado({
-                    to: prov.correo,
-                    subject: `Nueva Solicitud de Servicio - UAPA ProEvent`,
-                    html: `<h3>Hola ${prov.nombre_empresa},</h3>
-                      <p>Se te ha asignado una nueva solicitud de cotización para el evento <strong>${servicio.nombre_evento}</strong>.</p>
-                      <p><strong>Servicio requerido:</strong> ${descReq}</p>
-                      <p><strong>Fecha límite para cotizar:</strong> ${fechaLim}</p>
-                      <br><p>Ingresa a tu <a href="http://localhost:3000/licitaciones">Portal de Proveedores B2B</a> para enviar tu oferta.</p>
-                      <p>Atentamente,<br>Departamento de Compras UAPA</p>`
-                  }).catch(e => console.error('Error enviando correo a proveedor:', e));
-                } catch (e) { /* transporter no disponible, silencio */ }
+                // Iteramos sobre todos los proveedores encontrados y enviamos los correos concurrentemente
+                provRows.forEach(prov => {
+                  try {
+                    sendMailCentralizado({
+                      to: prov.correo,
+                      subject: `Nueva Solicitud de Servicio - UAPA ProEvent`,
+                      html: `<h3>Hola ${prov.nombre_empresa},</h3>
+                        <p>Se te ha asignado una nueva solicitud de cotización para el evento <strong>${servicio.nombre_evento}</strong>.</p>
+                        <p><strong>Servicio requerido:</strong> ${descReq}</p>
+                        <p><strong>Fecha límite para cotizar:</strong> ${fechaLim}</p>
+                        <br><p>Ingresa a tu <a href="http://localhost:3000/licitaciones">Portal de Proveedores B2B</a> para enviar tu oferta.</p>
+                        <p>Atentamente,<br>Departamento de Compras UAPA</p>`
+                    }).catch(e => console.error(`Error enviando correo a ${prov.correo}:`, e));
+                  } catch (e) { /* Fallo silencioso si no hay mailer */ }
+                });
               }
             });
           }
 
-          // Responder éxito independientemente del correo
-          res.json({ mensaje: 'Orden enviada y solicitud de cotización creada en el portal del proveedor.', id_solicitud: errSol ? null : solResult.insertId });
+          // Responder éxito al frontend (La respuesta no espera a que los correos terminen de enviarse)
+          res.json({ mensaje: 'Órdenes enviadas con éxito.', id_solicitud: errSol ? null : solResult.insertId });
 
           // Registrar en bitácora
           const reqUserId = req.headers['x-usuario-id'];
           if (reqUserId) BitacoraService.auditBestEffort({
             req,
             accion: AUDIT_ACTIONS.ENVIO_ORDEN_PROVEEDOR,
-            metadata: { id_entidad: id, cambios: { id_evento: servicio.id_evento, id_solicitud: errSol ? null : solResult.insertId } },
+            metadata: { id_entidad: id, cambios: { id_evento: servicio.id_evento, id_solicitud: errSol ? null : solResult.insertId, proveedores_notificados: proveedores_ids_destino } },
             actorOverride: { id_usuario: reqUserId, tipo_actor: 'INTERNO' }
           });
         }
