@@ -149,7 +149,7 @@ export default function DashboardVAFLayout({ usuario, onLogout }) {
             <h1>{getPageTitle()}</h1>
           </div>
           <div className="header-actions">
-            <NotificationBell usuario={usuario} onGoToPoaAdmin={() => setActiveTab("PoaAdmin")} />
+            <NotificationBell usuario={usuario} onGoToPoaAdmin={() => setActiveTab("GestionPresupuestaria")} />
           </div>
         </header>
 
