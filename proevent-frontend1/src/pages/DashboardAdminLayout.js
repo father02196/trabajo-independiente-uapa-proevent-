@@ -7,7 +7,7 @@
 // ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiList, FiCalendar, FiMonitor, FiBox, FiChevronDown, FiChevronRight, FiTruck, FiClipboard, FiMenu, FiCheckCircle, FiShield, FiInbox, FiPenTool, FiFileText, FiBookOpen, FiClock } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import logoIcono from './../img/logo-icono.png';
@@ -35,7 +35,17 @@ import ModuloProveedores from "./ModuloProveedores";
 import GestionCategorias from "./GestionCategorias";
 import FlujoAdministrativo from "./FlujoAdministrativo";
 import GestionEventos from "./GestionEventos";
+import HistorialEventos from "./HistorialEventos";
 import LicitacionesElegidas from "./LicitacionesElegidas";
+
+// --- MÓDULO JURÍDICO (Reutilización de componentes del Legal Layout) ---
+import DashboardLegal from "./DashboardLegal";
+import BandejaJuridica from "./BandejaJuridica";
+import GestionDictamenes from "./GestionDictamenes";
+import DictamenesRealizados from "./DictamenesRealizados";
+import FirmaDigital from "./FirmaDigital";
+import HistorialActividadLegal from "./HistorialActividadLegal";
+import BibliotecaJuridica from "./BibliotecaJuridica";
 
 function DashboardAdminLayout({ usuario, onLogoutClick }) {
     const navigate = useNavigate();
@@ -48,7 +58,8 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
         eventos: true,
         audiovisual: true,
         admin: true,
-        proveedores: true
+        proveedores: true,
+        juridico: false
     });
 
     const toggleMenu = (menu) => setOpenMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
@@ -71,6 +82,16 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
         if (currentPath.includes("/admin/proveedores/gestion")) return "Gestión Operativa";
         if (currentPath.includes("/admin/proveedores/categorias")) return "Gestión de Categorías";
         if (currentPath.includes("/admin/proveedores/licitaciones-elegidas")) return "Licitaciones Elegidas";
+        // --- Módulo Jurídico ---
+        if (currentPath.includes("/admin/juridico/dashboard")) return "Dashboard Legal";
+        if (currentPath.includes("/admin/juridico/bandeja")) return "Bandeja Jurídica";
+        if (currentPath.includes("/admin/juridico/dictamenes")) return "Gestión de Dictámenes";
+        if (currentPath.includes("/admin/juridico/flujo")) return "Dictámenes y Contratos";
+        if (currentPath.includes("/admin/juridico/firma")) return "Firma Digital";
+        if (currentPath.includes("/admin/juridico/realizados")) return "Dictámenes Realizados";
+        if (currentPath.includes("/admin/juridico/historial")) return "Historial de Actividad Legal";
+        if (currentPath.includes("/admin/juridico/biblioteca")) return "Biblioteca Jurídica";
+        // ---
         if (currentPath.includes("/admin/evaluacion")) return "Evaluación";
         if (currentPath.includes("/admin/soporte")) return "Soporte";
         if (currentPath.includes("/admin/evaluaciones")) return "Historial de Evaluaciones";
@@ -135,6 +156,9 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                             <li className={currentPath.includes("/admin/eventos/gestion") ? "active" : ""} onClick={() => handleNavigate("/admin/eventos/gestion")}>
                                 <FiClipboard className="action-icon" /> Gestión de Solicitudes
                             </li>
+                            <li className={currentPath.includes("/admin/eventos/historial") ? "active" : ""} onClick={() => handleNavigate("/admin/eventos/historial")}>
+                                <FiClock className="action-icon" /> Historial de Eventos
+                            </li>
                         </ul>
 
                         {/* Módulo Audiovisual */}
@@ -171,6 +195,35 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                             </li>
                             <li className={currentPath.includes("/admin/proveedores/licitaciones-elegidas") ? "active" : ""} onClick={() => handleNavigate("/admin/proveedores/licitaciones-elegidas")}>
                                 <FiCheckCircle className="action-icon" /> Licitaciones Elegidas
+                            </li>
+                        </ul>
+
+                        {/* Módulo Jurídico */}
+                        <li className="nav-group-header" onClick={() => toggleMenu('juridico')}>
+                            <span>Módulo Jurídico</span>
+                            {openMenus.juridico ? <FiChevronDown className="action-icon" /> : <FiChevronRight className="action-icon" />}
+                        </li>
+                        <ul className={`nav-submenu ${openMenus.juridico ? 'open' : ''}`}>
+                            <li className={currentPath.includes("/admin/juridico/bandeja") ? "active" : ""} onClick={() => handleNavigate("/admin/juridico/bandeja")}>
+                                <FiInbox className="action-icon" /> Bandeja Jurídica
+                            </li>
+                            <li className={currentPath.includes("/admin/juridico/dictamenes") ? "active" : ""} onClick={() => handleNavigate("/admin/juridico/dictamenes")}>
+                                <FiClipboard className="action-icon" /> Gestión de Dictámenes
+                            </li>
+                            <li className={currentPath.includes("/admin/juridico/flujo") ? "active" : ""} onClick={() => handleNavigate("/admin/juridico/flujo")}>
+                                <FiShield className="action-icon" /> Dictámenes y Contratos
+                            </li>
+                            <li className={currentPath.includes("/admin/juridico/firma") ? "active" : ""} onClick={() => handleNavigate("/admin/juridico/firma")}>
+                                <FiPenTool className="action-icon" /> Firma Digital
+                            </li>
+                            <li className={currentPath.includes("/admin/juridico/realizados") ? "active" : ""} onClick={() => handleNavigate("/admin/juridico/realizados")}>
+                                <FiFileText className="action-icon" /> Dictámenes Realizados
+                            </li>
+                            <li className={currentPath.includes("/admin/juridico/historial") ? "active" : ""} onClick={() => handleNavigate("/admin/juridico/historial")}>
+                                <FiActivity className="action-icon" /> Historial de Actividad
+                            </li>
+                            <li className={currentPath.includes("/admin/juridico/biblioteca") ? "active" : ""} onClick={() => handleNavigate("/admin/juridico/biblioteca")}>
+                                <FiBookOpen className="action-icon" /> Biblioteca Jurídica
                             </li>
                         </ul>
 
@@ -249,10 +302,10 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                         <Route path="/" element={<DashboardAdmin usuario={usuario} setActiveTab={mockSetActiveTab} />} />
                         <Route path="calendario" element={<Calendario usuario={usuario} />} />
                         <Route path="flujo-administrativo" element={<FlujoAdministrativo usuario={usuario} />} />
-                        
                         <Route path="eventos/solicitud" element={<Eventos usuario={usuario} />} />
                         <Route path="eventos/catalogos" element={<AdminEvento usuario={usuario} />} />
                         <Route path="eventos/gestion" element={<GestionEventos usuario={usuario} />} />
+                        <Route path="eventos/historial" element={<HistorialEventos usuario={usuario} />} />
                         
                         <Route path="audiovisual/solicitud" element={<Audiovisual usuario={usuario} />} />
                         <Route path="audiovisual/gestion" element={<GestionSolicitudesAV usuario={usuario} />} />
@@ -270,6 +323,34 @@ function DashboardAdminLayout({ usuario, onLogoutClick }) {
                         <Route path="poa" element={<PoaAdmin usuario={usuario} />} />
                         <Route path="presupuesto" element={<GestionPresupuestaria usuario={usuario} />} />
                         <Route path="bitacora" element={<Bitacora />} />
+
+                        {/* Módulo Jurídico */}
+                        <Route path="juridico/dashboard" element={<DashboardLegal usuario={usuario} setActiveTab={(tab) => {
+                            const routesJuridico = {
+                                'BandejaJuridica': '/admin/juridico/bandeja',
+                                'GestionDictamenes': '/admin/juridico/dictamenes',
+                                'FlujoAdministrativo': '/admin/juridico/flujo',
+                                'FirmaDigital': '/admin/juridico/firma',
+                                'DictamenesRealizados': '/admin/juridico/realizados',
+                                'HistorialActividadLegal': '/admin/juridico/historial',
+                                'BibliotecaJuridica': '/admin/juridico/biblioteca',
+                                'Calendario': '/admin/calendario',
+                                'Soporte': '/admin/soporte'
+                            };
+                            if (routesJuridico[tab]) navigate(routesJuridico[tab]);
+                        }} />} />
+                        <Route path="juridico/bandeja" element={<BandejaJuridica usuario={usuario} setActiveTab={(tab) => {
+                            if (tab === 'GestionDictamenes') navigate('/admin/juridico/dictamenes');
+                            else if (tab === 'FlujoAdministrativo') navigate('/admin/juridico/flujo');
+                        }} />} />
+                        <Route path="juridico/dictamenes" element={<GestionDictamenes usuario={usuario} setActiveTab={(tab) => {
+                            if (tab === 'FlujoAdministrativo') navigate('/admin/juridico/flujo');
+                        }} />} />
+                        <Route path="juridico/flujo" element={<FlujoAdministrativo usuario={usuario} />} />
+                        <Route path="juridico/firma" element={<FirmaDigital usuario={usuario} />} />
+                        <Route path="juridico/realizados" element={<DictamenesRealizados usuario={usuario} />} />
+                        <Route path="juridico/historial" element={<HistorialActividadLegal usuario={usuario} />} />
+                        <Route path="juridico/biblioteca" element={<BibliotecaJuridica usuario={usuario} />} />
 
                         {/* Catch-all */}
                         <Route path="*" element={<Navigate to="/admin" replace />} />

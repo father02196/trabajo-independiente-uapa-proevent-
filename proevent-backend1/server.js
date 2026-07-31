@@ -264,6 +264,14 @@ function crearNotificacion({ id_usuario_destino = null, rol_destino = null, titu
   });
 }
 
+// Función utilitaria para registrar la auditoría legal automáticamente
+function registrarAuditoriaLegal(db, { id_usuario, accion_realizada, id_evento = null, tipo_documento = null, estado_anterior = null, estado_nuevo = null, direccion_ip = null }) {
+  const sql = `INSERT INTO auditoria_legal (id_usuario, accion_realizada, id_evento, tipo_documento, estado_anterior, estado_nuevo, direccion_ip) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+  db.query(sql, [id_usuario, accion_realizada, id_evento, tipo_documento, estado_anterior, estado_nuevo, direccion_ip], (err) => {
+    if (err) console.error("Error registrando auditoria legal: ", err);
+  });
+}
+
 
 
 // --- PROCESOS EN SEGUNDO PLANO (CRON JOBS SIMULADOS) ---
@@ -3035,8 +3043,9 @@ app.put('/api/servicio_externo/:id/admin', async (req, res) => {
     connection = await db.promise().getConnection();
     await connection.beginTransaction();
     
-    const [rows] = await connection.execute('SELECT numero_orden_compra FROM servicio_externo WHERE id_servicio_ext = ?', [req.params.id]);
+    const [rows] = await connection.execute('SELECT numero_orden_compra, id_evento FROM servicio_externo WHERE id_servicio_ext = ?', [req.params.id]);
     const old_oc = rows.length > 0 ? rows[0].numero_orden_compra : null;
+    const id_evento = rows.length > 0 ? rows[0].id_evento : null;
 
     await connection.execute(
       'UPDATE servicio_externo SET numero_orden_compra = ?, requiere_contrato = ?, id_cotizacion_adjudicada = ? WHERE id_servicio_ext = ?',
@@ -3082,7 +3091,26 @@ app.put('/api/servicio_externo/:id/admin', async (req, res) => {
     }
     
     await connection.commit();
+    
+    // (1) NUEVO EXPEDIENTE ASIGNADO A JURÍDICO
+    // Se dispara cuando Compras adjudica una cotización y marca "requiere_contrato" = true.
+    if (id_cotizacion_adjudicada && requiere_contrato && id_evento) {
+      db.query('SELECT nombre FROM evento WHERE id_evento = ?', [id_evento], (err, evRows) => {
+        if (!err && evRows.length > 0) {
+          crearNotificacion({ 
+            rol_destino: 'Administrador de Legal', 
+            titulo: '⚖️ Nuevo Expediente en Bandeja Jurídica', 
+            cuerpo: `El evento "${evRows[0].nombre}" (#EVT-${id_evento}) ha sido adjudicado y requiere contrato.`, 
+            enlace_accion: 'dashboard-legal' 
+          });
+        }
+      });
+    }
+
     res.json({ mensaje: 'Datos administrativos del servicio actualizados' });
+    if (id_evento) {
+      verificarYFinalizarEvento(id_evento);
+    }
   } catch (error) {
     if (connection) await connection.rollback();
     res.status(500).json({ error: error.message });
@@ -3096,9 +3124,46 @@ app.put('/api/presupuesto/:id_evento', (req, res) => {
   res.status(403).json({ mensaje: 'Esta acción está bloqueada. El presupuesto se aprueba automáticamente desde el módulo de Gestión Presupuestaria.' });
 });
 
+const verificarYFinalizarEvento = (id_evento) => {
+  db.query('SELECT estado_legal FROM flujo_aprobacion_legal WHERE id_evento = ?', [id_evento], (err, results) => {
+    if (err || results.length === 0) return;
+    const estado_legal = results[0].estado_legal;
+    if (estado_legal === 'Aprobado' || estado_legal === 'Rechazado') {
+      db.query('SELECT COUNT(*) as total, SUM(CASE WHEN numero_orden_compra IS NOT NULL AND numero_orden_compra != "" THEN 1 ELSE 0 END) as con_oc FROM servicio_externo WHERE id_evento = ?', [id_evento], (err2, results2) => {
+        if (err2 || results2.length === 0) return;
+        const total = results2[0].total;
+        const con_oc = results2[0].con_oc;
+        if (total === 0 || con_oc >= total) {
+          db.query("UPDATE evento SET estado = 'Finalizado' WHERE id_evento = ?", [id_evento], (err3) => {
+            if (err3) console.error("Error finalizando evento:", err3);
+            else console.log(`[LegalFlow] Evento ${id_evento} marcado como 'Finalizado' automáticamente.`);
+          });
+        }
+      });
+    }
+  });
+};
+
 app.put('/api/flujo_legal/:id_evento', (req, res) => {
   const { estado_legal, observacion_legal, id_usuario_revisor } = req.body;
   const id_usuario = req.headers['x-usuario-id'] || id_usuario_revisor;
+  
+  const notificarResolucion = (estado) => {
+    db.query('SELECT e.id_usuario, e.nombre FROM evento e WHERE e.id_evento = ?', [req.params.id_evento], (errEv, evRows) => {
+      if (!errEv && evRows.length > 0) {
+        // (5) Dictamen emitido (Aviso general a bitácora u otro rol, pero el solicitante recibe el estado explícito)
+        if (estado === 'Aprobado') {
+          // (6) Dictamen Aprobado
+          crearNotificacion({ id_usuario_destino: evRows[0].id_usuario, titulo: '✅ Dictamen Jurídico Aprobado', cuerpo: `El evento "${evRows[0].nombre}" (#EVT-${req.params.id_evento}) tiene dictamen legal favorable.`, enlace_accion: 'mis-eventos' });
+          crearNotificacion({ rol_destino: 'Compras', titulo: '⚖️ Dictamen Aprobado', cuerpo: `El evento "${evRows[0].nombre}" fue aprobado por Legal y está listo para gestión de contrato.`, enlace_accion: 'compras' });
+        } else if (estado === 'Rechazado') {
+          // (7) Dictamen Rechazado
+          crearNotificacion({ id_usuario_destino: evRows[0].id_usuario, titulo: '❌ Dictamen Jurídico Rechazado', cuerpo: `El dictamen para "${evRows[0].nombre}" (#EVT-${req.params.id_evento}) fue rechazado por Legal.`, enlace_accion: 'mis-eventos' });
+        }
+      }
+    });
+  };
+
   db.query('SELECT id_flujo_legal FROM flujo_aprobacion_legal WHERE id_evento = ?', [req.params.id_evento], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     if (results.length === 0) {
@@ -3113,7 +3178,14 @@ app.put('/api/flujo_legal/:id_evento', (req, res) => {
               actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
             });
           }
+          // Registrar auditoría
+          const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+          registrarAuditoriaLegal(db, { id_usuario: parseInt(id_usuario), accion_realizada: 'Emisión de dictamen (nuevo)', id_evento: parseInt(req.params.id_evento), tipo_documento: 'Dictamen Legal', estado_anterior: 'Sin flujo', estado_nuevo: estado_legal, direccion_ip: ip });
+          
+          if (estado_legal === 'Aprobado' || estado_legal === 'Rechazado') notificarResolucion(estado_legal);
+
           res.json({ mensaje: 'Flujo legal creado y actualizado' });
+          verificarYFinalizarEvento(req.params.id_evento);
         });
     } else {
       db.query('UPDATE flujo_aprobacion_legal SET estado_legal = ?, observacion_legal = ?, id_usuario_revisor = ? WHERE id_evento = ?',
@@ -3127,9 +3199,392 @@ app.put('/api/flujo_legal/:id_evento', (req, res) => {
               actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
             });
           }
+          // Registrar auditoría
+          const ip2 = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+          registrarAuditoriaLegal(db, { id_usuario: parseInt(id_usuario), accion_realizada: 'Actualización de dictamen', id_evento: parseInt(req.params.id_evento), tipo_documento: 'Dictamen Legal', estado_anterior: 'Estado previo', estado_nuevo: estado_legal, direccion_ip: ip2 });
+          
+          if (estado_legal === 'Aprobado' || estado_legal === 'Rechazado') notificarResolucion(estado_legal);
+          
           res.json({ mensaje: 'Flujo legal actualizado' });
+          verificarYFinalizarEvento(req.params.id_evento);
         });
     }
+  });
+});
+
+app.get('/api/legal/dictamenes-pendientes', verificarToken, (req, res) => {
+  // Validar rol: solo Administrador de Legal (id_rol=12)
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+  const sql = `
+    SELECT 
+      e.id_evento, 
+      e.nombre AS nombre_evento, 
+      d.nombre AS dependencia, 
+      u.nombre AS solicitante, 
+      e.fecha_inicio AS fecha_evento,
+      cr.id_cotizacion AS id_cotizacion_ganadora,
+      pe.id_proveedor,
+      pe.nombre_empresa AS proveedor_ganador,
+      COALESCE(fal.estado_legal, 'Pendiente') AS estado_legal,
+      fal.observacion_legal,
+      fal.id_usuario_revisor,
+      cr.ruta_documento_pdf,
+      cr.monto_total_detectado,
+      MAX(se.numero_orden_compra) as numero_orden_compra
+    FROM evento e
+    JOIN dependencia d ON e.id_dependencia = d.id_dependencia
+    JOIN usuario u ON e.id_usuario = u.id_usuario
+    JOIN solicitud_cotizacion sc ON e.id_evento = sc.id_evento
+    JOIN cotizacion_recibida cr ON sc.id_solicitud = cr.id_solicitud
+    JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
+    LEFT JOIN servicio_externo se ON (se.id_evento = e.id_evento AND se.id_proveedor = pe.id_proveedor)
+    LEFT JOIN flujo_aprobacion_legal fal ON e.id_evento = fal.id_evento
+    WHERE cr.estado = 'Seleccionada'
+      AND (fal.estado_legal IS NULL OR fal.estado_legal IN ('Pendiente', 'En revisión'))
+    GROUP BY e.id_evento, cr.id_cotizacion, e.nombre, d.nombre, u.nombre, e.fecha_inicio, pe.id_proveedor, pe.nombre_empresa, fal.estado_legal, fal.observacion_legal, fal.id_usuario_revisor, cr.ruta_documento_pdf, cr.monto_total_detectado
+    ORDER BY e.fecha_inicio ASC
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error obteniendo dictámenes' });
+    }
+    res.json(results);
+  });
+});
+
+// ── BANDEJA JURÍDICA: Solicitudes pendientes de revisión legal con prioridad ──
+app.get('/api/legal/bandeja-juridica', verificarToken, (req, res) => {
+  // Validar rol: solo Administrador de Legal (id_rol=12) o Admin General (id_rol=1)
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+  const sql = `
+    SELECT 
+      e.id_evento, 
+      e.nombre AS nombre_evento, 
+      d.nombre AS dependencia, 
+      u.nombre AS solicitante, 
+      e.fecha_creacion AS fecha_envio,
+      e.fecha_inicio AS fecha_evento,
+      cr.id_cotizacion AS id_cotizacion_ganadora,
+      pe.nombre_empresa AS proveedor_ganador,
+      COALESCE(fal.estado_legal, 'Pendiente') AS estado_legal,
+      fal.observacion_legal,
+      cr.ruta_documento_pdf,
+      cr.monto_total_detectado,
+      DATEDIFF(NOW(), e.fecha_creacion) AS dias_transcurridos,
+      CASE 
+        WHEN DATEDIFF(NOW(), e.fecha_creacion) > 7 THEN 'Alta'
+        WHEN DATEDIFF(NOW(), e.fecha_creacion) >= 3 THEN 'Media'
+        ELSE 'Baja'
+      END AS prioridad
+    FROM evento e
+    JOIN dependencia d ON e.id_dependencia = d.id_dependencia
+    JOIN usuario u ON e.id_usuario = u.id_usuario
+    JOIN solicitud_cotizacion sc ON e.id_evento = sc.id_evento
+    JOIN cotizacion_recibida cr ON sc.id_solicitud = cr.id_solicitud
+    JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
+    LEFT JOIN flujo_aprobacion_legal fal ON e.id_evento = fal.id_evento
+    WHERE cr.estado = 'Seleccionada'
+      AND (fal.estado_legal IS NULL OR fal.estado_legal IN ('Pendiente', 'En revisión', 'Observado'))
+    GROUP BY e.id_evento, cr.id_cotizacion, e.nombre, d.nombre, u.nombre, 
+             e.fecha_creacion, e.fecha_inicio, pe.nombre_empresa, fal.estado_legal, 
+             fal.observacion_legal, cr.ruta_documento_pdf, cr.monto_total_detectado
+    ORDER BY 
+      FIELD(CASE 
+        WHEN DATEDIFF(NOW(), e.fecha_creacion) > 7 THEN 'Alta'
+        WHEN DATEDIFF(NOW(), e.fecha_creacion) >= 3 THEN 'Media'
+        ELSE 'Baja'
+      END, 'Alta', 'Media', 'Baja'),
+      e.fecha_creacion ASC
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error obteniendo bandeja jurídica' });
+    }
+    res.json(results);
+  });
+});
+
+app.get('/api/legal/dictamenes-realizados', verificarToken, (req, res) => {
+  // Validar rol: solo Administrador de Legal (id_rol=12)
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+  const sql = `
+    SELECT 
+      e.id_evento,
+      e.nombre AS nombre_evento,
+      cr.id_cotizacion AS id_cotizacion_ganadora,
+      pe.id_proveedor,
+      pe.nombre_empresa AS proveedor_ganador,
+      MAX(se.numero_orden_compra) AS numero_orden_compra,
+      fal.estado_legal,
+      fal.observacion_legal,
+      fal.fecha_actualizacion AS fecha_dictamen,
+      u_rev.nombre AS responsable_legal,
+      cr.ruta_documento_pdf AS ruta_cotizacion_pdf,
+      cr.monto_total_detectado,
+      de_dict.ruta_archivo AS ruta_dictamen_pdf,
+      de_dict.nombre_archivo AS nombre_dictamen,
+      de_oc.ruta_archivo AS ruta_oc_pdf,
+      de_oc.nombre_archivo AS nombre_oc
+    FROM flujo_aprobacion_legal fal
+    JOIN evento e ON fal.id_evento = e.id_evento
+    JOIN solicitud_cotizacion sc ON e.id_evento = sc.id_evento
+    JOIN cotizacion_recibida cr ON sc.id_solicitud = cr.id_solicitud AND cr.estado = 'Seleccionada'
+    JOIN proveedor_externo pe ON cr.id_proveedor = pe.id_proveedor
+    LEFT JOIN servicio_externo se ON (se.id_evento = e.id_evento AND se.id_proveedor = pe.id_proveedor)
+    LEFT JOIN usuario u_rev ON fal.id_usuario_revisor = u_rev.id_usuario
+    LEFT JOIN documento_evento de_dict ON (de_dict.id_evento = e.id_evento AND de_dict.tipo_documento = 'Contrato' AND de_dict.estado = 'Activo')
+    LEFT JOIN documento_evento de_oc ON (de_oc.id_evento = e.id_evento AND de_oc.tipo_documento = 'Orden de Compra' AND de_oc.estado = 'Activo')
+    WHERE fal.estado_legal NOT IN ('Pendiente', 'En revisión')
+    GROUP BY e.id_evento, cr.id_cotizacion, e.nombre, pe.id_proveedor, pe.nombre_empresa,
+             fal.estado_legal, fal.observacion_legal, fal.fecha_actualizacion, u_rev.nombre,
+             cr.ruta_documento_pdf, cr.monto_total_detectado, de_dict.ruta_archivo, de_dict.nombre_archivo,
+             de_oc.ruta_archivo, de_oc.nombre_archivo
+    ORDER BY fal.fecha_actualizacion DESC
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error obteniendo dictámenes realizados' });
+    }
+    res.json(results);
+  });
+});
+
+// ── FIRMA DIGITAL: Obtener documentos pendientes de firma y el historial ──
+app.get('/api/legal/firmas', verificarToken, (req, res) => {
+  // Validar rol: solo Administrador de Legal (id_rol=12) o Admin General (id_rol=1)
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+
+  const sql = `
+    SELECT 
+      de.id_documento,
+      e.nombre AS nombre_evento,
+      de.tipo_documento,
+      de.nombre_archivo,
+      u.nombre AS responsable,
+      de.fecha_subida AS fecha_creacion,
+      de.ruta_archivo,
+      de.estado_firma
+    FROM documento_evento de
+    JOIN evento e ON de.id_evento = e.id_evento
+    JOIN usuario u ON de.id_usuario_subio = u.id_usuario
+    WHERE de.tipo_documento IN ('Contrato', 'Orden de Compra')
+      AND de.estado = 'Activo'
+    ORDER BY 
+      CASE WHEN de.estado_firma = 'Pendiente' THEN 1 ELSE 2 END,
+      de.fecha_subida DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error obteniendo documentos para firma' });
+    }
+    res.json(results);
+  });
+});
+
+// ── FIRMA DIGITAL: Actualizar el estado de firma de un documento ──
+app.put('/api/legal/firmas/:id_documento', verificarToken, (req, res) => {
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+
+  const { id_documento } = req.params;
+  const { estado_firma } = req.body;
+
+  if (!['Firmado', 'Rechazado'].includes(estado_firma)) {
+    return res.status(400).json({ error: 'Estado de firma inválido' });
+  }
+
+  db.query('SELECT de.*, e.id_evento FROM documento_evento de JOIN evento e ON de.id_evento = e.id_evento WHERE de.id_documento = ?', [id_documento], (errQ, docRows) => {
+    const docInfo = docRows && docRows[0] ? docRows[0] : {};
+    const estadoAnterior = docInfo.estado_firma || 'Pendiente';
+
+    db.query('UPDATE documento_evento SET estado_firma = ? WHERE id_documento = ?', [estado_firma, id_documento], (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Error actualizando el estado de la firma' });
+      }
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ error: 'Documento no encontrado' });
+      }
+      // Registrar auditoría
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+      registrarAuditoriaLegal(db, {
+        id_usuario: req.user.id_usuario,
+        accion_realizada: estado_firma === 'Firmado' ? 'Firma de documento' : 'Rechazo de documento',
+        id_evento: docInfo.id_evento || null,
+        tipo_documento: docInfo.tipo_documento || null,
+        estado_anterior: estadoAnterior,
+        estado_nuevo: estado_firma,
+      });
+      
+      // (8) Firma digital completada
+      if (estado_firma === 'Firmado') {
+        db.query('SELECT e.id_usuario, e.nombre FROM evento e WHERE e.id_evento = ?', [docInfo.id_evento], (err3, evRows) => {
+          if (!err3 && evRows.length > 0) {
+            const idSol = evRows[0].id_usuario;
+            const nomEv = evRows[0].nombre;
+            crearNotificacion({ id_usuario_destino: idSol, titulo: '🖋️ Contrato Firmado Digitalmente', cuerpo: `El contrato para el evento "${nomEv}" ha sido firmado digitalmente por Legal.`, enlace_accion: 'mis-eventos' });
+            crearNotificacion({ rol_destino: 'VAF', titulo: '🖋️ Contrato Firmado', cuerpo: `Legal ha firmado digitalmente el contrato para "${nomEv}". Puede proceder con los pagos.`, enlace_accion: 'poa-admin' });
+            crearNotificacion({ rol_destino: 'Contabilidad', titulo: '🖋️ Contrato Firmado', cuerpo: `Legal ha firmado digitalmente el contrato para "${nomEv}". Puede proceder con los pagos.`, enlace_accion: 'poa-admin' });
+          }
+        });
+      }
+
+      res.json({ mensaje: `Documento marcado como ${estado_firma} exitosamente.` });
+    });
+  });
+});
+
+// ── BIBLIOTECA JURÍDICA ──
+app.get('/api/legal/biblioteca', verificarToken, (req, res) => {
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+  const sql = `
+    SELECT b.*, u.nombre AS responsable 
+    FROM biblioteca_legal b 
+    LEFT JOIN usuario u ON b.id_usuario_carga = u.id_usuario 
+    WHERE b.estado = 'Activo' 
+    ORDER BY b.fecha_carga DESC
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error obteniendo documentos de biblioteca' });
+    }
+    res.json(results);
+  });
+});
+
+app.post('/api/legal/biblioteca', verificarToken, upload.single('archivo'), (req, res) => {
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+  if (!req.file) {
+    return res.status(400).json({ error: 'Debe adjuntar un archivo' });
+  }
+  const { categoria, nombre_archivo } = req.body;
+  const ruta_archivo = `/uploads/${req.file.filename}`;
+  const tamano_bytes = req.file.size;
+  const id_usuario = req.user.id_usuario;
+
+  const sql = `INSERT INTO biblioteca_legal (nombre_archivo, ruta_archivo, categoria, tamano_bytes, id_usuario_carga) VALUES (?, ?, ?, ?, ?)`;
+  db.query(sql, [nombre_archivo || req.file.originalname, ruta_archivo, categoria, tamano_bytes, id_usuario], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error guardando en biblioteca' });
+    }
+    // Registrar auditoría
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    registrarAuditoriaLegal(db, {
+      id_usuario,
+      accion_realizada: 'Subida de documento a biblioteca',
+      tipo_documento: categoria,
+      estado_nuevo: 'Activo',
+      direccion_ip: ip
+    });
+    res.json({ mensaje: 'Documento subido a la biblioteca con éxito' });
+  });
+});
+
+app.put('/api/legal/biblioteca/:id', verificarToken, (req, res) => {
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido' });
+  }
+  const { id } = req.params;
+  const { nombre_archivo, categoria } = req.body;
+  
+  db.query('UPDATE biblioteca_legal SET nombre_archivo = ?, categoria = ? WHERE id_documento = ?', [nombre_archivo, categoria, id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error actualizando documento' });
+    }
+    // Registrar auditoría
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    registrarAuditoriaLegal(db, { id_usuario: req.user.id_usuario, accion_realizada: 'Actualización de documento en biblioteca', tipo_documento: categoria, direccion_ip: ip });
+    res.json({ mensaje: 'Documento actualizado' });
+  });
+});
+
+app.delete('/api/legal/biblioteca/:id', verificarToken, (req, res) => {
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido' });
+  }
+  const { id } = req.params;
+  db.query('UPDATE biblioteca_legal SET estado = ? WHERE id_documento = ?', ['Inactivo', id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error eliminando documento' });
+    }
+    // Registrar auditoría
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    registrarAuditoriaLegal(db, { id_usuario: req.user.id_usuario, accion_realizada: 'Eliminación de documento en biblioteca', estado_nuevo: 'Inactivo', direccion_ip: ip });
+    res.json({ mensaje: 'Documento eliminado lógicamente' });
+  });
+});
+
+// ── AUDITORIA LEGAL: Obtener historial de actividad ──
+app.get('/api/legal/auditoria', verificarToken, (req, res) => {
+  if (req.user && req.user.id_rol !== 12 && req.user.id_rol !== 1) {
+    return res.status(403).json({ error: 'Acceso restringido al Administrador Legal' });
+  }
+
+  let filterUser = req.query.usuario || '';
+  let filterAccion = req.query.accion || '';
+  let filterFecha = req.query.fecha || '';
+
+  let sql = `
+    SELECT 
+      al.id_auditoria,
+      al.fecha_hora,
+      u.nombre AS usuario,
+      al.accion_realizada,
+      e.nombre AS evento,
+      al.tipo_documento,
+      al.estado_anterior,
+      al.estado_nuevo,
+      al.direccion_ip
+    FROM auditoria_legal al
+    LEFT JOIN usuario u ON al.id_usuario = u.id_usuario
+    LEFT JOIN evento e ON al.id_evento = e.id_evento
+    WHERE 1=1
+  `;
+  const params = [];
+
+  if (filterUser) {
+    sql += ` AND u.nombre LIKE ?`;
+    params.push('%' + filterUser + '%');
+  }
+  if (filterAccion) {
+    sql += ` AND al.accion_realizada LIKE ?`;
+    params.push('%' + filterAccion + '%');
+  }
+  if (filterFecha) {
+    sql += ` AND DATE(al.fecha_hora) = ?`;
+    params.push(filterFecha);
+  }
+
+  sql += ` ORDER BY al.fecha_hora DESC`;
+
+  db.query(sql, params, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error obteniendo la auditoría' });
+    }
+    res.json(results);
   });
 });
 
@@ -3334,9 +3789,60 @@ app.put('/api/legal/:id/observar', (req, res) => {
             });
           }
 
+          // Registrar auditoría legal
+          const ipObs = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+          registrarAuditoriaLegal(db, { id_usuario: parseInt(id_usuario), accion_realizada: 'Devolver con observaciones', id_evento: parseInt(id), tipo_documento: 'Expediente Legal', estado_anterior: 'En revisión', estado_nuevo: 'Observado', direccion_ip: ipObs });
+
           res.json({mensaje: 'Evento observado por legal'});
         });
       });
+    });
+  });
+});
+
+// 2b. Legal Inicia Revisión del Evento
+app.put('/api/legal/:id/iniciar_revision', (req, res) => {
+  const { id } = req.params;
+  const id_usuario = req.headers['x-usuario-id'] || req.body.id_usuario;
+  
+  // Buscar si ya existe el flujo
+  db.query('SELECT id_flujo_legal FROM flujo_aprobacion_legal WHERE id_evento = ?', [id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const query = results.length === 0 
+      ? 'INSERT INTO flujo_aprobacion_legal (id_evento, estado_legal, id_usuario_revisor) VALUES (?, "En revisión", ?)'
+      : 'UPDATE flujo_aprobacion_legal SET estado_legal = "En revisión", id_usuario_revisor = ? WHERE id_evento = ?';
+    const params = results.length === 0 ? [id, id_usuario] : [id_usuario, id];
+
+    db.query(query, params, (err2) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+
+      if (id_usuario) {
+        BitacoraService.auditBestEffort({
+          req,
+          accion: { code: 'DICTAMEN_LEGAL', criticality: AUDIT_CRITICALITY.BEST_EFFORT },
+          metadata: { id_entidad: id, cambios: { estado: 'En revisión' } },
+          actorOverride: { id_usuario, tipo_actor: 'INTERNO' }
+        });
+      }
+
+      const ipObs = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+      registrarAuditoriaLegal(db, { id_usuario: parseInt(id_usuario), accion_realizada: 'Inicio de revisión legal', id_evento: parseInt(id), tipo_documento: 'Expediente Legal', estado_anterior: 'Pendiente', estado_nuevo: 'En revisión', direccion_ip: ipObs });
+
+      // (2) INICIO DE REVISIÓN
+      // Enviar notificación al solicitante del evento de que Legal está revisando.
+      db.query('SELECT e.id_usuario, e.nombre, d.nombre AS dependencia FROM evento e JOIN dependencia d ON e.id_dependencia = d.id_dependencia WHERE e.id_evento = ?', [id], (err3, evRows) => {
+        if (!err3 && evRows.length > 0) {
+          crearNotificacion({ 
+            id_usuario_destino: evRows[0].id_usuario, 
+            titulo: '⚖️ Revisión Jurídica Iniciada', 
+            cuerpo: `El departamento jurídico ha iniciado la revisión del evento "${evRows[0].nombre}" (#EVT-${id}).`, 
+            enlace_accion: `mis-eventos` 
+          });
+        }
+      });
+
+      res.json({ mensaje: 'Revisión iniciada correctamente' });
     });
   });
 });

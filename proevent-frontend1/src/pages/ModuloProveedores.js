@@ -39,31 +39,134 @@ const ProveedorSelectionModal = ({ isOpen, onClose, onConfirm, items, initialSel
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="modal-overlay" style={{ zIndex: 10000 }}>
-      <div className="modal-content" style={{ maxWidth: '400px' }}>
-        <h3>Seleccionar Proveedores</h3>
-        <div style={{ margin: '15px 0', display: 'flex', gap: '10px' }}>
-          <button type="button" className="btn btn-secondary" onClick={handleSelectAll}>
+    <div className="modal-overlay" style={{ zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }}>
+      <div className="modal-content" style={{ 
+        maxWidth: '500px', 
+        width: '90%', 
+        backgroundColor: '#ffffff', 
+        borderRadius: '16px', 
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', 
+        padding: '24px', 
+        display: 'flex', 
+        flexDirection: 'column' 
+      }}>
+        <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '16px', marginBottom: '16px' }}>
+          <h3 style={{ margin: '0', color: '#0f172a', fontSize: '1.25rem', fontWeight: '600' }}>Seleccionar Proveedores</h3>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.875rem' }}>Elige los proveedores a los que deseas enviar esta orden.</p>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#475569' }}>
+            {selectedIds.length} seleccionado(s)
+          </span>
+          <button 
+            type="button" 
+            onClick={handleSelectAll}
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: '#3b82f6', 
+              fontSize: '0.875rem', 
+              fontWeight: '600', 
+              cursor: 'pointer', 
+              padding: '4px 8px', 
+              borderRadius: '6px', 
+              transition: 'background-color 0.2s' 
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = '#eff6ff'}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
             {selectedIds.length === items.length ? 'Deseleccionar todo' : 'Seleccionar todo'}
           </button>
         </div>
-        <ul className="item-list" style={{ listStyle: 'none', padding: 0, maxHeight: '200px', overflowY: 'auto' }}>
+        
+        <ul className="item-list" style={{ 
+          listStyle: 'none', 
+          padding: '4px', 
+          margin: '0', 
+          maxHeight: '320px', 
+          overflowY: 'auto',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          backgroundColor: '#f8fafc'
+        }}>
+          {items.length === 0 && (
+            <li style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}>
+              No hay proveedores disponibles.
+            </li>
+          )}
           {items.map(item => (
-            <li key={item.id_proveedor} style={{ padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+            <li key={item.id_proveedor} style={{ marginBottom: '4px' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                cursor: 'pointer', 
+                padding: '12px 16px', 
+                backgroundColor: selectedIds.includes(item.id_proveedor) ? '#eff6ff' : '#ffffff', 
+                border: '1px solid',
+                borderColor: selectedIds.includes(item.id_proveedor) ? '#bfdbfe' : '#e2e8f0',
+                borderRadius: '8px',
+                transition: 'all 0.2s',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+              }}>
                 <input 
                   type="checkbox" 
                   checked={selectedIds.includes(item.id_proveedor)}
                   onChange={() => handleToggle(item.id_proveedor)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
                 />
-                {item.nombre_empresa} - {item.persona_contacto}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: '600', color: '#1e293b', fontSize: '0.95rem' }}>{item.nombre_empresa}</span>
+                  <span style={{ color: '#64748b', fontSize: '0.8rem' }}>Contacto: {item.persona_contacto}</span>
+                </div>
               </label>
             </li>
           ))}
         </ul>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-          <button type="button" className="btn btn-primary" onClick={() => onConfirm(selectedIds)}>Confirmar Selección</button>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+          <button 
+            type="button" 
+            onClick={onClose}
+            style={{
+              padding: '10px 16px',
+              backgroundColor: '#ffffff',
+              color: '#475569',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              flex: '1'
+            }}
+            onMouseOver={e => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+            onMouseOut={e => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+          >
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            onClick={() => onConfirm(selectedIds)}
+            style={{
+              padding: '10px 16px',
+              backgroundColor: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              flex: '1',
+              boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)'
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+          >
+            Confirmar Selección
+          </button>
         </div>
       </div>
     </div>,

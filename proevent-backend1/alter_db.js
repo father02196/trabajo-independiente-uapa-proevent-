@@ -1,14 +1,29 @@
+require('dotenv').config();
 const mysql = require('mysql2');
-const db = mysql.createConnection({host:'localhost', user:'root', password:'', database:'uapa_proevent'});
 
-db.query("ALTER TABLE servicio_externo ADD COLUMN numero_orden_compra VARCHAR(50) DEFAULT NULL", (err) => {
-  if (err && err.code !== 'ER_DUP_FIELDNAME') console.error(err);
-  db.query("ALTER TABLE servicio_externo ADD COLUMN requiere_contrato BOOLEAN DEFAULT FALSE", (err2) => {
-    if (err2 && err2.code !== 'ER_DUP_FIELDNAME') console.error(err2);
-    db.query("ALTER TABLE presupuesto MODIFY COLUMN estado ENUM('Pendiente','Asignado','Aprobado','Rechazado') DEFAULT 'Pendiente'", (err3) => {
-       if (err3) console.error(err3);
-       console.log("DB altered");
-       process.exit();
-    });
+const db = mysql.createConnection({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'uapa_proevent'
+});
+
+db.connect((err) => {
+  if (err) throw err;
+  console.log('Conectado a la base de datos.');
+
+  const sql = "ALTER TABLE documento_evento ADD COLUMN estado_firma ENUM('Pendiente', 'Firmado', 'Rechazado') DEFAULT 'Pendiente'";
+  
+  db.query(sql, (error, results) => {
+    if (error) {
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log('La columna estado_firma ya existe.');
+      } else {
+        console.error('Error alterando la tabla:', error);
+      }
+    } else {
+      console.log('Columna estado_firma añadida con éxito.');
+    }
+    db.end();
   });
 });

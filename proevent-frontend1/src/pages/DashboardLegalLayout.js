@@ -7,7 +7,7 @@
 // ============================================================
 
 import React, { useState } from "react";
-import { FiLogOut, FiHeadphones, FiCalendar, FiShield, FiMenu } from "react-icons/fi";
+import { FiLogOut, FiHeadphones, FiCalendar, FiShield, FiMenu, FiClipboard, FiFileText, FiInbox, FiPenTool, FiActivity, FiBookOpen } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import logoIcono from './../img/logo-icono.png';
@@ -16,6 +16,12 @@ import dashboardIcon from "./../img/dashboard.png";
 import DashboardLegal from "./DashboardLegal";
 import Calendario from "./Calendario";
 import FlujoAdministrativo from "./FlujoAdministrativo";
+import GestionDictamenes from "./GestionDictamenes";
+import DictamenesRealizados from "./DictamenesRealizados";
+import BandejaJuridica from "./BandejaJuridica";
+import FirmaDigital from "./FirmaDigital";
+import HistorialActividadLegal from "./HistorialActividadLegal";
+import BibliotecaJuridica from "./BibliotecaJuridica";
 import SoporteHome from "./SoporteHome";
 import NotificationBell from "./NotificationBell";
 
@@ -47,6 +53,18 @@ function DashboardLegalLayout({ usuario, onLogoutClick }) {
         switch (activeTab) {
             case "Dashboard":
                 return <DashboardLegal usuario={usuario} setActiveTab={setActiveTab} />;
+            case "GestionDictamenes":
+                return <GestionDictamenes usuario={usuario} setActiveTab={setActiveTab} />;
+            case "BandejaJuridica":
+                return <BandejaJuridica usuario={usuario} setActiveTab={setActiveTab} />;
+            case "FirmaDigital":
+                return <FirmaDigital usuario={usuario} />;
+            case "HistorialActividadLegal":
+                return <HistorialActividadLegal usuario={usuario} />;
+            case "BibliotecaJuridica":
+                return <BibliotecaJuridica usuario={usuario} />;
+            case "DictamenesRealizados":
+                return <DictamenesRealizados usuario={usuario} />;
             case "FlujoAdministrativo":
                 return <FlujoAdministrativo usuario={usuario} />;
             case "Calendario":
@@ -62,6 +80,18 @@ function DashboardLegalLayout({ usuario, onLogoutClick }) {
         switch (activeTab) {
             case "Dashboard":
                 return "Dashboard Legal";
+            case "GestionDictamenes":
+                return "Gestión de Dictámenes";
+            case "BandejaJuridica":
+                return "Bandeja Jurídica";
+            case "FirmaDigital":
+                return "Firma Digital";
+            case "HistorialActividadLegal":
+                return "Historial de Actividad";
+            case "BibliotecaJuridica":
+                return "Biblioteca Jurídica";
+            case "DictamenesRealizados":
+                return "Dictámenes Realizados";
             case "FlujoAdministrativo":
                 return "Dictámenes y Contratos";
             case "Calendario":
@@ -96,9 +126,33 @@ function DashboardLegalLayout({ usuario, onLogoutClick }) {
                             <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
                             Dashboard Legal
                         </li>
+                        <li className={activeTab === "BandejaJuridica" ? "active" : ""} onClick={() => setActiveTab("BandejaJuridica")}>
+                            <FiInbox className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                            Bandeja Jurídica
+                        </li>
+                        <li className={activeTab === "GestionDictamenes" ? "active" : ""} onClick={() => setActiveTab("GestionDictamenes")}>
+                            <FiClipboard className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                            Gestión de Dictámenes
+                        </li>
                         <li className={activeTab === "FlujoAdministrativo" ? "active" : ""} onClick={() => setActiveTab("FlujoAdministrativo")}>
                             <FiShield className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                             Dictámenes y Contratos
+                        </li>
+                        <li className={activeTab === "FirmaDigital" ? "active" : ""} onClick={() => setActiveTab("FirmaDigital")}>
+                            <FiPenTool className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                            Firma Digital
+                        </li>
+                        <li className={activeTab === "DictamenesRealizados" ? "active" : ""} onClick={() => setActiveTab("DictamenesRealizados")}>
+                            <FiFileText className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                            Dictámenes Realizados
+                        </li>
+                        <li className={activeTab === "HistorialActividadLegal" ? "active" : ""} onClick={() => setActiveTab("HistorialActividadLegal")}>
+                            <FiActivity className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                            Historial de Actividad
+                        </li>
+                        <li className={activeTab === "BibliotecaJuridica" ? "active" : ""} onClick={() => setActiveTab("BibliotecaJuridica")}>
+                            <FiBookOpen className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                            Biblioteca Jurídica
                         </li>
                         <li className={activeTab === "Calendario" ? "active" : ""} onClick={() => setActiveTab("Calendario")}>
                             <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
