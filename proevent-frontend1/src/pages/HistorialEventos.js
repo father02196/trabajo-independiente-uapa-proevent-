@@ -1,9 +1,9 @@
 // ============================================================
-// GESTIÓN DE EVENTOS - Componente Principal
+// HISTORIAL DE EVENTOS - Componente de Solo Lectura
 // Pertenece a: Módulo de Administración de Eventos (ProEvent)
-// Propósito: Muestra la tabla principal de solicitudes de eventos,
-// permite cambiar estados, ver la Ficha Técnica en detalle,
-// asignar servicios externos, personal y cronograma.
+// Propósito: Muestra los eventos cuya fecha de finalización ya pasó,
+// permitiendo consultar su ficha técnica, documentos, presupuesto
+// y flujo de aprobación en modo solo lectura.
 // ============================================================
 
 // Importaciones de React y hooks necesarios
@@ -32,11 +32,11 @@ import './../css/Dashboard.css';
 const API = "http://localhost:8080";
 
 // ============================================================
-// COMPONENTE: GestionEventos
-// Recibe: usuario (objeto del usuario logueado), searchTerm
-// (texto de búsqueda global), onEditEvent (callback para editar)
-// ============================================================
-function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
+// COMPONENTE: HistorialEventos
+// -----------------------------------------------------------------------------
+// Componente de SOLO LECTURA para visualizar eventos cuya fecha_fin ya pasó.
+// -----------------------------------------------------------------------------
+export function HistorialEventos({ usuario, searchTerm = "" }) {
 
   // --- ESTADOS DE FILTROS DE LA TABLA ---
   const [filtroEstado, setFiltroEstado] = useState('Todos los estados');
@@ -318,19 +318,19 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
         
-        const eventosVigentes = data.filter(e => {
-          if (['Finalizado', 'Cancelado', 'Rechazado'].includes(e.estado)) return false;
-          if (!e.fecha_fin) return true; 
+        const eventosCaducados = data.filter(e => {
+          if (['Finalizado', 'Cancelado', 'Rechazado'].includes(e.estado)) return true;
+          if (!e.fecha_fin) return false; 
           const fechaFinStr = e.fecha_fin.split('T')[0];
           const partes = fechaFinStr.split('-');
           const fechaFinLocal = new Date(partes[0], partes[1] - 1, partes[2]);
-          return fechaFinLocal >= hoy;
+          return fechaFinLocal < hoy;
         });
 
-        setEventRequests(eventosVigentes);
+        setEventRequests(eventosCaducados);
         
         // Carga aprobaciones para los eventos "Aprobados" (candidatos a pasar a "En Progreso")
-        const aprobados = eventosVigentes.filter(e => e.estado === 'Aprobado');
+        const aprobados = eventosCaducados.filter(e => e.estado === 'Aprobado');
         aprobados.forEach(e => cargarAprobacionesEvento(e.id_evento));
       } else {
         setError("Error al cargar eventos.");
@@ -598,7 +598,7 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                   <th>ESTADO EVENTO</th>
                   <th>CONTABILIDAD POA</th>
                   <th>MÁS DETALLES</th>
-                  {usuario?.rol !== "Administrador V-A-F" && <th style={{ textAlign: 'center' }}>ACCIONES DE GESTIÓN</th>}
+                  <th style={{ textAlign: 'center' }}>ESTADO FINAL</th>
                 </tr>
               </thead>
               <tbody>
@@ -645,104 +645,11 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
                         <FiEye /> Ver detalles
                       </button>
                     </td>
-                    {usuario?.rol !== "Administrador V-A-F" && (
-                      <td>
-                        <div className="actions-cell">
-                          {usuario?.rol === "Solicitante" ? (
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <button
-                                type="button"
-                                className="action-icon-btn edit"
-                                onClick={() => onEditEvent(req)}
-                                disabled={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado")}
-                                title={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado") ? "Solo puedes editar solicitudes pendientes u observadas" : "Editar solicitud"}
-                                aria-label="Editar solicitud"
-                              >
-                                <FiEdit2 />
-                              </button>
-                              <button
-                                type="button"
-                                className="action-icon-btn delete"
-                                onClick={() => handleEliminarEvento(req.id_evento)}
-                                disabled={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado")}
-                                title={!(!req.estado || req.estado === "Pendiente" || req.estado === "Observado") ? "Solo puedes eliminar solicitudes pendientes u observadas" : "Eliminar solicitud"}
-                                aria-label="Eliminar solicitud"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              {(!req.estado || req.estado === "Pendiente") && (
-                                <>
-                                  <button type="button" className="btn btn-primary btn-sm" onClick={() => handleCambiarEstado(req.id_evento, "Aprobado")} style={{ padding: '6px 12px', width: '100%' }}>
-                                    <FiCheckCircle /> Aprobar
-                                  </button>
-                                  <button type="button" className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', width: '100%', color: '#ef4444', borderColor: '#fca5a5', backgroundColor: '#fef2f2' }} onClick={() => handleCambiarEstado(req.id_evento, "Rechazado")}>
-                                    <FiXCircle /> Rechazar
-                                  </button>
-                                </>
-                              )}
-                              {req.estado === "Aprobado" && (() => {
-                                const aprobInfo = aprobacionesMap[req.id_evento];
-                                const isLoading = loadingAprobaciones[req.id_evento];
-                                const puedeIniciar = aprobInfo?.puede_iniciar;
-                                const hayRechazos = aprobInfo?.hay_rechazos;
-                                return (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <button
-                                      type="button"
-                                      className={`btn btn-sm ${puedeIniciar ? '' : 'btn-secondary'}`}
-                                      style={{
-                                        padding: '6px 12px', width: '100%',
-                                        backgroundColor: puedeIniciar ? '#0ea5e9' : hayRechazos ? '#fef2f2' : '#f1f5f9',
-                                        color: puedeIniciar ? '#fff' : hayRechazos ? '#ef4444' : '#64748b',
-                                        border: puedeIniciar ? 'none' : `1px solid ${hayRechazos ? '#fca5a5' : '#e2e8f0'}`,
-                                        cursor: puedeIniciar ? 'pointer' : 'not-allowed',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                        fontWeight: '600', borderRadius: '8px', fontSize: '12.5px',
-                                        transition: 'all 0.2s'
-                                      }}
-                                      onClick={() => {
-                                        if (puedeIniciar) {
-                                          handleCambiarEstado(req.id_evento, 'En Progreso');
-                                        } else {
-                                          if (aprobInfo) setModalAprobaciones({ id_evento: req.id_evento, ...aprobInfo });
-                                          else { cargarAprobacionesEvento(req.id_evento); toast('Cargando estado de aprobaciones...'); }
-                                        }
-                                      }}
-                                      title={puedeIniciar ? 'Iniciar evento' : hayRechazos ? 'Evento rechazado por un área' : 'Aprobaciones pendientes'}
-                                    >
-                                      {isLoading ? <FiClock size={13} /> : puedeIniciar ? <FiPlay size={13} /> : <FiLock size={13} />}
-                                      {isLoading ? 'Verificando...' : puedeIniciar ? 'Iniciar Evento' : hayRechazos ? 'Rechazado' : 'Pendiente'}
-                                    </button>
-                                    {/* Mini badge de estado de aprobaciones */}
-                                    {aprobInfo && !puedeIniciar && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setModalAprobaciones({ id_evento: req.id_evento, ...aprobInfo })}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'center', padding: '2px', textDecoration: 'underline' }}
-                                        aria-label="Ver estado de aprobaciones previas"
-                                      >
-                                        <FiInfo size={11} /> Ver aprobaciones
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                              {req.estado === "En Progreso" && (
-                                <button type="button" className="btn btn-primary btn-sm" style={{ backgroundColor: '#10b981', border: 'none', padding: '6px 12px', width: '100%' }} onClick={() => handleCambiarEstado(req.id_evento, "Finalizado")}>
-                                  Finalizar
-                                </button>
-                              )}
-                              {["Finalizado", "Rechazado", "Cancelado"].includes(req.estado) && (
-                                <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: '600', textAlign: 'center', display: 'block' }}>Finalizado</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    )}
+                    <td>
+                      <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: '600', textAlign: 'center', display: 'block' }}>
+                        {req.estado || 'Finalizado'}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1221,4 +1128,4 @@ function GestionEventos({ usuario, searchTerm = "", onEditEvent }) {
   );
 }
 
-export default GestionEventos;
+export default HistorialEventos;

@@ -14,10 +14,13 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
 // Iconos de Feather Icons usados en la UI de los paneles y botones
-import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye, FiRefreshCw, FiEdit2, FiX, FiCalendar } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle, FiTrash2, FiDownload, FiDollarSign, FiShield, FiBriefcase, FiEye, FiRefreshCw, FiEdit2, FiX, FiCalendar, FiArrowUp, FiSearch } from 'react-icons/fi';
 
 // Sistema de notificaciones flotantes (toasts)
 import { toast } from 'react-hot-toast';
+
+// Librería para exportar a Excel
+import * as XLSX from 'xlsx';
 
 import axios from '../api/axios';
 
@@ -100,6 +103,21 @@ export default function FlujoAdministrativo({ usuario }) {
   useEffect(() => {
     cargarEventos();
   }, []);
+
+  // --- EFECTO: Preseleccionar evento si viene de Gestión de Dictámenes ---
+  useEffect(() => {
+    if (eventos.length > 0) {
+      const evPre = localStorage.getItem('evento_preseleccionado_legal');
+      if (evPre) {
+        const evt = eventos.find(e => e.id_evento.toString() === evPre);
+        if (evt) {
+          setEventoSeleccionado(evt);
+          cargarDatos(evPre);
+          localStorage.removeItem('evento_preseleccionado_legal');
+        }
+      }
+    }
+  }, [eventos]);
 
   // --- FUNCIÓN: handleSelectEvent ---
   // Se dispara cuando el usuario elige un evento en el selector.
@@ -541,10 +559,7 @@ export default function FlujoAdministrativo({ usuario }) {
            toast.success('Evento devuelto a solicitante (Observado)');
            setEventoSeleccionado(null);
            // Recargar la lista de eventos para remover el observado de la bandeja
-           const evtRes = await fetch(`${API}/eventos`);
-           const evtData = await evtRes.json();
-           const eventosPermitidos = Array.isArray(evtData) ? evtData.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") : [];
-           setEventos(eventosPermitidos);
+           cargarEventos();
         } else {
            toast.error('Error al observar el evento');
         }
@@ -566,10 +581,7 @@ export default function FlujoAdministrativo({ usuario }) {
            setLegal({ estado_legal: 'Pendiente', observacion_legal: '' });
            setEventoSeleccionado(null);
            // Recargar la lista de eventos para reflejar cambios en la tabla
-           const evtRes = await fetch(`${API}/eventos`);
-           const evtData = await evtRes.json();
-           const eventosPermitidos = Array.isArray(evtData) ? evtData.filter(e => e.estado === "Aprobado" || e.estado === "En Progreso") : [];
-           setEventos(eventosPermitidos);
+           cargarEventos();
         }
       }
     } catch (err) {
@@ -1027,87 +1039,193 @@ export default function FlujoAdministrativo({ usuario }) {
             </select>
           </div>
           
-          <div>
-            <label style={{ fontWeight: '600', fontSize: '13px', color: '#475569', display: 'block', marginBottom: '8px' }}>Observaciones / Notas Jurídicas:</label>
+          <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+            <label style={{ fontWeight: '700', fontSize: '13.5px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <FiFileText color="#64748b" /> Observaciones / Notas Jurídicas
+            </label>
             <textarea 
               className="form-control-premium" 
-              rows="4" 
+              rows="5" 
               value={legal.observacion_legal || ''} 
               onChange={(e) => setLegal({ ...legal, observacion_legal: e.target.value })}
-              placeholder="Ingrese cualquier observación, enmienda requerida o nota jurídica para el solicitante..."
-              style={{ width: '100%', marginBottom: '20px', resize: 'vertical' }}
+              placeholder="Describa requerimientos, enmiendas o especificaciones legales del dictamen..."
+              style={{ 
+                width: '100%', 
+                marginBottom: '20px', 
+                resize: 'vertical',
+                minHeight: '100px',
+                padding: '16px',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: '#334155'
+              }}
             />
-            <button type="submit" className="btn btn-primary" onClick={guardarLegal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FiShield /> Guardar Dictamen Legal
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                type="button" 
+                onClick={guardarLegal} 
+                style={{ 
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '10px',
+                  fontWeight: '600',
+                  fontSize: '14.5px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.25)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                <FiShield size={18} /> Guardar Dictamen Legal
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="saas-panel-card" style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <h5 style={{ fontSize: '15px', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FiFileText style={{ color: '#8b5cf6' }}/> Control de Contratos B2B
-          </h5>
-          <p style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '16px' }}>Marque los servicios de proveedores externos que requieren firma de contrato antes de operar.</p>
+        <div className="saas-panel-card" style={{ padding: '32px', flex: 1, display: 'flex', flexDirection: 'column', background: '#ffffff', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}>
+          {/* ── Encabezado mejorado con icono y subtítulo ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 10px rgba(124, 58, 237, 0.2)' }}>
+              <FiFileText size={20} color="#fff" />
+            </div>
+            <div>
+              <h5 style={{ fontSize: '18px', color: '#0f172a', margin: 0, fontWeight: '700', letterSpacing: '-0.3px' }}>Control de Contratos B2B</h5>
+              <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0', fontWeight: '500' }}>Gestione los contratos y acuerdos para proveedores externos del evento.</p>
+            </div>
+          </div>
           
           <div style={{ flex: 1 }}>
             {servicios.length === 0 ? (
-              <div className="empty-panel-state" style={{ padding: '20px 0' }}>
-                <p>Sin servicios externos registrados.</p>
+              <div className="empty-panel-state" style={{ padding: '60px 20px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                <FiFileText style={{ fontSize: '48px', color: '#cbd5e1', marginBottom: '16px', display: 'block', margin: '0 auto 16px' }} />
+                <h6 style={{ color: '#475569', fontSize: '15px', fontWeight: '600', margin: '0 0 8px 0' }}>Sin servicios registrados</h6>
+                <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>No hay servicios externos asignados a este evento.</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {servicios.map(s => {
                   const contratoFile = contratosFiles[s.id_servicio_ext];
                   const hasContratoEnBoveda = documentos.find(d => d.tipo_documento?.trim().toLowerCase().includes('contrato') && d.numero_orden_compra === s.numero_orden_compra);
 
                   return (
-                  <div key={s.id_servicio_ext} style={{ display: 'flex', flexDirection: 'column', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                        {s.tipo_servicio} 
-                        {s.numero_orden_compra && <span style={{ color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>(OC: {s.numero_orden_compra})</span>}
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+                  <div key={s.id_servicio_ext} style={{ 
+                    display: 'flex', flexDirection: 'column', 
+                    padding: '24px', 
+                    background: '#ffffff', 
+                    borderRadius: '16px', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 8px -2px rgba(0, 0, 0, 0.05)',
+                    transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
+                  }}>
+                    {/* ── Fila principal: Info del servicio + Acciones ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
+                      {/* Lado izquierdo: Tipo de servicio + OC + Estado */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '220px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', letterSpacing: '-0.2px' }}>
+                          {s.tipo_servicio}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          {s.numero_orden_compra && (
+                            <span style={{ 
+                              display: 'inline-flex', alignItems: 'center', gap: '6px',
+                              fontSize: '12.5px', fontWeight: '700', color: '#0369a1', 
+                              background: '#e0f2fe', padding: '4px 12px', borderRadius: '8px',
+                              border: '1px solid #bae6fd'
+                            }}>
+                              <FiBriefcase size={12} /> OC: {s.numero_orden_compra}
+                            </span>
+                          )}
+                          <span style={{ 
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            fontSize: '12.5px', fontWeight: '600', 
+                            color: s.requiere_contrato ? '#047857' : '#64748b',
+                            background: s.requiere_contrato ? '#d1fae5' : '#f1f5f9',
+                            padding: '4px 12px', borderRadius: '8px',
+                            border: `1px solid ${s.requiere_contrato ? '#a7f3d0' : '#e2e8f0'}`
+                          }}>
+                            {s.requiere_contrato ? <FiCheckCircle size={13} /> : <FiAlertCircle size={13} />}
+                            {s.requiere_contrato ? 'Contrato requerido' : 'Sin contrato'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Lado derecho: Botón Ver Detalles + Toggle */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
                         <button 
                           type="button"
-                          className="btn-modern btn-outline" 
                           onClick={() => setLegalContextService(s)}
-                          style={{ padding: '4px 10px', fontSize: '12px' }}
                           title="Ver especificaciones y proveedor ganador"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '8px',
+                            padding: '10px 20px', fontSize: '13.5px', fontWeight: '600',
+                            color: '#2563eb', background: '#eff6ff',
+                            border: '1px solid #bfdbfe', borderRadius: '10px',
+                            cursor: 'pointer', transition: 'all 0.2s ease',
+                            whiteSpace: 'nowrap', boxShadow: '0 1px 2px rgba(37, 99, 235, 0.05)'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#93c5fd'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
                         >
-                          <FiEye style={{ marginRight: '6px' }} /> Ver Detalles
+                          <FiEye size={15} /> Ver Detalles
                         </button>
-                        <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={s.requiere_contrato} 
-                            onChange={(e) => {
-                              const updated = [...servicios];
-                              const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
-                              updated[idx].requiere_contrato = e.target.checked;
-                              setServicios(updated);
-                              guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
-                            }}
-                          />
-                          <span className="toggle-slider"></span>
-                        </label>
+                        
+                        {/* Toggle con label descriptiva */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', minHeight: '42px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569', whiteSpace: 'nowrap' }}>Requerir contrato</span>
+                          <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}>
+                            <input 
+                              type="checkbox" 
+                              checked={s.requiere_contrato} 
+                              onChange={(e) => {
+                                const updated = [...servicios];
+                                const idx = updated.findIndex(u => u.id_servicio_ext === s.id_servicio_ext);
+                                updated[idx].requiere_contrato = e.target.checked;
+                                setServicios(updated);
+                                guardarCambiosServicio(s.id_servicio_ext, s.numero_orden_compra, e.target.checked);
+                              }}
+                            />
+                            <span className="toggle-slider"></span>
+                          </label>
+                        </div>
                       </div>
                     </div>
                     
+                    {/* ── Sección expandible: Subida de contrato PDF ── */}
                     {s.requiere_contrato && (
-                      <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div style={{ 
+                        marginTop: '20px', paddingTop: '20px', 
+                        borderTop: '1px dashed #cbd5e1', 
+                        display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' 
+                      }}>
                         <label style={{ 
-                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '10px 20px', margin: 0, 
-                            background: contratoFile ? '#ecfdf5' : '#ffffff', 
-                            border: `1px solid ${contratoFile ? '#10b981' : '#3b82f6'}`, 
-                            borderRadius: '8px',
-                            color: contratoFile ? '#047857' : '#3b82f6',
+                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '12px', 
+                            padding: '12px 24px', margin: 0, 
+                            background: contratoFile ? '#ecfdf5' : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
+                            border: `2px dashed ${contratoFile ? '#10b981' : '#94a3b8'}`, 
+                            borderRadius: '12px',
+                            color: contratoFile ? '#047857' : '#475569',
                             fontWeight: '600',
-                            fontSize: '13px',
+                            fontSize: '14px',
                             transition: 'all 0.2s ease',
-                            boxShadow: contratoFile ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
-                          }}>
-                          <FiUpload style={{ fontSize: '16px' }} /> {contratoFile ? 'Contrato Listo' : 'Seleccionar Contrato PDF'}
+                            boxShadow: contratoFile ? '0 4px 12px rgba(16, 185, 129, 0.12)' : 'none',
+                            flex: '1'
+                          }}
+                          onMouseEnter={e => { if(!contratoFile) { e.currentTarget.style.borderColor = '#64748b'; e.currentTarget.style.background = '#f1f5f9'; } }}
+                          onMouseLeave={e => { if(!contratoFile) { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.background = 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'; } }}
+                          >
+                          <FiUpload size={18} color={contratoFile ? "#10b981" : "#64748b"} /> 
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>{contratoFile ? '✓ Contrato Seleccionado' : 'Seleccionar Archivo PDF del Contrato'}</span>
+                            {contratoFile && <span style={{ fontSize: '11.5px', fontWeight: '500', color: '#059669', marginTop: '2px' }}>{contratoFile.name}</span>}
+                          </div>
                           <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
                                 setContratosFiles(prev => ({ ...prev, [s.id_servicio_ext]: e.target.files[0] }));
@@ -1120,27 +1238,29 @@ export default function FlujoAdministrativo({ usuario }) {
                           disabled={!contratoFile}
                           onClick={() => handleInsertarContratoPorServicio(s)}
                           style={{ 
-                            padding: '10px 20px', 
+                            padding: '12px 28px', 
                             display: 'inline-flex', 
                             alignItems: 'center', 
                             gap: '10px', 
-                            borderRadius: '8px',
-                            background: contratoFile ? '#3b82f6' : '#e2e8f0',
+                            borderRadius: '12px',
+                            background: contratoFile ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : '#e2e8f0',
                             color: contratoFile ? '#ffffff' : '#94a3b8',
                             fontWeight: '600',
-                            fontSize: '13px',
-                            border: contratoFile ? '1px solid #2563eb' : '1px solid #cbd5e1',
-                            boxShadow: contratoFile ? '0 4px 12px rgba(59, 130, 246, 0.25)' : 'none',
+                            fontSize: '14px',
+                            border: 'none',
+                            boxShadow: contratoFile ? '0 4px 14px rgba(37, 99, 235, 0.3)' : 'none',
                             cursor: contratoFile ? 'pointer' : 'not-allowed',
-                            transition: 'all 0.2s ease'
+                            transition: 'all 0.2s ease',
+                            height: '100%'
                           }}
                         >
-                          <FiFileText style={{ fontSize: '16px' }} /> {hasContratoEnBoveda ? 'Actualizar en Bóveda' : 'Insertar en Bóveda'}
+                          <FiCheckCircle size={16} /> {hasContratoEnBoveda ? 'Actualizar en Bóveda' : 'Insertar en Bóveda'}
                         </button>
                       </div>
                     )}
                   </div>
-                );})}
+                );
+              })}
               </div>
             )}
           </div>
@@ -1288,7 +1408,12 @@ export default function FlujoAdministrativo({ usuario }) {
               {recargandoEventos ? 'Actualizando...' : 'Recargar'}
             </button>
           </div>
-          <select onChange={handleSelectEvent} className="table-select-premium" style={{ width: '100%', padding: '10px 14px', fontSize: '13.5px' }}>
+          <select 
+            value={eventoSeleccionado?.id_evento || ''} 
+            onChange={handleSelectEvent} 
+            className="table-select-premium" 
+            style={{ width: '100%', padding: '10px 14px', fontSize: '13.5px' }}
+          >
             <option value="">-- Elige un evento para administrar --</option>
             {eventos.map((ev) => (
               <option key={ev.id_evento} value={ev.id_evento}>
@@ -1298,7 +1423,7 @@ export default function FlujoAdministrativo({ usuario }) {
           </select>
         </div>
 
-        {eventoSeleccionado && (
+        {eventoSeleccionado ? (
           <div>
             {/* BOTÓN EXCLUSIVO DEL ADMINISTRADOR GENERAL PARA ABRIR EL MODAL */}
             {usuario?.rol === 'Administrador' && (
@@ -1347,6 +1472,7 @@ export default function FlujoAdministrativo({ usuario }) {
                   Compras y Cotizaciones
                 </button>
               )}
+              
               {(isVAFRole || isGeneralRole) && (
                 <button 
                   type="button"
@@ -1356,6 +1482,7 @@ export default function FlujoAdministrativo({ usuario }) {
                   Presupuesto (VAF)
                 </button>
               )}
+              
               {(isLegalRole || isGeneralRole) && (
                 <button 
                   type="button"
@@ -1389,6 +1516,20 @@ export default function FlujoAdministrativo({ usuario }) {
                   {tab === 'documentos' && renderDocumentos()}
                 </>
               )}
+            </div>
+          </div>
+        ) : (
+          <div className="empty-state-flujo fade-in" style={{ padding: '80px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '88px', height: '88px', borderRadius: '50%', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: '0 8px 16px -4px rgba(0,0,0,0.05), inset 0 2px 4px rgba(255,255,255,0.5)' }}>
+               <FiFileText size={40} color="#94a3b8" />
+            </div>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.3px' }}>No hay un evento seleccionado</h4>
+            <p style={{ margin: '0 0 28px 0', fontSize: '14.5px', color: '#64748b', maxWidth: '440px', lineHeight: '1.6' }}>
+               Para visualizar o gestionar la información jurídica, contratos y dictámenes, debe elegir un evento operativo de la lista desplegable superior.
+            </p>
+            <div style={{ padding: '10px 20px', background: '#eff6ff', borderRadius: '99px', border: '1px dashed #93c5fd', display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#2563eb', fontWeight: '600', fontSize: '13px', animation: 'bounceUp 2s infinite' }}>
+               <style>{`@keyframes bounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }`}</style>
+               <FiArrowUp size={16} /> Diríjase al selector de eventos arriba
             </div>
           </div>
         )}
@@ -1466,144 +1607,190 @@ export default function FlujoAdministrativo({ usuario }) {
         document.body
       )}
 
-      {/* MODAL DE CONTEXTO JURÍDICO — inyectado en document.body via Portal para evitar modal trapping */}
       {(isLegalRole || isGeneralRole) && legalContextService && ReactDOM.createPortal(
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '580px', borderRadius: '20px', overflow: 'hidden' }}>
+        <div className="modal-overlay" style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', 
+          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(6px)',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+          `}</style>
+          <div className="modal-content" style={{ 
+            maxWidth: '680px', width: '94%', borderRadius: '18px', overflow: 'hidden', 
+            backgroundColor: '#ffffff', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
+            display: 'flex', flexDirection: 'column', maxHeight: '88vh',
+            animation: 'scaleUp 0.2s ease-out'
+          }}>
 
-            {/* ── HEADER con gradiente azul institucional ── */}
+            {/* ── HEADER PROFESIONAL PREMIUM ── */}
             <div style={{
-              background: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
-              padding: '22px 26px',
+              background: '#f8fafc',
+              padding: '20px 24px',
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '12px'
+              borderBottom: '1px solid #e2e8f0',
+              flexShrink: 0
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{
                   width: '42px', height: '42px', borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                  background: '#e2e8f0', border: '1px solid #cbd5e1',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.02)'
                 }}>
-                  <FiFileText size={20} color="#fff" />
+                  <FiFileText size={20} color="#475569" />
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.70)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    Expediente de Contrato
-                  </p>
-                  <h4 style={{ margin: '2px 0 0 0', fontSize: '17px', fontWeight: '700', color: '#fff', letterSpacing: '-0.2px' }}>
+                  <h4 style={{ margin: '0', fontSize: '18px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.3px' }}>
                     {legalContextService.tipo_servicio}
                   </h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: '500', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Expediente de Contrato
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setLegalContextService(null)}
                 style={{
-                  background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '8px',
+                  background: 'transparent', border: 'none', borderRadius: '8px',
                   width: '32px', height: '32px', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0,
-                  transition: 'background 0.2s'
+                  justifyContent: 'center', cursor: 'pointer', color: '#64748b', flexShrink: 0,
+                  transition: 'all 0.2s'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 <FiX size={16} />
               </button>
             </div>
 
-            {/* ── BODY ── */}
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* ── BODY con scroll ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 28px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
 
               {/* BLOQUE 1 — Proveedor y Finanzas */}
               {(() => {
                 const cotizacionGanadora = cotizaciones.find(c => c.id_cotizacion === legalContextService.id_cotizacion_adjudicada);
                 return (
-                  <div style={{ background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(59,130,246,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FiBriefcase size={14} color="#3B82F6" />
-                      </div>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Proveedor y Finanzas</span>
-                    </div>
+                  <div>
+                    <h6 style={{ fontSize: '13px', fontWeight: '700', color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiBriefcase size={14} color="#64748b" /> Proveedor y Finanzas
+                    </h6>
                     {cotizacionGanadora ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                        <div className="detail-group">
-                          <label>Proveedor Adjudicado</label>
-                          <p style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A', margin: 0 }}>{cotizacionGanadora.proveedor_nombre}</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <label style={{ fontSize: '11.5px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Proveedor Adjudicado</label>
+                          <p style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', margin: 0 }}>{cotizacionGanadora.proveedor_nombre}</p>
                         </div>
-                        <div className="detail-group">
-                          <label>Monto Acordado (RD$)</label>
-                          <p style={{ fontSize: '15px', fontWeight: '700', color: '#059669', margin: 0 }}>
+                        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <label style={{ fontSize: '11.5px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Monto Acordado</label>
+                          <p style={{ fontSize: '18px', fontWeight: '800', color: '#059669', margin: 0, letterSpacing: '-0.3px' }}>
                             RD$ {Number(cotizacionGanadora.monto_total_detectado).toLocaleString('es-DO')}
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '8px', padding: '10px 14px' }}>
-                        <FiAlertCircle size={15} color="#92400E" />
-                        <span style={{ fontSize: '13px', color: '#92400E', fontWeight: '500' }}>Cotización pendiente o no enlazada a este servicio.</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '16px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <FiAlertCircle size={16} color="#d97706" />
+                        </div>
+                        <span style={{ fontSize: '14px', color: '#92400e', fontWeight: '500' }}>Cotización pendiente o no enlazada a este servicio.</span>
                       </div>
                     )}
                   </div>
                 );
               })()}
 
+              <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '0' }} />
+
               {/* BLOQUE 2 — Requerimientos del Solicitante */}
-              <div style={{ borderRadius: '12px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-                <div style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(139,92,246,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <FiFileText size={14} color="#8B5CF6" />
-                  </div>
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Requerimientos del Solicitante</span>
-                </div>
-                <div style={{ background: '#fff', padding: '14px 16px', minHeight: '70px' }}>
-                  <p style={{ margin: 0, fontSize: '13.5px', color: '#334155', lineHeight: '1.65', whiteSpace: 'pre-wrap' }}>
-                    {legalContextService.detalles || <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>No hay detalles registrados para este servicio.</span>}
+              <div>
+                <h6 style={{ fontSize: '13px', fontWeight: '700', color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FiFileText size={14} color="#64748b" /> Requerimientos Técnicos
+                </h6>
+                <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)', minHeight: '90px' }}>
+                  <p style={{ margin: 0, fontSize: '14.5px', color: '#334155', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>
+                    {legalContextService.detalles || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No hay detalles registrados para este servicio.</span>}
                   </p>
                 </div>
               </div>
 
               {/* BLOQUE 3 — Condiciones del Evento */}
               {eventoSeleccionado && (
-                <div style={{ borderRadius: '12px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-                  <div style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(16,185,129,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <FiCalendar size={14} color="#10B981" />
-                    </div>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Condiciones del Evento</span>
-                  </div>
-                  <div style={{ background: '#fff', padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                    {[
-                      { label: 'Fecha de Montaje', val: eventoSeleccionado.fecha_montaje
-                        ? new Date(eventoSeleccionado.fecha_montaje).toLocaleDateString('es-DO', { day:'2-digit', month:'long', year:'numeric' })
-                        : '—' },
-                      { label: 'Fecha de Inicio', val: eventoSeleccionado.fecha_inicio
-                        ? new Date(eventoSeleccionado.fecha_inicio).toLocaleDateString('es-DO', { day:'2-digit', month:'long', year:'numeric' })
-                        : '—' },
-                      { label: 'Sede (Campus)', val: eventoSeleccionado.campus || '—' },
-                      { label: 'Salón / Espacio', val: eventoSeleccionado.espacio || '—' },
-                    ].map(({ label, val }) => (
-                      <div className="detail-group" key={label}>
-                        <label>{label}</label>
-                        <p style={{ fontSize: '13.5px', fontWeight: '600', color: '#1E293B', margin: 0 }}>{val}</p>
+                <>
+                  <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '0' }} />
+                  <div>
+                    <h6 style={{ fontSize: '13px', fontWeight: '700', color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiCalendar size={14} color="#64748b" /> Condiciones del Evento
+                    </h6>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#ffffff', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <FiCalendar size={16} color="#64748b" />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '2px' }}>Montaje</label>
+                          <p style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', margin: 0 }}>
+                            {eventoSeleccionado.fecha_montaje ? new Date(eventoSeleccionado.fecha_montaje).toLocaleDateString('es-DO', { day:'2-digit', month:'short', year:'numeric' }) : '—'}
+                          </p>
+                        </div>
                       </div>
-                    ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#ffffff', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <FiCheckCircle size={16} color="#10b981" />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '2px' }}>Inicio del Evento</label>
+                          <p style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', margin: 0 }}>
+                            {eventoSeleccionado.fecha_inicio ? new Date(eventoSeleccionado.fecha_inicio).toLocaleDateString('es-DO', { day:'2-digit', month:'short', year:'numeric' }) : '—'}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#ffffff', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)', gridColumn: '1 / -1' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <FiFileText size={16} color="#64748b" />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '2px' }}>Ubicación</label>
+                          <p style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', margin: 0 }}>
+                            {eventoSeleccionado.campus || '—'} — {eventoSeleccionado.espacio || '—'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
 
             </div>
 
             {/* ── FOOTER ── */}
-            <div className="modal-footer">
-              <button className="close-btn" onClick={() => setLegalContextService(null)}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '14px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#ffffff', flexShrink: 0 }}>
+              <button 
+                onClick={() => setLegalContextService(null)}
+                style={{
+                  padding: '10px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+                  cursor: 'pointer', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+              >
                 Cerrar
               </button>
               <button
-                className="btn-primary"
-                style={{ marginLeft: '8px', padding: '10px 22px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', border: 'none' }}
                 onClick={() => setLegalContextService(null)}
+                style={{
+                  padding: '10px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+                  cursor: 'pointer', border: 'none',
+                  background: '#2563eb', color: '#ffffff',
+                  boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(37, 99, 235, 0.3)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.boxShadow = '0 2px 4px rgba(37, 99, 235, 0.2)'; }}
               >
                 Entendido
               </button>

@@ -189,6 +189,7 @@ export default function GestionPresupuestaria({ usuario }) {
     
     const montoAprobado = aprobados.reduce((sum, m) => sum + Number(m.monto_descontado_dop || 0), 0);
     const montoRechazado = rechazados.reduce((sum, m) => sum + Number(m.monto_descontado_dop || 0), 0);
+    const montoPendiente = pendientes.reduce((sum, m) => sum + Number(m.monto_descontado_dop || 0), 0);
 
     return {
       total,
@@ -196,7 +197,8 @@ export default function GestionPresupuestaria({ usuario }) {
       rechazadosCount: rechazados.length,
       pendientesCount: pendientes.length,
       montoAprobado,
-      montoRechazado
+      montoRechazado,
+      montoPendiente
     };
   }, [movimientos]);
 
@@ -249,7 +251,17 @@ export default function GestionPresupuestaria({ usuario }) {
           </div>
           <div>
             <div style={{ fontSize: '12px', color: '#065F46', fontWeight: 600, textTransform: 'uppercase' }}>Aprobados ({stats.aprobadosCount})</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--success)' }}>RD$ {stats.montoAprobado.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--success)' }}>RD$ {stats.montoAprobado.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid #c7d2fe', boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FiRefreshCw size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: '#3730a3', fontWeight: 600, textTransform: 'uppercase' }}>Pendientes ({stats.pendientesCount})</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: '#3730a3' }}>RD$ {stats.montoPendiente.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
           </div>
         </div>
 
@@ -259,7 +271,7 @@ export default function GestionPresupuestaria({ usuario }) {
           </div>
           <div>
             <div style={{ fontSize: '12px', color: '#7F1D1D', fontWeight: 600, textTransform: 'uppercase' }}>Rechazados ({stats.rechazadosCount})</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--danger)' }}>RD$ {stats.montoRechazado.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--danger)' }}>RD$ {stats.montoRechazado.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
           </div>
         </div>
       </div>

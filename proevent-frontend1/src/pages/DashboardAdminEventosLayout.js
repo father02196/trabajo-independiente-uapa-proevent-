@@ -8,7 +8,7 @@
 // ============================================================
 import React, { useState } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { FiLogOut, FiStar, FiHeadphones, FiActivity, FiList, FiCalendar, FiChevronDown, FiChevronRight, FiMenu, FiClipboard } from "react-icons/fi";
+import { FiLogOut, FiStar, FiHeadphones, FiActivity, FiList, FiCalendar, FiChevronDown, FiChevronRight, FiMenu, FiClipboard, FiClock } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import logoIcono from './../img/logo-icono.png';
@@ -19,6 +19,7 @@ import DashboardAdminEventos from "./dashboards/DashboardAdminEventos";
 import Eventos from "./Eventos";
 import AdminEvento from "./AdminEvento";
 import GestionEventos from "./GestionEventos";
+import HistorialEventos from "./HistorialEventos";
 import Calendario from "./Calendario";
 import Evaluacion from "./Evaluacion";
 import SoporteHome from "./SoporteHome";
@@ -45,6 +46,7 @@ function DashboardAdminEventosLayout({ usuario, onLogoutClick }) {
         if (currentPath.includes("/admin-eventos/eventos/solicitud")) return "Solicitud de Eventos";
         if (currentPath.includes("/admin-eventos/eventos/catalogos")) return "Catálogos de Eventos";
         if (currentPath.includes("/admin-eventos/eventos/gestion")) return "Gestión de Solicitudes";
+        if (currentPath.includes("/admin-eventos/eventos/historial")) return "Historial de Eventos";
         if (currentPath.includes("/admin-eventos/evaluacion")) return "Evaluación de Servicios";
         if (currentPath.includes("/admin-eventos/soporte")) return "Soporte y Ayuda";
         if (currentPath.includes("/admin-eventos/evaluaciones")) return "Historial de Evaluaciones";
@@ -95,8 +97,11 @@ function DashboardAdminEventosLayout({ usuario, onLogoutClick }) {
                             <li className={currentPath.includes("/admin-eventos/eventos/catalogos") ? "active" : ""} onClick={() => handleNavigate("/admin-eventos/eventos/catalogos")}>
                                 <FiList className="action-icon" /> Catálogos de Eventos
                             </li>
-                            <li className={currentPath.includes("/admin-eventos/eventos/gestion") ? "active" : ""} onClick={() => handleNavigate("/admin-eventos/eventos/gestion")}>
+                            <li className={currentPath.includes("/admin-eventos/eventos/gestion") && !currentPath.includes("/admin-eventos/eventos/historial") ? "active" : ""} onClick={() => handleNavigate("/admin-eventos/eventos/gestion")}>
                                 <FiClipboard className="action-icon" /> Gestión de Solicitudes
+                            </li>
+                            <li className={currentPath.includes("/admin-eventos/eventos/historial") ? "active" : ""} onClick={() => handleNavigate("/admin-eventos/eventos/historial")}>
+                                <FiClock className="action-icon" /> Historial de Eventos
                             </li>
                         </ul>
 
@@ -170,6 +175,7 @@ function DashboardAdminEventosLayout({ usuario, onLogoutClick }) {
                         <Route path="eventos/solicitud" element={<Eventos usuario={usuario} />} />
                         <Route path="eventos/catalogos" element={<AdminEvento usuario={usuario} />} />
                         <Route path="eventos/gestion" element={<GestionEventos usuario={usuario} />} />
+                        <Route path="eventos/historial" element={<HistorialEventos usuario={usuario} />} />
                         
                         <Route path="evaluacion" element={<Evaluacion usuario={usuario} />} />
                         <Route path="soporte" element={<SoporteHome usuario={usuario} />} />

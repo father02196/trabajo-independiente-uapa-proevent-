@@ -8,7 +8,7 @@
 // ============================================================
 
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck, FiRefreshCw, FiPieChart, FiBarChart2 } from "react-icons/fi";
+import { FiCheckCircle, FiFileText, FiClock, FiActivity, FiArrowUpRight, FiShield, FiAlertTriangle, FiCalendar, FiBriefcase, FiFilter, FiCheck, FiRefreshCw, FiPieChart, FiBarChart2, FiClipboard, FiInbox } from "react-icons/fi";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -463,7 +463,14 @@ function DashboardLegal({ usuario, setActiveTab }) {
           <div className="panel-body flex-column-body">
             
             <div className="quick-actions-list" style={{ marginBottom: '24px' }}>
-              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
+              <div className="quick-action-btn premium-btn-blue" onClick={() => setActiveTab && setActiveTab("BandejaJuridica")}>
+                <div className="icon-wrapper"><FiInbox /></div>
+                <div className="btn-text">
+                  <strong>Bandeja Jurídica</strong>
+                  <span>Bandeja de entrada de solicitudes</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("FlujoAdministrativo")}>
                 <div className="icon-wrapper"><FiCheck /></div>
                 <div className="btn-text">
                   <strong>Evaluación Legal</strong>
@@ -475,6 +482,20 @@ function DashboardLegal({ usuario, setActiveTab }) {
                 <div className="btn-text">
                   <strong>Calendario Institucional</strong>
                   <span>Revisar Fechas Aprobadas</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-green" onClick={() => setActiveTab && setActiveTab("GestionDictamenes")}>
+                <div className="icon-wrapper"><FiClipboard /></div>
+                <div className="btn-text">
+                  <strong>Gestión de Dictámenes</strong>
+                  <span>Cotizaciones adjudicadas pendientes</span>
+                </div>
+              </div>
+              <div className="quick-action-btn premium-btn-purple" onClick={() => setActiveTab && setActiveTab("DictamenesRealizados")}>
+                <div className="icon-wrapper"><FiFileText /></div>
+                <div className="btn-text">
+                  <strong>Dictámenes Realizados</strong>
+                  <span>Historial de contratos y avales</span>
                 </div>
               </div>
             </div>
